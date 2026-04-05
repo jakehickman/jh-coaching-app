@@ -488,7 +488,14 @@ function MealPlanTab() {
                 const hasMacros = mm.calories > 0;
                 return (
                   <Card key={i}>
-                    <p className="text-sm font-semibold text-foreground mb-3">{meal.name ?? `Meal ${i + 1}`}</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-semibold text-foreground">{meal.name ?? `Meal ${i + 1}`}</p>
+                      {meal.time && (
+                        <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
+                          {(() => { try { const [h, m] = meal.time.split(":"); const d = new Date(); d.setHours(+h, +m); return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); } catch { return meal.time; } })()}
+                        </span>
+                      )}
+                    </div>
                     {(meal.items ?? []).map((item: any, j: number) => {
                       const food = foodDb.find((f: any) => f.name === item.food);
                       const grams = parseFloat(item.grams) || 0;

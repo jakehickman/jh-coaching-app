@@ -132,6 +132,47 @@ function SortableExerciseRow({
   );
 }
 
+// ─── Food Combobox ──────────────────────────────────────────────────────────
+function FoodCombobox({ value, onChange, foodNames }: { value: string; onChange: (v: string) => void; foodNames: string[] }) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const filtered = search.length > 0
+    ? foodNames.filter(n => n.toLowerCase().includes(search.toLowerCase())).slice(0, 10)
+    : foodNames.slice(0, 10);
+  return (
+    <div className="relative w-full">
+      <input
+        type="text"
+        value={open ? search : value}
+        onChange={e => { setSearch(e.target.value); setOpen(true); }}
+        onFocus={() => { setSearch(""); setOpen(true); }}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="Search food…"
+        className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto">
+          {filtered.map(name => (
+            <button
+              key={name}
+              type="button"
+              onMouseDown={() => { onChange(name); setSearch(""); setOpen(false); }}
+              className="w-full text-left px-3 py-1.5 text-xs text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+      {open && search.length > 0 && filtered.length === 0 && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl px-3 py-2">
+          <p className="text-xs text-muted-foreground">No foods match "{search}"</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Client Selector ──────────────────────────────────────────────────────────
 function useClientSelector() {
   const { data: allUsers } = trpc.users.list.useQuery();
@@ -689,9 +730,10 @@ function MealPlansSection() {
     fat: Math.round((acc.fat + m.fat) * 10) / 10,
   }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
 
-  const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, items: [] }]);
+  const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", items: [] }]);
   const removeMeal = (i: number) => setMeals(m => m.filter((_, idx) => idx !== i));
   const updateMealName = (i: number, name: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, name } : meal));
+  const updateMealTime = (i: number, time: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, time } : meal));
   const addItem = (mealIdx: number) => setMeals(m => m.map((meal, idx) => idx === mealIdx
     ? { ...meal, items: [...(meal.items ?? []), { food: "", grams: "" }] }
     : meal));
@@ -753,7 +795,10 @@ function MealPlansSection() {
               <Card key={i}>
                 <div className="flex items-center gap-2 mb-3">
                   <input type="text" value={meal.name} onChange={e => updateMealName(i, e.target.value)}
+                    placeholder="Meal name"
                     className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-primary" />
+                  <input type="time" value={meal.time ?? ""} onChange={e => updateMealTime(i, e.target.value)}
+                    className="w-28 bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
                   <button onClick={() => removeMeal(i)} className="text-destructive hover:opacity-80">
                     <Trash2 size={15} />
                   </button>
@@ -770,16 +815,13 @@ function MealPlansSection() {
                     const hasData = item.food && parseFloat(item.grams) > 0;
                     return (
                       <div key={j} className="grid grid-cols-12 gap-1 items-center">
-                        <select
-                          value={item.food}
-                          onChange={e => updateItem(i, j, "food", e.target.value)}
-                          className="col-span-6 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                        >
-                          <option value="">— select food —</option>
-                          {foodNames.map(name => (
-                            <option key={name} value={name}>{name}</option>
-                          ))}
-                        </select>
+                        <div className="col-span-6">
+                          <FoodCombobox
+                            value={item.food}
+                            onChange={v => updateItem(i, j, "food", v)}
+                            foodNames={foodNames}
+                          />
+                        </div>
                         <input
                           type="number" min="0" step="1"
                           value={item.grams}

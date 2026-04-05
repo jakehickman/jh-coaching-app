@@ -51,3 +51,6 @@
 - [x] Seed all 46 foods with USDA-sourced nutritional data
 - [x] Build Nutrition Data tab in Coach Panel (searchable table, add/edit/delete)
 - [x] Add per-meal macro totals and daily totals to Meal Plans section
+- [x] Add meal time field to each meal card in Meal Plans editor
+- [x] Replace food dropdown with searchable combobox in Meal Plans editor
+- [x] Display meal time on client Meal Plan tab
