@@ -1025,15 +1025,16 @@ function ProgressSection() {
   const prevAvgSteps = avgOf(prev7.map(l => l.stepsCount as number | null));
 
   // ── Meal adherence: on-plan days / total logged days in window ──────────────
-  const curOnPlan = cur7.filter(l => !l.offPlanMeal).length;
+  const isOffPlan = (v: unknown) => v === true || v === 1 || v === '1';
+  const curOnPlan = cur7.filter(l => !isOffPlan(l.offPlanMeal)).length;
   const mealAdherence = cur7.length > 0 ? Math.round((curOnPlan / cur7.length) * 100) : null;
-  const prevOnPlan = prev7.filter(l => !l.offPlanMeal).length;
+  const prevOnPlan = prev7.filter(l => !isOffPlan(l.offPlanMeal)).length;
   const prevMealAdherence = prev7.length > 0 ? Math.round((prevOnPlan / prev7.length) * 100) : null;
 
   // ── Training adherence: calendar-day window vs rotation length ──────────────
   const schedule = (trainingProgram?.schedule as string[] | null) ?? null;
   const programDays = (trainingProgram?.days as any[] | null) ?? null;
-  const rotationLen = programDays?.length ?? schedule?.length ?? 7;
+  const rotationLen = schedule?.length ?? programDays?.length ?? 7;
   const prescribedPerRotation = schedule
     ? schedule.filter((s: string) => s && s.toLowerCase() !== "off").length
     : programDays
