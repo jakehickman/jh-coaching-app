@@ -10,12 +10,24 @@ import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X } from "lucide-rea
 import { toast } from "sonner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-// Safely extract YYYY-MM-DD from any date value (Date object, ISO string, plain date string)
-function fmtDate(val: unknown): string {
+// Convert a DB date value (ISO timestamp or plain date string) to local yyyy-mm-dd
+// This handles the UTC offset — e.g. "2026-04-05T04:00:00.000Z" is April 6 in AEST (UTC+10)
+function toLocalDateStr(val: unknown): string {
   if (!val) return "";
   const s = String(val);
-  const iso = s.includes('T') ? s.slice(0, 10) : s.slice(0, 10);
-  // Display as dd/mm/yyyy
+  // If it's a full ISO timestamp, parse as Date and use local date parts
+  if (s.includes('T') || s.includes('Z')) {
+    const d = new Date(s);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  // Plain date string like "2026-04-06" — use as-is
+  return s.slice(0, 10);
+}
+
+// Display a DB date value as dd/mm/yyyy in local time
+function fmtDate(val: unknown): string {
+  if (!val) return "";
+  const iso = toLocalDateStr(val);
   const [y, m, d] = iso.split('-');
   if (y && m && d) return `${d}/${m}/${y}`;
   return iso;
@@ -135,14 +147,14 @@ function OverviewTab() {
 
   const thisWeekWeights = allLogs
     .filter(l => {
-      const d = String(l.logDate).slice(0, 10);
+      const d = toLocalDateStr(l.logDate);
       return d >= day6ago && d <= today && l.weight != null;
     })
     .map(l => l.weight as number);
 
   const prevWeekWeights = allLogs
     .filter(l => {
-      const d = String(l.logDate).slice(0, 10);
+      const d = toLocalDateStr(l.logDate);
       return d >= day13ago && d <= day7ago && l.weight != null;
     })
     .map(l => l.weight as number);
@@ -247,7 +259,7 @@ function DailyLogTab() {
 
   // Load existing log for selected date
   useEffect(() => {
-    const existing = logs?.find(l => String(l.logDate).slice(0, 10) === date);
+    const existing = logs?.find(l => toLocalDateStr(l.logDate) === date);
     if (existing) {
       setForm({
         weight: existing.weight?.toString() ?? "",
