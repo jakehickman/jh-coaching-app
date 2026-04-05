@@ -953,7 +953,8 @@ function ShoppingListTab() {
 // ─── Tab: Training Program ────────────────────────────────────────────────────
 function getYouTubeEmbedUrl(url: string): string | null {
   if (!url) return null;
-  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  // Handle: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/shorts/ID
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\.\w-]+)/);
   if (!match) return null;
   return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
 }
@@ -1023,37 +1024,37 @@ function TrainingTab() {
           </button>
 
           {expandedDay === i && (
-            <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-2">
               <div className="grid grid-cols-12 gap-2 px-1 mb-1">
-                <p className="col-span-5 text-[10px] text-muted-foreground uppercase tracking-wider">Exercise</p>
-                <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Sets</p>
-                <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Reps</p>
-                <p className="col-span-3 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Notes</p>
+                <p className="col-span-6 text-[10px] text-muted-foreground uppercase tracking-wider">Exercise</p>
+                <p className="col-span-3 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Sets</p>
+                <p className="col-span-3 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Reps</p>
               </div>
               {(day.exercises ?? []).map((ex: any, j: number) => {
                 const videoUrl = videoMap[ex.name];
                 const embedUrl = videoUrl ? getYouTubeEmbedUrl(videoUrl) : null;
                 return (
-                  <div key={j} className="grid grid-cols-12 gap-2 items-center py-2 border-t border-border">
-                    <div className="col-span-5 flex items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground">{ex.name}</p>
-                        {ex.notes && <p className="text-[10px] text-muted-foreground">{ex.notes}</p>}
+                  <div key={j} className="border-t border-border">
+                    <div className="grid grid-cols-12 gap-2 items-center py-2">
+                      <div className="col-span-6 flex items-center gap-2">
+                        <p className="text-sm text-foreground flex-1 min-w-0">{ex.name}</p>
+                        {embedUrl && (
+                          <button
+                            onClick={() => setVideoModal({ name: ex.name, embedUrl })}
+                            className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                            title="Watch demo"
+                          >
+                            <Play size={10} />
+                            <span className="text-[9px] font-semibold">Demo</span>
+                          </button>
+                        )}
                       </div>
-                      {embedUrl && (
-                        <button
-                          onClick={() => setVideoModal({ name: ex.name, embedUrl })}
-                          className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                          title="Watch demo"
-                        >
-                          <Play size={10} />
-                          <span className="text-[9px] font-semibold">Demo</span>
-                        </button>
-                      )}
+                      <p className="col-span-3 text-sm text-foreground text-center">{ex.sets}</p>
+                      <p className="col-span-3 text-sm text-foreground text-center">{ex.reps}</p>
                     </div>
-                    <p className="col-span-2 text-sm text-foreground text-center">{ex.sets}</p>
-                    <p className="col-span-2 text-sm text-foreground text-center">{ex.reps}</p>
-                    <p className="col-span-3 text-xs text-muted-foreground text-center">{ex.notes}</p>
+                    {ex.notes && (
+                      <p className="text-xs text-muted-foreground pb-2 leading-relaxed">{ex.notes}</p>
+                    )}
                   </div>
                 );
               })}
