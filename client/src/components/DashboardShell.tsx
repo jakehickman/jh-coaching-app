@@ -8,7 +8,6 @@ import {
   Calendar,
   Salad,
   ChevronLeft,
-  ClipboardCheck,
   ClipboardList,
   Dumbbell,
   Home,
@@ -47,7 +46,6 @@ const coachNav: NavItem[] = [
   { href: "/coach/progress", label: "Client Progress", icon: <TrendingUp size={18} /> },
   { href: "/coach/exercise-library", label: "Exercise Library", icon: <BookOpen size={18} /> },
   { href: "/coach/nutrition-data", label: "Nutrition Data", icon: <Salad size={18} /> },
-  { href: "/coach/onboarding", label: "Onboarding", icon: <ClipboardCheck size={18} /> },
 ];
 
 interface DashboardShellProps {
