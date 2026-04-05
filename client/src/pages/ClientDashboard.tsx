@@ -257,8 +257,7 @@ function OverviewTab() {
         const sites = [
           { label: "Umbilical", avg: siteAvg([latest.umbilical1, latest.umbilical2, latest.umbilical3, latest.umbilical4, latest.umbilical5]) },
           { label: "Suprailiac", avg: siteAvg([latest.suprailiac1, latest.suprailiac2, latest.suprailiac3, latest.suprailiac4, latest.suprailiac5]) },
-          { label: "Calf", avg: siteAvg([latest.calf1, latest.calf2, latest.calf3, latest.calf4, latest.calf5]) },
-          { label: "Thigh", avg: siteAvg([latest.thigh1, latest.thigh2, latest.thigh3, latest.thigh4, latest.thigh5]) },
+
         ];
         // Total uses whatever sites have data (not requiring all 4)
         const sitesWithData = sites.filter(s => s.avg != null);
@@ -269,8 +268,7 @@ function OverviewTab() {
         const prevSites = prev ? [
           { label: "Umbilical", avg: siteAvg([prev.umbilical1, prev.umbilical2, prev.umbilical3, prev.umbilical4, prev.umbilical5]) },
           { label: "Suprailiac", avg: siteAvg([prev.suprailiac1, prev.suprailiac2, prev.suprailiac3, prev.suprailiac4, prev.suprailiac5]) },
-          { label: "Calf", avg: siteAvg([prev.calf1, prev.calf2, prev.calf3, prev.calf4, prev.calf5]) },
-          { label: "Thigh", avg: siteAvg([prev.thigh1, prev.thigh2, prev.thigh3, prev.thigh4, prev.thigh5]) },
+
         ] : null;
         // Compare only sites that exist in both measurements
         const prevTotal = prevSites
@@ -602,8 +600,7 @@ function DailyLogTab() {
 const SKINFOLD_SITES = [
   { key: "umbilical", label: "Umbilical" },
   { key: "suprailiac", label: "Suprailiac" },
-  { key: "calf", label: "Calf" },
-  { key: "thigh", label: "Thigh" },
+
 ] as const;
 
 function avgReadings(vals: (number | null | undefined)[]): number | null {
@@ -620,8 +617,7 @@ function MeasurementsTab() {
     waist: "",
     umbilical: { ...emptySkinfold },
     suprailiac: { ...emptySkinfold },
-    calf: { ...emptySkinfold },
-    thigh: { ...emptySkinfold },
+
     notes: "",
   });
   const add = trpc.measurements.add.useMutation({
@@ -696,8 +692,7 @@ function MeasurementsTab() {
             waist: parseR(form.waist),
             umbilical1: parseR(form.umbilical.r1), umbilical2: parseR(form.umbilical.r2), umbilical3: parseR(form.umbilical.r3), umbilical4: parseR(form.umbilical.r4), umbilical5: parseR(form.umbilical.r5),
             suprailiac1: parseR(form.suprailiac.r1), suprailiac2: parseR(form.suprailiac.r2), suprailiac3: parseR(form.suprailiac.r3), suprailiac4: parseR(form.suprailiac.r4), suprailiac5: parseR(form.suprailiac.r5),
-            calf1: parseR(form.calf.r1), calf2: parseR(form.calf.r2), calf3: parseR(form.calf.r3), calf4: parseR(form.calf.r4), calf5: parseR(form.calf.r5),
-            thigh1: parseR(form.thigh.r1), thigh2: parseR(form.thigh.r2), thigh3: parseR(form.thigh.r3), thigh4: parseR(form.thigh.r4), thigh5: parseR(form.thigh.r5),
+
             notes: form.notes || undefined,
           })} disabled={add.isPending}
             className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-lg hover:opacity-90 disabled:opacity-50">
@@ -735,9 +730,7 @@ function MeasurementsTab() {
             {measurements!.map(m => {
               const umbAvg = avgReadings([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]);
               const supAvg = avgReadings([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]);
-              const calfAvg = avgReadings([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]);
-              const thighAvg = avgReadings([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]);
-              const siteAvgs = [umbAvg, supAvg, calfAvg, thighAvg];
+              const siteAvgs = [umbAvg, supAvg];
               const total = siteAvgs.every(v => v !== null) ? parseFloat(siteAvgs.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
               return (
                 <Card key={m.id}>
@@ -763,8 +756,7 @@ function MeasurementsTab() {
                         {[
                           { label: "Umbilical", avg: umbAvg },
                           { label: "Suprailiac", avg: supAvg },
-                          { label: "Calf", avg: calfAvg },
-                          { label: "Thigh", avg: thighAvg },
+
                         ].map(({ label, avg }) => (
                           <div key={label} className="text-center">
                             <p className="text-xs text-muted-foreground">{label}</p>

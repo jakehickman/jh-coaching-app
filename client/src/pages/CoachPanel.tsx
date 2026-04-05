@@ -1076,10 +1076,9 @@ function ProgressSection() {
     const sites = [
       avg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]),
       avg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]),
-      avg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]),
-      avg([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]),
     ];
-    return sites.every(v => v != null) ? parseFloat(sites.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
+    const withData = sites.filter(v => v != null);
+    return withData.length > 0 ? parseFloat(withData.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
   }
   const latestSkinfold = skinfoldTotal(latestM);
   const prevSkinfold = skinfoldTotal(prevM);
@@ -1245,8 +1244,7 @@ function ProgressSection() {
                     {([
                       { label: "Umbilical", vals: [latestM.umbilical1, latestM.umbilical2, latestM.umbilical3, latestM.umbilical4, latestM.umbilical5] },
                       { label: "Suprailiac", vals: [latestM.suprailiac1, latestM.suprailiac2, latestM.suprailiac3, latestM.suprailiac4, latestM.suprailiac5] },
-                      { label: "Calf", vals: [latestM.calf1, latestM.calf2, latestM.calf3, latestM.calf4, latestM.calf5] },
-                      { label: "Thigh", vals: [latestM.thigh1, latestM.thigh2, latestM.thigh3, latestM.thigh4, latestM.thigh5] },
+
                     ] as { label: string; vals: (number | null | undefined)[] }[]).map(({ label, vals }) => {
                       const nums = vals.filter((v): v is number => v != null);
                       const siteAvg = nums.length ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
