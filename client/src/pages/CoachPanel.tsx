@@ -346,8 +346,6 @@ function TrainingSection() {
   const [notes, setNotes] = useState("");
   const [days, setDays] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<string[]>([]);
-  const [copyFromId, setCopyFromId] = useState<string>("");
-  const { data: allPrograms } = trpc.training.listAll.useQuery();
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
 
   // ── Volume calculation ──────────────────────────────────────────────────────
@@ -457,17 +455,6 @@ function TrainingSection() {
       if (oldIndex !== -1 && newIndex !== -1) reorderDays(oldIndex, newIndex);
     }
   };
-  const handleCopyProgram = () => {
-    if (!copyFromId) return;
-    const source = allPrograms?.find((p: any) => p.userId === parseInt(copyFromId));
-    if (source) {
-      setProgramName(source.programName ?? "");
-      setNotes(source.notes ?? "");
-      setDays((source.days as any[]) ?? []);
-      setSchedule((source.schedule as string[]) ?? []);
-      toast.success("Program copied — hit Save to apply");
-    }
-  };
   // Schedule helpers
   const dayOptions = ["Off", ...days.map(d => d.name || `Day ${days.indexOf(d) + 1}`)];
   const addScheduleSlot = () => setSchedule(s => [...s, days[0]?.name || "Day 1"]);
@@ -491,34 +478,6 @@ function TrainingSection() {
       </div>
       {selectedUserId && (
         <>
-          {allPrograms && allPrograms.filter((p: any) => p.userId !== selectedUserId).length > 0 && (
-            <div className="flex gap-2 items-end">
-              <div className="flex-1">
-                <label className="text-xs text-muted-foreground block mb-1">Copy program from</label>
-                <select
-                  value={copyFromId}
-                  onChange={e => setCopyFromId(e.target.value)}
-                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">— select a client —</option>
-                  {allPrograms
-                    .filter((p: any) => p.userId !== selectedUserId)
-                    .map((p: any) => (
-                      <option key={p.userId} value={p.userId}>
-                        {clients.find(c => c.id === p.userId)?.name ?? `User ${p.userId}`} — {p.programName ?? "Unnamed"}
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <button
-                onClick={handleCopyProgram}
-                disabled={!copyFromId}
-                className="px-4 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:border-primary/50 disabled:opacity-40 transition-colors"
-              >
-                Copy
-              </button>
-            </div>
-          )}
           {/* ── Training Schedule ── */}
           <div>
             <div className="flex items-center justify-between mb-2">
