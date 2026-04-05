@@ -44,3 +44,4 @@
 - [x] Add videoUrl column to exercise_library table and migrate DB
 - [x] Add video URL input to Exercise Library editor
 - [x] Add play button with embedded video modal to client Training Program tab
+- [x] Re-seed all 55 exercises into exercise_library with correct muscle group values
