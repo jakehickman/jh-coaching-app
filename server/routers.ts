@@ -354,5 +354,41 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(({ input }) => db.deleteNutritionFood(input.id)),
   }),
+
+  // Workout Sessions
+  workoutSessions: router({
+    // Client: list their own sessions
+    list: protectedProcedure.query(({ ctx }) => db.listWorkoutSessions(ctx.user.id)),
+    // Admin: list sessions for a specific client
+    listForClient: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(({ input }) => db.listWorkoutSessions(input.userId)),
+    // Client: save a session (upsert by userId+sessionDate+dayLabel)
+    save: protectedProcedure
+      .input(
+        z.object({
+          sessionDate: z.string(), // yyyy-mm-dd
+          dayLabel: z.string(),
+          exercises: z.array(
+            z.object({
+              name: z.string(),
+              sets: z.array(
+                z.object({
+                  weight: z.number().nullable().optional(),
+                  reps: z.number().nullable().optional(),
+                  notes: z.string().nullable().optional(),
+                })
+              ),
+            })
+          ),
+          notes: z.string().nullable().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) => db.saveWorkoutSession({ userId: ctx.user.id, ...input })),
+    // Client: delete a session
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) => db.deleteWorkoutSession(input.id, ctx.user.id)),
+  }),
 });
 export type AppRouter = typeof appRouter;

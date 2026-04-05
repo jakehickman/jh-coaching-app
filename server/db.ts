@@ -19,6 +19,7 @@ import {
   nutritionFoods,
   NutritionFood,
   InsertNutritionFood,
+  workoutSessions,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -510,4 +511,56 @@ export async function deleteNutritionFood(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(nutritionFoods).where(eq(nutritionFoods.id, id));
+}
+
+// ─── Workout Sessions ─────────────────────────────────────────────────────────
+export async function listWorkoutSessions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(workoutSessions)
+    .where(eq(workoutSessions.userId, userId))
+    .orderBy(desc(workoutSessions.sessionDate));
+}
+
+export async function saveWorkoutSession(data: {
+  userId: number;
+  sessionDate: string;
+  dayLabel: string;
+  exercises: unknown;
+  notes?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  // Upsert: if a session exists for same userId + sessionDate + dayLabel, update it
+  const existing = await db
+    .select()
+    .from(workoutSessions)
+    .where(
+      and(
+        eq(workoutSessions.userId, data.userId),
+        eq(workoutSessions.sessionDate, data.sessionDate as any),
+        eq(workoutSessions.dayLabel, data.dayLabel)
+      )
+    )
+    .limit(1);
+  if (existing.length > 0) {
+    await db
+      .update(workoutSessions)
+      .set({ exercises: data.exercises, notes: data.notes ?? null, updatedAt: new Date() })
+      .where(eq(workoutSessions.id, existing[0].id));
+    return existing[0].id;
+  } else {
+    const result = await db.insert(workoutSessions).values(data as any);
+    return (result as any).insertId;
+  }
+}
+
+export async function deleteWorkoutSession(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .delete(workoutSessions)
+    .where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, userId)));
 }

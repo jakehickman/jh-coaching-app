@@ -978,6 +978,10 @@ function ProgressSection() {
     { userId: selectedUserId! },
     { enabled: !!selectedUserId }
   );
+  const { data: workoutSessions = [] } = trpc.workoutSessions.listForClient.useQuery(
+    { userId: selectedUserId! },
+    { enabled: !!selectedUserId }
+  );
 
   const weightData = (logs ?? []).filter(l => l.weight).slice(0, 14).reverse()
     .map(l => ({ date: String(l.logDate).slice(5), weight: l.weight }));
@@ -1100,6 +1104,55 @@ function ProgressSection() {
                   </Card>
                 </div>
               </>
+            );
+          })()}
+
+          {/* Exercise Progress Cards */}
+          {workoutSessions.length > 0 && (() => {
+            // Build per-exercise history: { [exerciseName]: [{date, sets}] }
+            const exerciseHistory: Record<string, Array<{ date: string; sets: Array<{ weight: number | null; reps: number | null }> }>> = {};
+            for (const session of [...workoutSessions].reverse()) {
+              const dateStr = String(session.sessionDate).slice(0, 10);
+              for (const ex of (session.exercises as any[])) {
+                if (!exerciseHistory[ex.name]) exerciseHistory[ex.name] = [];
+                exerciseHistory[ex.name].push({ date: dateStr, sets: ex.sets ?? [] });
+              }
+            }
+            const exerciseNames = Object.keys(exerciseHistory);
+            return (
+              <div>
+                <SectionLabel>Exercise Progress</SectionLabel>
+                <div className="space-y-3">
+                  {exerciseNames.map(name => {
+                    const history = exerciseHistory[name];
+                    return (
+                      <Card key={name}>
+                        <p className="text-sm font-semibold text-foreground mb-2">{name}</p>
+                        <div className="space-y-2">
+                          {history.slice(-8).map((entry, i) => {
+                            const [y, m, d] = entry.date.split("-");
+                            const dateLabel = y && m && d ? `${d}/${m}/${y}` : entry.date;
+                            const validSets = entry.sets.filter(s => s.weight != null || s.reps != null);
+                            return (
+                              <div key={i} className="flex items-start justify-between border-t border-border pt-2 first:border-0 first:pt-0">
+                                <p className="text-xs text-muted-foreground w-20 flex-shrink-0">{dateLabel}</p>
+                                <div className="flex flex-wrap gap-x-3 gap-y-0.5 justify-end">
+                                  {validSets.length > 0 ? validSets.map((s, si) => (
+                                    <p key={si} className="text-xs text-foreground">
+                                      <span className="text-muted-foreground text-[10px]">S{si + 1}: </span>
+                                      {s.weight != null ? `${s.weight}kg` : "—"} × {s.reps != null ? s.reps : "—"}
+                                    </p>
+                                  )) : <p className="text-xs text-muted-foreground">No data</p>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })()}
 

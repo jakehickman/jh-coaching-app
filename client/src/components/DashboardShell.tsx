@@ -36,6 +36,7 @@ const clientNav: NavItem[] = [
   { href: "/dashboard/meal-plan", label: "Meal Plan", icon: <Zap size={18} /> },
   { href: "/dashboard/shopping", label: "Shopping List", icon: <ShoppingCart size={18} /> },
   { href: "/dashboard/training", label: "Training Program", icon: <Dumbbell size={18} /> },
+  { href: "/dashboard/workout-log", label: "Workout Log", icon: <BarChart3 size={18} /> },
 ];
 
 const coachNav: NavItem[] = [

@@ -6,7 +6,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar
 } from "recharts";
-import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X } from "lucide-react";
+import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -1098,6 +1098,296 @@ function TrainingTab() {
 }
 
 
+// ─── Tab: Workout Log ────────────────────────────────────────────────────────
+function WorkoutLogTab() {
+  const { data: program } = trpc.training.get.useQuery();
+  const { data: sessions = [], refetch } = trpc.workoutSessions.list.useQuery();
+  const utils = trpc.useUtils();
+
+  const today = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  })();
+
+  // Build list of program days (non-Off)
+  const days: Array<{ label: string; exercises: Array<{ name: string; sets: number; reps: string; notes?: string }> }> =
+    (program?.days as any[]) ?? [];
+
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [sessionDate, setSessionDate] = useState(today);
+  // exerciseData: { [exerciseName]: Array<{weight: string, reps: string, notes: string}> }
+  const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string }>>>({});
+  const [sessionNotes, setSessionNotes] = useState("");
+  const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<number | null>(null);
+
+  const saveMutation = trpc.workoutSessions.save.useMutation({
+    onSuccess: () => { utils.workoutSessions.list.invalidate(); setSaving(false); toast.success("Session saved!"); },
+    onError: () => { setSaving(false); toast.error("Failed to save session."); },
+  });
+  const deleteMutation = trpc.workoutSessions.delete.useMutation({
+    onSuccess: () => { utils.workoutSessions.list.invalidate(); setDeleting(null); toast.success("Session deleted."); },
+    onError: () => { setDeleting(null); toast.error("Failed to delete."); },
+  });
+
+  // When user picks a day, load existing session for that date+day or init blank
+  function selectDay(label: string) {
+    setSelectedDay(label);
+    const dayDef = days.find(d => d.label === label);
+    const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === sessionDate && s.dayLabel === label);
+    if (existing) {
+      const exData: Record<string, Array<{ weight: string; reps: string; notes: string }>> = {};
+      for (const ex of (existing.exercises as any[])) {
+        exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
+          weight: s.weight != null ? String(s.weight) : "",
+          reps: s.reps != null ? String(s.reps) : "",
+          notes: s.notes ?? "",
+        }));
+      }
+      setExerciseData(exData);
+      setSessionNotes((existing.notes as string) ?? "");
+    } else {
+      const blank: Record<string, Array<{ weight: string; reps: string; notes: string }>> = {};
+      for (const ex of (dayDef?.exercises ?? [])) {
+        blank[ex.name] = [{ weight: "", reps: "", notes: "" }];
+      }
+      setExerciseData(blank);
+      setSessionNotes("");
+    }
+  }
+
+  // Re-load when date changes
+  useEffect(() => {
+    if (selectedDay) selectDay(selectedDay);
+  }, [sessionDate, sessions.length]);
+
+  function setSet(exName: string, idx: number, field: "weight" | "reps" | "notes", val: string) {
+    setExerciseData(prev => {
+      const sets = [...(prev[exName] ?? [{ weight: "", reps: "", notes: "" }])];
+      sets[idx] = { ...sets[idx], [field]: val };
+      return { ...prev, [exName]: sets };
+    });
+  }
+
+  function addSet(exName: string) {
+    setExerciseData(prev => ({
+      ...prev,
+      [exName]: [...(prev[exName] ?? []), { weight: "", reps: "", notes: "" }],
+    }));
+  }
+
+  function removeSet(exName: string, idx: number) {
+    setExerciseData(prev => {
+      const sets = (prev[exName] ?? []).filter((_, i) => i !== idx);
+      return { ...prev, [exName]: sets.length ? sets : [{ weight: "", reps: "", notes: "" }] };
+    });
+  }
+
+  function handleSave() {
+    if (!selectedDay) return;
+    setSaving(true);
+    const dayDef = days.find(d => d.label === selectedDay);
+    const exercises = (dayDef?.exercises ?? []).map(ex => ({
+      name: ex.name,
+      sets: (exerciseData[ex.name] ?? []).map(s => ({
+        weight: s.weight !== "" ? parseFloat(s.weight) : null,
+        reps: s.reps !== "" ? parseInt(s.reps) : null,
+        notes: s.notes || null,
+      })),
+    }));
+    saveMutation.mutate({ sessionDate, dayLabel: selectedDay, exercises, notes: sessionNotes || null });
+  }
+
+  const inputCls = "bg-secondary border border-border rounded-lg px-2 py-3 text-base text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary w-full";
+
+  return (
+    <div className="space-y-4">
+      {/* Date picker */}
+      <Card>
+        <SectionLabel>Date</SectionLabel>
+        <DateInput value={sessionDate} onChange={v => { setSessionDate(v); setSelectedDay(null); }} />
+      </Card>
+
+      {/* Day selector */}
+      {days.length === 0 ? (
+        <Card><p className="text-sm text-muted-foreground">No training program assigned yet.</p></Card>
+      ) : (
+        <Card>
+          <SectionLabel>Select Session</SectionLabel>
+          <div className="flex flex-wrap gap-2">
+            {days.map(d => (
+              <button
+                key={d.label}
+                onClick={() => selectDay(d.label)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedDay === d.label
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Exercise logging */}
+      {selectedDay && (() => {
+        const dayDef = days.find(d => d.label === selectedDay);
+        return (
+          <div className="space-y-3">
+            {(dayDef?.exercises ?? []).map((ex, i) => {
+              const sets = exerciseData[ex.name] ?? [{ weight: "", reps: "", notes: "" }];
+              const isExpanded = expandedSets[ex.name];
+              return (
+                <Card key={i}>
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div>
+                      <p className="text-base font-semibold text-foreground">{ex.name}</p>
+                      {ex.notes && <p className="text-xs text-muted-foreground mt-0.5">{ex.notes}</p>}
+                      <p className="text-xs text-muted-foreground mt-0.5">{ex.sets} sets × {ex.reps}</p>
+                    </div>
+                  </div>
+
+                  {/* Primary set — always visible, visually prominent */}
+                  <div className="mb-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-primary mb-1.5">Set 1 (Primary)</p>
+                    <div className="flex gap-2 items-center">
+                      <div className="flex-1">
+                        <p className="text-[10px] text-muted-foreground mb-1">Weight (kg)</p>
+                        <input
+                          type="number" inputMode="decimal" placeholder="kg"
+                          value={sets[0]?.weight ?? ""}
+                          onChange={e => setSet(ex.name, 0, "weight", e.target.value)}
+                          className={inputCls}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[10px] text-muted-foreground mb-1">Reps</p>
+                        <input
+                          type="number" inputMode="numeric" placeholder="reps"
+                          value={sets[0]?.reps ?? ""}
+                          onChange={e => setSet(ex.name, 0, "reps", e.target.value)}
+                          className={inputCls}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional sets — collapsible */}
+                  {sets.length > 1 && (
+                    <div className="space-y-2 mb-2">
+                      {sets.slice(1).map((s, idx) => (
+                        <div key={idx + 1} className="border-t border-border pt-2">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Set {idx + 2}</p>
+                            <button onClick={() => removeSet(ex.name, idx + 1)} className="text-muted-foreground hover:text-destructive transition-colors"><Minus size={14} /></button>
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <input
+                                type="number" inputMode="decimal" placeholder="kg"
+                                value={s.weight ?? ""}
+                                onChange={e => setSet(ex.name, idx + 1, "weight", e.target.value)}
+                                className={inputCls}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <input
+                                type="number" inputMode="numeric" placeholder="reps"
+                                value={s.reps ?? ""}
+                                onChange={e => setSet(ex.name, idx + 1, "reps", e.target.value)}
+                                className={inputCls}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => addSet(ex.name)}
+                    className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
+                  >
+                    <Plus size={13} /> Add Set
+                  </button>
+                </Card>
+              );
+            })}
+
+            {/* Session notes */}
+            <Card>
+              <SectionLabel>Session Notes</SectionLabel>
+              <textarea
+                value={sessionNotes}
+                onChange={e => setSessionNotes(e.target.value)}
+                placeholder="How did the session feel? Any PRs, issues, adjustments..."
+                rows={3}
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              />
+            </Card>
+
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save Session"}
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* Past sessions */}
+      {sessions.length > 0 && (
+        <div className="space-y-2">
+          <SectionLabel>Past Sessions</SectionLabel>
+          {sessions.slice(0, 20).map(s => (
+            <Card key={s.id}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{s.dayLabel}</p>
+                  <p className="text-xs text-muted-foreground">{fmtDate(s.sessionDate)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setSessionDate(toLocalDateStr(s.sessionDate)); selectDay(s.dayLabel); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => { if (confirm("Delete this session?")) { setDeleting(s.id); deleteMutation.mutate({ id: s.id }); } }}
+                    disabled={deleting === s.id}
+                    className="text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+              {/* Summary of sets */}
+              <div className="mt-2 space-y-1">
+                {(s.exercises as any[]).map((ex: any, i: number) => {
+                  const validSets = (ex.sets ?? []).filter((st: any) => st.weight != null || st.reps != null);
+                  if (!validSets.length) return null;
+                  return (
+                    <p key={i} className="text-xs text-muted-foreground">
+                      <span className="text-foreground font-medium">{ex.name}</span>: {validSets.map((st: any) => `${st.weight ?? "—"}kg × ${st.reps ?? "—"}`).join(" | ")}
+                    </p>
+                  );
+                })}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main ClientDashboard ─────────────────────────────────────────────────────
 const TAB_MAP: Record<string, React.ReactNode> = {
   overview: <OverviewTab />,
@@ -1106,6 +1396,7 @@ const TAB_MAP: Record<string, React.ReactNode> = {
   "meal-plan": <MealPlanTab />,
   shopping: <ShoppingListTab />,
   training: <TrainingTab />,
+  "workout-log": <WorkoutLogTab />,
 };
 
 const TAB_TITLES: Record<string, string> = {
@@ -1115,6 +1406,7 @@ const TAB_TITLES: Record<string, string> = {
   "meal-plan": "Meal Plan",
   shopping: "Shopping List",
   training: "Training Program",
+  "workout-log": "Workout Log",
 };
 
 export default function ClientDashboard() {

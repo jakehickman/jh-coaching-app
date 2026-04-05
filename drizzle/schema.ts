@@ -265,3 +265,19 @@ export const nutritionFoods = mysqlTable("nutrition_foods", {
 
 export type NutritionFood = typeof nutritionFoods.$inferSelect;
 export type InsertNutritionFood = typeof nutritionFoods.$inferInsert;
+
+// Workout sessions — client logs sets/reps/weight per program day
+export const workoutSessions = mysqlTable("workout_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  sessionDate: date("sessionDate").notNull(),
+  dayLabel: varchar("dayLabel", { length: 128 }).notNull(), // e.g. "Day A - Upper"
+  // JSON: [{name: string, sets: [{weight: number|null, reps: number|null, notes: string|null}]}]
+  exercises: json("exercises").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WorkoutSession = typeof workoutSessions.$inferSelect;
+export type InsertWorkoutSession = typeof workoutSessions.$inferInsert;

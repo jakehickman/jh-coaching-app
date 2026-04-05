@@ -81,3 +81,7 @@
 - [x] Add delete option to daily log entries in client dashboard
 - [x] Fix training adherence: compare against prescribed training days per week from schedule
 - [x] Change Daily Log date field to dd/mm/yyyy format
+- [x] Workout Log tab: client selects program day, logs sets/reps/weight per exercise
+- [x] Workout Log: primary set visually emphasised, additional sets expandable
+- [x] Workout Log: save/update session, delete session
+- [x] Coach Client Progress: per-exercise progress cards showing weight/reps across sessions
