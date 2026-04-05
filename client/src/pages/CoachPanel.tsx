@@ -894,96 +894,6 @@ function MealPlansSection() {
   );
 }
 
-// ─── Section: Coaching Notes ──────────────────────────────────────────────────
-function NotesSection() {
-  const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
-  const { data: notes, refetch } = trpc.notes.list.useQuery(
-    { clientId: selectedUserId! },
-    { enabled: !!selectedUserId }
-  );
-  const addNote = trpc.notes.add.useMutation({
-    onSuccess: () => { toast.success("Note added"); refetch(); setContent(""); }
-  });
-
-  const [content, setContent] = useState("");
-  const [category, setCategory] = useState("General");
-  const today = new Date().toISOString().slice(0, 10);
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <SectionLabel>Select Client</SectionLabel>
-        <div className="flex gap-2 flex-wrap">
-          {clients.map(c => (
-            <button key={c.id} onClick={() => setSelectedUserId(c.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                selectedUserId === c.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}>
-              {c.name ?? `User ${c.id}`}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {selectedUserId && (
-        <>
-          <Card className="space-y-3">
-            <p className="text-sm font-semibold text-foreground">Add Note</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">Category</label>
-                <select value={category} onChange={e => setCategory(e.target.value)}
-                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
-                  <option>General</option>
-                  <option>Training</option>
-                  <option>Nutrition</option>
-                  <option>Progress</option>
-                  <option>Mindset</option>
-                  <option>Adjustment</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Note</label>
-              <textarea value={content} onChange={e => setContent(e.target.value)} rows={4}
-                placeholder="Write your coaching note here..."
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
-            </div>
-            <button
-              onClick={() => addNote.mutate({ clientId: selectedUserId, noteDate: today, content, category })}
-              disabled={!content.trim() || addNote.isPending}
-              className="w-full py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
-            >
-              {addNote.isPending ? "Saving..." : "Add Note"}
-            </button>
-          </Card>
-
-          <div>
-            <SectionLabel>Note History</SectionLabel>
-            {(notes ?? []).length === 0 && (
-              <Card className="text-center py-8">
-                <p className="text-muted-foreground text-sm">No notes yet for this client.</p>
-              </Card>
-            )}
-            <div className="space-y-3">
-              {(notes ?? []).map(note => (
-                <Card key={note.id}>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{note.category ?? "General"}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{String(note.noteDate).slice(0, 10)}</p>
-                  </div>
-                  <p className="text-sm text-foreground leading-relaxed">{note.content}</p>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 // ─── Section: Client Progress ─────────────────────────────────────────────────
 function ProgressSection() {
@@ -1429,7 +1339,6 @@ const SECTION_MAP: Record<string, React.ReactNode> = {
   clients: <ClientsSection />,
   training: <TrainingSection />,
   "meal-plans": <MealPlansSection />,
-  notes: <NotesSection />,
   progress: <ProgressSection />,
   "exercise-library": <ExerciseLibrarySection />,
   "nutrition-data": <NutritionDataSection />,
@@ -1438,7 +1347,6 @@ const SECTION_TITLES: Record<string, string> = {
   clients: "Clients",
   training: "Training Programs",
   "meal-plans": "Meal Plans",
-  notes: "Coaching Notes",
   progress: "Client Progress",
   "exercise-library": "Exercise Library",
   "nutrition-data": "Nutrition Data",

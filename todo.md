@@ -54,3 +54,4 @@
 - [x] Add meal time field to each meal card in Meal Plans editor
 - [x] Replace food dropdown with searchable combobox in Meal Plans editor
 - [x] Display meal time on client Meal Plan tab
+- [x] Remove Coaching Notes tab from Coach Panel and sidebar nav

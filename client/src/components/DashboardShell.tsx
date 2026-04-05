@@ -44,7 +44,6 @@ const coachNav: NavItem[] = [
   { href: "/coach/clients", label: "Clients", icon: <Users size={16} /> },
   { href: "/coach/training", label: "Training Programs", icon: <Dumbbell size={16} /> },
   { href: "/coach/meal-plans", label: "Meal Plans", icon: <Zap size={16} /> },
-  { href: "/coach/notes", label: "Coaching Notes", icon: <ClipboardList size={16} /> },
   { href: "/coach/progress", label: "Client Progress", icon: <TrendingUp size={16} /> },
   { href: "/coach/exercise-library", label: "Exercise Library", icon: <BookOpen size={16} /> },
   { href: "/coach/nutrition-data", label: "Nutrition Data", icon: <Salad size={16} /> },
