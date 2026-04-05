@@ -963,7 +963,7 @@ function MealPlansSection() {
 function ProgressSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
   const { data: logs } = trpc.dailyLog.listForClient.useQuery(
-    { userId: selectedUserId!, limit: 30 },
+    { userId: selectedUserId!, limit: 60 },
     { enabled: !!selectedUserId }
   );
   const { data: measurements } = trpc.measurements.listForClient.useQuery(
@@ -983,33 +983,127 @@ function ProgressSection() {
     { enabled: !!selectedUserId }
   );
 
-  const weightData = (logs ?? []).filter(l => l.weight).slice(0, 14).reverse()
-    .map(l => ({ date: String(l.logDate).slice(5), weight: l.weight }));
+  // ── Calendar-day helpers ────────────────────────────────────────────────────
+  const DAY = 86400000;
+  function localDateStr(offsetDays: number): string {
+    const d = new Date(Date.now() - offsetDays * DAY);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  const today = localDateStr(0);
+  const day7 = localDateStr(7);   // start of current 7-day window
+  const day14 = localDateStr(14); // start of previous 7-day window
 
-  const recentLogs = (logs ?? []).slice(0, 7);
+  const allLogs = logs ?? [];
+  // Current 7 calendar days (today - 6 days)
+  const cur7 = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= day7 && d <= today; });
+  // Previous 7 calendar days (today - 13 days to today - 7 days)
+  const prev7 = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= day14 && d < day7; });
 
-  // Training adherence: compare trained days against prescribed training days per week
-  // schedule is an array like ["Day 1","Day 2","Off","Day 3","Off","Off","Off"]
+  // ── Metric helpers ──────────────────────────────────────────────────────────
+  function avgOf(arr: (number | null | undefined)[]): number | null {
+    const nums = arr.filter((v): v is number => v != null);
+    return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+  }
+  function pctChange(cur: number | null, prev: number | null): string | null {
+    if (cur == null || prev == null || prev === 0) return null;
+    const pct = ((cur - prev) / prev) * 100;
+    return (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%";
+  }
+
+  // ── 7-day averages ──────────────────────────────────────────────────────────
+  const curAvgWeight = avgOf(cur7.map(l => l.weight as number | null));
+  const prevAvgWeight = avgOf(prev7.map(l => l.weight as number | null));
+  const weightPct = pctChange(curAvgWeight, prevAvgWeight);
+
+  const curAvgHunger = avgOf(cur7.map(l => l.hungerLevel as number | null));
+  const prevAvgHunger = avgOf(prev7.map(l => l.hungerLevel as number | null));
+
+  const curAvgSleep = avgOf(cur7.map(l => l.sleepQuality as number | null));
+  const prevAvgSleep = avgOf(prev7.map(l => l.sleepQuality as number | null));
+
+  const curAvgSteps = avgOf(cur7.map(l => l.stepsCount as number | null));
+  const prevAvgSteps = avgOf(prev7.map(l => l.stepsCount as number | null));
+
+  // ── Meal adherence: on-plan days / total logged days in window ──────────────
+  const curOnPlan = cur7.filter(l => !l.offPlanMeal).length;
+  const mealAdherence = cur7.length > 0 ? Math.round((curOnPlan / cur7.length) * 100) : null;
+  const prevOnPlan = prev7.filter(l => !l.offPlanMeal).length;
+  const prevMealAdherence = prev7.length > 0 ? Math.round((prevOnPlan / prev7.length) * 100) : null;
+
+  // ── Training adherence: calendar-day window vs rotation length ──────────────
   const schedule = (trainingProgram?.schedule as string[] | null) ?? null;
-  const prescribedDaysPerWeek = schedule
+  const programDays = (trainingProgram?.days as any[] | null) ?? null;
+  const rotationLen = programDays?.length ?? schedule?.length ?? 7;
+  const prescribedPerRotation = schedule
     ? schedule.filter((s: string) => s && s.toLowerCase() !== "off").length
+    : programDays
+      ? programDays.filter((d: any) => !String(d.name ?? d.label ?? "").toLowerCase().includes("off")).length
+      : null;
+  const rotationStart = localDateStr(rotationLen - 1);
+  const rotationLogs = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= rotationStart && d <= today; });
+  const trainedInRotation = rotationLogs.filter(l => l.trainingCompleted).length;
+  const trainingAdherence = prescribedPerRotation != null && prescribedPerRotation > 0
+    ? Math.min(100, Math.round((trainedInRotation / prescribedPerRotation) * 100))
     : null;
-  const trainedDays = recentLogs.filter(l => l.trainingCompleted).length;
-  // If we have a schedule, expected training days = prescribedDaysPerWeek per 7 days
-  const expectedTrainingDays = prescribedDaysPerWeek != null
-    ? Math.round((prescribedDaysPerWeek / 7) * recentLogs.length)
-    : recentLogs.length;
-  const adherence = expectedTrainingDays > 0
-    ? Math.min(100, Math.round((trainedDays / expectedTrainingDays) * 100))
-    : 0;
-  const adherenceLabel = prescribedDaysPerWeek != null
-    ? `${trainedDays}/${expectedTrainingDays} prescribed days`
-    : `${trainedDays}/${recentLogs.length} logged days`;
+  const trainingAdherenceLabel = prescribedPerRotation != null
+    ? `${trainedInRotation}/${prescribedPerRotation} prescribed (${rotationLen}-day rotation)`
+    : `${trainedInRotation} trained days`;
 
-  const onPlanDays = recentLogs.filter(l => !l.offPlanMeal).length;
-  const mealAdherence = recentLogs.length > 0 ? Math.round((onPlanDays / recentLogs.length) * 100) : 0;
-  const weights = recentLogs.filter(l => l.weight).map(l => l.weight as number);
-  const avgWeight = weights.length > 0 ? (weights.reduce((a, b) => a + b, 0) / weights.length).toFixed(1) : "—";
+  // ── Weight trend chart: last 14 days ────────────────────────────────────────
+  const weightData = allLogs
+    .filter(l => l.weight != null)
+    .slice(0, 14)
+    .reverse()
+    .map(l => {
+      const d = toLocalDateStr(l.logDate);
+      const [y, mo, dy] = d.split("-");
+      return { date: `${dy} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(mo)-1]}`, weight: l.weight };
+    });
+
+  // ── Measurements comparison ─────────────────────────────────────────────────
+  const sortedMeasurements = [...(measurements ?? [])].sort((a, b) =>
+    toLocalDateStr(b.measureDate).localeCompare(toLocalDateStr(a.measureDate))
+  );
+  const latestM = sortedMeasurements[0] ?? null;
+  const prevM = sortedMeasurements[1] ?? null;
+  function skinfoldTotal(m: typeof latestM): number | null {
+    if (!m) return null;
+    const avg = (vals: (number | null | undefined)[]) => {
+      const nums = vals.filter((v): v is number => v != null);
+      return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+    };
+    const sites = [
+      avg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]),
+      avg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]),
+      avg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]),
+      avg([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]),
+    ];
+    return sites.every(v => v != null) ? parseFloat(sites.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
+  }
+  const latestSkinfold = skinfoldTotal(latestM);
+  const prevSkinfold = skinfoldTotal(prevM);
+  const skinfoldDiff = latestSkinfold != null && prevSkinfold != null
+    ? parseFloat((latestSkinfold - prevSkinfold).toFixed(1))
+    : null;
+  const waistDiff = latestM?.waist != null && prevM?.waist != null
+    ? parseFloat(((latestM.waist as number) - (prevM.waist as number)).toFixed(1))
+    : null;
+
+  // ── Metric card helper ──────────────────────────────────────────────────────
+  function ProgCard({ label, value, sub, change, changeColor }: {
+    label: string; value: string; sub?: string;
+    change?: string | null; changeColor?: "green" | "red" | "amber" | "neutral";
+  }) {
+    const colorMap = { green: "text-green-400", red: "text-red-400", amber: "text-amber-400", neutral: "text-muted-foreground" };
+    return (
+      <div className="bg-secondary rounded-xl p-3">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
+        <p className="text-xl font-bold text-foreground">{value}</p>
+        {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+        {change && <p className={`text-xs font-medium mt-1 ${colorMap[changeColor ?? "neutral"]}`}>{change} vs prev 7d</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -1029,83 +1123,153 @@ function ProgressSection() {
 
       {selectedUserId && (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">7-Day Avg Weight</p><p className="text-xl font-bold text-foreground mt-1">{avgWeight} kg</p></Card>
-            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Training Adherence</p><p className="text-xl font-bold text-foreground mt-1">{adherence}%</p><p className="text-[10px] text-muted-foreground">{adherenceLabel}</p></Card>
-            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meal Adherence</p><p className={`text-xl font-bold mt-1 ${mealAdherence >= 80 ? "text-green-400" : mealAdherence >= 60 ? "text-amber-400" : "text-red-400"}`}>{mealAdherence}%</p><p className="text-[10px] text-muted-foreground">{onPlanDays}/{recentLogs.length} on-plan days</p></Card>
-            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Measurements</p><p className="text-xl font-bold text-foreground mt-1">{(measurements ?? []).length}</p></Card>
+          {/* ── 7-Day Metric Averages ─────────────────────────────────── */}
+          <div>
+            <SectionLabel>7-Day Averages (vs previous 7 days)</SectionLabel>
+            <div className="grid grid-cols-2 gap-3">
+              <ProgCard
+                label="Avg Weight"
+                value={curAvgWeight != null ? `${curAvgWeight.toFixed(1)} kg` : "—"}
+                sub={prevAvgWeight != null ? `Prev: ${prevAvgWeight.toFixed(1)} kg` : undefined}
+                change={weightPct ?? undefined}
+                changeColor={weightPct ? (parseFloat(weightPct) < 0 ? "green" : "red") : "neutral"}
+              />
+              <ProgCard
+                label="Training Adherence"
+                value={trainingAdherence != null ? `${trainingAdherence}%` : "—"}
+                sub={trainingAdherenceLabel}
+              />
+              <ProgCard
+                label="Meal Adherence"
+                value={mealAdherence != null ? `${mealAdherence}%` : "—"}
+                sub={`${curOnPlan}/${cur7.length} on-plan days`}
+                change={prevMealAdherence != null && mealAdherence != null
+                  ? `${mealAdherence >= prevMealAdherence ? "+" : ""}${mealAdherence - prevMealAdherence}%`
+                  : undefined}
+                changeColor={mealAdherence != null && prevMealAdherence != null
+                  ? (mealAdherence >= prevMealAdherence ? "green" : "red")
+                  : "neutral"}
+              />
+              <ProgCard
+                label="Avg Hunger"
+                value={curAvgHunger != null ? `${curAvgHunger.toFixed(1)}/5` : "—"}
+                sub={prevAvgHunger != null ? `Prev: ${prevAvgHunger.toFixed(1)}/5` : undefined}
+                change={curAvgHunger != null && prevAvgHunger != null
+                  ? `${(curAvgHunger - prevAvgHunger) >= 0 ? "+" : ""}${(curAvgHunger - prevAvgHunger).toFixed(1)}`
+                  : undefined}
+                changeColor={curAvgHunger != null && prevAvgHunger != null
+                  ? (curAvgHunger <= prevAvgHunger ? "green" : "amber")
+                  : "neutral"}
+              />
+              <ProgCard
+                label="Avg Sleep Quality"
+                value={curAvgSleep != null ? `${curAvgSleep.toFixed(1)}/5` : "—"}
+                sub={prevAvgSleep != null ? `Prev: ${prevAvgSleep.toFixed(1)}/5` : undefined}
+                change={curAvgSleep != null && prevAvgSleep != null
+                  ? `${(curAvgSleep - prevAvgSleep) >= 0 ? "+" : ""}${(curAvgSleep - prevAvgSleep).toFixed(1)}`
+                  : undefined}
+                changeColor={curAvgSleep != null && prevAvgSleep != null
+                  ? (curAvgSleep >= prevAvgSleep ? "green" : "red")
+                  : "neutral"}
+              />
+              {(curAvgSteps != null || prevAvgSteps != null) && (
+                <ProgCard
+                  label="Avg Steps"
+                  value={curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—"}
+                  sub={prevAvgSteps != null ? `Prev: ${Math.round(prevAvgSteps).toLocaleString()}` : undefined}
+                  change={curAvgSteps != null && prevAvgSteps != null
+                    ? `${(curAvgSteps - prevAvgSteps) >= 0 ? "+" : ""}${Math.round(curAvgSteps - prevAvgSteps).toLocaleString()}`
+                    : undefined}
+                  changeColor={curAvgSteps != null && prevAvgSteps != null
+                    ? (curAvgSteps >= prevAvgSteps ? "green" : "amber")
+                    : "neutral"}
+                />
+              )}
+            </div>
           </div>
 
+          {/* ── Weight Trend Chart ────────────────────────────────────── */}
           {weightData.length > 1 && (
             <div>
-              <SectionLabel>Weight Trend</SectionLabel>
+              <SectionLabel>Weight Trend (last 14 entries)</SectionLabel>
               <Card>
-                <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={weightData}>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={weightData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                    <XAxis dataKey="date" tick={{ fill: "#666", fontSize: 11 }} />
-                    <YAxis domain={["auto", "auto"]} tick={{ fill: "#666", fontSize: 11 }} />
-                    <Tooltip contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }} labelStyle={{ color: "#fff" }} itemStyle={{ color: "#22c55e" }} />
-                    <Line type="monotone" dataKey="weight" stroke="#22c55e" strokeWidth={2} dot={false} />
+                    <XAxis dataKey="date" tick={{ fill: "#666", fontSize: 10 }} interval="preserveStartEnd" />
+                    <YAxis domain={["auto", "auto"]} tick={{ fill: "#666", fontSize: 10 }} width={36} />
+                    <Tooltip contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }} labelStyle={{ color: "#fff" }} itemStyle={{ color: "#22c55e" }} formatter={(v: number) => [`${v} kg`, "Weight"]} />
+                    <Line type="monotone" dataKey="weight" stroke="#22c55e" strokeWidth={2} dot={{ r: 3, fill: "#22c55e" }} />
                   </LineChart>
                 </ResponsiveContainer>
               </Card>
             </div>
           )}
 
-          {(measurements ?? []).length > 0 && (() => {
-            const m = measurements![0];
-            const avg = (vals: (number | null)[]) => {
-              const nums = vals.filter((v): v is number => v !== null && v !== undefined);
-              return nums.length > 0 ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
-            };
-            const umbAvg = avg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]);
-            const supAvg = avg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]);
-            const calfAvg = avg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]);
-            const thighAvg = avg([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]);
-            const siteAvgs = [umbAvg, supAvg, calfAvg, thighAvg];
-            const total = siteAvgs.every(v => v !== null) ? parseFloat(siteAvgs.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
-            return (
-              <>
-                <div>
-                  <SectionLabel>Waist Circumference</SectionLabel>
-                  <Card>
-                    <p className="text-xs text-muted-foreground mb-1">{String(m.measureDate).slice(0, 10)}</p>
-                    {m.waist ? (
-                      <p className="text-2xl font-bold text-foreground">{m.waist} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Not recorded</p>
+          {/* ── Measurements Comparison ───────────────────────────────── */}
+          {latestM && (
+            <>
+              <div>
+                <SectionLabel>Waist Circumference</SectionLabel>
+                <Card>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">{toLocalDateStr(latestM.measureDate).split("-").reverse().join("/")}</p>
+                      {latestM.waist != null ? (
+                        <p className="text-2xl font-bold text-foreground">{latestM.waist} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Not recorded</p>
+                      )}
+                    </div>
+                    {waistDiff != null && (
+                      <p className={`text-sm font-semibold ${waistDiff < 0 ? "text-green-400" : waistDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                        {waistDiff > 0 ? "+" : ""}{waistDiff} cm vs prev
+                      </p>
                     )}
-                  </Card>
-                </div>
-                <div>
-                  <SectionLabel>Skinfold Thickness</SectionLabel>
-                  <Card className="space-y-3">
-                    <p className="text-xs text-muted-foreground">{String(m.measureDate).slice(0, 10)} — averages of 5 readings</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { label: "Umbilical", avg: umbAvg },
-                        { label: "Suprailiac", avg: supAvg },
-                        { label: "Calf", avg: calfAvg },
-                        { label: "Thigh", avg: thighAvg },
-                      ].map(({ label, avg }) => (
+                  </div>
+                </Card>
+              </div>
+              <div>
+                <SectionLabel>Skinfold Thickness</SectionLabel>
+                <Card className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">{toLocalDateStr(latestM.measureDate).split("-").reverse().join("/")} — avg of 5 readings per site</p>
+                    {skinfoldDiff != null && (
+                      <p className={`text-sm font-semibold ${skinfoldDiff < 0 ? "text-green-400" : skinfoldDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                        {skinfoldDiff > 0 ? "+" : ""}{skinfoldDiff} mm total
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {([
+                      { label: "Umbilical", vals: [latestM.umbilical1, latestM.umbilical2, latestM.umbilical3, latestM.umbilical4, latestM.umbilical5] },
+                      { label: "Suprailiac", vals: [latestM.suprailiac1, latestM.suprailiac2, latestM.suprailiac3, latestM.suprailiac4, latestM.suprailiac5] },
+                      { label: "Calf", vals: [latestM.calf1, latestM.calf2, latestM.calf3, latestM.calf4, latestM.calf5] },
+                      { label: "Thigh", vals: [latestM.thigh1, latestM.thigh2, latestM.thigh3, latestM.thigh4, latestM.thigh5] },
+                    ] as { label: string; vals: (number | null | undefined)[] }[]).map(({ label, vals }) => {
+                      const nums = vals.filter((v): v is number => v != null);
+                      const siteAvg = nums.length ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
+                      return (
                         <div key={label} className="bg-secondary rounded-lg p-3">
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
-                          <p className="text-lg font-bold text-foreground mt-0.5">{avg !== null ? <>{avg} <span className="text-xs font-normal text-muted-foreground">mm</span></> : "—"}</p>
+                          <p className="text-lg font-bold text-foreground mt-0.5">{siteAvg !== null ? <>{siteAvg} <span className="text-xs font-normal text-muted-foreground">mm</span></> : "—"}</p>
                         </div>
-                      ))}
-                    </div>
-                    {total !== null && (
-                      <div className="border-t border-border pt-3 flex items-center justify-between">
-                        <p className="text-sm font-medium text-foreground">Total (sum of averages)</p>
-                        <p className="text-lg font-bold text-primary">{total} mm</p>
+                      );
+                    })}
+                  </div>
+                  {latestSkinfold !== null && (
+                    <div className="border-t border-border pt-3 flex items-center justify-between">
+                      <p className="text-sm font-medium text-foreground">Total</p>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-primary">{latestSkinfold} mm</p>
+                        {prevSkinfold != null && <p className="text-xs text-muted-foreground">Prev: {prevSkinfold} mm</p>}
                       </div>
-                    )}
-                  </Card>
-                </div>
-              </>
-            );
-          })()}
+                    </div>
+                  )}
+                </Card>
+              </div>
+            </>
+          )}
 
           {/* Exercise Progress Cards */}
           {workoutSessions.length > 0 && (() => {
