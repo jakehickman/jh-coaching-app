@@ -977,12 +977,9 @@ function TrainingTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <SectionLabel>Training Program</SectionLabel>
-          {program?.programName && <p className="text-sm font-semibold text-foreground">{program.programName}</p>}
-        </div>
-      </div>
+      {program?.programName && (
+        <p className="text-sm font-semibold text-foreground">{program.programName}</p>
+      )}
 
       {schedule.length > 0 && (
         <Card>
