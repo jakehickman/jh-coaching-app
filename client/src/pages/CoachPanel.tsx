@@ -75,12 +75,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-card border border-border rounded-xl p-4 ${className}`}>{children}</div>;
 }
-function MuscleGroupSection({ group, children }: { group: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(true);
+function MuscleGroupSection({ group, children, forceOpen }: { group: string; children: React.ReactNode; forceOpen?: boolean }) {
+  const [localOpen, setLocalOpen] = useState(true);
+  const open = forceOpen !== undefined ? forceOpen : localOpen;
   return (
     <div className="border border-border rounded-xl overflow-hidden">
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setLocalOpen(o => !o)}
         className="w-full flex items-center justify-between px-4 py-3 bg-card hover:bg-muted/40 transition-colors"
       >
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group}</span>
@@ -998,6 +999,7 @@ function ProgressSection() {
     { enabled: !!selectedUserId }
   );
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
+  const [allExpanded, setAllExpanded] = useState(true);
 
   // ── Calendar-day helpers ────────────────────────────────────────────────────
   const DAY = 86400000;
@@ -1337,10 +1339,18 @@ function ProgressSection() {
 
             return (
               <div>
-                <SectionLabel>Exercise Progress</SectionLabel>
+                <div className="flex items-center justify-between mb-3">
+                  <SectionLabel>Exercise Progress</SectionLabel>
+                  <button
+                    onClick={() => setAllExpanded(v => !v)}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  >
+                    {allExpanded ? <><ChevronUp className="w-3 h-3" /> Collapse All</> : <><ChevronDown className="w-3 h-3" /> Expand All</>}
+                  </button>
+                </div>
                 <div className="space-y-3">
                   {muscleGroups.map(group => (
-                    <MuscleGroupSection key={group} group={group}>
+                    <MuscleGroupSection key={group} group={group} forceOpen={allExpanded}>
                       <div className="space-y-3">
                         {byMuscle[group].map(name => {
                           const history = exerciseHistory[name];
