@@ -15,6 +15,13 @@
       "when": 1775385773566,
       "tag": "0001_high_thena",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1775389652850,
+      "tag": "0002_illegal_mach_iv",
+      "breakpoints": true
     }
   ]
 }

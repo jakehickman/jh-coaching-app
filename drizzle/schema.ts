@@ -126,6 +126,7 @@ export const trainingPrograms = mysqlTable("training_programs", {
   coachId: int("coachId"),
   programName: varchar("programName", { length: 128 }),
   days: json("days"), // JSON: array of day objects with exercises
+  schedule: json("schedule"), // JSON: array of strings e.g. ["Day 1","Day 2","Off","Day 3","Day 4","Off"]
   notes: text("notes"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

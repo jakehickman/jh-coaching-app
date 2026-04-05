@@ -567,6 +567,7 @@ function TrainingTab() {
   const [expandedDay, setExpandedDay] = useState<number | null>(0);
 
   const days = (program?.days as any[]) ?? [];
+  const schedule = Array.isArray(program?.schedule) ? (program!.schedule as string[]) : [];
 
   return (
     <div className="space-y-4">
@@ -576,6 +577,22 @@ function TrainingTab() {
           {program?.programName && <p className="text-sm font-semibold text-foreground">{program.programName}</p>}
         </div>
       </div>
+
+      {schedule.length > 0 && (
+        <Card>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Training Schedule</p>
+          <div className="flex flex-wrap gap-1.5 items-center">
+            {schedule.map((slot: string, i: number) => (
+              <span key={i} className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                slot === "Off"
+                  ? "bg-secondary text-muted-foreground"
+                  : "bg-primary/10 text-primary border border-primary/20"
+              }`}>{slot}</span>
+            ))}
+            <span className="text-[10px] text-muted-foreground/50 ml-1">→ repeat</span>
+          </div>
+        </Card>
+      )}
 
       {days.length === 0 && (
         <Card className="text-center py-12">
@@ -606,7 +623,7 @@ function TrainingTab() {
                 <p className="col-span-5 text-[10px] text-muted-foreground uppercase tracking-wider">Exercise</p>
                 <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Sets</p>
                 <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Reps</p>
-                <p className="col-span-3 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Rest</p>
+                <p className="col-span-3 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Notes</p>
               </div>
               {(day.exercises ?? []).map((ex: any, j: number) => (
                 <div key={j} className="grid grid-cols-12 gap-2 items-center py-2 border-t border-border">
@@ -616,7 +633,7 @@ function TrainingTab() {
                   </div>
                   <p className="col-span-2 text-sm text-foreground text-center">{ex.sets}</p>
                   <p className="col-span-2 text-sm text-foreground text-center">{ex.reps}</p>
-                  <p className="col-span-3 text-sm text-muted-foreground text-center">{ex.rest}</p>
+                  <p className="col-span-3 text-xs text-muted-foreground text-center">{ex.notes}</p>
                 </div>
               ))}
             </div>

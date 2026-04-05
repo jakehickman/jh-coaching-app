@@ -195,6 +195,7 @@ export const appRouter = router({
           userId: z.number(),
           programName: z.string().optional(),
           days: z.any().optional(),
+          schedule: z.any().optional(),
           notes: z.string().optional(),
         })
       )

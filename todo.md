@@ -30,3 +30,4 @@
 - [x] Copy program between clients dropdown
 - [x] Remove Rest column from Training Programs editor
 - [x] Remove Focus field from training day cards in Training Programs editor
+- [x] Training schedule rotation builder in Training Programs editor (Day 1 / Day 2 / Off / repeat)

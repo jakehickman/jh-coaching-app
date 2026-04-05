@@ -296,6 +296,7 @@ export async function upsertTrainingProgram(data: {
   coachId?: number;
   programName?: string;
   days?: unknown;
+  schedule?: unknown;
   notes?: string;
 }) {
   const db = await getDb();

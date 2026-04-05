@@ -306,19 +306,20 @@ function TrainingSection() {
   const upsert = trpc.training.upsert.useMutation({
     onSuccess: () => { toast.success("Training program saved"); refetch(); }
   });
-  const [programName, setProgramName] = useState("");
+   const [programName, setProgramName] = useState("");
   const [notes, setNotes] = useState("");
   const [days, setDays] = useState<any[]>([]);
+  const [schedule, setSchedule] = useState<string[]>([]);
   const [copyFromId, setCopyFromId] = useState<string>("");
   const { data: allPrograms } = trpc.training.listAll.useQuery();
-
   useEffect(() => {
     if (program) {
       setProgramName(program.programName ?? "");
       setNotes(program.notes ?? "");
       setDays((program.days as any[]) ?? []);
+      setSchedule((program.schedule as string[]) ?? []);
     } else {
-      setProgramName(""); setNotes(""); setDays([]);
+      setProgramName(""); setNotes(""); setDays([]); setSchedule([]);
     }
   }, [program]);
 
@@ -373,9 +374,15 @@ function TrainingSection() {
       setProgramName(source.programName ?? "");
       setNotes(source.notes ?? "");
       setDays((source.days as any[]) ?? []);
+      setSchedule((source.schedule as string[]) ?? []);
       toast.success("Program copied — hit Save to apply");
     }
   };
+  // Schedule helpers
+  const dayOptions = ["Off", ...days.map(d => d.name || `Day ${days.indexOf(d) + 1}`)];
+  const addScheduleSlot = () => setSchedule(s => [...s, days[0]?.name || "Day 1"]);
+  const removeScheduleSlot = (i: number) => setSchedule(s => s.filter((_, idx) => idx !== i));
+  const updateScheduleSlot = (i: number, val: string) => setSchedule(s => s.map((v, idx) => idx === i ? val : v));
 
   return (
     <div className="space-y-6">
@@ -428,6 +435,48 @@ function TrainingSection() {
               placeholder="e.g. 4-Day Upper/Lower"
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
+          {/* ── Training Schedule ── */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-muted-foreground">Training Schedule</label>
+              <span className="text-[10px] text-muted-foreground/60">defines the rotation for this client</span>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              {schedule.map((slot, i) => (
+                <div key={i} className="flex items-center gap-1">
+                  <select
+                    value={slot}
+                    onChange={e => updateScheduleSlot(i, e.target.value)}
+                    className="bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    {dayOptions.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                  <button onClick={() => removeScheduleSlot(i)} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 size={12} />
+                  </button>
+                  {i < schedule.length - 1 && (
+                    <span className="text-muted-foreground/40 text-xs select-none">/</span>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={addScheduleSlot}
+                className="flex items-center gap-1 px-2 py-1.5 border border-dashed border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+              >
+                <Plus size={11} /> Add
+              </button>
+              {schedule.length > 0 && (
+                <span className="text-[10px] text-primary/70 ml-1">→ repeat</span>
+              )}
+            </div>
+            {schedule.length > 0 && (
+              <p className="text-[10px] text-muted-foreground/50 mt-1.5">
+                {schedule.join(" / ")} / repeat
+              </p>
+            )}
+          </div>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDayDragEnd}>
             <SortableContext items={days.map((_: any, i: number) => `day-${i}`)} strategy={verticalListSortingStrategy}>
               <div className="space-y-4">
@@ -459,7 +508,7 @@ function TrainingSection() {
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
           </div>
           <button
-            onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || undefined, days, notes: notes || undefined })}
+            onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || undefined, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || undefined })}
             disabled={upsert.isPending}
             className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
           >
