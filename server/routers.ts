@@ -390,5 +390,39 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(({ ctx, input }) => db.deleteWorkoutSession(input.id, ctx.user.id)),
   }),
+
+  // Onboarding submissions
+  onboarding: router({
+    // Public: submit onboarding form (no auth required)
+    submit: publicProcedure
+      .input(
+        z.object({
+          fullName: z.string().min(1),
+          email: z.string().email(),
+          age: z.number().int().min(13).max(100).optional(),
+          heightCm: z.number().positive().optional(),
+          currentWeightKg: z.number().positive().optional(),
+          goalWeightKg: z.number().positive().optional(),
+          primaryGoal: z.string().optional(),
+          trainingExperience: z.string().optional(),
+          trainingFrequency: z.string().optional(),
+          equipment: z.string().optional(),
+          dietApproach: z.string().optional(),
+          injuries: z.string().optional(),
+          lifestyle: z.string().optional(),
+          additionalInfo: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const userId = ctx.user?.id ?? null;
+        return db.createOnboardingSubmission({ ...input, userId });
+      }),
+    // Admin: list all submissions
+    list: adminProcedure.query(() => db.listOnboardingSubmissions()),
+    // Admin: mark as reviewed
+    markReviewed: adminProcedure
+      .input(z.object({ id: z.number(), reviewed: z.boolean() }))
+      .mutation(({ input }) => db.markOnboardingReviewed(input.id, input.reviewed)),
+  }),
 });
 export type AppRouter = typeof appRouter;

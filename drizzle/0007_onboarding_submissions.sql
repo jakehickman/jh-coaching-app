@@ -1,0 +1,21 @@
+CREATE TABLE `onboarding_submissions` (
+  `id` int AUTO_INCREMENT NOT NULL,
+  `userId` int,
+  `fullName` varchar(128),
+  `email` varchar(320),
+  `age` int,
+  `heightCm` float,
+  `currentWeightKg` float,
+  `goalWeightKg` float,
+  `primaryGoal` varchar(256),
+  `trainingExperience` varchar(64),
+  `trainingFrequency` varchar(64),
+  `equipment` varchar(64),
+  `dietApproach` varchar(64),
+  `injuries` text,
+  `lifestyle` text,
+  `additionalInfo` text,
+  `submittedAt` timestamp NOT NULL DEFAULT (now()),
+  `reviewed` boolean NOT NULL DEFAULT false,
+  CONSTRAINT `onboarding_submissions_id` PRIMARY KEY(`id`)
+);

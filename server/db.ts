@@ -20,6 +20,8 @@ import {
   NutritionFood,
   InsertNutritionFood,
   workoutSessions,
+  onboardingSubmissions,
+  InsertOnboardingSubmission,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -563,4 +565,36 @@ export async function deleteWorkoutSession(id: number, userId: number) {
   await db
     .delete(workoutSessions)
     .where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, userId)));
+}
+
+// ── Onboarding submissions ────────────────────────────────────────────────────
+
+export async function createOnboardingSubmission(
+  data: Omit<InsertOnboardingSubmission, "id" | "submittedAt" | "reviewed">
+) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(onboardingSubmissions).values({
+    ...data,
+    reviewed: false,
+  });
+  return result;
+}
+
+export async function listOnboardingSubmissions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(onboardingSubmissions)
+    .orderBy(onboardingSubmissions.submittedAt);
+}
+
+export async function markOnboardingReviewed(id: number, reviewed: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(onboardingSubmissions)
+    .set({ reviewed })
+    .where(eq(onboardingSubmissions.id, id));
 }

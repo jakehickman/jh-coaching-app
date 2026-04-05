@@ -281,3 +281,32 @@ export const workoutSessions = mysqlTable("workout_sessions", {
 
 export type WorkoutSession = typeof workoutSessions.$inferSelect;
 export type InsertWorkoutSession = typeof workoutSessions.$inferInsert;
+
+// Onboarding submissions — new client intake form responses
+export const onboardingSubmissions = mysqlTable("onboarding_submissions", {
+  id: int("id").autoincrement().primaryKey(),
+  // Optional link to a user account (null if submitted before account creation)
+  userId: int("userId"),
+  // Personal details
+  fullName: varchar("fullName", { length: 128 }),
+  email: varchar("email", { length: 320 }),
+  age: int("age"),
+  heightCm: float("heightCm"),
+  currentWeightKg: float("currentWeightKg"),
+  goalWeightKg: float("goalWeightKg"),
+  // Goals & history
+  primaryGoal: varchar("primaryGoal", { length: 256 }),
+  trainingExperience: varchar("trainingExperience", { length: 64 }), // e.g. "None", "< 1 year", "1-3 years", "3+ years"
+  trainingFrequency: varchar("trainingFrequency", { length: 64 }), // days per week
+  equipment: varchar("equipment", { length: 64 }), // "Gym", "Home gym", "Minimal"
+  dietApproach: varchar("dietApproach", { length: 64 }), // "Track calories", "Flexible/intuitive", "No preference"
+  injuries: text("injuries"),
+  lifestyle: text("lifestyle"), // work schedule, stress, sleep notes
+  additionalInfo: text("additionalInfo"),
+  // Meta
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
+  reviewed: boolean("reviewed").default(false).notNull(),
+});
+
+export type OnboardingSubmission = typeof onboardingSubmissions.$inferSelect;
+export type InsertOnboardingSubmission = typeof onboardingSubmissions.$inferInsert;
