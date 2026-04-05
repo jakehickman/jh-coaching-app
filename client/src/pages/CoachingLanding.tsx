@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Link } from "wouter";
 
 const WORK_WITH_ME_URL = "https://jakehickman.com/coaching#work-with-me";
+const JAKE_PHOTO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663515200499/HZf6zqYa94nKHY3YxXLHa5/jake-portrait_22da64f5.png";
 
 const features = [
   "Training program built for you",
@@ -113,6 +113,38 @@ const faqs = [
   },
 ];
 
+// Icon components matching the original
+function IconTarget() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+    </svg>
+  );
+}
+function IconShield() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  );
+}
+function IconMessage() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  );
+}
+function IconTrending() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+    </svg>
+  );
+}
+
+const coachingIcons = [<IconTarget />, <IconShield />, <IconMessage />, <IconTrending />];
+
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -136,27 +168,24 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 export default function CoachingLanding() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <header className="border-b border-border/40 px-6 py-4 flex items-center justify-between max-w-5xl mx-auto">
+      {/* Nav — no border, no login link */}
+      <header className="px-6 py-5 text-center max-w-3xl mx-auto">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           1:1 Online Coaching with Jake Hickman
         </p>
-        <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-          Client Login →
-        </Link>
       </header>
 
       {/* Hero */}
-      <section className="max-w-2xl mx-auto px-6 pt-20 pb-16 text-center">
+      <section className="max-w-2xl mx-auto px-6 pt-10 pb-16 text-center">
         <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
           Transform Your Body In 12 Weeks
         </h1>
-        <p className="text-muted-foreground text-lg mb-8">
+        <p className="text-muted-foreground text-lg mb-10">
           Lose fat, build muscle, and stay consistent with a plan you can actually stick to.
         </p>
 
         {/* Price */}
-        <div className="mb-8">
+        <div className="mb-6">
           <span className="text-5xl font-bold text-foreground">$199</span>
           <span className="text-muted-foreground ml-2 text-base">AUD / month (3-month minimum)</span>
           <p className="text-xs text-muted-foreground mt-1">Cancel anytime. No lock-in.</p>
@@ -164,23 +193,28 @@ export default function CoachingLanding() {
 
         <a
           href={WORK_WITH_ME_URL}
-          className="inline-flex items-center justify-center px-10 py-4 bg-primary text-primary-foreground font-semibold text-sm uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity"
+          className="inline-flex items-center justify-center w-full max-w-sm px-10 py-4 bg-primary text-primary-foreground font-semibold text-sm uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity"
         >
           Work With Me
         </a>
         <p className="mt-3 text-xs text-muted-foreground">Start immediately. Full access after checkout.</p>
 
         {/* Guarantee */}
-        <div className="mt-6 inline-flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="text-primary">✓</span>
-          <span>30-Day Money-Back Guarantee · No lock-in · Cancel anytime</span>
+        <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary flex-shrink-0">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span className="font-semibold text-foreground">30-Day Money-Back Guarantee</span>
         </div>
+        <p className="text-xs text-muted-foreground mt-1">No lock-in · Cancel anytime</p>
 
         {/* Feature list */}
-        <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-2 text-left max-w-sm mx-auto">
+        <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-2.5 text-left max-w-sm mx-auto">
           {features.map((f) => (
             <div key={f} className="flex items-start gap-2 text-sm text-foreground">
-              <span className="text-primary mt-0.5">✓</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-primary mt-0.5 flex-shrink-0">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
               {f}
             </div>
           ))}
@@ -189,34 +223,38 @@ export default function CoachingLanding() {
 
       {/* About */}
       <section className="bg-card border-y border-border">
-        <div className="max-w-3xl mx-auto px-6 py-16 flex flex-col md:flex-row gap-10 items-center">
-          <div className="w-32 h-32 rounded-full bg-muted flex-shrink-0 overflow-hidden">
-            <img
-              src="https://jakehickman.com/jake.jpg"
-              alt="Jake Hickman"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">About Me</p>
-            <h2 className="text-2xl font-bold mb-1">Jake Hickman</h2>
-            <p className="text-xs text-primary mb-4">Certified, Henselmans PT Course</p>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              I help people lose fat, build muscle, and stay consistent long term. I focus on effective training plans
-              and a diet that's easy to follow. Everything is personalised and adjusted as you go, with ongoing
-              accountability to keep you on track.
-            </p>
+        <div className="max-w-3xl mx-auto px-6 py-14">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-8">About Me</p>
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="w-48 h-56 rounded-xl bg-muted flex-shrink-0 overflow-hidden">
+              <img
+                src={JAKE_PHOTO_URL}
+                alt="Jake Hickman"
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold mb-1">Jake Hickman</h2>
+              <div className="flex items-center gap-1.5 mb-4">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <p className="text-xs text-primary">Certified, Henselmans PT Course</p>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                I help people lose fat, build muscle, and stay consistent long term. I focus on effective training plans
+                and a diet that's easy to follow. Everything is personalised and adjusted as you go, with ongoing
+                accountability to keep you on track.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Approach */}
-      <section className="max-w-3xl mx-auto px-6 py-16">
+      <section className="max-w-3xl mx-auto px-6 py-14">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">My Approach</p>
-        <h2 className="text-3xl font-bold mb-4">No guesswork. Just a clear plan.</h2>
+        <h2 className="text-3xl font-bold mb-5">No guesswork. Just a clear plan.</h2>
         <p className="text-muted-foreground text-sm leading-relaxed mb-3">
           You get a training and nutrition plan built for you, with regular reviews and adjustments so you always know
           exactly what to do next.
@@ -229,20 +267,25 @@ export default function CoachingLanding() {
         </p>
       </section>
 
-      {/* Coaching points */}
+      {/* Coaching points — list style matching original */}
       <section className="bg-card border-y border-border">
-        <div className="max-w-3xl mx-auto px-6 py-16">
+        <div className="max-w-3xl mx-auto px-6 py-14">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">The Coaching</p>
-          <h2 className="text-3xl font-bold mb-10">This isn't a plan you follow alone.</h2>
+          <h2 className="text-3xl font-bold mb-4">This isn't a plan you follow alone.</h2>
           <p className="text-muted-foreground text-sm mb-10 leading-relaxed">
             Most people have tried a program before. The difference here is that I'm with you throughout: guiding,
             adjusting, and keeping you moving forward.
           </p>
-          <div className="grid md:grid-cols-2 gap-6">
-            {coachingPoints.map((p) => (
-              <div key={p.title} className="bg-background border border-border rounded-xl p-5">
-                <h3 className="font-semibold text-foreground mb-2">{p.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
+          <div className="space-y-6">
+            {coachingPoints.map((p, i) => (
+              <div key={p.title} className="flex items-start gap-4 pb-6 border-b border-border last:border-0 last:pb-0">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  {coachingIcons[i]}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">{p.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -250,9 +293,9 @@ export default function CoachingLanding() {
       </section>
 
       {/* Outcomes */}
-      <section className="max-w-3xl mx-auto px-6 py-16">
+      <section className="max-w-3xl mx-auto px-6 py-14">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">What to Expect</p>
-        <div className="grid md:grid-cols-3 gap-6 mt-6">
+        <div className="grid md:grid-cols-3 gap-5 mt-6">
           {outcomes.map((o) => (
             <div key={o.label} className="border border-border rounded-xl p-5">
               <div className="w-2 h-2 rounded-full bg-primary mb-3" />
@@ -265,28 +308,30 @@ export default function CoachingLanding() {
 
       {/* For you / not for you */}
       <section className="bg-card border-y border-border">
-        <div className="max-w-3xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-10">
+        <div className="max-w-3xl mx-auto px-6 py-14 grid md:grid-cols-2 gap-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
               This is for you if…
             </p>
             <ul className="space-y-3">
               {forYou.map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-foreground">
-                  <span className="text-primary mt-0.5">✓</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-primary mt-0.5 flex-shrink-0">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
                   {item}
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
               This isn't for you if…
             </p>
             <ul className="space-y-3">
               {notForYou.map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="text-destructive mt-0.5">✕</span>
+                  <span className="text-destructive mt-0.5 flex-shrink-0">✕</span>
                   {item}
                 </li>
               ))}
@@ -296,10 +341,10 @@ export default function CoachingLanding() {
       </section>
 
       {/* Mid CTA */}
-      <section className="max-w-2xl mx-auto px-6 py-16 text-center">
+      <section className="max-w-2xl mx-auto px-6 py-14 text-center">
         <a
           href={WORK_WITH_ME_URL}
-          className="inline-flex items-center justify-center px-10 py-4 bg-primary text-primary-foreground font-semibold text-sm uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity"
+          className="inline-flex items-center justify-center w-full max-w-sm px-10 py-4 bg-primary text-primary-foreground font-semibold text-sm uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity"
         >
           Work With Me · $199/mo (3-month minimum)
         </a>
@@ -310,16 +355,16 @@ export default function CoachingLanding() {
 
       {/* Testimonials */}
       <section className="bg-card border-y border-border">
-        <div className="max-w-3xl mx-auto px-6 py-16">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Client Results</p>
+        <div className="max-w-3xl mx-auto px-6 py-14">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Client Results</p>
           <p className="text-sm text-muted-foreground mb-10">Join others already making progress</p>
           <div className="grid md:grid-cols-2 gap-6">
             {testimonials.map((t) => (
               <div key={t.name} className="bg-background border border-border rounded-xl p-6">
-                <p className="text-sm text-foreground leading-relaxed mb-4 italic">"{t.quote}"</p>
+                <p className="text-sm text-foreground leading-relaxed mb-5 italic">"{t.quote}"</p>
                 <div>
                   <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                  <p className="text-xs text-primary font-semibold uppercase tracking-wide">{t.result}</p>
+                  <p className="text-xs text-primary font-semibold uppercase tracking-wide mt-0.5">{t.result}</p>
                 </div>
               </div>
             ))}
@@ -328,7 +373,7 @@ export default function CoachingLanding() {
       </section>
 
       {/* FAQ */}
-      <section className="max-w-2xl mx-auto px-6 py-16">
+      <section className="max-w-2xl mx-auto px-6 py-14">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Questions</p>
         <div>
           {faqs.map((faq) => (
@@ -351,7 +396,7 @@ export default function CoachingLanding() {
           </p>
           <a
             href={WORK_WITH_ME_URL}
-            className="inline-flex items-center justify-center px-10 py-4 bg-primary text-primary-foreground font-semibold text-sm uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity"
+            className="inline-flex items-center justify-center w-full max-w-sm px-10 py-4 bg-primary text-primary-foreground font-semibold text-sm uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity"
           >
             Work With Me Now
           </a>
@@ -365,9 +410,8 @@ export default function CoachingLanding() {
       </section>
 
       {/* Footer */}
-      <footer className="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between text-xs text-muted-foreground border-t border-border">
+      <footer className="max-w-5xl mx-auto px-6 py-8 text-center text-xs text-muted-foreground border-t border-border">
         <span>Jake Hickman · 1:1 Online Coaching</span>
-        <span>© {new Date().getFullYear()}</span>
       </footer>
     </div>
   );
