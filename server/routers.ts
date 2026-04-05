@@ -325,6 +325,7 @@ export const appRouter = router({
           calves: z.number().optional(),
           abs: z.number().optional(),
           customGroups: z.any().optional(),
+          videoUrl: z.string().optional(),
         })
       )
       .mutation(({ input }) => db.upsertExercise(input as any)),

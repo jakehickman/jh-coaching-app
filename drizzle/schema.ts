@@ -210,6 +210,7 @@ export const exerciseLibrary = mysqlTable("exercise_library", {
   abs: float("abs").default(0),
   // Extra custom muscle groups stored as JSON: [{name, value}]
   customGroups: json("customGroups"),
+  videoUrl: varchar("videoUrl", { length: 512 }), // YouTube or other video URL
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

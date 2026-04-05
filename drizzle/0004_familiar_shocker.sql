@@ -1,0 +1,1 @@
+ALTER TABLE `exercise_library` ADD `videoUrl` varchar(512);

@@ -4,7 +4,7 @@ import { useParams, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical, BookOpen, Search, Pencil, X } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical, BookOpen, Search, Pencil, X, Play, ExternalLink } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -1068,12 +1068,13 @@ type ExerciseRow = {
   chest: number; frontDelts: number; sideDelts: number; triceps: number;
   lats: number; upperBack: number; rearDelts: number; biceps: number;
   quads: number; hams: number; glutes: number; calves: number; abs: number;
+  videoUrl?: string;
 };
-
 const EMPTY_EXERCISE: ExerciseRow = {
   name: "", chest: 0, frontDelts: 0, sideDelts: 0, triceps: 0,
   lats: 0, upperBack: 0, rearDelts: 0, biceps: 0,
   quads: 0, hams: 0, glutes: 0, calves: 0, abs: 0,
+  videoUrl: "",
 };
 
 function ExerciseLibrarySection() {
@@ -1138,6 +1139,15 @@ function ExerciseLibrarySection() {
             placeholder="Exercise name"
             className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
+          <div>
+            <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">Demo Video URL (YouTube)</label>
+            <input
+              value={editing.videoUrl ?? ""}
+              onChange={e => setEditing(prev => prev ? { ...prev, videoUrl: e.target.value } : prev)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {MUSCLE_GROUPS.map(mg => (
               <div key={mg.key}>
@@ -1178,7 +1188,12 @@ function ExerciseLibrarySection() {
             )}
             {filtered.map((ex, i) => (
               <tr key={ex.id} className={`border-b border-border/50 hover:bg-secondary/30 transition-colors ${i % 2 === 0 ? "" : "bg-secondary/10"}`}>
-                <td className="px-4 py-2.5 font-medium text-foreground sticky left-0 bg-card">{ex.name}</td>
+                <td className="px-4 py-2.5 font-medium text-foreground sticky left-0 bg-card">
+                  <div className="flex items-center gap-2">
+                    <span>{ex.name}</span>
+                    {(ex as any).videoUrl && <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-red-500/20 text-red-400"><Play size={8} />Video</span>}
+                  </div>
+                </td>
                 {MUSCLE_GROUPS.map(mg => {
                   const val = (ex as any)[mg.key] as number ?? 0;
                   return (

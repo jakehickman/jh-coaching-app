@@ -41,3 +41,6 @@
 - [x] Remove placeholder text from Program Name input in Training Programs editor
 - [x] Sort weekly volume table rows from highest to lowest weekly total
 - [x] Remove Program Name field entirely from Training Programs editor
+- [x] Add videoUrl column to exercise_library table and migrate DB
+- [x] Add video URL input to Exercise Library editor
+- [x] Add play button with embedded video modal to client Training Program tab
