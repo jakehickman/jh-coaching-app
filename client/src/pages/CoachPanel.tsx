@@ -522,7 +522,7 @@ function TrainingSection() {
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Program Name</label>
             <input type="text" value={programName} onChange={e => setProgramName(e.target.value)}
-              placeholder="e.g. 4-Day Upper/Lower"
+              placeholder=""
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
           {/* ── Training Schedule ── */}
