@@ -80,13 +80,12 @@ export const appRouter = router({
           logDate: z.string(),
           weight: z.number().optional(),
           sleepHours: z.number().optional(),
-          caffeineIntake: z.number().optional(),
+          caffeineServings: z.number().optional(),
           trainingCompleted: z.boolean().optional(),
           trainingType: z.string().optional(),
           stepsCount: z.number().optional(),
-          energyLevel: z.number().min(1).max(10).optional(),
-          hungerLevel: z.number().min(1).max(10).optional(),
-          stressLevel: z.number().min(1).max(10).optional(),
+          sleepQuality: z.number().min(1).max(5).optional(),
+          hungerLevel: z.number().min(1).max(5).optional(),
           notes: z.string().optional(),
         })
       )

@@ -1007,7 +1007,8 @@ function ProgressSection() {
                       </div>
                       <div className="flex items-center gap-4">
                         {log.weight && <div className="text-right"><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
-                        {log.energyLevel && <div className="text-right"><p className="text-xs text-muted-foreground">Energy</p><p className="text-sm font-semibold text-foreground">{log.energyLevel}/10</p></div>}
+                        {log.hungerLevel && <div className="text-right"><p className="text-xs text-muted-foreground">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
+                        {log.sleepQuality && <div className="text-right"><p className="text-xs text-muted-foreground">Sleep Q.</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
                         <div className={`w-2 h-2 rounded-full ${log.trainingCompleted ? "bg-primary" : "bg-muted"}`} />
                       </div>
                     </div>

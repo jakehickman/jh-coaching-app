@@ -157,13 +157,12 @@ export async function upsertDailyLog(data: {
   logDate: string;
   weight?: number;
   sleepHours?: number;
-  caffeineIntake?: number;
+  caffeineServings?: number;
   trainingCompleted?: boolean;
   trainingType?: string;
   stepsCount?: number;
-  energyLevel?: number;
+  sleepQuality?: number;
   hungerLevel?: number;
-  stressLevel?: number;
   notes?: string;
 }) {
   const db = await getDb();

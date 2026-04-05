@@ -55,9 +55,9 @@
 - [x] Replace food dropdown with searchable combobox in Meal Plans editor
 - [x] Display meal time on client Meal Plan tab
 - [x] Remove Coaching Notes tab from Coach Panel and sidebar nav
-- [ ] Change caffeine field to servings (1 serving = 80-100mg) in daily log
-- [ ] Change biofeedback scale from 1-10 to 1-5
-- [ ] Remove Energy Level and Stress Level from biofeedback
-- [ ] Add Sleep Quality (1-5) to biofeedback
-- [ ] Update coach Client Progress view to reflect new biofeedback fields
-- [ ] Session type dropdown in daily log populated from client's training program day names
+- [x] Change caffeine field to servings (1 serving = 80-100mg) in daily log
+- [x] Change biofeedback scale from 1-10 to 1-5
+- [x] Remove Energy Level and Stress Level from biofeedback
+- [x] Add Sleep Quality (1-5) to biofeedback
+- [x] Update coach Client Progress view to reflect new biofeedback fields
+- [x] Session type dropdown in daily log populated from client's training program day names

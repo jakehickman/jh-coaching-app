@@ -31,12 +31,12 @@ function MetricCard({ label, value, sub }: { label: string; value: string | numb
     </Card>
   );
 }
-function ScoreInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+function ScoreInput({ label, value, onChange, max = 10 }: { label: string; value: number; onChange: (v: number) => void; max?: number }) {
   return (
     <div>
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
       <div className="flex gap-1 flex-wrap">
-        {[1,2,3,4,5,6,7,8,9,10].map(n => (
+        {Array.from({ length: max }, (_, i) => i + 1).map(n => (
           <button
             key={n}
             onClick={() => onChange(n)}
@@ -148,14 +148,22 @@ function DailyLogTab() {
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
   const [form, setForm] = useState({
-    weight: "", sleepHours: "", caffeineIntake: "", trainingCompleted: false,
-    trainingType: "", stepsCount: "", energyLevel: 5, hungerLevel: 5, stressLevel: 5, notes: ""
+    weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false,
+    trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, notes: ""
   });
 
   const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 30 });
+  const { data: program } = trpc.training.get.useQuery();
   const upsert = trpc.dailyLog.upsert.useMutation({
     onSuccess: () => { toast.success("Log saved"); refetch(); }
   });
+
+  // Build session options from training program day names
+  const sessionOptions: string[] = program?.days
+    ? (program.days as Array<{ name?: string }>)
+        .map((d, i) => d.name || `Day ${i + 1}`)
+        .filter(Boolean)
+    : [];
 
   // Load existing log for selected date
   useEffect(() => {
@@ -164,17 +172,16 @@ function DailyLogTab() {
       setForm({
         weight: existing.weight?.toString() ?? "",
         sleepHours: existing.sleepHours?.toString() ?? "",
-        caffeineIntake: existing.caffeineIntake?.toString() ?? "",
+        caffeineServings: existing.caffeineServings?.toString() ?? "",
         trainingCompleted: existing.trainingCompleted ?? false,
         trainingType: existing.trainingType ?? "",
         stepsCount: existing.stepsCount?.toString() ?? "",
-        energyLevel: existing.energyLevel ?? 5,
-        hungerLevel: existing.hungerLevel ?? 5,
-        stressLevel: existing.stressLevel ?? 5,
+        sleepQuality: existing.sleepQuality ?? 3,
+        hungerLevel: existing.hungerLevel ?? 3,
         notes: existing.notes ?? "",
       });
     } else {
-      setForm({ weight: "", sleepHours: "", caffeineIntake: "", trainingCompleted: false, trainingType: "", stepsCount: "", energyLevel: 5, hungerLevel: 5, stressLevel: 5, notes: "" });
+      setForm({ weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, notes: "" });
     }
   }, [date, logs]);
 
@@ -183,13 +190,12 @@ function DailyLogTab() {
       logDate: date,
       weight: form.weight ? parseFloat(form.weight) : undefined,
       sleepHours: form.sleepHours ? parseFloat(form.sleepHours) : undefined,
-      caffeineIntake: form.caffeineIntake ? parseInt(form.caffeineIntake) : undefined,
+      caffeineServings: form.caffeineServings ? parseFloat(form.caffeineServings) : undefined,
       trainingCompleted: form.trainingCompleted,
       trainingType: form.trainingType || undefined,
       stepsCount: form.stepsCount ? parseInt(form.stepsCount) : undefined,
-      energyLevel: form.energyLevel,
+      sleepQuality: form.sleepQuality,
       hungerLevel: form.hungerLevel,
-      stressLevel: form.stressLevel,
       notes: form.notes || undefined,
     });
   };
@@ -220,9 +226,10 @@ function DailyLogTab() {
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Caffeine (mg)</label>
-              <input type="number" value={form.caffeineIntake} onChange={f("caffeineIntake")} placeholder="e.g. 200"
+              <label className="text-xs text-muted-foreground block mb-1">Caffeine (servings)</label>
+              <input type="number" step="0.5" min="0" value={form.caffeineServings} onChange={f("caffeineServings")} placeholder="e.g. 2"
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <p className="text-[10px] text-muted-foreground mt-0.5">1 serving ≈ 80–100mg</p>
             </div>
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Steps</label>
@@ -249,29 +256,36 @@ function DailyLogTab() {
           </label>
           {form.trainingCompleted && (
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Session Type</label>
+              <label className="text-xs text-muted-foreground block mb-1">Session</label>
               <select value={form.trainingType} onChange={f("trainingType")}
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
-                <option value="">Select type</option>
-                <option>Upper Body</option>
-                <option>Lower Body</option>
-                <option>Push</option>
-                <option>Pull</option>
-                <option>Legs</option>
-                <option>Full Body</option>
-                <option>Cardio</option>
+                <option value="">Select session</option>
+                {sessionOptions.length > 0
+                  ? sessionOptions.map(s => <option key={s} value={s}>{s}</option>)
+                  : [
+                      <option key="ub" value="Upper Body">Upper Body</option>,
+                      <option key="lb" value="Lower Body">Lower Body</option>,
+                      <option key="push" value="Push">Push</option>,
+                      <option key="pull" value="Pull">Pull</option>,
+                      <option key="legs" value="Legs">Legs</option>,
+                      <option key="fb" value="Full Body">Full Body</option>,
+                      <option key="cardio" value="Cardio">Cardio</option>,
+                    ]
+                }
               </select>
+              {sessionOptions.length === 0 && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">No training program assigned yet — showing generic options</p>
+              )}
             </div>
           )}
         </Card>
       </div>
 
       <div>
-        <SectionLabel>Biofeedback (1–10)</SectionLabel>
+        <SectionLabel>Biofeedback (1–5)</SectionLabel>
         <Card className="space-y-4">
-          <ScoreInput label="Energy Level" value={form.energyLevel} onChange={v => setForm(p => ({ ...p, energyLevel: v }))} />
-          <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => setForm(p => ({ ...p, hungerLevel: v }))} />
-          <ScoreInput label="Stress Level" value={form.stressLevel} onChange={v => setForm(p => ({ ...p, stressLevel: v }))} />
+          <ScoreInput label="Sleep Quality" value={form.sleepQuality} onChange={v => setForm(p => ({ ...p, sleepQuality: v }))} max={5} />
+          <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => setForm(p => ({ ...p, hungerLevel: v }))} max={5} />
         </Card>
       </div>
 
