@@ -98,7 +98,7 @@ export async function getClientProfile(userId: number) {
     .from(clientProfiles)
     .where(eq(clientProfiles.userId, userId))
     .limit(1);
-  return result[0];
+  return result[0] ?? null;
 }
 
 export async function upsertClientProfile(data: {
@@ -144,7 +144,7 @@ export async function getDailyLogByDate(userId: number, logDate: string) {
     .from(dailyLogs)
     .where(and(eq(dailyLogs.userId, userId), eq(dailyLogs.logDate, logDate as any)))
     .limit(1);
-  return result[0];
+  return result[0] ?? null;
 }
 
 export async function upsertDailyLog(data: {
@@ -217,7 +217,7 @@ export async function getMealPlan(userId: number, dayType: "training" | "rest") 
     .from(mealPlans)
     .where(and(eq(mealPlans.userId, userId), eq(mealPlans.dayType, dayType)))
     .limit(1);
-  return result[0];
+  return result[0] ?? null;
 }
 
 export async function upsertMealPlan(data: {
@@ -288,7 +288,7 @@ export async function getTrainingProgram(userId: number) {
     .from(trainingPrograms)
     .where(eq(trainingPrograms.userId, userId))
     .limit(1);
-  return result[0];
+  return result[0] ?? null;
 }
 
 export async function upsertTrainingProgram(data: {

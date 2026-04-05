@@ -24,12 +24,12 @@ export const appRouter = router({
 
   // Client profile
   profile: router({
-    get: protectedProcedure.query(({ ctx }) =>
-      db.getClientProfile(ctx.user.id)
+    get: protectedProcedure.query(async ({ ctx }) =>
+      (await db.getClientProfile(ctx.user.id)) ?? null
     ),
     getById: adminProcedure
       .input(z.object({ userId: z.number() }))
-      .query(({ input }) => db.getClientProfile(input.userId)),
+      .query(async ({ input }) => (await db.getClientProfile(input.userId)) ?? null),
     upsert: protectedProcedure
       .input(
         z.object({
@@ -132,10 +132,10 @@ export const appRouter = router({
   mealPlan: router({
     get: protectedProcedure
       .input(z.object({ dayType: z.enum(["training", "rest"]) }))
-      .query(({ ctx, input }) => db.getMealPlan(ctx.user.id, input.dayType)),
+      .query(async ({ ctx, input }) => (await db.getMealPlan(ctx.user.id, input.dayType)) ?? null),
     getForClient: adminProcedure
       .input(z.object({ userId: z.number(), dayType: z.enum(["training", "rest"]) }))
-      .query(({ input }) => db.getMealPlan(input.userId, input.dayType)),
+      .query(async ({ input }) => (await db.getMealPlan(input.userId, input.dayType)) ?? null),
     upsert: adminProcedure
       .input(
         z.object({
@@ -183,12 +183,12 @@ export const appRouter = router({
 
   // Training Program
   training: router({
-    get: protectedProcedure.query(({ ctx }) =>
-      db.getTrainingProgram(ctx.user.id)
+    get: protectedProcedure.query(async ({ ctx }) =>
+      (await db.getTrainingProgram(ctx.user.id)) ?? null
     ),
     getForClient: adminProcedure
       .input(z.object({ userId: z.number() }))
-      .query(({ input }) => db.getTrainingProgram(input.userId)),
+      .query(async ({ input }) => (await db.getTrainingProgram(input.userId)) ?? null),
     upsert: adminProcedure
       .input(
         z.object({
