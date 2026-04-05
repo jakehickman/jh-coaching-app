@@ -4,7 +4,24 @@ import { useParams, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
@@ -15,6 +32,51 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-card border border-border rounded-xl p-4 ${className}`}>{children}</div>;
+}
+
+// ─── Sortable Exercise Row ───────────────────────────────────────────────────
+function SortableExerciseRow({
+  id, ex, dayIdx, exIdx, updateExercise, removeExercise
+}: {
+  id: string;
+  ex: any;
+  dayIdx: number;
+  exIdx: number;
+  updateExercise: (d: number, e: number, f: string, v: string) => void;
+  removeExercise: (d: number, e: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="grid grid-cols-12 gap-1 items-center">
+      <div
+        {...attributes}
+        {...listeners}
+        className="col-span-1 flex justify-center text-muted-foreground cursor-grab active:cursor-grabbing hover:text-foreground touch-none"
+      >
+        <GripVertical size={13} />
+      </div>
+      <input type="text" value={ex.name} onChange={e => updateExercise(dayIdx, exIdx, "name", e.target.value)}
+        placeholder="Exercise name"
+        className="col-span-4 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+      <input type="text" value={ex.sets} onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
+        placeholder="4"
+        className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+      <input type="text" value={ex.reps} onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
+        placeholder="8-12"
+        className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+      <input type="text" value={ex.rest} onChange={e => updateExercise(dayIdx, exIdx, "rest", e.target.value)}
+        placeholder="90s"
+        className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+      <button onClick={() => removeExercise(dayIdx, exIdx)} className="col-span-1 flex justify-center text-destructive hover:opacity-80">
+        <Trash2 size={13} />
+      </button>
+    </div>
+  );
 }
 
 // ─── Client Selector ──────────────────────────────────────────────────────────
@@ -189,11 +251,27 @@ function TrainingSection() {
     setDays(d => d.map((day, idx) => idx === dayIdx
       ? { ...day, exercises: day.exercises.filter((_: any, i: number) => i !== exIdx) }
       : day));
-  const updateExercise = (dayIdx: number, exIdx: number, field: string, value: string) =>
+   const updateExercise = (dayIdx: number, exIdx: number, field: string, value: string) =>
     setDays(d => d.map((day, idx) => idx === dayIdx
       ? { ...day, exercises: day.exercises.map((ex: any, i: number) => i === exIdx ? { ...ex, [field]: value } : ex) }
       : day));
-
+  const reorderExercises = (dayIdx: number, oldIndex: number, newIndex: number) =>
+    setDays(d => d.map((day, idx) => idx === dayIdx
+      ? { ...day, exercises: arrayMove(day.exercises, oldIndex, newIndex) }
+      : day));
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const handleDragEnd = (dayIdx: number) => (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const exercises = days[dayIdx]?.exercises ?? [];
+      const oldIndex = exercises.findIndex((_: any, i: number) => `ex-${dayIdx}-${i}` === active.id);
+      const newIndex = exercises.findIndex((_: any, i: number) => `ex-${dayIdx}-${i}` === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) reorderExercises(dayIdx, oldIndex, newIndex);
+    }
+  };
   return (
     <div className="space-y-6">
       <div>
@@ -237,31 +315,31 @@ function TrainingSection() {
 
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-1 px-1">
+                    <p className="col-span-1"></p>
                     <p className="col-span-4 text-[10px] text-muted-foreground">Exercise</p>
                     <p className="col-span-2 text-[10px] text-muted-foreground text-center">Sets</p>
                     <p className="col-span-2 text-[10px] text-muted-foreground text-center">Reps</p>
                     <p className="col-span-2 text-[10px] text-muted-foreground text-center">Rest</p>
-                    <p className="col-span-2 text-[10px] text-muted-foreground"></p>
+                    <p className="col-span-1"></p>
                   </div>
-                  {(day.exercises ?? []).map((ex: any, j: number) => (
-                    <div key={j} className="grid grid-cols-12 gap-1 items-center">
-                      <input type="text" value={ex.name} onChange={e => updateExercise(i, j, "name", e.target.value)}
-                        placeholder="Exercise name"
-                        className="col-span-4 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-                      <input type="text" value={ex.sets} onChange={e => updateExercise(i, j, "sets", e.target.value)}
-                        placeholder="4"
-                        className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-                      <input type="text" value={ex.reps} onChange={e => updateExercise(i, j, "reps", e.target.value)}
-                        placeholder="8-12"
-                        className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-                      <input type="text" value={ex.rest} onChange={e => updateExercise(i, j, "rest", e.target.value)}
-                        placeholder="90s"
-                        className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-                      <button onClick={() => removeExercise(i, j)} className="col-span-2 flex justify-center text-destructive hover:opacity-80">
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  ))}
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(i)}>
+                    <SortableContext
+                      items={(day.exercises ?? []).map((_: any, j: number) => `ex-${i}-${j}`)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {(day.exercises ?? []).map((ex: any, j: number) => (
+                        <SortableExerciseRow
+                          key={`ex-${i}-${j}`}
+                          id={`ex-${i}-${j}`}
+                          ex={ex}
+                          dayIdx={i}
+                          exIdx={j}
+                          updateExercise={updateExercise}
+                          removeExercise={removeExercise}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
                   <button onClick={() => addExercise(i)}
                     className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 mt-1">
                     <Plus size={12} /> Add Exercise
