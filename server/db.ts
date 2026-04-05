@@ -311,6 +311,11 @@ export async function upsertTrainingProgram(data: {
   }
 }
 
+export async function listAllTrainingPrograms() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(trainingPrograms);
+}
 // MESO Cycles
 export async function getMesoCycles(userId: number) {
   const db = await getDb();

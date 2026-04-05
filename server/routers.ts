@@ -201,6 +201,7 @@ export const appRouter = router({
       .mutation(({ ctx, input }) =>
         db.upsertTrainingProgram({ coachId: ctx.user.id, ...input })
       ),
+    listAll: adminProcedure.query(() => db.listAllTrainingPrograms()),
   }),
 
   // MESO Cycles

@@ -25,3 +25,7 @@
 - [x] Remove "Coaches" stat card from Coach Panel (single coach only)
 - [x] Show all users (including admin/coach) in Coach Panel client selector so coach can select themselves
 - [x] Drag-to-reorder exercises within each training day in Coach Panel Training Programs editor
+- [x] Drag-to-reorder training days in Training Programs editor
+- [x] Expandable exercise notes field per exercise
+- [x] Copy program between clients dropdown
+- [x] Remove Rest column from Training Programs editor

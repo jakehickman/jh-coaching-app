@@ -46,35 +46,55 @@ function SortableExerciseRow({
   removeExercise: (d: number, e: number) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const [showNotes, setShowNotes] = useState(false);
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
   return (
-    <div ref={setNodeRef} style={style} className="grid grid-cols-12 gap-1 items-center">
-      <div
-        {...attributes}
-        {...listeners}
-        className="col-span-1 flex justify-center text-muted-foreground cursor-grab active:cursor-grabbing hover:text-foreground touch-none"
-      >
-        <GripVertical size={13} />
+    <div ref={setNodeRef} style={style} className="space-y-1">
+      <div className="grid grid-cols-12 gap-1 items-center">
+        <div
+          {...attributes}
+          {...listeners}
+          className="col-span-1 flex justify-center text-muted-foreground cursor-grab active:cursor-grabbing hover:text-foreground touch-none"
+        >
+          <GripVertical size={13} />
+        </div>
+        <input type="text" value={ex.name} onChange={e => updateExercise(dayIdx, exIdx, "name", e.target.value)}
+          placeholder="Exercise name"
+          className="col-span-6 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+        <input type="text" value={ex.sets} onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
+          placeholder="4"
+          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+        <input type="text" value={ex.reps} onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
+          placeholder="8-12"
+          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+        <div className="col-span-1 flex items-center gap-0.5">
+          <button
+            onClick={() => setShowNotes(n => !n)}
+            title="Toggle notes"
+            className={`flex justify-center transition-colors ${showNotes || ex.notes ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <ChevronDown size={12} className={`transition-transform ${showNotes ? 'rotate-180' : ''}`} />
+          </button>
+          <button onClick={() => removeExercise(dayIdx, exIdx)} className="flex justify-center text-destructive hover:opacity-80">
+            <Trash2 size={12} />
+          </button>
+        </div>
       </div>
-      <input type="text" value={ex.name} onChange={e => updateExercise(dayIdx, exIdx, "name", e.target.value)}
-        placeholder="Exercise name"
-        className="col-span-4 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-      <input type="text" value={ex.sets} onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
-        placeholder="4"
-        className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-      <input type="text" value={ex.reps} onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
-        placeholder="8-12"
-        className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-      <input type="text" value={ex.rest} onChange={e => updateExercise(dayIdx, exIdx, "rest", e.target.value)}
-        placeholder="90s"
-        className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-      <button onClick={() => removeExercise(dayIdx, exIdx)} className="col-span-1 flex justify-center text-destructive hover:opacity-80">
-        <Trash2 size={13} />
-      </button>
+      {showNotes && (
+        <div className="pl-6">
+          <input
+            type="text"
+            value={ex.notes ?? ""}
+            onChange={e => updateExercise(dayIdx, exIdx, "notes", e.target.value)}
+            placeholder="Coaching notes (e.g. tempo 3-1-1, pause at bottom)"
+            className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:text-foreground"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -215,6 +235,71 @@ function ClientsSection() {
 }
 
 // ─── Section: Training Programs ───────────────────────────────────────────────
+function SortableDayCard({
+  id, day, dayIdx, sensors, updateDay, removeDay, addExercise, removeExercise, updateExercise, handleExDragEnd
+}: {
+  id: string; day: any; dayIdx: number; sensors: any;
+  updateDay: (i: number, f: string, v: string) => void;
+  removeDay: (i: number) => void;
+  addExercise: (i: number) => void;
+  removeExercise: (d: number, e: number) => void;
+  updateExercise: (d: number, e: number, f: string, v: string) => void;
+  handleExDragEnd: (dayIdx: number) => (event: DragEndEvent) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <div {...attributes} {...listeners} className="text-muted-foreground cursor-grab active:cursor-grabbing hover:text-foreground touch-none flex-shrink-0">
+            <GripVertical size={15} />
+          </div>
+          <input type="text" value={day.name} onChange={e => updateDay(dayIdx, "name", e.target.value)}
+            className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-medium" />
+          <input type="text" value={day.focus} onChange={e => updateDay(dayIdx, "focus", e.target.value)}
+            placeholder="Focus (e.g. Upper Body)"
+            className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+          <button onClick={() => removeDay(dayIdx)} className="text-destructive hover:opacity-80 flex-shrink-0">
+            <Trash2 size={15} />
+          </button>
+        </div>
+        <div className="space-y-2">
+          <div className="grid grid-cols-12 gap-1 px-1">
+            <p className="col-span-1"></p>
+            <p className="col-span-6 text-[10px] text-muted-foreground">Exercise</p>
+            <p className="col-span-2 text-[10px] text-muted-foreground text-center">Sets</p>
+            <p className="col-span-2 text-[10px] text-muted-foreground text-center">Reps</p>
+            <p className="col-span-1"></p>
+          </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleExDragEnd(dayIdx)}>
+            <SortableContext
+              items={(day.exercises ?? []).map((_: any, j: number) => `ex-${dayIdx}-${j}`)}
+              strategy={verticalListSortingStrategy}
+            >
+              {(day.exercises ?? []).map((ex: any, j: number) => (
+                <SortableExerciseRow
+                  key={`ex-${dayIdx}-${j}`}
+                  id={`ex-${dayIdx}-${j}`}
+                  ex={ex}
+                  dayIdx={dayIdx}
+                  exIdx={j}
+                  updateExercise={updateExercise}
+                  removeExercise={removeExercise}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+          <button onClick={() => addExercise(dayIdx)}
+            className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 mt-1">
+            <Plus size={12} /> Add Exercise
+          </button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function TrainingSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
   const { data: program, refetch } = trpc.training.getForClient.useQuery(
@@ -224,10 +309,11 @@ function TrainingSection() {
   const upsert = trpc.training.upsert.useMutation({
     onSuccess: () => { toast.success("Training program saved"); refetch(); }
   });
-
   const [programName, setProgramName] = useState("");
   const [notes, setNotes] = useState("");
   const [days, setDays] = useState<any[]>([]);
+  const [copyFromId, setCopyFromId] = useState<string>("");
+  const { data: allPrograms } = trpc.training.listAll.useQuery();
 
   useEffect(() => {
     if (program) {
@@ -245,13 +331,13 @@ function TrainingSection() {
     setDays(d => d.map((day, idx) => idx === i ? { ...day, [field]: value } : day));
   const addExercise = (dayIdx: number) =>
     setDays(d => d.map((day, idx) => idx === dayIdx
-      ? { ...day, exercises: [...(day.exercises ?? []), { name: "", sets: "", reps: "", rest: "", notes: "" }] }
+      ? { ...day, exercises: [...(day.exercises ?? []), { name: "", sets: "", reps: "", notes: "" }] }
       : day));
   const removeExercise = (dayIdx: number, exIdx: number) =>
     setDays(d => d.map((day, idx) => idx === dayIdx
       ? { ...day, exercises: day.exercises.filter((_: any, i: number) => i !== exIdx) }
       : day));
-   const updateExercise = (dayIdx: number, exIdx: number, field: string, value: string) =>
+  const updateExercise = (dayIdx: number, exIdx: number, field: string, value: string) =>
     setDays(d => d.map((day, idx) => idx === dayIdx
       ? { ...day, exercises: day.exercises.map((ex: any, i: number) => i === exIdx ? { ...ex, [field]: value } : ex) }
       : day));
@@ -259,11 +345,14 @@ function TrainingSection() {
     setDays(d => d.map((day, idx) => idx === dayIdx
       ? { ...day, exercises: arrayMove(day.exercises, oldIndex, newIndex) }
       : day));
+  const reorderDays = (oldIndex: number, newIndex: number) =>
+    setDays(d => arrayMove(d, oldIndex, newIndex));
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
-  const handleDragEnd = (dayIdx: number) => (event: DragEndEvent) => {
+  const handleExDragEnd = (dayIdx: number) => (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const exercises = days[dayIdx]?.exercises ?? [];
@@ -272,6 +361,25 @@ function TrainingSection() {
       if (oldIndex !== -1 && newIndex !== -1) reorderExercises(dayIdx, oldIndex, newIndex);
     }
   };
+  const handleDayDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = days.findIndex((_: any, i: number) => `day-${i}` === active.id);
+      const newIndex = days.findIndex((_: any, i: number) => `day-${i}` === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) reorderDays(oldIndex, newIndex);
+    }
+  };
+  const handleCopyProgram = () => {
+    if (!copyFromId) return;
+    const source = allPrograms?.find((p: any) => p.userId === parseInt(copyFromId));
+    if (source) {
+      setProgramName(source.programName ?? "");
+      setNotes(source.notes ?? "");
+      setDays((source.days as any[]) ?? []);
+      toast.success("Program copied — hit Save to apply");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -287,79 +395,72 @@ function TrainingSection() {
           ))}
         </div>
       </div>
-
       {selectedUserId && (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Program Name</label>
-              <input type="text" value={programName} onChange={e => setProgramName(e.target.value)}
-                placeholder="e.g. 4-Day Upper/Lower"
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+          {allPrograms && allPrograms.filter((p: any) => p.userId !== selectedUserId).length > 0 && (
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground block mb-1">Copy program from</label>
+                <select
+                  value={copyFromId}
+                  onChange={e => setCopyFromId(e.target.value)}
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">— select a client —</option>
+                  {allPrograms
+                    .filter((p: any) => p.userId !== selectedUserId)
+                    .map((p: any) => (
+                      <option key={p.userId} value={p.userId}>
+                        {clients.find(c => c.id === p.userId)?.name ?? `User ${p.userId}`} — {p.programName ?? "Unnamed"}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <button
+                onClick={handleCopyProgram}
+                disabled={!copyFromId}
+                className="px-4 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:border-primary/50 disabled:opacity-40 transition-colors"
+              >
+                Copy
+              </button>
             </div>
+          )}
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">Program Name</label>
+            <input type="text" value={programName} onChange={e => setProgramName(e.target.value)}
+              placeholder="e.g. 4-Day Upper/Lower"
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
-
-          <div className="space-y-4">
-            {days.map((day, i) => (
-              <Card key={i}>
-                <div className="flex items-center gap-2 mb-3">
-                  <input type="text" value={day.name} onChange={e => updateDay(i, "name", e.target.value)}
-                    className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-medium" />
-                  <input type="text" value={day.focus} onChange={e => updateDay(i, "focus", e.target.value)}
-                    placeholder="Focus (e.g. Upper Body)"
-                    className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-                  <button onClick={() => removeDay(i)} className="text-destructive hover:opacity-80 flex-shrink-0">
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="grid grid-cols-12 gap-1 px-1">
-                    <p className="col-span-1"></p>
-                    <p className="col-span-4 text-[10px] text-muted-foreground">Exercise</p>
-                    <p className="col-span-2 text-[10px] text-muted-foreground text-center">Sets</p>
-                    <p className="col-span-2 text-[10px] text-muted-foreground text-center">Reps</p>
-                    <p className="col-span-2 text-[10px] text-muted-foreground text-center">Rest</p>
-                    <p className="col-span-1"></p>
-                  </div>
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(i)}>
-                    <SortableContext
-                      items={(day.exercises ?? []).map((_: any, j: number) => `ex-${i}-${j}`)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {(day.exercises ?? []).map((ex: any, j: number) => (
-                        <SortableExerciseRow
-                          key={`ex-${i}-${j}`}
-                          id={`ex-${i}-${j}`}
-                          ex={ex}
-                          dayIdx={i}
-                          exIdx={j}
-                          updateExercise={updateExercise}
-                          removeExercise={removeExercise}
-                        />
-                      ))}
-                    </SortableContext>
-                  </DndContext>
-                  <button onClick={() => addExercise(i)}
-                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 mt-1">
-                    <Plus size={12} /> Add Exercise
-                  </button>
-                </div>
-              </Card>
-            ))}
-          </div>
-
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDayDragEnd}>
+            <SortableContext items={days.map((_: any, i: number) => `day-${i}`)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-4">
+                {days.map((day, i) => (
+                  <SortableDayCard
+                    key={`day-${i}`}
+                    id={`day-${i}`}
+                    day={day}
+                    dayIdx={i}
+                    sensors={sensors}
+                    updateDay={updateDay}
+                    removeDay={removeDay}
+                    addExercise={addExercise}
+                    removeExercise={removeExercise}
+                    updateExercise={updateExercise}
+                    handleExDragEnd={handleExDragEnd}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
           <button onClick={addDay}
             className="flex items-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors w-full justify-center">
             <Plus size={14} /> Add Training Day
           </button>
-
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Coach Notes</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
           </div>
-
           <button
             onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || undefined, days, notes: notes || undefined })}
             disabled={upsert.isPending}
