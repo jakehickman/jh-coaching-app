@@ -75,6 +75,21 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-card border border-border rounded-xl p-4 ${className}`}>{children}</div>;
 }
+function MuscleGroupSection({ group, children }: { group: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="border border-border rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-card hover:bg-muted/40 transition-colors"
+      >
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group}</span>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+      {open && <div className="px-4 pb-4 pt-3 space-y-3 bg-card">{children}</div>}
+    </div>
+  );
+}
 
 // ─── Sortable Exercise Row ───────────────────────────────────────────────────
 function SortableExerciseRow({
@@ -1323,10 +1338,9 @@ function ProgressSection() {
             return (
               <div>
                 <SectionLabel>Exercise Progress</SectionLabel>
-                <div className="space-y-5">
+                <div className="space-y-3">
                   {muscleGroups.map(group => (
-                    <div key={group}>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">{group}</p>
+                    <MuscleGroupSection key={group} group={group}>
                       <div className="space-y-3">
                         {byMuscle[group].map(name => {
                           const history = exerciseHistory[name];
@@ -1356,7 +1370,7 @@ function ProgressSection() {
                           );
                         })}
                       </div>
-                    </div>
+                    </MuscleGroupSection>
                   ))}
                 </div>
               </div>
