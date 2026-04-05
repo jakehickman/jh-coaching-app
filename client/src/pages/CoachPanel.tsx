@@ -206,20 +206,19 @@ function ClientsSection() {
   });
 
   const [form, setForm] = useState({
-    displayName: "", startDate: "", goalWeight: "", startWeight: "", notes: ""
+    startDate: "", goalWeight: "", startWeight: "", notes: ""
   });
 
   useEffect(() => {
     if (profile) {
       setForm({
-        displayName: profile.displayName ?? "",
         startDate: profile.startDate ? String(profile.startDate).slice(0, 10) : "",
         goalWeight: profile.goalWeight?.toString() ?? "",
         startWeight: profile.startWeight?.toString() ?? "",
         notes: profile.notes ?? "",
       });
     } else {
-      setForm({ displayName: "", startDate: "", goalWeight: "", startWeight: "", notes: "" });
+      setForm({ startDate: "", goalWeight: "", startWeight: "", notes: "" });
     }
   }, [profile, selectedId]);
 
@@ -263,7 +262,6 @@ function ClientsSection() {
           <Card className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               {[
-                { key: "displayName", label: "Display Name", type: "text" },
                 { key: "startDate", label: "Start Date", type: "date" },
                 { key: "startWeight", label: "Start Weight (kg)", type: "number" },
                 { key: "goalWeight", label: "Goal Weight (kg)", type: "number" },
@@ -291,7 +289,6 @@ function ClientsSection() {
             <button
               onClick={() => upsertProfile.mutate({
                 userId: selectedId,
-                displayName: form.displayName || undefined,
                 startDate: form.startDate || undefined,
                 goalWeight: form.goalWeight ? parseFloat(form.goalWeight) : undefined,
                 startWeight: form.startWeight ? parseFloat(form.startWeight) : undefined,
