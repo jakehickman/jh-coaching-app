@@ -1,28 +1,305 @@
+import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
+import * as db from "./db";
+
+const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+  return next({ ctx });
+});
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query((opts) => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
+      return { success: true } as const;
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  // Client profile
+  profile: router({
+    get: protectedProcedure.query(({ ctx }) =>
+      db.getClientProfile(ctx.user.id)
+    ),
+    getById: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(({ input }) => db.getClientProfile(input.userId)),
+    upsert: protectedProcedure
+      .input(
+        z.object({
+          displayName: z.string().optional(),
+          startDate: z.string().optional(),
+          goalWeight: z.number().optional(),
+          startWeight: z.number().optional(),
+          showDate: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        db.upsertClientProfile({ userId: ctx.user.id, ...input })
+      ),
+    upsertForClient: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          coachId: z.number().optional(),
+          displayName: z.string().optional(),
+          startDate: z.string().optional(),
+          goalWeight: z.number().optional(),
+          startWeight: z.number().optional(),
+          showDate: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(({ input }) => db.upsertClientProfile(input)),
+  }),
+
+  // Users (admin)
+  users: router({
+    list: adminProcedure.query(() => db.getAllUsers()),
+    clients: adminProcedure.query(({ ctx }) => db.getAllClients(ctx.user.id)),
+  }),
+
+  // Daily Logs
+  dailyLog: router({
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(({ ctx, input }) => db.getDailyLogs(ctx.user.id, input.limit)),
+    listForClient: adminProcedure
+      .input(z.object({ userId: z.number(), limit: z.number().optional() }))
+      .query(({ input }) => db.getDailyLogs(input.userId, input.limit)),
+    upsert: protectedProcedure
+      .input(
+        z.object({
+          logDate: z.string(),
+          weight: z.number().optional(),
+          sleepHours: z.number().optional(),
+          caffeineIntake: z.number().optional(),
+          trainingCompleted: z.boolean().optional(),
+          trainingType: z.string().optional(),
+          stepsCount: z.number().optional(),
+          energyLevel: z.number().min(1).max(10).optional(),
+          hungerLevel: z.number().min(1).max(10).optional(),
+          stressLevel: z.number().min(1).max(10).optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        db.upsertDailyLog({ userId: ctx.user.id, ...input })
+      ),
+  }),
+
+  // Measurements
+  measurements: router({
+    list: protectedProcedure.query(({ ctx }) =>
+      db.getMeasurements(ctx.user.id)
+    ),
+    listForClient: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(({ input }) => db.getMeasurements(input.userId)),
+    add: protectedProcedure
+      .input(
+        z.object({
+          measureDate: z.string(),
+          weight: z.number().optional(),
+          chest: z.number().optional(),
+          waist: z.number().optional(),
+          hips: z.number().optional(),
+          leftArm: z.number().optional(),
+          rightArm: z.number().optional(),
+          leftThigh: z.number().optional(),
+          rightThigh: z.number().optional(),
+          leftCalf: z.number().optional(),
+          rightCalf: z.number().optional(),
+          neck: z.number().optional(),
+          shoulders: z.number().optional(),
+          bodyFatPercent: z.number().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        db.addMeasurement({ userId: ctx.user.id, ...input })
+      ),
+  }),
+
+  // Meal Plans
+  mealPlan: router({
+    get: protectedProcedure
+      .input(z.object({ dayType: z.enum(["training", "rest"]) }))
+      .query(({ ctx, input }) => db.getMealPlan(ctx.user.id, input.dayType)),
+    getForClient: adminProcedure
+      .input(z.object({ userId: z.number(), dayType: z.enum(["training", "rest"]) }))
+      .query(({ input }) => db.getMealPlan(input.userId, input.dayType)),
+    upsert: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          dayType: z.enum(["training", "rest"]),
+          meals: z.any().optional(),
+          totalCalories: z.number().optional(),
+          totalProtein: z.number().optional(),
+          totalCarbs: z.number().optional(),
+          totalFat: z.number().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        db.upsertMealPlan({ coachId: ctx.user.id, ...input })
+      ),
+  }),
+
+  // Shopping List
+  shopping: router({
+    list: protectedProcedure.query(({ ctx }) =>
+      db.getShoppingItems(ctx.user.id)
+    ),
+    listForClient: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(({ input }) => db.getShoppingItems(input.userId)),
+    toggle: protectedProcedure
+      .input(z.object({ id: z.number(), checked: z.boolean() }))
+      .mutation(({ input }) => db.toggleShoppingItem(input.id, input.checked)),
+    add: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          category: z.string().optional(),
+          itemName: z.string(),
+          quantity: z.string().optional(),
+          sortOrder: z.number().optional(),
+        })
+      )
+      .mutation(({ input }) => db.addShoppingItem(input)),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteShoppingItem(input.id)),
+  }),
+
+  // Training Program
+  training: router({
+    get: protectedProcedure.query(({ ctx }) =>
+      db.getTrainingProgram(ctx.user.id)
+    ),
+    getForClient: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(({ input }) => db.getTrainingProgram(input.userId)),
+    upsert: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          programName: z.string().optional(),
+          days: z.any().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        db.upsertTrainingProgram({ coachId: ctx.user.id, ...input })
+      ),
+  }),
+
+  // MESO Cycles
+  meso: router({
+    cycles: protectedProcedure.query(({ ctx }) =>
+      db.getMesoCycles(ctx.user.id)
+    ),
+    cyclesForClient: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(({ input }) => db.getMesoCycles(input.userId)),
+    sessions: protectedProcedure
+      .input(z.object({ mesoId: z.number() }))
+      .query(({ input }) => db.getMesoSessions(input.mesoId)),
+    upsertSession: protectedProcedure
+      .input(
+        z.object({
+          id: z.number().optional(),
+          mesoId: z.number(),
+          sessionDate: z.string().optional(),
+          weekNumber: z.number().optional(),
+          dayLabel: z.string().optional(),
+          exercises: z.any().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        db.upsertMesoSession({ userId: ctx.user.id, ...input })
+      ),
+  }),
+
+  // Timeline
+  timeline: router({
+    list: protectedProcedure.query(({ ctx }) =>
+      db.getTimelineMilestones(ctx.user.id)
+    ),
+    listForClient: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(({ input }) => db.getTimelineMilestones(input.userId)),
+    toggle: protectedProcedure
+      .input(z.object({ id: z.number(), completed: z.boolean() }))
+      .mutation(({ input }) => db.toggleMilestone(input.id, input.completed)),
+  }),
+
+  // Coaching Notes
+  notes: router({
+    list: adminProcedure
+      .input(z.object({ clientId: z.number() }))
+      .query(({ input }) => db.getCoachingNotes(input.clientId)),
+    add: adminProcedure
+      .input(
+        z.object({
+          clientId: z.number(),
+          noteDate: z.string(),
+          content: z.string(),
+          category: z.string().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        db.addCoachingNote({ coachId: ctx.user.id, ...input })
+      ),
+  }),
+
+  // Weekly Check-ins
+  checkIn: router({
+    list: protectedProcedure.query(({ ctx }) =>
+      db.getWeeklyCheckIns(ctx.user.id)
+    ),
+    listForClient: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(({ input }) => db.getWeeklyCheckIns(input.userId)),
+    upsert: protectedProcedure
+      .input(
+        z.object({
+          weekStartDate: z.string(),
+          avgWeight: z.number().optional(),
+          weightChange: z.number().optional(),
+          trainingAdherence: z.number().min(0).max(100).optional(),
+          nutritionAdherence: z.number().min(0).max(100).optional(),
+          overallFeeling: z.number().min(1).max(10).optional(),
+          wins: z.string().optional(),
+          challenges: z.string().optional(),
+          nextWeekGoals: z.string().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        db.upsertWeeklyCheckIn({ userId: ctx.user.id, ...input })
+      ),
+    addCoachFeedback: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          weekStartDate: z.string(),
+          coachFeedback: z.string(),
+        })
+      )
+      .mutation(({ input }) =>
+        db.upsertWeeklyCheckIn({ userId: input.userId, weekStartDate: input.weekStartDate, coachFeedback: input.coachFeedback })
+      ),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

@@ -1,0 +1,23 @@
+# JH Coaching App TODO
+
+- [x] Database schema: users, client_profiles, daily_logs, measurements, meal_plans, shopping_list, training_programs, exercises, meso_cycles, meso_sessions, timeline_milestones, coaching_notes
+- [x] Global dark theme: black bg, white text, green accent (#22C55E)
+- [x] Auth: Manus OAuth login, coach vs client role routing
+- [x] DashboardLayout with sidebar for client tabs and coach panel
+- [x] Client Dashboard tab: overview metrics, weight chart, adherence
+- [x] Client Daily Log tab: date, weight, sleep, caffeine, training logged
+- [x] Client Measurements tab: grouped body measurement sessions with history
+- [x] Client Meal Plan tab: training day vs non-training day meals
+- [x] Client Shopping List tab: checkboxes, grouped categories
+- [x] Client Training Program tab: exercise list with sets/reps/rest
+- [x] Client MESO 1 tab: periodization tracker with weekly progression
+- [x] Client Timeline tab: show prep countdown with milestones
+- [x] Coach panel: client list, select client, view their data
+- [x] Coach panel: edit training program per client
+- [x] Coach panel: edit meal plan per client
+- [x] Coach panel: leave coaching notes per client
+- [x] Calculated metrics: 7-day weight average, weekly adherence, body comp tracking
+- [x] Charts: weight trend, measurement progress, adherence bar chart
+- [x] Seed demo data for Jake H
+- [x] Mobile-responsive layout
+- [x] Vitest tests: 17 tests passing (auth, dailyLog, measurements, profile, shopping, timeline, checkIn, notes admin guard)
