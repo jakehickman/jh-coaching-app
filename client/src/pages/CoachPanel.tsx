@@ -17,6 +17,7 @@ import {
 import {
   arrayMove,
   SortableContext,
+  horizontalListSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -241,6 +242,48 @@ function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ─── Sortable Schedule Slot ─────────────────────────────────────────────────
+function SortableScheduleSlot({
+  id, slot, index, dayOptions, onUpdate, onRemove, isLast
+}: {
+  id: string;
+  slot: string;
+  index: number;
+  dayOptions: string[];
+  onUpdate: (i: number, val: string) => void;
+  onRemove: (i: number) => void;
+  isLast: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-1">
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground p-0.5 touch-none"
+      >
+        <GripVertical size={12} />
+      </div>
+      <select
+        value={slot}
+        onChange={e => onUpdate(index, e.target.value)}
+        className="bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+      >
+        {dayOptions.map(opt => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
+      </select>
+      <button onClick={() => onRemove(index)} className="text-muted-foreground hover:text-destructive">
+        <Trash2 size={12} />
+      </button>
+      {!isLast && (
+        <span className="text-muted-foreground/40 text-xs select-none">/</span>
+      )}
     </div>
   );
 }
@@ -688,6 +731,16 @@ function TrainingSection() {
       : day));
   const reorderDays = (oldIndex: number, newIndex: number) =>
     setDays(d => arrayMove(d, oldIndex, newIndex));
+  const reorderSchedule = (oldIndex: number, newIndex: number) =>
+    setSchedule(s => arrayMove(s, oldIndex, newIndex));
+  const handleScheduleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = parseInt(String(active.id).replace('slot-', ''));
+      const newIndex = parseInt(String(over.id).replace('slot-', ''));
+      if (!isNaN(oldIndex) && !isNaN(newIndex)) reorderSchedule(oldIndex, newIndex);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -739,36 +792,33 @@ function TrainingSection() {
               <label className="text-xs text-muted-foreground">Training Schedule</label>
               <span className="text-[10px] text-muted-foreground/60">defines the rotation for this client</span>
             </div>
-            <div className="flex flex-wrap gap-2 items-center">
-              {schedule.map((slot, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  <select
-                    value={slot}
-                    onChange={e => updateScheduleSlot(i, e.target.value)}
-                    className="bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleScheduleDragEnd}>
+              <SortableContext items={schedule.map((_, i) => `slot-${i}`)} strategy={horizontalListSortingStrategy}>
+                <div className="flex flex-wrap gap-2 items-center">
+                  {schedule.map((slot, i) => (
+                    <SortableScheduleSlot
+                      key={`slot-${i}`}
+                      id={`slot-${i}`}
+                      slot={slot}
+                      index={i}
+                      dayOptions={dayOptions}
+                      onUpdate={updateScheduleSlot}
+                      onRemove={removeScheduleSlot}
+                      isLast={i === schedule.length - 1}
+                    />
+                  ))}
+                  <button
+                    onClick={addScheduleSlot}
+                    className="flex items-center gap-1 px-2 py-1.5 border border-dashed border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
                   >
-                    {dayOptions.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                  <button onClick={() => removeScheduleSlot(i)} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 size={12} />
+                    <Plus size={11} /> Add
                   </button>
-                  {i < schedule.length - 1 && (
-                    <span className="text-muted-foreground/40 text-xs select-none">/</span>
+                  {schedule.length > 0 && (
+                    <span className="text-[10px] text-primary/70 ml-1">→ repeat</span>
                   )}
                 </div>
-              ))}
-              <button
-                onClick={addScheduleSlot}
-                className="flex items-center gap-1 px-2 py-1.5 border border-dashed border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
-              >
-                <Plus size={11} /> Add
-              </button>
-              {schedule.length > 0 && (
-                <span className="text-[10px] text-primary/70 ml-1">→ repeat</span>
-              )}
-            </div>
+              </SortableContext>
+            </DndContext>
             {schedule.length > 0 && (
               <p className="text-[10px] text-muted-foreground/50 mt-1.5">
                 {schedule.join(" / ")} / repeat
