@@ -1270,7 +1270,7 @@ function ProgressSection() {
                       <p className="text-sm font-medium text-foreground">Total</p>
                       <div className="text-right">
                         <p className="text-lg font-bold text-primary">{latestSkinfold} mm</p>
-                        {prevSkinfold != null && prevM && <p className="text-xs text-muted-foreground">Prev · {toLocalDateStr(prevM.measureDate).split("-").reverse().join("/")}: {prevSkinfold} mm</p>}
+                        {prevSkinfold != null && prevM && <p className="text-xs text-muted-foreground">vs {toLocalDateStr(prevM.measureDate).split("-").reverse().join("/")}: {prevSkinfold} mm</p>}
                       </div>
                     </div>
                   )}

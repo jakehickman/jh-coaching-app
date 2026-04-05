@@ -317,7 +317,7 @@ function OverviewTab() {
                   )}
                 </div>
                 {prev && waistDiff == null && (
-                  <p className="text-xs text-muted-foreground mt-2">Prev · {fmtDate(prev.measureDate)}: {prev.waist ?? "—"} cm</p>
+                  <p className="text-xs text-muted-foreground mt-2">vs {fmtDate(prev.measureDate)}: {prev.waist ?? "—"} cm</p>
                 )}
               </Card>
             </div>
@@ -353,7 +353,7 @@ function OverviewTab() {
                     <p className="text-sm font-medium text-foreground">Total ({sitesWithData.length} sites)</p>
                     <div className="text-right">
                       <p className="text-lg font-bold text-primary">{latestTotal} mm</p>
-                      {prevTotal != null && prev && <p className="text-xs text-muted-foreground">Prev · {fmtDate(prev.measureDate)}: {prevTotal} mm</p>}
+                      {prevTotal != null && prev && <p className="text-xs text-muted-foreground">vs {fmtDate(prev.measureDate)}: {prevTotal} mm</p>}
                     </div>
                   </div>
                 )}
