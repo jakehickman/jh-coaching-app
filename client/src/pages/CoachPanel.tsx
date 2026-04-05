@@ -22,7 +22,7 @@ function useClientSelector() {
   const { data: allUsers } = trpc.users.list.useQuery();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
-  const clients = (allUsers ?? []).filter(u => u.role === "user");
+  const clients = allUsers ?? [];
 
   useEffect(() => {
     if (clients.length > 0 && !selectedUserId) {
@@ -64,7 +64,7 @@ function ClientsSection() {
     }
   }, [profile, selectedId]);
 
-  const clients = (allUsers ?? []).filter(u => u.role === "user");
+  const clients = allUsers ?? [];
 
   return (
     <div className="space-y-6">

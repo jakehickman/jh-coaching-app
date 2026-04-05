@@ -23,3 +23,4 @@
 - [x] Vitest tests: 17 tests passing (auth, dailyLog, measurements, profile, shopping, timeline, checkIn, notes admin guard)
 - [x] Reassign Jake H demo data to user ID 1 (coach account) for client POV preview
 - [x] Remove "Coaches" stat card from Coach Panel (single coach only)
+- [x] Show all users (including admin/coach) in Coach Panel client selector so coach can select themselves
