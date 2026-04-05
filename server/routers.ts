@@ -86,6 +86,7 @@ export const appRouter = router({
           stepsCount: z.number().optional(),
           sleepQuality: z.number().min(1).max(5).optional(),
           hungerLevel: z.number().min(1).max(5).optional(),
+          offPlanMeal: z.boolean().optional(),
           notes: z.string().optional(),
         })
       )

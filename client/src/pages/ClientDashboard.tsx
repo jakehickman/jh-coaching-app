@@ -149,7 +149,7 @@ function DailyLogTab() {
   const [date, setDate] = useState(today);
   const [form, setForm] = useState({
     weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false,
-    trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, notes: ""
+    trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, offPlanMeal: false, notes: ""
   });
 
   const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 30 });
@@ -178,10 +178,11 @@ function DailyLogTab() {
         stepsCount: existing.stepsCount?.toString() ?? "",
         sleepQuality: existing.sleepQuality ?? 3,
         hungerLevel: existing.hungerLevel ?? 3,
+        offPlanMeal: existing.offPlanMeal ?? false,
         notes: existing.notes ?? "",
       });
     } else {
-      setForm({ weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, notes: "" });
+      setForm({ weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, offPlanMeal: false, notes: "" });
     }
   }, [date, logs]);
 
@@ -196,6 +197,7 @@ function DailyLogTab() {
       stepsCount: form.stepsCount ? parseInt(form.stepsCount) : undefined,
       sleepQuality: form.sleepQuality,
       hungerLevel: form.hungerLevel,
+      offPlanMeal: form.offPlanMeal,
       notes: form.notes || undefined,
     });
   };
@@ -287,6 +289,27 @@ function DailyLogTab() {
         <Card className="space-y-4">
           <ScoreInput label="Sleep Quality" value={form.sleepQuality} onChange={v => setForm(p => ({ ...p, sleepQuality: v }))} max={5} />
           <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => setForm(p => ({ ...p, hungerLevel: v }))} max={5} />
+        </Card>
+      </div>
+
+      <div>
+        <SectionLabel>Nutrition</SectionLabel>
+        <Card>
+          <button
+            type="button"
+            onClick={() => setForm(p => ({ ...p, offPlanMeal: !p.offPlanMeal }))}
+            className="flex items-center gap-3 cursor-pointer w-full text-left"
+          >
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+              form.offPlanMeal ? "bg-amber-500 border-amber-500" : "border-border"
+            }`}>
+              {form.offPlanMeal && <Check size={12} className="text-white" />}
+            </div>
+            <div>
+              <span className="text-sm text-foreground">Off plan meal today</span>
+              <p className="text-[10px] text-muted-foreground">Had 1 or more meals not in my prescribed plan</p>
+            </div>
+          </button>
         </Card>
       </div>
 

@@ -62,3 +62,4 @@
 - [x] Update coach Client Progress view to reflect new biofeedback fields
 - [x] Session type dropdown in daily log populated from client's training program day names
 - [x] Fix: Training completed today checkbox stuck/unable to uncheck in Daily Log
+- [x] Add Off Plan Meal checkbox to Daily Log (DB column, router, form, coach view)

@@ -56,6 +56,7 @@ export const dailyLogs = mysqlTable("daily_logs", {
   stepsCount: int("stepsCount"),
   sleepQuality: int("sleepQuality"), // 1-5
   hungerLevel: int("hungerLevel"), // 1-5
+  offPlanMeal: boolean("offPlanMeal").default(false),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
