@@ -50,13 +50,12 @@ export const dailyLogs = mysqlTable("daily_logs", {
   logDate: date("logDate").notNull(),
   weight: float("weight"), // kg
   sleepHours: float("sleepHours"),
-  caffeineIntake: int("caffeineIntake"), // mg
+  caffeineServings: float("caffeineServings"), // servings (1 serving = 80-100mg)
   trainingCompleted: boolean("trainingCompleted").default(false),
   trainingType: varchar("trainingType", { length: 64 }), // e.g. "Upper", "Lower", "Rest"
   stepsCount: int("stepsCount"),
-  energyLevel: int("energyLevel"), // 1-10
-  hungerLevel: int("hungerLevel"), // 1-10
-  stressLevel: int("stressLevel"), // 1-10
+  sleepQuality: int("sleepQuality"), // 1-5
+  hungerLevel: int("hungerLevel"), // 1-5
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

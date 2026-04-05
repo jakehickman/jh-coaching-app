@@ -43,6 +43,13 @@
       "when": 1775395636570,
       "tag": "0005_mute_ultimatum",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1775397511874,
+      "tag": "0006_clever_risque",
+      "breakpoints": true
     }
   ]
 }
