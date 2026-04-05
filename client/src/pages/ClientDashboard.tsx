@@ -117,6 +117,7 @@ function OverviewTab() {
   const { data: checkIns } = trpc.checkIn.list.useQuery();
   const { data: profile } = trpc.profile.get.useQuery();
   const { data: program } = trpc.training.get.useQuery();
+  const { data: measurements } = trpc.measurements.list.useQuery();
 
   const weightData = (logs ?? [])
     .filter(l => l.weight)
@@ -226,6 +227,105 @@ function OverviewTab() {
           </Card>
         </div>
       )}
+
+      {/* ── Measurements Comparison ─────────────────────────────── */}
+      {(() => {
+        const mList = (measurements ?? []).slice().sort((a, b) =>
+          toLocalDateStr(b.measureDate).localeCompare(toLocalDateStr(a.measureDate))
+        );
+        const latest = mList[0];
+        const prev = mList[1];
+        if (!latest) return null;
+
+        const siteAvg = (vals: (number | null | undefined)[]) => {
+          const nums = vals.filter((v): v is number => v != null);
+          return nums.length ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
+        };
+
+        const sites = [
+          { label: "Umbilical", avg: siteAvg([latest.umbilical1, latest.umbilical2, latest.umbilical3, latest.umbilical4, latest.umbilical5]) },
+          { label: "Suprailiac", avg: siteAvg([latest.suprailiac1, latest.suprailiac2, latest.suprailiac3, latest.suprailiac4, latest.suprailiac5]) },
+          { label: "Calf", avg: siteAvg([latest.calf1, latest.calf2, latest.calf3, latest.calf4, latest.calf5]) },
+          { label: "Thigh", avg: siteAvg([latest.thigh1, latest.thigh2, latest.thigh3, latest.thigh4, latest.thigh5]) },
+        ];
+        const latestTotal = sites.every(s => s.avg != null)
+          ? parseFloat(sites.reduce((a, s) => a + s.avg!, 0).toFixed(1))
+          : null;
+
+        const prevSites = prev ? [
+          siteAvg([prev.umbilical1, prev.umbilical2, prev.umbilical3, prev.umbilical4, prev.umbilical5]),
+          siteAvg([prev.suprailiac1, prev.suprailiac2, prev.suprailiac3, prev.suprailiac4, prev.suprailiac5]),
+          siteAvg([prev.calf1, prev.calf2, prev.calf3, prev.calf4, prev.calf5]),
+          siteAvg([prev.thigh1, prev.thigh2, prev.thigh3, prev.thigh4, prev.thigh5]),
+        ] : null;
+        const prevTotal = prevSites && prevSites.every(v => v != null)
+          ? parseFloat(prevSites.reduce((a, b) => a + b!, 0).toFixed(1))
+          : null;
+        const totalDiff = latestTotal != null && prevTotal != null
+          ? parseFloat((latestTotal - prevTotal).toFixed(1))
+          : null;
+
+        const waistDiff = latest.waist != null && prev?.waist != null
+          ? parseFloat((latest.waist - prev.waist).toFixed(1))
+          : null;
+
+        return (
+          <>
+            <div>
+              <SectionLabel>Waist Circumference</SectionLabel>
+              <Card>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">{fmtDate(latest.measureDate)}</p>
+                    {latest.waist != null ? (
+                      <p className="text-2xl font-bold text-foreground">{latest.waist} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Not recorded</p>
+                    )}
+                  </div>
+                  {waistDiff != null && (
+                    <p className={`text-sm font-semibold ${waistDiff < 0 ? "text-green-400" : waistDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                      {waistDiff > 0 ? "+" : ""}{waistDiff} cm vs prev
+                    </p>
+                  )}
+                </div>
+              </Card>
+            </div>
+            <div>
+              <SectionLabel>Skinfold Thickness</SectionLabel>
+              <Card className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">{fmtDate(latest.measureDate)} — avg of 5 readings per site</p>
+                  {totalDiff != null && (
+                    <p className={`text-sm font-semibold ${totalDiff < 0 ? "text-green-400" : totalDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                      {totalDiff > 0 ? "+" : ""}{totalDiff} mm total
+                    </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {sites.map(({ label, avg }) => (
+                    <div key={label} className="bg-secondary rounded-lg p-3">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+                      <p className="text-lg font-bold text-foreground mt-0.5">
+                        {avg != null ? <>{avg} <span className="text-xs font-normal text-muted-foreground">mm</span></> : "—"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {latestTotal != null && (
+                  <div className="border-t border-border pt-3 flex items-center justify-between">
+                    <p className="text-sm font-medium text-foreground">Total</p>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-primary">{latestTotal} mm</p>
+                      {prevTotal != null && <p className="text-xs text-muted-foreground">Prev: {prevTotal} mm</p>}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </>
+        );
+      })()}
 
       {recentLogs.length > 0 && (
         <div>
