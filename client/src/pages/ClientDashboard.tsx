@@ -144,9 +144,25 @@ function OverviewTab() {
 }
 
 // ─── Tab: Daily Log ───────────────────────────────────────────────────────────
+// dd/mm/yyyy helpers
+function toDisplayDate(iso: string): string {
+  if (!iso || iso.length < 10) return iso;
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+function toISODate(display: string): string {
+  const parts = display.replace(/[^0-9]/g, "");
+  if (parts.length < 8) return "";
+  return `${parts.slice(4, 8)}-${parts.slice(2, 4)}-${parts.slice(0, 2)}`;
+}
+function isValidISODate(iso: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso);
+}
+
 function DailyLogTab() {
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
+  const [dateDisplay, setDateDisplay] = useState(() => toDisplayDate(today));
   const [form, setForm] = useState({
     weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false,
     trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, offPlanMeal: false, notes: ""
@@ -212,8 +228,19 @@ function DailyLogTab() {
     <div className="space-y-6 max-w-lg">
       <div>
         <SectionLabel>Select Date</SectionLabel>
-        <input type="date" value={date} onChange={e => setDate(e.target.value)}
-          className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+        <input
+          type="text"
+          value={dateDisplay}
+          onChange={e => {
+            const raw = e.target.value;
+            setDateDisplay(raw);
+            const iso = toISODate(raw);
+            if (isValidISODate(iso)) setDate(iso);
+          }}
+          onBlur={() => { if (isValidISODate(date)) setDateDisplay(toDisplayDate(date)); }}
+          placeholder="dd/mm/yyyy"
+          maxLength={10}
+          className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-36" />
       </div>
 
       <div>

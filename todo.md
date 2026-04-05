@@ -80,3 +80,4 @@
 - [x] Fix: Training program coach notes not clearing when removed and saved
 - [x] Add delete option to daily log entries in client dashboard
 - [x] Fix training adherence: compare against prescribed training days per week from schedule
+- [x] Change Daily Log date field to dd/mm/yyyy format
