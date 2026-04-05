@@ -75,9 +75,17 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-card border border-border rounded-xl p-4 ${className}`}>{children}</div>;
 }
-function MuscleGroupSection({ group, children, forceOpen }: { group: string; children: React.ReactNode; forceOpen?: boolean }) {
+function MuscleGroupSection({ group, children, globalToggle }: { group: string; children: React.ReactNode; globalToggle?: { expanded: boolean; gen: number } | null }) {
   const [localOpen, setLocalOpen] = useState(true);
-  const open = forceOpen !== undefined ? forceOpen : localOpen;
+  const [lastGen, setLastGen] = useState(0);
+  // When a new global toggle fires (gen changed), sync local state to it
+  useEffect(() => {
+    if (globalToggle && globalToggle.gen !== lastGen) {
+      setLocalOpen(globalToggle.expanded);
+      setLastGen(globalToggle.gen);
+    }
+  }, [globalToggle, lastGen]);
+  const open = localOpen;
   return (
     <div className="border border-border rounded-xl overflow-hidden">
       <button
@@ -999,7 +1007,8 @@ function ProgressSection() {
     { enabled: !!selectedUserId }
   );
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
-  const [allExpanded, setAllExpanded] = useState(true);
+  // allExpandedState: null = no global action, true/false = last global action
+  const [globalToggle, setGlobalToggle] = useState<{ expanded: boolean; gen: number } | null>(null);
 
   // ── Calendar-day helpers ────────────────────────────────────────────────────
   const DAY = 86400000;
@@ -1342,15 +1351,15 @@ function ProgressSection() {
                 <div className="flex items-center justify-between mb-3">
                   <SectionLabel>Exercise Progress</SectionLabel>
                   <button
-                    onClick={() => setAllExpanded(v => !v)}
+                    onClick={() => setGlobalToggle(prev => ({ expanded: !(prev?.expanded ?? true), gen: (prev?.gen ?? 0) + 1 }))}
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                   >
-                    {allExpanded ? <><ChevronUp className="w-3 h-3" /> Collapse All</> : <><ChevronDown className="w-3 h-3" /> Expand All</>}
+                    {(globalToggle?.expanded ?? true) ? <><ChevronUp className="w-3 h-3" /> Collapse All</> : <><ChevronDown className="w-3 h-3" /> Expand All</>}
                   </button>
                 </div>
                 <div className="space-y-3">
                   {muscleGroups.map(group => (
-                    <MuscleGroupSection key={group} group={group} forceOpen={allExpanded}>
+                    <MuscleGroupSection key={group} group={group} globalToggle={globalToggle}>
                       <div className="space-y-3">
                         {byMuscle[group].map(name => {
                           const history = exerciseHistory[name];
