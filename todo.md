@@ -68,3 +68,7 @@
 - [x] Redesign measurements: waist only + 4 skinfold sites (5 readings each, averaged in coach view)
 - [x] Rename "Add Session" to "Add Measurement" on client Measurements tab
 - [x] Add delete button to each measurement history entry (client can remove wrong entries)
+- [x] Fix: Meal plan notes not clearing when removed and saved in Coach Panel
+- [x] Add servingUnit + servingGrams to nutrition_foods (e.g. "1 egg = 50g")
+- [x] Update meal plan food selector to show servings input for unit-based foods
+- [x] Update Nutrition Data tab to show/edit serving info per food

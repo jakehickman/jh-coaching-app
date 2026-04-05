@@ -141,7 +141,7 @@ export const appRouter = router({
           totalProtein: z.number().optional(),
           totalCarbs: z.number().optional(),
           totalFat: z.number().optional(),
-          notes: z.string().optional(),
+          notes: z.string().nullable().optional(),
         })
       )
       .mutation(({ ctx, input }) =>
@@ -342,6 +342,8 @@ export const appRouter = router({
           carbs: z.number(),
           fiber: z.number(),
           fat: z.number(),
+          servingUnit: z.string().nullable().optional(),
+          servingGrams: z.number().nullable().optional(),
         })
       )
       .mutation(({ input }) => db.upsertNutritionFood(input as any)),

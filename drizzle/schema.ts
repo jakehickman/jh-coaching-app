@@ -257,6 +257,8 @@ export const nutritionFoods = mysqlTable("nutrition_foods", {
   carbs: float("carbs").notNull().default(0),         // g per 100g
   fiber: float("fiber").notNull().default(0),         // g per 100g
   fat: float("fat").notNull().default(0),             // g per 100g
+  servingUnit: varchar("servingUnit", { length: 64 }),  // e.g. "egg", "slice", "tbsp" — null means per 100g
+  servingGrams: float("servingGrams"),                  // grams per 1 serving unit
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -662,10 +662,13 @@ function TrainingSection() {
   );
 }
 // ─── Section: Meal Plans ──────────────────────────────────────────────────────
-// Helper: compute macros for a single item given food db and grams
-function calcItemMacros(foodDb: any[], foodName: string, grams: number) {
+// Helper: compute macros for a single item given food db and grams (or servings)
+// item.grams stores either grams (per-100g foods) or servings count (unit-based foods)
+function calcItemMacros(foodDb: any[], foodName: string, amount: number) {
   const food = foodDb.find(f => f.name === foodName);
-  if (!food || !grams) return { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 };
+  if (!food || !amount) return { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 };
+  // If food has a serving unit, amount = number of servings; convert to grams
+  const grams = food.servingUnit && food.servingGrams ? amount * food.servingGrams : amount;
   const factor = grams / 100;
   return {
     calories: Math.round(food.calories * factor),
@@ -674,6 +677,12 @@ function calcItemMacros(foodDb: any[], foodName: string, grams: number) {
     fiber: Math.round(food.fiber * factor * 10) / 10,
     fat: Math.round(food.fat * factor * 10) / 10,
   };
+}
+// Helper: get the effective grams for a food item (for display)
+function getItemGrams(foodDb: any[], foodName: string, amount: number): number | null {
+  const food = foodDb.find(f => f.name === foodName);
+  if (!food || !amount) return null;
+  return food.servingUnit && food.servingGrams ? Math.round(amount * food.servingGrams) : amount;
 }
 
 function MacroChip({ label, value, unit = "g", highlight = false }: { label: string; value: number; unit?: string; highlight?: boolean }) {
@@ -806,13 +815,17 @@ function MealPlansSection() {
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-1 px-1">
                     <p className="col-span-6 text-[10px] text-muted-foreground">Food</p>
-                    <p className="col-span-2 text-[10px] text-muted-foreground">Grams</p>
+                    <p className="col-span-2 text-[10px] text-muted-foreground">Amount</p>
                     <p className="col-span-3 text-[10px] text-muted-foreground">Macros</p>
                     <p className="col-span-1"></p>
                   </div>
                   {(meal.items ?? []).map((item: any, j: number) => {
-                    const m = calcItemMacros(foodDb, item.food, parseFloat(item.grams) || 0);
-                    const hasData = item.food && parseFloat(item.grams) > 0;
+                    const selectedFood = foodDb.find(f => f.name === item.food);
+                    const isServingBased = !!(selectedFood?.servingUnit && selectedFood?.servingGrams);
+                    const amount = parseFloat(item.grams) || 0;
+                    const m = calcItemMacros(foodDb, item.food, amount);
+                    const hasData = item.food && amount > 0;
+                    const effectiveGrams = isServingBased ? getItemGrams(foodDb, item.food, amount) : null;
                     return (
                       <div key={j} className="grid grid-cols-12 gap-1 items-center">
                         <div className="col-span-6">
@@ -822,13 +835,19 @@ function MealPlansSection() {
                             foodNames={foodNames}
                           />
                         </div>
-                        <input
-                          type="number" min="0" step="1"
-                          value={item.grams}
-                          onChange={e => updateItem(i, j, "grams", e.target.value)}
-                          placeholder="g"
-                          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                        />
+                        <div className="col-span-2 flex flex-col">
+                          <input
+                            type="number" min="0" step={isServingBased ? "0.5" : "1"}
+                            value={item.grams}
+                            onChange={e => updateItem(i, j, "grams", e.target.value)}
+                            placeholder={isServingBased ? "qty" : "g"}
+                            className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                          {isServingBased && (
+                            <span className="text-[9px] text-muted-foreground text-center mt-0.5">{selectedFood.servingUnit}{effectiveGrams ? ` (${effectiveGrams}g)` : ""}</span>
+                          )}
+                          {!isServingBased && <span className="text-[9px] text-muted-foreground text-center mt-0.5">g</span>}
+                        </div>
                         <div className="col-span-3 text-[10px] text-muted-foreground leading-tight">
                           {hasData ? (
                             <span className="text-foreground font-medium">{m.calories} kcal</span>
@@ -880,7 +899,7 @@ function MealPlansSection() {
               totalProtein: dailyTotals.protein ? Math.round(dailyTotals.protein) : undefined,
               totalCarbs: dailyTotals.carbs ? Math.round(dailyTotals.carbs) : undefined,
               totalFat: dailyTotals.fat ? Math.round(dailyTotals.fat) : undefined,
-              notes: planNotes || undefined,
+              notes: planNotes || null,
             })}
             disabled={upsert.isPending}
             className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
@@ -1243,8 +1262,10 @@ type FoodRow = {
   carbs: number;
   fiber: number;
   fat: number;
+  servingUnit?: string | null;
+  servingGrams?: number | null;
 };
-const EMPTY_FOOD: FoodRow = { name: "", calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 };
+const EMPTY_FOOD: FoodRow = { name: "", calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, servingUnit: null, servingGrams: null };
 const MACRO_FIELDS = [
   { key: "calories" as const, label: "Calories", unit: "kcal", step: 1 },
   { key: "protein" as const, label: "Protein", unit: "g", step: 0.1 },
@@ -1316,7 +1337,30 @@ function NutritionDataSection() {
               </div>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground">All values are per 100g of food</p>
+          {/* Serving size fields */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">Serving Unit <span className="normal-case font-normal">(e.g. egg, slice, tbsp)</span></label>
+              <input
+                type="text"
+                value={(editing as any).servingUnit ?? ""}
+                onChange={e => setEditing(prev => prev ? { ...prev, servingUnit: e.target.value || null } : prev)}
+                placeholder="Leave blank for per 100g only"
+                className="w-full bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">Grams per serving</label>
+              <input
+                type="number" step="0.1" min="0"
+                value={(editing as any).servingGrams ?? ""}
+                onChange={e => setEditing(prev => prev ? { ...prev, servingGrams: e.target.value ? parseFloat(e.target.value) : null } : prev)}
+                placeholder="e.g. 50"
+                className="w-full bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground">All macro values are per 100g. Serving unit is optional — used in meal plans for unit-based foods.</p>
           <div className="flex gap-2 justify-end">
             <button onClick={() => setEditing(null)} className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg">Cancel</button>
             <button onClick={saveEditing} disabled={upsert.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50">
@@ -1334,12 +1378,13 @@ function NutritionDataSection() {
               {MACRO_FIELDS.map(f => (
                 <th key={f.key} className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-right min-w-[80px]">{f.label}<br /><span className="text-[9px] normal-case font-normal">(per 100g)</span></th>
               ))}
+              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-left min-w-[100px]">Serving</th>
               <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[80px]">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-8 text-muted-foreground text-sm">No foods found</td></tr>
+              <tr><td colSpan={8} className="text-center py-8 text-muted-foreground text-sm">No foods found</td></tr>
             )}
             {filtered.map((food, i) => (
               <tr key={food.id} className={`border-b border-border/50 hover:bg-secondary/30 transition-colors ${i % 2 === 0 ? "" : "bg-secondary/10"}`}>
@@ -1349,6 +1394,9 @@ function NutritionDataSection() {
                 <td className="px-3 py-2.5 text-right text-foreground">{food.carbs}</td>
                 <td className="px-3 py-2.5 text-right text-foreground">{food.fiber}</td>
                 <td className="px-3 py-2.5 text-right text-foreground">{food.fat}</td>
+                <td className="px-3 py-2.5 text-left text-foreground text-xs">
+                  {(food as any).servingUnit ? <span className="text-muted-foreground">1 {(food as any).servingUnit} = {(food as any).servingGrams}g</span> : <span className="text-muted-foreground/40">—</span>}
+                </td>
                 <td className="px-3 py-2.5 text-center">
                   <div className="flex items-center justify-center gap-2">
                     <button onClick={() => startEdit(food as FoodRow)} className="text-muted-foreground hover:text-primary transition-colors"><Pencil size={13} /></button>

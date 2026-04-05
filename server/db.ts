@@ -232,15 +232,18 @@ export async function upsertMealPlan(data: {
   totalProtein?: number;
   totalCarbs?: number;
   totalFat?: number;
-  notes?: string;
+  notes?: string | null;
 }) {
   const db = await getDb();
   if (!db) return;
   const existing = await getMealPlan(data.userId, data.dayType);
   if (existing) {
+    // Explicitly include notes (even null) so clearing it persists
+    const updateData: any = { ...data, updatedAt: new Date() };
+    if ('notes' in data) updateData.notes = data.notes ?? null;
     await db
       .update(mealPlans)
-      .set({ ...data, updatedAt: new Date() } as any)
+      .set(updateData)
       .where(eq(mealPlans.id, existing.id));
   } else {
     await db.insert(mealPlans).values(data as any);
