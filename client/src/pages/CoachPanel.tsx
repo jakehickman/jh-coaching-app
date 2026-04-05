@@ -446,12 +446,18 @@ function useClientSelector() {
 // ─── Section: Clients ─────────────────────────────────────────────────────────
 function ClientsSection() {
   const { data: allUsers, refetch } = trpc.users.list.useQuery();
+  const utils = trpc.useUtils();
+  const setApproved = trpc.users.setApproved.useMutation({
+    onSuccess: () => {
+      utils.users.list.invalidate();
+      toast.success("Access updated");
+    },
+  });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const { data: profile } = trpc.profile.getById.useQuery(
     { userId: selectedId! },
     { enabled: !!selectedId }
   );
-  const utils = trpc.useUtils();
   const upsertProfile = trpc.profile.upsertForClient.useMutation({
     onSuccess: () => {
       toast.success("Profile updated");
@@ -505,6 +511,21 @@ function ClientsSection() {
               <span className={`text-xs px-2 py-0.5 rounded-full ${user.role === "admin" ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
                 {user.role}
               </span>
+              {user.role !== "admin" && (
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    setApproved.mutate({ userId: user.id, approved: !(user as any).approved });
+                  }}
+                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                    (user as any).approved
+                      ? "border-primary/40 text-primary bg-primary/10 hover:bg-primary/20"
+                      : "border-border text-muted-foreground bg-secondary hover:border-primary/40 hover:text-primary"
+                  }`}
+                >
+                  {(user as any).approved ? "Approved" : "Approve"}
+                </button>
+              )}
             </div>
           ))}
         </div>

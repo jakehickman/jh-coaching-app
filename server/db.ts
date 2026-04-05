@@ -67,6 +67,11 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.role = "admin";
       updateSet.role = "admin";
     }
+    // Auto-approve admins/owner
+    if (user.openId === ENV.ownerOpenId || user.role === "admin") {
+      values.approved = true;
+      updateSet.approved = true;
+    }
     if (!values.lastSignedIn) values.lastSignedIn = new Date();
     if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
     await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
@@ -96,6 +101,12 @@ export async function getAllUsers() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(users).orderBy(desc(users.createdAt));
+}
+
+export async function setUserApproved(userId: number, approved: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ approved }).where(eq(users.id, userId));
 }
 
 export async function getClientProfile(userId: number) {

@@ -64,6 +64,9 @@ export const appRouter = router({
   users: router({
     list: adminProcedure.query(() => db.getAllUsers()),
     clients: adminProcedure.query(({ ctx }) => db.getAllClients(ctx.user.id)),
+    setApproved: adminProcedure
+      .input(z.object({ userId: z.number(), approved: z.boolean() }))
+      .mutation(({ input }) => db.setUserApproved(input.userId, input.approved)),
   }),
 
   // Daily Logs
