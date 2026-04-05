@@ -46,3 +46,4 @@
 - [x] Add play button with embedded video modal to client Training Program tab
 - [x] Re-seed all 55 exercises into exercise_library with correct muscle group values
 - [x] Remove copy program feature from Training Programs editor
+- [x] Remove Jake H demo client account and all associated demo data
