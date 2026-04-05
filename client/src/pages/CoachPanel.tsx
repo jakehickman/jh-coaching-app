@@ -917,6 +917,8 @@ function ProgressSection() {
   const recentLogs = (logs ?? []).slice(0, 7);
   const trainedDays = recentLogs.filter(l => l.trainingCompleted).length;
   const adherence = recentLogs.length > 0 ? Math.round((trainedDays / recentLogs.length) * 100) : 0;
+  const onPlanDays = recentLogs.filter(l => !l.offPlanMeal).length;
+  const mealAdherence = recentLogs.length > 0 ? Math.round((onPlanDays / recentLogs.length) * 100) : 0;
   const weights = recentLogs.filter(l => l.weight).map(l => l.weight as number);
   const avgWeight = weights.length > 0 ? (weights.reduce((a, b) => a + b, 0) / weights.length).toFixed(1) : "—";
 
@@ -938,9 +940,10 @@ function ProgressSection() {
 
       {selectedUserId && (
         <>
-          <div className="grid grid-cols-3 gap-3">
-            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">7-Day Avg</p><p className="text-xl font-bold text-foreground mt-1">{avgWeight} kg</p></Card>
-            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Training</p><p className="text-xl font-bold text-foreground mt-1">{adherence}%</p></Card>
+          <div className="grid grid-cols-2 gap-3">
+            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">7-Day Avg Weight</p><p className="text-xl font-bold text-foreground mt-1">{avgWeight} kg</p></Card>
+            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Training Adherence</p><p className="text-xl font-bold text-foreground mt-1">{adherence}%</p><p className="text-[10px] text-muted-foreground">{trainedDays}/{recentLogs.length} days</p></Card>
+            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meal Adherence</p><p className={`text-xl font-bold mt-1 ${mealAdherence >= 80 ? "text-green-400" : mealAdherence >= 60 ? "text-amber-400" : "text-red-400"}`}>{mealAdherence}%</p><p className="text-[10px] text-muted-foreground">{onPlanDays}/{recentLogs.length} on-plan days</p></Card>
             <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Measurements</p><p className="text-xl font-bold text-foreground mt-1">{(measurements ?? []).length}</p></Card>
           </div>
 
@@ -1000,17 +1003,23 @@ function ProgressSection() {
               <Card>
                 <div className="space-y-2">
                   {(logs ?? []).slice(0, 7).map(log => (
-                    <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{String(log.logDate).slice(0, 10)}</p>
-                        <p className="text-xs text-muted-foreground">{log.trainingType ?? (log.trainingCompleted ? "Training" : "Rest")}</p>
+                    <div key={log.id} className="py-2 border-b border-border last:border-0">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{String(log.logDate).slice(0, 10)}</p>
+                          <p className="text-xs text-muted-foreground">{log.trainingType ?? (log.trainingCompleted ? "Training" : "Rest")}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {log.weight && <div className="text-right"><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
+                          {log.hungerLevel && <div className="text-right"><p className="text-[10px] text-muted-foreground">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
+                          {log.sleepQuality && <div className="text-right"><p className="text-[10px] text-muted-foreground">Sleep</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
+                          {log.offPlanMeal && <span className="text-[10px] font-medium bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Off Plan</span>}
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${log.trainingCompleted ? "bg-primary" : "bg-muted"}`} />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        {log.weight && <div className="text-right"><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
-                        {log.hungerLevel && <div className="text-right"><p className="text-xs text-muted-foreground">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
-                        {log.sleepQuality && <div className="text-right"><p className="text-xs text-muted-foreground">Sleep Q.</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
-                        <div className={`w-2 h-2 rounded-full ${log.trainingCompleted ? "bg-primary" : "bg-muted"}`} />
-                      </div>
+                      {log.notes && (
+                        <p className="text-xs text-muted-foreground mt-1 italic pl-1 border-l-2 border-border">{log.notes}</p>
+                      )}
                     </div>
                   ))}
                 </div>

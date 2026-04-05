@@ -63,3 +63,5 @@
 - [x] Session type dropdown in daily log populated from client's training program day names
 - [x] Fix: Training completed today checkbox stuck/unable to uncheck in Daily Log
 - [x] Add Off Plan Meal checkbox to Daily Log (DB column, router, form, coach view)
+- [x] Add weekly meal adherence % to Client Progress tab (based on off-plan meal data)
+- [x] Show client daily log notes in Coach Progress view
