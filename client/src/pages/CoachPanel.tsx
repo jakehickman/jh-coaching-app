@@ -302,25 +302,27 @@ function ClientsSection() {
         <div>
           <SectionLabel>Client Profile</SectionLabel>
           <Card className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-3">
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Start Date</label>
                 <DateInput value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} />
               </div>
-              {([
-                { key: "startWeight", label: "Start Weight (kg)", type: "number" },
-                { key: "goalWeight", label: "Goal Weight (kg)", type: "number" },
-              ] as const).map(({ key, label, type }) => (
-                <div key={key}>
-                  <label className="text-xs text-muted-foreground block mb-1">{label}</label>
-                  <input
-                    type={type}
-                    value={(form as any)[key]}
-                    onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-              ))}
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  { key: "startWeight", label: "Start Weight (kg)", type: "number" },
+                  { key: "goalWeight", label: "Goal Weight (kg)", type: "number" },
+                ] as const).map(({ key, label, type }) => (
+                  <div key={key}>
+                    <label className="text-xs text-muted-foreground block mb-1">{label}</label>
+                    <input
+                      type={type}
+                      value={(form as any)[key]}
+                      onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Notes</label>
