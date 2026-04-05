@@ -100,6 +100,147 @@ function MuscleGroupSection({ group, children, globalToggle }: { group: string; 
   );
 }
 
+// ─── Recent Logs Panel ──────────────────────────────────────────────────────
+type DailyLogRow = {
+  id: number;
+  logDate: unknown;
+  weight?: number | null;
+  sleepHours?: number | null;
+  caffeineServings?: number | null;
+  trainingCompleted?: boolean | number | null;
+  trainingType?: string | null;
+  stepsCount?: number | null;
+  sleepQuality?: number | null;
+  hungerLevel?: number | null;
+  offPlanMeal?: boolean | number | null;
+  notes?: string | null;
+};
+
+function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Build a map of yyyy-mm-dd -> log
+  const logMap: Record<string, DailyLogRow> = {};
+  for (const log of logs) {
+    const key = toLocalDateStr(log.logDate);
+    if (key) logMap[key] = log;
+  }
+
+  // Generate last 14 calendar days (today first)
+  const days: string[] = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+  }
+
+  function fmtDay(iso: string) {
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function dayLabel(iso: string) {
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-AU', { weekday: 'short' });
+  }
+
+  const isOffPlan = (v: unknown) => v === true || v === 1 || v === '1';
+  const isTrained = (v: unknown) => v === true || v === 1 || v === '1';
+
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {days.map((iso) => {
+        const log = logMap[iso] ?? null;
+        const isExpanded = expandedId === iso;
+        const hasData = !!log;
+        const trained = log ? isTrained(log.trainingCompleted) : false;
+        const sessionLabel = log?.trainingType && log.trainingType !== 'Off'
+          ? log.trainingType
+          : (trained ? 'Training' : 'Rest');
+
+        return (
+          <div key={iso} className="border-b border-border last:border-0">
+            {/* Summary row */}
+            <button
+              onClick={() => hasData && setExpandedId(isExpanded ? null : iso)}
+              className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
+                hasData ? 'hover:bg-muted/30 cursor-pointer' : 'cursor-default opacity-50'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-14 flex-shrink-0">
+                  <p className="text-xs font-semibold text-foreground">{fmtDay(iso)}</p>
+                  <p className="text-[10px] text-muted-foreground">{dayLabel(iso)}</p>
+                </div>
+                {hasData ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {log.weight != null && (
+                      <span className="text-xs font-medium text-foreground">{log.weight} kg</span>
+                    )}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                      trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                    }`}>{sessionLabel}</span>
+                    {isOffPlan(log.offPlanMeal) && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">Off Plan</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">No entry</span>
+                )}
+              </div>
+              {hasData && (
+                isExpanded
+                  ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              )}
+            </button>
+
+            {/* Expanded detail */}
+            {isExpanded && log && (
+              <div className="px-4 pb-4 bg-muted/20 border-t border-border">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 pt-3">
+                  {log.weight != null && (
+                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Weight</p><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>
+                  )}
+                  {log.stepsCount != null && (
+                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>
+                  )}
+                  {log.sleepHours != null && (
+                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Hours</p><p className="text-sm font-semibold text-foreground">{log.sleepHours} hrs</p></div>
+                  )}
+                  {log.sleepQuality != null && (
+                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>
+                  )}
+                  {log.hungerLevel != null && (
+                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>
+                  )}
+                  {log.caffeineServings != null && (
+                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Caffeine</p><p className="text-sm font-semibold text-foreground">{log.caffeineServings} srv</p></div>
+                  )}
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p>
+                    <p className="text-sm font-semibold text-foreground">{sessionLabel}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p>
+                    <p className="text-sm font-semibold text-foreground">{isOffPlan(log.offPlanMeal) ? 'Off Plan' : 'On Plan'}</p>
+                  </div>
+                </div>
+                {log.notes && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Notes</p>
+                    <p className="text-sm text-foreground italic">{log.notes}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Sortable Exercise Row ───────────────────────────────────────────────────
 function SortableExerciseRow({
   id, ex, dayIdx, exIdx, updateExercise, removeExercise, exerciseNames
@@ -1399,30 +1540,7 @@ function ProgressSection() {
           {(logs ?? []).length > 0 && (
             <div>
               <SectionLabel>Recent Daily Logs</SectionLabel>
-              <Card>
-                <div className="space-y-2">
-                  {(logs ?? []).slice(0, 7).map(log => (
-                    <div key={log.id} className="py-2 border-b border-border last:border-0">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{String(log.logDate).slice(0, 10)}</p>
-                          <p className="text-xs text-muted-foreground">{log.trainingType && log.trainingType !== 'Off' ? log.trainingType : (log.trainingCompleted ? "Training" : "Rest")}</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {log.weight && <div className="text-right"><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
-                          {log.hungerLevel && <div className="text-right"><p className="text-[10px] text-muted-foreground">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
-                          {log.sleepQuality && <div className="text-right"><p className="text-[10px] text-muted-foreground">Sleep</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
-                          {log.offPlanMeal && <span className="text-[10px] font-medium bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Off Plan</span>}
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${log.trainingCompleted ? "bg-primary" : "bg-muted"}`} />
-                        </div>
-                      </div>
-                      {log.notes && (
-                        <p className="text-xs text-muted-foreground mt-1 italic pl-1 border-l-2 border-border">{log.notes}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </Card>
+              <RecentLogsPanel logs={(logs ?? []).slice(0, 14)} />
             </div>
           )}
         </>

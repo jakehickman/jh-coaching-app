@@ -81,6 +81,113 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-card border border-border rounded-xl p-4 ${className}`}>{children}</div>;
 }
+
+type DailyLogRow = {
+  id: number;
+  logDate: unknown;
+  weight?: number | null;
+  sleepHours?: number | null;
+  caffeineServings?: number | null;
+  trainingCompleted?: boolean | number | null;
+  trainingType?: string | null;
+  stepsCount?: number | null;
+  sleepQuality?: number | null;
+  hungerLevel?: number | null;
+  offPlanMeal?: boolean | number | null;
+  notes?: string | null;
+};
+
+function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const logMap: Record<string, DailyLogRow> = {};
+  for (const log of logs) {
+    const key = toLocalDateStr(log.logDate);
+    if (key) logMap[key] = log;
+  }
+
+  const days: string[] = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+  }
+
+  function fmtDay(iso: string) {
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  function dayLabel(iso: string) {
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-AU', { weekday: 'short' });
+  }
+  const isOffPlan = (v: unknown) => v === true || v === 1 || v === '1';
+  const isTrained = (v: unknown) => v === true || v === 1 || v === '1';
+
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {days.map((iso) => {
+        const log = logMap[iso] ?? null;
+        const isExpanded = expandedId === iso;
+        const hasData = !!log;
+        const trained = log ? isTrained(log.trainingCompleted) : false;
+        const sessionLabel = log?.trainingType && log.trainingType !== 'Off'
+          ? log.trainingType
+          : (trained ? 'Training' : 'Rest');
+        return (
+          <div key={iso} className="border-b border-border last:border-0">
+            <button
+              onClick={() => hasData && setExpandedId(isExpanded ? null : iso)}
+              className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
+                hasData ? 'hover:bg-muted/30 cursor-pointer' : 'cursor-default opacity-50'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-14 flex-shrink-0">
+                  <p className="text-xs font-semibold text-foreground">{fmtDay(iso)}</p>
+                  <p className="text-[10px] text-muted-foreground">{dayLabel(iso)}</p>
+                </div>
+                {hasData ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {log.weight != null && <span className="text-xs font-medium text-foreground">{log.weight} kg</span>}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                      trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                    }`}>{sessionLabel}</span>
+                    {isOffPlan(log.offPlanMeal) && <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">Off Plan</span>}
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">No entry</span>
+                )}
+              </div>
+              {hasData && (isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />)}
+            </button>
+            {isExpanded && log && (
+              <div className="px-4 pb-4 bg-muted/20 border-t border-border">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 pt-3">
+                  {log.weight != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Weight</p><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
+                  {log.stepsCount != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>}
+                  {log.sleepHours != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Hours</p><p className="text-sm font-semibold text-foreground">{log.sleepHours} hrs</p></div>}
+                  {log.sleepQuality != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
+                  {log.hungerLevel != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
+                  {log.caffeineServings != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Caffeine</p><p className="text-sm font-semibold text-foreground">{log.caffeineServings} srv</p></div>}
+                  <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p><p className="text-sm font-semibold text-foreground">{sessionLabel}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p><p className="text-sm font-semibold text-foreground">{isOffPlan(log.offPlanMeal) ? 'Off Plan' : 'On Plan'}</p></div>
+                </div>
+                {log.notes && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Notes</p>
+                    <p className="text-sm text-foreground italic">{log.notes}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function MetricCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <Card>
@@ -363,27 +470,10 @@ function OverviewTab() {
         );
       })()}
 
-      {recentLogs.length > 0 && (
-        <div>
-          <SectionLabel>Recent Logs</SectionLabel>
-          <Card>
-            <div className="space-y-2">
-              {recentLogs.map(log => (
-                <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{fmtDate(log.logDate)}</p>
-                    <p className="text-xs text-muted-foreground">{log.trainingType && log.trainingType !== 'Off' ? log.trainingType : (log.trainingCompleted ? "Training" : "Rest")}</p>
-                  </div>
-                  <div className="flex items-center gap-4 text-right">
-                    {log.weight && <div><p className="text-sm font-semibold text-foreground">{log.weight} kg</p><p className="text-[10px] text-muted-foreground">weight</p></div>}
-                    <div className={`w-2 h-2 rounded-full ${log.trainingCompleted ? "bg-primary" : "bg-muted"}`} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
+      <div>
+        <SectionLabel>Recent Logs</SectionLabel>
+        <RecentLogsPanel logs={allLogs} />
+      </div>
     </div>
   );
 }
@@ -571,33 +661,10 @@ function DailyLogTab() {
         {upsert.isPending ? "Saving..." : "Save Log"}
       </button>
 
-      {(logs ?? []).length > 0 && (
-        <div>
-          <SectionLabel>Recent Logs</SectionLabel>
-          <div className="space-y-2">
-            {(logs ?? []).slice(0, 14).map(log => (
-              <div key={log.id} className="flex items-center justify-between bg-secondary rounded-lg px-3 py-3">
-                <div>
-                  <p className="text-base font-medium text-foreground">{fmtDate(String(log.logDate))}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {log.trainingType && log.trainingType !== 'Off' ? log.trainingType : (log.trainingCompleted ? "Training" : "Rest")}
-                    {log.weight ? ` · ${log.weight}kg` : ""}
-                    {log.offPlanMeal ? " · Off plan" : ""}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    if (confirm("Delete this log entry?")) del.mutate({ id: log.id });
-                  }}
-                  className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div>
+        <SectionLabel>Recent Logs</SectionLabel>
+        <RecentLogsPanel logs={logs ?? []} />
+      </div>
     </div>
   );
 }
