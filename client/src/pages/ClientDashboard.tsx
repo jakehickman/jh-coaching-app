@@ -116,21 +116,16 @@ function OverviewTab() {
   const { data: logs } = trpc.dailyLog.list.useQuery({ limit: 30 });
   const { data: checkIns } = trpc.checkIn.list.useQuery();
   const { data: profile } = trpc.profile.get.useQuery();
+  const { data: program } = trpc.training.get.useQuery();
 
-   const weightData = (logs ?? [])
+  const weightData = (logs ?? [])
     .filter(l => l.weight)
     .slice(0, 14)
     .reverse()
     .map(l => {
-      const raw = String(l.logDate);
-      // Handle both ISO datetime strings and plain date strings
-      const dateStr = raw.includes('T') ? raw.slice(0, 10) : raw.slice(0, 10);
-      return { date: dateStr.slice(5), weight: l.weight };
+      const iso = toLocalDateStr(l.logDate);
+      return { date: iso.slice(5), weight: l.weight };
     });
-
-  const recentLogs = (logs ?? []).slice(0, 7);
-  const trainedDays = recentLogs.filter(l => l.trainingCompleted).length;
-  const adherence = recentLogs.length > 0 ? Math.round((trainedDays / recentLogs.length) * 100) : 0;
 
   // 7-day avg weight using true calendar days (string comparison avoids timezone shifts)
   const allLogs = logs ?? [];
@@ -173,14 +168,31 @@ function OverviewTab() {
 
   const latestLog = logs?.[0];
 
+  // Training adherence — calendar days vs prescribed training days
+  const schedule: string[] = Array.isArray((program as any)?.schedule) ? (program as any).schedule : [];
+  const prescribedDays = schedule.length > 0
+    ? schedule.filter((s: string) => s !== 'Off').length
+    : 7;
+  const trainedThisWeek = allLogs.filter(l => {
+    const d = toLocalDateStr(l.logDate);
+    return d >= day6ago && d <= today && l.trainingCompleted;
+  }).length;
+  const adherence = prescribedDays > 0 ? Math.min(100, Math.round((trainedThisWeek / prescribedDays) * 100)) : 0;
+  const adherenceSub = schedule.length > 0
+    ? `${trainedThisWeek}/${prescribedDays} prescribed days`
+    : `${trainedThisWeek} sessions this week`;
+
+  // Recent logs for display (last 7 entries)
+  const recentLogs = allLogs.slice(0, 7);
+
   return (
     <div className="space-y-6">
       <div>
         <SectionLabel>Weekly Summary</SectionLabel>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? "+" : ""}${weightChangePct}% vs prev 7 days` : undefined} />
-          <MetricCard label="Training Adherence" value={`${adherence}%`} sub={`${trainedDays}/${recentLogs.length} sessions`} />
-          <MetricCard label="Latest Weight" value={latestLog?.weight ? `${latestLog.weight} kg` : "—"} sub={latestLog?.logDate ? String(latestLog.logDate).slice(0, 10) : undefined} />
+          <MetricCard label="Training Adherence" value={`${adherence}%`} sub={adherenceSub} />
+          <MetricCard label="Latest Weight" value={latestLog?.weight ? `${latestLog.weight} kg` : "—"} sub={latestLog?.logDate ? fmtDate(latestLog.logDate) : undefined} />
           <MetricCard label="Goal Weight" value={profile?.goalWeight ? `${profile.goalWeight} kg` : "—"} sub={profile?.startWeight ? `Started: ${profile.startWeight} kg` : undefined} />
         </div>
       </div>
@@ -192,7 +204,12 @@ function OverviewTab() {
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={weightData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                <XAxis dataKey="date" tick={{ fill: "#666", fontSize: 11 }} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: "#666", fontSize: 10 }}
+                  interval="preserveStartEnd"
+                  tickLine={false}
+                />
                 <YAxis domain={["auto", "auto"]} tick={{ fill: "#666", fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }}
@@ -561,7 +578,12 @@ function MeasurementsTab() {
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={waistData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                <XAxis dataKey="date" tick={{ fill: "#666", fontSize: 11 }} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: "#666", fontSize: 10 }}
+                  interval="preserveStartEnd"
+                  tickLine={false}
+                />
                 <YAxis domain={["auto", "auto"]} tick={{ fill: "#666", fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }} labelStyle={{ color: "#fff" }} itemStyle={{ color: "#22c55e" }} />
                 <Line type="monotone" dataKey="waist" stroke="#22c55e" strokeWidth={2} dot={false} name="Waist (cm)" />
