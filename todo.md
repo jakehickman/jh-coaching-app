@@ -29,3 +29,4 @@
 - [x] Expandable exercise notes field per exercise
 - [x] Copy program between clients dropdown
 - [x] Remove Rest column from Training Programs editor
+- [x] Remove Focus field from training day cards in Training Programs editor

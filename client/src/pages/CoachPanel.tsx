@@ -257,9 +257,6 @@ function SortableDayCard({
           </div>
           <input type="text" value={day.name} onChange={e => updateDay(dayIdx, "name", e.target.value)}
             className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-medium" />
-          <input type="text" value={day.focus} onChange={e => updateDay(dayIdx, "focus", e.target.value)}
-            placeholder="Focus (e.g. Upper Body)"
-            className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
           <button onClick={() => removeDay(dayIdx)} className="text-destructive hover:opacity-80 flex-shrink-0">
             <Trash2 size={15} />
           </button>
