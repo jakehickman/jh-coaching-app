@@ -133,7 +133,7 @@ function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
         const trained = log ? isTrained(log.trainingCompleted) : false;
         const sessionLabel = log?.trainingType && log.trainingType !== 'Off'
           ? log.trainingType
-          : (trained ? 'Training' : 'Rest');
+          : (trained ? 'Training' : 'Off');
         return (
           <div key={iso} className="border-b border-border last:border-0">
             <button
