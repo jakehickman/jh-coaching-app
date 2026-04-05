@@ -55,21 +55,6 @@ export default function Home() {
         </a>
       </p>
 
-      {/* Features */}
-      <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl w-full">
-        {[
-          { label: "Daily Log", desc: "Weight, sleep & training" },
-          { label: "Meal Plan", desc: "Training & rest day meals" },
-          { label: "Training", desc: "Your program & MESO" },
-          { label: "Progress", desc: "Charts & measurements" },
-        ].map((f) => (
-          <div key={f.label} className="bg-card border border-border rounded-xl p-4 text-center">
-            <div className="w-2 h-2 rounded-full bg-primary mx-auto mb-2" />
-            <p className="text-sm font-semibold text-foreground">{f.label}</p>
-            <p className="text-xs text-muted-foreground mt-1">{f.desc}</p>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
