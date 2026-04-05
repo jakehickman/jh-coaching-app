@@ -107,19 +107,11 @@ export const appRouter = router({
       .input(
         z.object({
           measureDate: z.string(),
-          weight: z.number().optional(),
-          chest: z.number().optional(),
           waist: z.number().optional(),
-          hips: z.number().optional(),
-          leftArm: z.number().optional(),
-          rightArm: z.number().optional(),
-          leftThigh: z.number().optional(),
-          rightThigh: z.number().optional(),
-          leftCalf: z.number().optional(),
-          rightCalf: z.number().optional(),
-          neck: z.number().optional(),
-          shoulders: z.number().optional(),
-          bodyFatPercent: z.number().optional(),
+          umbilical1: z.number().optional(), umbilical2: z.number().optional(), umbilical3: z.number().optional(), umbilical4: z.number().optional(), umbilical5: z.number().optional(),
+          suprailiac1: z.number().optional(), suprailiac2: z.number().optional(), suprailiac3: z.number().optional(), suprailiac4: z.number().optional(), suprailiac5: z.number().optional(),
+          calf1: z.number().optional(), calf2: z.number().optional(), calf3: z.number().optional(), calf4: z.number().optional(), calf5: z.number().optional(),
+          thigh1: z.number().optional(), thigh2: z.number().optional(), thigh3: z.number().optional(), thigh4: z.number().optional(), thigh5: z.number().optional(),
           notes: z.string().optional(),
         })
       )

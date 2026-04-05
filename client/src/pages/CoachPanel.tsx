@@ -964,38 +964,59 @@ function ProgressSection() {
             </div>
           )}
 
-          {(measurements ?? []).length > 0 && (
-            <div>
-              <SectionLabel>Latest Measurements</SectionLabel>
-              <Card>
-                {(() => {
-                  const m = measurements![0];
-                  return (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-3">{String(m.measureDate).slice(0, 10)}</p>
-                      <div className="grid grid-cols-3 gap-3">
-                        {[
-                          { label: "Weight", value: m.weight, unit: "kg" },
-                          { label: "Waist", value: m.waist, unit: "cm" },
-                          { label: "Chest", value: m.chest, unit: "cm" },
-                          { label: "Hips", value: m.hips, unit: "cm" },
-                          { label: "L Arm", value: m.leftArm, unit: "cm" },
-                          { label: "R Arm", value: m.rightArm, unit: "cm" },
-                          { label: "L Thigh", value: m.leftThigh, unit: "cm" },
-                          { label: "Body Fat", value: m.bodyFatPercent, unit: "%" },
-                        ].filter(x => x.value).map(({ label, value, unit }) => (
-                          <div key={label}>
-                            <p className="text-[10px] text-muted-foreground">{label}</p>
-                            <p className="text-sm font-semibold text-foreground">{value}{unit}</p>
-                          </div>
-                        ))}
-                      </div>
+          {(measurements ?? []).length > 0 && (() => {
+            const m = measurements![0];
+            const avg = (vals: (number | null)[]) => {
+              const nums = vals.filter((v): v is number => v !== null && v !== undefined);
+              return nums.length > 0 ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
+            };
+            const umbAvg = avg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]);
+            const supAvg = avg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]);
+            const calfAvg = avg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]);
+            const thighAvg = avg([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]);
+            const siteAvgs = [umbAvg, supAvg, calfAvg, thighAvg];
+            const total = siteAvgs.every(v => v !== null) ? parseFloat(siteAvgs.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
+            return (
+              <>
+                <div>
+                  <SectionLabel>Waist Circumference</SectionLabel>
+                  <Card>
+                    <p className="text-xs text-muted-foreground mb-1">{String(m.measureDate).slice(0, 10)}</p>
+                    {m.waist ? (
+                      <p className="text-2xl font-bold text-foreground">{m.waist} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Not recorded</p>
+                    )}
+                  </Card>
+                </div>
+                <div>
+                  <SectionLabel>Skinfold Thickness</SectionLabel>
+                  <Card className="space-y-3">
+                    <p className="text-xs text-muted-foreground">{String(m.measureDate).slice(0, 10)} — averages of 5 readings</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { label: "Umbilical", avg: umbAvg },
+                        { label: "Suprailiac", avg: supAvg },
+                        { label: "Calf", avg: calfAvg },
+                        { label: "Thigh", avg: thighAvg },
+                      ].map(({ label, avg }) => (
+                        <div key={label} className="bg-secondary rounded-lg p-3">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+                          <p className="text-lg font-bold text-foreground mt-0.5">{avg !== null ? <>{avg} <span className="text-xs font-normal text-muted-foreground">mm</span></> : "—"}</p>
+                        </div>
+                      ))}
                     </div>
-                  );
-                })()}
-              </Card>
-            </div>
-          )}
+                    {total !== null && (
+                      <div className="border-t border-border pt-3 flex items-center justify-between">
+                        <p className="text-sm font-medium text-foreground">Total (sum of averages)</p>
+                        <p className="text-lg font-bold text-primary">{total} mm</p>
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              </>
+            );
+          })()}
 
           {(logs ?? []).length > 0 && (
             <div>

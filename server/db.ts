@@ -193,19 +193,11 @@ export async function getMeasurements(userId: number) {
 export async function addMeasurement(data: {
   userId: number;
   measureDate: string;
-  weight?: number;
-  chest?: number;
   waist?: number;
-  hips?: number;
-  leftArm?: number;
-  rightArm?: number;
-  leftThigh?: number;
-  rightThigh?: number;
-  leftCalf?: number;
-  rightCalf?: number;
-  neck?: number;
-  shoulders?: number;
-  bodyFatPercent?: number;
+  umbilical1?: number; umbilical2?: number; umbilical3?: number; umbilical4?: number; umbilical5?: number;
+  suprailiac1?: number; suprailiac2?: number; suprailiac3?: number; suprailiac4?: number; suprailiac5?: number;
+  calf1?: number; calf2?: number; calf3?: number; calf4?: number; calf5?: number;
+  thigh1?: number; thigh2?: number; thigh3?: number; thigh4?: number; thigh5?: number;
   notes?: string;
 }) {
   const db = await getDb();

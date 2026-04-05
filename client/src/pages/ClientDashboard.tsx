@@ -328,41 +328,49 @@ function DailyLogTab() {
 }
 
 // ─── Tab: Measurements ────────────────────────────────────────────────────────
+const SKINFOLD_SITES = [
+  { key: "umbilical", label: "Umbilical" },
+  { key: "suprailiac", label: "Suprailiac" },
+  { key: "calf", label: "Calf" },
+  { key: "thigh", label: "Thigh" },
+] as const;
+
+function avgReadings(vals: (number | null | undefined)[]): number | null {
+  const nums = vals.filter((v): v is number => v !== null && v !== undefined);
+  return nums.length > 0 ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
+}
+
 function MeasurementsTab() {
   const { data: measurements, refetch } = trpc.measurements.list.useQuery();
   const [showForm, setShowForm] = useState(false);
+  const emptySkinfold = { r1: "", r2: "", r3: "", r4: "", r5: "" };
   const [form, setForm] = useState({
     measureDate: new Date().toISOString().slice(0, 10),
-    weight: "", chest: "", waist: "", hips: "", leftArm: "", rightArm: "",
-    leftThigh: "", rightThigh: "", leftCalf: "", rightCalf: "", neck: "", shoulders: "", bodyFatPercent: "", notes: ""
+    waist: "",
+    umbilical: { ...emptySkinfold },
+    suprailiac: { ...emptySkinfold },
+    calf: { ...emptySkinfold },
+    thigh: { ...emptySkinfold },
+    notes: "",
   });
   const add = trpc.measurements.add.useMutation({
     onSuccess: () => { toast.success("Measurements saved"); setShowForm(false); refetch(); }
   });
 
-  const f = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm(prev => ({ ...prev, [field]: e.target.value }));
+  const setReading = (site: string, r: string, val: string) =>
+    setForm(p => ({ ...p, [site]: { ...(p as any)[site], [r]: val } }));
 
-  const fields = [
-    { key: "weight", label: "Weight (kg)" }, { key: "chest", label: "Chest (cm)" },
-    { key: "waist", label: "Waist (cm)" }, { key: "hips", label: "Hips (cm)" },
-    { key: "leftArm", label: "Left Arm (cm)" }, { key: "rightArm", label: "Right Arm (cm)" },
-    { key: "leftThigh", label: "Left Thigh (cm)" }, { key: "rightThigh", label: "Right Thigh (cm)" },
-    { key: "leftCalf", label: "Left Calf (cm)" }, { key: "rightCalf", label: "Right Calf (cm)" },
-    { key: "neck", label: "Neck (cm)" }, { key: "shoulders", label: "Shoulders (cm)" },
-    { key: "bodyFatPercent", label: "Body Fat %" },
-  ];
+  const parseR = (v: string) => v ? parseFloat(v) : undefined;
 
-  const waistData = (measurements ?? []).slice(0, 8).reverse().map(m => {
-    const raw = String(m.measureDate);
-    const dateStr = raw.includes('T') ? raw.slice(0, 10) : raw.slice(0, 10);
-    return { date: dateStr.slice(5), waist: m.waist, weight: m.weight };
-  });
+  const waistData = (measurements ?? []).slice(0, 8).reverse().map(m => ({
+    date: String(m.measureDate).slice(5, 10),
+    waist: m.waist,
+  }));
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <SectionLabel>Body Measurements</SectionLabel>
+        <SectionLabel>Measurements</SectionLabel>
         <button onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors">
           <Plus size={14} /> Add Session
@@ -370,31 +378,55 @@ function MeasurementsTab() {
       </div>
 
       {showForm && (
-        <Card className="space-y-4">
+        <Card className="space-y-5">
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Date</label>
             <input type="date" value={form.measureDate} onChange={e => setForm(p => ({ ...p, measureDate: e.target.value }))}
               className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {fields.map(({ key, label }) => (
+
+          {/* Waist */}
+          <div>
+            <p className="text-xs font-semibold text-foreground mb-2">Waist Circumference (cm)</p>
+            <input type="number" step="0.1" value={form.waist} onChange={e => setForm(p => ({ ...p, waist: e.target.value }))} placeholder="e.g. 82.5"
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+          </div>
+
+          {/* Skinfold sites */}
+          <div className="space-y-4">
+            <p className="text-xs font-semibold text-foreground">Skinfold Thickness — enter 5 readings per site (mm)</p>
+            {SKINFOLD_SITES.map(({ key, label }) => (
               <div key={key}>
-                <label className="text-xs text-muted-foreground block mb-1">{label}</label>
-                <input type="number" step="0.1" value={(form as any)[key]} onChange={f(key)} placeholder="—"
-                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                <p className="text-xs text-muted-foreground mb-2">{label}</p>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {(["r1","r2","r3","r4","r5"] as const).map((r, i) => (
+                    <div key={r}>
+                      <label className="text-[10px] text-muted-foreground block mb-1 text-center">{i+1}</label>
+                      <input type="number" step="0.1" value={(form as any)[key][r]}
+                        onChange={e => setReading(key, r, e.target.value)} placeholder="—"
+                        className="w-full bg-secondary border border-border rounded-lg px-1.5 py-2 text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
+
           <div>
-            <label className="text-xs text-muted-foreground block mb-1">Notes</label>
+            <label className="text-xs text-muted-foreground block mb-1">Notes (optional)</label>
             <input type="text" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional"
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
+
           <button onClick={() => add.mutate({
             measureDate: form.measureDate,
-            ...Object.fromEntries(fields.map(({ key }) => [key, (form as any)[key] ? parseFloat((form as any)[key]) : undefined])),
+            waist: parseR(form.waist),
+            umbilical1: parseR(form.umbilical.r1), umbilical2: parseR(form.umbilical.r2), umbilical3: parseR(form.umbilical.r3), umbilical4: parseR(form.umbilical.r4), umbilical5: parseR(form.umbilical.r5),
+            suprailiac1: parseR(form.suprailiac.r1), suprailiac2: parseR(form.suprailiac.r2), suprailiac3: parseR(form.suprailiac.r3), suprailiac4: parseR(form.suprailiac.r4), suprailiac5: parseR(form.suprailiac.r5),
+            calf1: parseR(form.calf.r1), calf2: parseR(form.calf.r2), calf3: parseR(form.calf.r3), calf4: parseR(form.calf.r4), calf5: parseR(form.calf.r5),
+            thigh1: parseR(form.thigh.r1), thigh2: parseR(form.thigh.r2), thigh3: parseR(form.thigh.r3), thigh4: parseR(form.thigh.r4), thigh5: parseR(form.thigh.r5),
             notes: form.notes || undefined,
-          } as any)} disabled={add.isPending}
+          })} disabled={add.isPending}
             className="w-full py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
             {add.isPending ? "Saving..." : "Save Measurements"}
           </button>
@@ -422,29 +454,51 @@ function MeasurementsTab() {
         <div>
           <SectionLabel>History</SectionLabel>
           <div className="space-y-3">
-            {measurements!.map(m => (
-              <Card key={m.id}>
-                <p className="text-sm font-semibold text-foreground mb-2">{fmtDate(m.measureDate)}</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: "Weight", value: m.weight, unit: "kg" },
-                    { label: "Waist", value: m.waist, unit: "cm" },
-                    { label: "Chest", value: m.chest, unit: "cm" },
-                    { label: "Hips", value: m.hips, unit: "cm" },
-                    { label: "L Arm", value: m.leftArm, unit: "cm" },
-                    { label: "R Arm", value: m.rightArm, unit: "cm" },
-                    { label: "L Thigh", value: m.leftThigh, unit: "cm" },
-                    { label: "R Thigh", value: m.rightThigh, unit: "cm" },
-                    { label: "Body Fat", value: m.bodyFatPercent, unit: "%" },
-                  ].filter(x => x.value).map(({ label, value, unit }) => (
-                    <div key={label}>
-                      <p className="text-[10px] text-muted-foreground">{label}</p>
-                      <p className="text-sm font-medium text-foreground">{value}{unit}</p>
+            {measurements!.map(m => {
+              const umbAvg = avgReadings([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]);
+              const supAvg = avgReadings([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]);
+              const calfAvg = avgReadings([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]);
+              const thighAvg = avgReadings([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]);
+              const siteAvgs = [umbAvg, supAvg, calfAvg, thighAvg];
+              const total = siteAvgs.every(v => v !== null) ? parseFloat(siteAvgs.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
+              return (
+                <Card key={m.id}>
+                  <p className="text-sm font-semibold text-foreground mb-3">{fmtDate(m.measureDate)}</p>
+                  {/* Waist */}
+                  {m.waist && (
+                    <div className="mb-3">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Waist</p>
+                      <p className="text-base font-bold text-foreground">{m.waist} <span className="text-xs font-normal text-muted-foreground">cm</span></p>
                     </div>
-                  ))}
-                </div>
-              </Card>
-            ))}
+                  )}
+                  {/* Skinfold averages */}
+                  {siteAvgs.some(v => v !== null) && (
+                    <>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Skinfold (avg mm)</p>
+                      <div className="grid grid-cols-4 gap-2 mb-2">
+                        {[
+                          { label: "Umbilical", avg: umbAvg },
+                          { label: "Suprailiac", avg: supAvg },
+                          { label: "Calf", avg: calfAvg },
+                          { label: "Thigh", avg: thighAvg },
+                        ].map(({ label, avg }) => (
+                          <div key={label} className="text-center">
+                            <p className="text-[9px] text-muted-foreground">{label}</p>
+                            <p className="text-sm font-semibold text-foreground">{avg ?? "—"}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {total !== null && (
+                        <div className="border-t border-border pt-2 flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground">Total</p>
+                          <p className="text-sm font-bold text-primary">{total} mm</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}

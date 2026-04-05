@@ -65,3 +65,4 @@
 - [x] Add Off Plan Meal checkbox to Daily Log (DB column, router, form, coach view)
 - [x] Add weekly meal adherence % to Client Progress tab (based on off-plan meal data)
 - [x] Show client daily log notes in Coach Progress view
+- [x] Redesign measurements: waist only + 4 skinfold sites (5 readings each, averaged in coach view)
