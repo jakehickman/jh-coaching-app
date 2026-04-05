@@ -197,12 +197,16 @@ function ClientsSection() {
     { userId: selectedId! },
     { enabled: !!selectedId }
   );
+  const utils = trpc.useUtils();
   const upsertProfile = trpc.profile.upsertForClient.useMutation({
-    onSuccess: () => { toast.success("Profile updated"); }
+    onSuccess: () => {
+      toast.success("Profile updated");
+      utils.profile.getById.invalidate({ userId: selectedId! });
+    }
   });
 
   const [form, setForm] = useState({
-    displayName: "", startDate: "", goalWeight: "", startWeight: "", showDate: "", notes: ""
+    displayName: "", startDate: "", goalWeight: "", startWeight: "", notes: ""
   });
 
   useEffect(() => {
@@ -212,11 +216,10 @@ function ClientsSection() {
         startDate: profile.startDate ? String(profile.startDate).slice(0, 10) : "",
         goalWeight: profile.goalWeight?.toString() ?? "",
         startWeight: profile.startWeight?.toString() ?? "",
-        showDate: profile.showDate ? String(profile.showDate).slice(0, 10) : "",
         notes: profile.notes ?? "",
       });
     } else {
-      setForm({ displayName: "", startDate: "", goalWeight: "", startWeight: "", showDate: "", notes: "" });
+      setForm({ displayName: "", startDate: "", goalWeight: "", startWeight: "", notes: "" });
     }
   }, [profile, selectedId]);
 
@@ -264,7 +267,6 @@ function ClientsSection() {
                 { key: "startDate", label: "Start Date", type: "date" },
                 { key: "startWeight", label: "Start Weight (kg)", type: "number" },
                 { key: "goalWeight", label: "Goal Weight (kg)", type: "number" },
-                { key: "showDate", label: "Show Date", type: "date" },
               ].map(({ key, label, type }) => (
                 <div key={key}>
                   <label className="text-xs text-muted-foreground block mb-1">{label}</label>
@@ -293,7 +295,6 @@ function ClientsSection() {
                 startDate: form.startDate || undefined,
                 goalWeight: form.goalWeight ? parseFloat(form.goalWeight) : undefined,
                 startWeight: form.startWeight ? parseFloat(form.startWeight) : undefined,
-                showDate: form.showDate || undefined,
                 notes: form.notes || undefined,
               })}
               disabled={upsertProfile.isPending}
