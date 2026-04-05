@@ -300,7 +300,7 @@ function OverviewTab() {
               <Card>
                 <div className="flex items-end justify-between">
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">{fmtDate(latest.measureDate)}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Latest · {fmtDate(latest.measureDate)}</p>
                     {latest.waist != null ? (
                       <p className="text-2xl font-bold text-foreground">{latest.waist} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
                     ) : (
@@ -312,23 +312,29 @@ function OverviewTab() {
                       <p className={`text-sm font-semibold ${waistDiff < 0 ? "text-green-400" : waistDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
                         {waistDiff > 0 ? "+" : ""}{waistDiff} cm
                       </p>
-                      <p className="text-[10px] text-muted-foreground">vs {fmtDate(prev.measureDate)}</p>
+                      <p className="text-xs text-muted-foreground">vs {fmtDate(prev.measureDate)}</p>
                     </div>
                   )}
                 </div>
+                {prev && waistDiff == null && (
+                  <p className="text-xs text-muted-foreground mt-2">Prev · {fmtDate(prev.measureDate)}: {prev.waist ?? "—"} cm</p>
+                )}
               </Card>
             </div>
             <div>
               <SectionLabel>Skinfold Thickness</SectionLabel>
               <Card className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">{fmtDate(latest.measureDate)} — avg of 5 readings per site</p>
+                  <div>
+                    <p className="text-xs font-medium text-foreground">Latest · {fmtDate(latest.measureDate)}</p>
+                    <p className="text-[11px] text-muted-foreground">avg of 5 readings per site</p>
+                  </div>
                   {totalDiff != null && prev && (
                     <div className="text-right">
                       <p className={`text-sm font-semibold ${totalDiff < 0 ? "text-green-400" : totalDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
                         {totalDiff > 0 ? "+" : ""}{totalDiff} mm
                       </p>
-                      <p className="text-[10px] text-muted-foreground">vs {fmtDate(prev.measureDate)}</p>
+                      <p className="text-xs text-muted-foreground">vs {fmtDate(prev.measureDate)}</p>
                     </div>
                   )}
                 </div>
@@ -347,7 +353,7 @@ function OverviewTab() {
                     <p className="text-sm font-medium text-foreground">Total ({sitesWithData.length} sites)</p>
                     <div className="text-right">
                       <p className="text-lg font-bold text-primary">{latestTotal} mm</p>
-                      {prevTotal != null && prev && <p className="text-xs text-muted-foreground">Prev ({fmtDate(prev.measureDate)}): {prevTotal} mm</p>}
+                      {prevTotal != null && prev && <p className="text-xs text-muted-foreground">Prev · {fmtDate(prev.measureDate)}: {prevTotal} mm</p>}
                     </div>
                   </div>
                 )}

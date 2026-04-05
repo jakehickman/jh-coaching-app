@@ -1214,17 +1214,20 @@ function ProgressSection() {
                 <Card>
                   <div className="flex items-end justify-between">
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">{toLocalDateStr(latestM.measureDate).split("-").reverse().join("/")}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Latest · {toLocalDateStr(latestM.measureDate).split("-").reverse().join("/")}</p>
                       {latestM.waist != null ? (
                         <p className="text-2xl font-bold text-foreground">{latestM.waist} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
                       ) : (
                         <p className="text-sm text-muted-foreground">Not recorded</p>
                       )}
                     </div>
-                    {waistDiff != null && (
-                      <p className={`text-sm font-semibold ${waistDiff < 0 ? "text-green-400" : waistDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                        {waistDiff > 0 ? "+" : ""}{waistDiff} cm vs prev
-                      </p>
+                    {waistDiff != null && prevM && (
+                      <div className="text-right">
+                        <p className={`text-sm font-semibold ${waistDiff < 0 ? "text-green-400" : waistDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                          {waistDiff > 0 ? "+" : ""}{waistDiff} cm
+                        </p>
+                        <p className="text-xs text-muted-foreground">vs {toLocalDateStr(prevM.measureDate).split("-").reverse().join("/")}</p>
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -1233,11 +1236,17 @@ function ProgressSection() {
                 <SectionLabel>Skinfold Thickness</SectionLabel>
                 <Card className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">{toLocalDateStr(latestM.measureDate).split("-").reverse().join("/")} — avg of 5 readings per site</p>
-                    {skinfoldDiff != null && (
-                      <p className={`text-sm font-semibold ${skinfoldDiff < 0 ? "text-green-400" : skinfoldDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                        {skinfoldDiff > 0 ? "+" : ""}{skinfoldDiff} mm total
-                      </p>
+                    <div>
+                      <p className="text-xs font-medium text-foreground">Latest · {toLocalDateStr(latestM.measureDate).split("-").reverse().join("/")}</p>
+                      <p className="text-[11px] text-muted-foreground">avg of 5 readings per site</p>
+                    </div>
+                    {skinfoldDiff != null && prevM && (
+                      <div className="text-right">
+                        <p className={`text-sm font-semibold ${skinfoldDiff < 0 ? "text-green-400" : skinfoldDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                          {skinfoldDiff > 0 ? "+" : ""}{skinfoldDiff} mm
+                        </p>
+                        <p className="text-xs text-muted-foreground">vs {toLocalDateStr(prevM.measureDate).split("-").reverse().join("/")}</p>
+                      </div>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -1261,7 +1270,7 @@ function ProgressSection() {
                       <p className="text-sm font-medium text-foreground">Total</p>
                       <div className="text-right">
                         <p className="text-lg font-bold text-primary">{latestSkinfold} mm</p>
-                        {prevSkinfold != null && <p className="text-xs text-muted-foreground">Prev: {prevSkinfold} mm</p>}
+                        {prevSkinfold != null && prevM && <p className="text-xs text-muted-foreground">Prev · {toLocalDateStr(prevM.measureDate).split("-").reverse().join("/")}: {prevSkinfold} mm</p>}
                       </div>
                     </div>
                   )}
