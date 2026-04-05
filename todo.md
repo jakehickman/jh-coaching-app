@@ -40,3 +40,4 @@
 - [x] Round weekly volume totals to nearest whole number
 - [x] Remove placeholder text from Program Name input in Training Programs editor
 - [x] Sort weekly volume table rows from highest to lowest weekly total
+- [x] Remove Program Name field entirely from Training Programs editor
