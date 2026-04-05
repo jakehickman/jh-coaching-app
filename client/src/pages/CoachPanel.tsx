@@ -638,7 +638,7 @@ function TrainingSection() {
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
           </div>
            <button
-            onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || undefined, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null })}
+            onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || null, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null })}
             disabled={upsert.isPending}
             className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
           >

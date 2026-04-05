@@ -306,7 +306,7 @@ export async function getTrainingProgram(userId: number) {
 export async function upsertTrainingProgram(data: {
   userId: number;
   coachId?: number;
-  programName?: string;
+  programName?: string | null;
   days?: unknown;
   schedule?: unknown;
   notes?: string | null;
@@ -317,6 +317,7 @@ export async function upsertTrainingProgram(data: {
   if (existing) {
     const updateData: any = { ...data, updatedAt: new Date() };
     if (data.notes === null || data.notes === "") updateData.notes = null;
+    if (data.programName === null || data.programName === "") updateData.programName = null;
     await db
       .update(trainingPrograms)
       .set(updateData)

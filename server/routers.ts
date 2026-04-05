@@ -191,7 +191,7 @@ export const appRouter = router({
       .input(
         z.object({
           userId: z.number(),
-          programName: z.string().optional(),
+          programName: z.string().nullable().optional(),
           days: z.any().optional(),
           schedule: z.any().optional(),
           notes: z.string().nullable().optional(),
