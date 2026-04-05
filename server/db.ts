@@ -114,7 +114,7 @@ export async function upsertClientProfile(data: {
   goalWeight?: number;
   startWeight?: number;
   showDate?: string;
-  notes?: string;
+  notes?: string | null;
 }) {
   const db = await getDb();
   if (!db) return;

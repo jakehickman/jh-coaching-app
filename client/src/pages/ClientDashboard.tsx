@@ -120,22 +120,30 @@ function OverviewTab() {
   const trainedDays = recentLogs.filter(l => l.trainingCompleted).length;
   const adherence = recentLogs.length > 0 ? Math.round((trainedDays / recentLogs.length) * 100) : 0;
 
-  // 7-day avg weight using true calendar days
-  const todayMs = new Date().setHours(0, 0, 0, 0);
-  const DAY = 86400000;
+  // 7-day avg weight using true calendar days (string comparison avoids timezone shifts)
   const allLogs = logs ?? [];
+  const DAY = 86400000;
+  // Build date strings for the window boundaries using local time
+  const localDateStr = (offsetDays: number) => {
+    const d = new Date(Date.now() - offsetDays * DAY);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const today = localDateStr(0);
+  const day6ago = localDateStr(6);
+  const day7ago = localDateStr(7);
+  const day13ago = localDateStr(13);
 
   const thisWeekWeights = allLogs
     .filter(l => {
-      const d = new Date(String(l.logDate).slice(0, 10)).setHours(0, 0, 0, 0);
-      return d >= todayMs - 6 * DAY && d <= todayMs && l.weight != null;
+      const d = String(l.logDate).slice(0, 10);
+      return d >= day6ago && d <= today && l.weight != null;
     })
     .map(l => l.weight as number);
 
   const prevWeekWeights = allLogs
     .filter(l => {
-      const d = new Date(String(l.logDate).slice(0, 10)).setHours(0, 0, 0, 0);
-      return d >= todayMs - 13 * DAY && d <= todayMs - 7 * DAY && l.weight != null;
+      const d = String(l.logDate).slice(0, 10);
+      return d >= day13ago && d <= day7ago && l.weight != null;
     })
     .map(l => l.weight as number);
 

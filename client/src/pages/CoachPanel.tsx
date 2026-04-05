@@ -292,7 +292,7 @@ function ClientsSection() {
                 startDate: form.startDate || undefined,
                 goalWeight: form.goalWeight ? parseFloat(form.goalWeight) : undefined,
                 startWeight: form.startWeight ? parseFloat(form.startWeight) : undefined,
-                notes: form.notes || undefined,
+                notes: form.notes || null,
               })}
               disabled={upsertProfile.isPending}
               className="w-full py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"

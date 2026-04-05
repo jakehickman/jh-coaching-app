@@ -54,7 +54,7 @@ export const appRouter = router({
           goalWeight: z.number().optional(),
           startWeight: z.number().optional(),
           showDate: z.string().optional(),
-          notes: z.string().optional(),
+          notes: z.string().nullable().optional(),
         })
       )
       .mutation(({ input }) => db.upsertClientProfile(input)),
