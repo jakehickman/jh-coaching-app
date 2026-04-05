@@ -21,3 +21,4 @@
 - [x] Seed demo data for Jake H
 - [x] Mobile-responsive layout
 - [x] Vitest tests: 17 tests passing (auth, dailyLog, measurements, profile, shopping, timeline, checkIn, notes admin guard)
+- [x] Reassign Jake H demo data to user ID 1 (coach account) for client POV preview

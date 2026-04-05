@@ -10,6 +10,12 @@ import { Check, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+// Safely extract YYYY-MM-DD from any date value (Date object, ISO string, plain date string)
+function fmtDate(val: unknown): string {
+  if (!val) return "";
+  const s = String(val);
+  return s.includes('T') ? s.slice(0, 10) : s.slice(0, 10);
+}
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">{children}</p>;
 }
@@ -52,11 +58,16 @@ function OverviewTab() {
   const { data: checkIns } = trpc.checkIn.list.useQuery();
   const { data: profile } = trpc.profile.get.useQuery();
 
-  const weightData = (logs ?? [])
+   const weightData = (logs ?? [])
     .filter(l => l.weight)
     .slice(0, 14)
     .reverse()
-    .map(l => ({ date: String(l.logDate).slice(5), weight: l.weight }));
+    .map(l => {
+      const raw = String(l.logDate);
+      // Handle both ISO datetime strings and plain date strings
+      const dateStr = raw.includes('T') ? raw.slice(0, 10) : raw.slice(0, 10);
+      return { date: dateStr.slice(5), weight: l.weight };
+    });
 
   const recentLogs = (logs ?? []).slice(0, 7);
   const trainedDays = recentLogs.filter(l => l.trainingCompleted).length;
@@ -114,7 +125,7 @@ function OverviewTab() {
               {recentLogs.map(log => (
                 <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div>
-                    <p className="text-sm font-medium text-foreground">{String(log.logDate).slice(0, 10)}</p>
+                    <p className="text-sm font-medium text-foreground">{fmtDate(log.logDate)}</p>
                     <p className="text-xs text-muted-foreground">{log.trainingType ?? (log.trainingCompleted ? "Training" : "Rest")}</p>
                   </div>
                   <div className="flex items-center gap-4 text-right">
@@ -304,9 +315,11 @@ function MeasurementsTab() {
     { key: "bodyFatPercent", label: "Body Fat %" },
   ];
 
-  const waistData = (measurements ?? []).slice(0, 8).reverse().map(m => ({
-    date: String(m.measureDate).slice(5), waist: m.waist, weight: m.weight
-  }));
+  const waistData = (measurements ?? []).slice(0, 8).reverse().map(m => {
+    const raw = String(m.measureDate);
+    const dateStr = raw.includes('T') ? raw.slice(0, 10) : raw.slice(0, 10);
+    return { date: dateStr.slice(5), waist: m.waist, weight: m.weight };
+  });
 
   return (
     <div className="space-y-6">
@@ -373,7 +386,7 @@ function MeasurementsTab() {
           <div className="space-y-3">
             {measurements!.map(m => (
               <Card key={m.id}>
-                <p className="text-sm font-semibold text-foreground mb-2">{String(m.measureDate).slice(0, 10)}</p>
+                <p className="text-sm font-semibold text-foreground mb-2">{fmtDate(m.measureDate)}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { label: "Weight", value: m.weight, unit: "kg" },
@@ -668,7 +681,7 @@ function MesoTab() {
               <p className="text-lg font-bold text-foreground">{currentCycle.mesoName ?? "MESO 1"}</p>
               {currentCycle.startDate && currentCycle.endDate && (
                 <p className="text-xs text-muted-foreground">
-                  {String(currentCycle.startDate).slice(0, 10)} → {String(currentCycle.endDate).slice(0, 10)}
+                  {fmtDate(currentCycle.startDate)} → {fmtDate(currentCycle.endDate)}
                 </p>
               )}
             </div>
@@ -685,7 +698,7 @@ function MesoTab() {
                 {sessions!.filter(s => s.weekNumber === week).map(session => (
                   <Card key={session.id}>
                     <p className="text-sm font-semibold text-foreground mb-3">{session.dayLabel}</p>
-                    {session.sessionDate && <p className="text-xs text-muted-foreground mb-2">{String(session.sessionDate).slice(0, 10)}</p>}
+                    {session.sessionDate && <p className="text-xs text-muted-foreground mb-2">{fmtDate(session.sessionDate)}</p>}
                     {(session.exercises as any[])?.map((ex: any, i: number) => (
                       <div key={i} className="mb-3">
                         <p className="text-sm font-medium text-foreground mb-1">{ex.name}</p>
@@ -767,7 +780,7 @@ function TimelineTab() {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold text-foreground">{m.title}</p>
-                        <p className="text-xs text-muted-foreground">{String(m.milestoneDate).slice(0, 10)} · {daysAway} days away</p>
+                        <p className="text-xs text-muted-foreground">{fmtDate(m.milestoneDate)} · {daysAway} days away</p>
                         {m.description && <p className="text-xs text-muted-foreground mt-0.5">{m.description}</p>}
                       </div>
                       <button
@@ -795,7 +808,7 @@ function TimelineTab() {
               <div key={m.id} className="flex items-center gap-3 py-2 opacity-50">
                 <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
                 <p className="text-sm text-muted-foreground line-through">{m.title}</p>
-                <p className="text-xs text-muted-foreground ml-auto">{String(m.milestoneDate).slice(0, 10)}</p>
+                <p className="text-xs text-muted-foreground ml-auto">{fmtDate(m.milestoneDate)}</p>
               </div>
             ))}
           </div>
