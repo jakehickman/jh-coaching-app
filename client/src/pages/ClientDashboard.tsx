@@ -14,7 +14,54 @@ import { toast } from "sonner";
 function fmtDate(val: unknown): string {
   if (!val) return "";
   const s = String(val);
-  return s.includes('T') ? s.slice(0, 10) : s.slice(0, 10);
+  const iso = s.includes('T') ? s.slice(0, 10) : s.slice(0, 10);
+  // Display as dd/mm/yyyy
+  const [y, m, d] = iso.split('-');
+  if (y && m && d) return `${d}/${m}/${y}`;
+  return iso;
+}
+
+// DD/MM/YYYY date picker — always shows in Australian format regardless of browser locale
+// value and onChange use yyyy-mm-dd strings internally
+function DateInput({ value, onChange, className = "" }: { value: string; onChange: (v: string) => void; className?: string }) {
+  const [y, m, d] = value ? value.split('-') : ['', '', ''];
+
+  const update = (newD: string, newM: string, newY: string) => {
+    if (newD.length <= 2 && newM.length <= 2 && newY.length <= 4) {
+      const dPad = newD.padStart(2, '0');
+      const mPad = newM.padStart(2, '0');
+      if (newY.length === 4 && newM.length >= 1 && newD.length >= 1) {
+        onChange(`${newY}-${mPad}-${dPad}`);
+      }
+    }
+  };
+
+  const inputCls = `bg-secondary border border-border rounded-lg px-2 py-2 text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary`;
+
+  return (
+    <div className={`flex items-center gap-1 ${className}`}>
+      <input
+        type="number" min={1} max={31} placeholder="DD"
+        value={d || ''}
+        onChange={e => update(e.target.value, m || '', y || '')}
+        className={`${inputCls} w-14`}
+      />
+      <span className="text-muted-foreground text-sm">/</span>
+      <input
+        type="number" min={1} max={12} placeholder="MM"
+        value={m || ''}
+        onChange={e => update(d || '', e.target.value, y || '')}
+        className={`${inputCls} w-14`}
+      />
+      <span className="text-muted-foreground text-sm">/</span>
+      <input
+        type="number" min={2000} max={2100} placeholder="YYYY"
+        value={y || ''}
+        onChange={e => update(d || '', m || '', e.target.value)}
+        className={`${inputCls} w-20`}
+      />
+    </div>
+  );
 }
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">{children}</p>;
@@ -212,8 +259,7 @@ function DailyLogTab() {
     <div className="space-y-6 max-w-lg">
       <div>
         <SectionLabel>Select Date</SectionLabel>
-        <input type="date" value={date} onChange={e => setDate(e.target.value)} lang="en-AU"
-          className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+        <DateInput value={date} onChange={setDate} />
       </div>
 
       <div>
@@ -415,8 +461,7 @@ function MeasurementsTab() {
         <Card className="space-y-5">
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Date</label>
-            <input type="date" value={form.measureDate} onChange={e => setForm(p => ({ ...p, measureDate: e.target.value }))}
-              className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+            <DateInput value={form.measureDate} onChange={v => setForm(p => ({ ...p, measureDate: v }))} />
           </div>
 
           {/* Waist */}
