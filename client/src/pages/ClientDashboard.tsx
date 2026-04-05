@@ -1109,9 +1109,9 @@ function WorkoutLogTab() {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   })();
 
-  // Build list of program days (non-Off)
+  // Build list of program days — DB uses 'name' field (e.g. "A", "B"), map to label for consistency
   const days: Array<{ label: string; exercises: Array<{ name: string; sets: number; reps: string; notes?: string }> }> =
-    (program?.days as any[]) ?? [];
+    ((program?.days as any[]) ?? []).map((d: any) => ({ ...d, label: d.label ?? d.name }));
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [sessionDate, setSessionDate] = useState(today);
