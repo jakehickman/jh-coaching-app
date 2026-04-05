@@ -626,7 +626,9 @@ function TrainingSection() {
                     </tr>
                   </thead>
                   <tbody>
-                    {MUSCLE_GROUPS.map(mg => {
+                    {[...MUSCLE_GROUPS]
+                      .sort((a, b) => (volumeTable.weeklyTotals[b.key] ?? 0) - (volumeTable.weeklyTotals[a.key] ?? 0))
+                      .map(mg => {
                       const weekly = volumeTable.weeklyTotals[mg.key] ?? 0;
                       if (weekly === 0) return null;
                       return (

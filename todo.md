@@ -39,3 +39,4 @@
 - [x] Exercise name in Training Programs editor: searchable dropdown from Exercise Library
 - [x] Round weekly volume totals to nearest whole number
 - [x] Remove placeholder text from Program Name input in Training Programs editor
+- [x] Sort weekly volume table rows from highest to lowest weekly total
