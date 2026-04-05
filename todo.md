@@ -72,3 +72,5 @@
 - [x] Add servingUnit + servingGrams to nutrition_foods (e.g. "1 egg = 50g")
 - [x] Update meal plan food selector to show servings input for unit-based foods
 - [x] Update Nutrition Data tab to show/edit serving info per food
+- [x] Fix: Client Meal Plan tab macro calculations incorrect for serving-size based foods
+- [x] Change "MEAL:" label to "TOTAL:" in client Meal Plan meal subtotal

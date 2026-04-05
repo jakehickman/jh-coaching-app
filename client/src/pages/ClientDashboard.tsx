@@ -523,12 +523,19 @@ function MealPlanTab() {
 
   const meals = (plan?.meals as any[]) ?? [];
 
+  // Helper: convert item amount to grams (handles serving-based foods)
+  function itemToGrams(food: any, amount: number): number {
+    if (!food) return amount;
+    return food.servingUnit && food.servingGrams ? amount * food.servingGrams : amount;
+  }
+
   // Calculate macros per meal and daily totals from food DB
   const mealMacros = meals.map(meal =>
     (meal.items ?? []).reduce((acc: any, item: any) => {
       const food = foodDb.find((f: any) => f.name === item.food);
       if (!food || !parseFloat(item.grams)) return acc;
-      const factor = parseFloat(item.grams) / 100;
+      const grams = itemToGrams(food, parseFloat(item.grams));
+      const factor = grams / 100;
       return {
         calories: acc.calories + Math.round(food.calories * factor),
         protein: Math.round((acc.protein + food.protein * factor) * 10) / 10,
@@ -599,17 +606,22 @@ function MealPlanTab() {
                     </div>
                     {(meal.items ?? []).map((item: any, j: number) => {
                       const food = foodDb.find((f: any) => f.name === item.food);
-                      const grams = parseFloat(item.grams) || 0;
-                      const factor = grams / 100;
-                      const itemCal = food && grams ? Math.round(food.calories * factor) : null;
-                      const itemP = food && grams ? Math.round(food.protein * factor * 10) / 10 : null;
-                      const itemC = food && grams ? Math.round(food.carbs * factor * 10) / 10 : null;
-                      const itemF = food && grams ? Math.round(food.fat * factor * 10) / 10 : null;
+                      const rawAmount = parseFloat(item.grams) || 0;
+                      const effectiveGrams = food ? itemToGrams(food, rawAmount) : rawAmount;
+                      const factor = effectiveGrams / 100;
+                      const isServingBased = !!(food?.servingUnit && food?.servingGrams);
+                      const displayQty = isServingBased
+                        ? `${rawAmount} ${food.servingUnit}${rawAmount !== 1 ? "s" : ""} (${effectiveGrams}g)`
+                        : rawAmount > 0 ? `${rawAmount}g` : "";
+                      const itemCal = food && rawAmount ? Math.round(food.calories * factor) : null;
+                      const itemP = food && rawAmount ? Math.round(food.protein * factor * 10) / 10 : null;
+                      const itemC = food && rawAmount ? Math.round(food.carbs * factor * 10) / 10 : null;
+                      const itemF = food && rawAmount ? Math.round(food.fat * factor * 10) / 10 : null;
                       return (
                         <div key={j} className="py-2 border-b border-border/50 last:border-0">
                           <div className="flex items-center justify-between">
                             <p className="text-sm text-foreground">{item.food || <span className="text-muted-foreground italic">Unknown food</span>}</p>
-                            <p className="text-xs text-muted-foreground">{grams > 0 ? `${grams}g` : ""}</p>
+                            <p className="text-xs text-muted-foreground">{displayQty}</p>
                           </div>
                           {itemCal !== null && (
                             <div className="flex gap-3 mt-0.5">
@@ -625,7 +637,7 @@ function MealPlanTab() {
                     {hasMacros && (
                       <div className="mt-3 pt-2 border-t border-border/40">
                         <div className="flex gap-2 flex-wrap">
-                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground self-center">Meal:</span>
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground self-center">Total:</span>
                           <span className="text-xs font-semibold text-primary">{mm.calories} kcal</span>
                           <span className="text-xs text-muted-foreground">P {mm.protein}g</span>
                           <span className="text-xs text-muted-foreground">C {mm.carbs}g</span>
