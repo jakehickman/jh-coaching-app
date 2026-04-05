@@ -1122,8 +1122,23 @@ function WorkoutLogTab() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
 
+  const dailyLogMutation = trpc.dailyLog.upsert.useMutation();
+
   const saveMutation = trpc.workoutSessions.save.useMutation({
-    onSuccess: () => { utils.workoutSessions.list.invalidate(); setSaving(false); toast.success("Session saved!"); },
+    onSuccess: () => {
+      utils.workoutSessions.list.invalidate();
+      utils.dailyLog.list.invalidate();
+      setSaving(false);
+      toast.success("Session saved!");
+      // Auto-link to Daily Log: tick training completed + set session type
+      if (selectedDay) {
+        dailyLogMutation.mutate({
+          logDate: sessionDate,
+          trainingCompleted: true,
+          trainingType: selectedDay,
+        });
+      }
+    },
     onError: () => { setSaving(false); toast.error("Failed to save session."); },
   });
   const deleteMutation = trpc.workoutSessions.delete.useMutation({
@@ -1236,18 +1251,36 @@ function WorkoutLogTab() {
       {/* Exercise logging */}
       {selectedDay && (() => {
         const dayDef = days.find(d => d.label === selectedDay);
+
+        // Build last-session lookup: find the most recent session for this day BEFORE sessionDate
+        const prevSession = [...sessions]
+          .filter(s => s.dayLabel === selectedDay && toLocalDateStr(s.sessionDate) < sessionDate)
+          .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)))[0];
+        const prevExMap: Record<string, Array<{ weight: number | null; reps: number | null }>> = {};
+        if (prevSession) {
+          for (const ex of (prevSession.exercises as any[])) {
+            prevExMap[ex.name] = (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null);
+          }
+        }
+
         return (
           <div className="space-y-3">
             {(dayDef?.exercises ?? []).map((ex, i) => {
               const sets = exerciseData[ex.name] ?? [{ weight: "", reps: "", notes: "" }];
               const isExpanded = expandedSets[ex.name];
+              const prevSets = prevExMap[ex.name] ?? [];
               return (
                 <Card key={i}>
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-base font-semibold text-foreground">{ex.name}</p>
                       {ex.notes && <p className="text-xs text-muted-foreground mt-0.5">{ex.notes}</p>}
                       <p className="text-xs text-muted-foreground mt-0.5">{ex.sets} sets × {ex.reps}</p>
+                      {prevSets.length > 0 && (
+                        <p className="text-xs text-primary/80 mt-1">
+                          Last: {prevSets.map((s, si) => `${s.weight ?? '—'}kg × ${s.reps ?? '—'}`).join(' | ')}
+                        </p>
+                      )}
                     </div>
                   </div>
 

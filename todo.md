@@ -85,3 +85,5 @@
 - [x] Workout Log: primary set visually emphasised, additional sets expandable
 - [x] Workout Log: save/update session, delete session
 - [x] Coach Client Progress: per-exercise progress cards showing weight/reps across sessions
+- [x] Workout Log: show last session weight x reps below each exercise name
+- [x] Workout Log: auto-tick training completed and set session type in Daily Log on save
