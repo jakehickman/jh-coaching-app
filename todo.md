@@ -66,3 +66,5 @@
 - [x] Add weekly meal adherence % to Client Progress tab (based on off-plan meal data)
 - [x] Show client daily log notes in Coach Progress view
 - [x] Redesign measurements: waist only + 4 skinfold sites (5 readings each, averaged in coach view)
+- [x] Rename "Add Session" to "Add Measurement" on client Measurements tab
+- [x] Add delete button to each measurement history entry (client can remove wrong entries)

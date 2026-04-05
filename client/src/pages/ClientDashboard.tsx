@@ -356,6 +356,9 @@ function MeasurementsTab() {
   const add = trpc.measurements.add.useMutation({
     onSuccess: () => { toast.success("Measurements saved"); setShowForm(false); refetch(); }
   });
+  const del = trpc.measurements.delete.useMutation({
+    onSuccess: () => { toast.success("Entry deleted"); refetch(); }
+  });
 
   const setReading = (site: string, r: string, val: string) =>
     setForm(p => ({ ...p, [site]: { ...(p as any)[site], [r]: val } }));
@@ -373,7 +376,7 @@ function MeasurementsTab() {
         <SectionLabel>Measurements</SectionLabel>
         <button onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors">
-          <Plus size={14} /> Add Session
+          <Plus size={14} /> Add Measurement
         </button>
       </div>
 
@@ -463,7 +466,13 @@ function MeasurementsTab() {
               const total = siteAvgs.every(v => v !== null) ? parseFloat(siteAvgs.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
               return (
                 <Card key={m.id}>
-                  <p className="text-sm font-semibold text-foreground mb-3">{fmtDate(m.measureDate)}</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-foreground">{fmtDate(m.measureDate)}</p>
+                    <button onClick={() => { if (confirm("Delete this measurement entry?")) del.mutate({ id: m.id }); }}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded" title="Delete entry">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                   {/* Waist */}
                   {m.waist && (
                     <div className="mb-3">

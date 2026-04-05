@@ -190,6 +190,12 @@ export async function getMeasurements(userId: number) {
     .orderBy(desc(measurements.measureDate));
 }
 
+export async function deleteMeasurement(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(measurements).where(and(eq(measurements.id, id), eq(measurements.userId, userId)));
+}
+
 export async function addMeasurement(data: {
   userId: number;
   measureDate: string;

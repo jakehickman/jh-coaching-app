@@ -118,6 +118,9 @@ export const appRouter = router({
       .mutation(({ ctx, input }) =>
         db.addMeasurement({ userId: ctx.user.id, ...input })
       ),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) => db.deleteMeasurement(input.id, ctx.user.id)),
   }),
 
   // Meal Plans
