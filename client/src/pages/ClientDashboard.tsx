@@ -260,21 +260,35 @@ function OverviewTab() {
           { label: "Calf", avg: siteAvg([latest.calf1, latest.calf2, latest.calf3, latest.calf4, latest.calf5]) },
           { label: "Thigh", avg: siteAvg([latest.thigh1, latest.thigh2, latest.thigh3, latest.thigh4, latest.thigh5]) },
         ];
-        const latestTotal = sites.every(s => s.avg != null)
-          ? parseFloat(sites.reduce((a, s) => a + s.avg!, 0).toFixed(1))
+        // Total uses whatever sites have data (not requiring all 4)
+        const sitesWithData = sites.filter(s => s.avg != null);
+        const latestTotal = sitesWithData.length > 0
+          ? parseFloat(sitesWithData.reduce((a, s) => a + s.avg!, 0).toFixed(1))
           : null;
 
         const prevSites = prev ? [
-          siteAvg([prev.umbilical1, prev.umbilical2, prev.umbilical3, prev.umbilical4, prev.umbilical5]),
-          siteAvg([prev.suprailiac1, prev.suprailiac2, prev.suprailiac3, prev.suprailiac4, prev.suprailiac5]),
-          siteAvg([prev.calf1, prev.calf2, prev.calf3, prev.calf4, prev.calf5]),
-          siteAvg([prev.thigh1, prev.thigh2, prev.thigh3, prev.thigh4, prev.thigh5]),
+          { label: "Umbilical", avg: siteAvg([prev.umbilical1, prev.umbilical2, prev.umbilical3, prev.umbilical4, prev.umbilical5]) },
+          { label: "Suprailiac", avg: siteAvg([prev.suprailiac1, prev.suprailiac2, prev.suprailiac3, prev.suprailiac4, prev.suprailiac5]) },
+          { label: "Calf", avg: siteAvg([prev.calf1, prev.calf2, prev.calf3, prev.calf4, prev.calf5]) },
+          { label: "Thigh", avg: siteAvg([prev.thigh1, prev.thigh2, prev.thigh3, prev.thigh4, prev.thigh5]) },
         ] : null;
-        const prevTotal = prevSites && prevSites.every(v => v != null)
-          ? parseFloat(prevSites.reduce((a, b) => a + b!, 0).toFixed(1))
+        // Compare only sites that exist in both measurements
+        const prevTotal = prevSites
+          ? (() => {
+              const matchedPrev = prevSites.filter(ps => sites.find(s => s.label === ps.label && s.avg != null) && ps.avg != null);
+              const matchedCur = sites.filter(s => prevSites.find(ps => ps.label === s.label && ps.avg != null) && s.avg != null);
+              if (matchedPrev.length === 0 || matchedPrev.length !== matchedCur.length) return null;
+              return parseFloat(matchedPrev.reduce((a, s) => a + s.avg!, 0).toFixed(1));
+            })()
           : null;
-        const totalDiff = latestTotal != null && prevTotal != null
-          ? parseFloat((latestTotal - prevTotal).toFixed(1))
+        const curTotalForDiff = prevTotal != null && prevSites
+          ? (() => {
+              const matchedCur = sites.filter(s => prevSites.find(ps => ps.label === s.label && ps.avg != null) && s.avg != null);
+              return matchedCur.length > 0 ? parseFloat(matchedCur.reduce((a, s) => a + s.avg!, 0).toFixed(1)) : null;
+            })()
+          : null;
+        const totalDiff = curTotalForDiff != null && prevTotal != null
+          ? parseFloat((curTotalForDiff - prevTotal).toFixed(1))
           : null;
 
         const waistDiff = latest.waist != null && prev?.waist != null
@@ -295,10 +309,13 @@ function OverviewTab() {
                       <p className="text-sm text-muted-foreground">Not recorded</p>
                     )}
                   </div>
-                  {waistDiff != null && (
-                    <p className={`text-sm font-semibold ${waistDiff < 0 ? "text-green-400" : waistDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                      {waistDiff > 0 ? "+" : ""}{waistDiff} cm vs prev
-                    </p>
+                  {waistDiff != null && prev && (
+                    <div className="text-right">
+                      <p className={`text-sm font-semibold ${waistDiff < 0 ? "text-green-400" : waistDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                        {waistDiff > 0 ? "+" : ""}{waistDiff} cm
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">vs {fmtDate(prev.measureDate)}</p>
+                    </div>
                   )}
                 </div>
               </Card>
@@ -308,10 +325,13 @@ function OverviewTab() {
               <Card className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">{fmtDate(latest.measureDate)} — avg of 5 readings per site</p>
-                  {totalDiff != null && (
-                    <p className={`text-sm font-semibold ${totalDiff < 0 ? "text-green-400" : totalDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                      {totalDiff > 0 ? "+" : ""}{totalDiff} mm total
-                    </p>
+                  {totalDiff != null && prev && (
+                    <div className="text-right">
+                      <p className={`text-sm font-semibold ${totalDiff < 0 ? "text-green-400" : totalDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                        {totalDiff > 0 ? "+" : ""}{totalDiff} mm
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">vs {fmtDate(prev.measureDate)}</p>
+                    </div>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -326,10 +346,10 @@ function OverviewTab() {
                 </div>
                 {latestTotal != null && (
                   <div className="border-t border-border pt-3 flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">Total</p>
+                    <p className="text-sm font-medium text-foreground">Total ({sitesWithData.length} sites)</p>
                     <div className="text-right">
                       <p className="text-lg font-bold text-primary">{latestTotal} mm</p>
-                      {prevTotal != null && <p className="text-xs text-muted-foreground">Prev: {prevTotal} mm</p>}
+                      {prevTotal != null && prev && <p className="text-xs text-muted-foreground">Prev ({fmtDate(prev.measureDate)}): {prevTotal} mm</p>}
                     </div>
                   </div>
                 )}
