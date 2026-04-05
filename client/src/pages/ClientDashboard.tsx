@@ -142,24 +142,34 @@ function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
                 hasData ? 'hover:bg-muted/30 cursor-pointer' : 'cursor-default opacity-50'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-14 flex-shrink-0">
-                  <p className="text-xs font-semibold text-foreground">{fmtDay(iso)}</p>
-                  <p className="text-[10px] text-muted-foreground">{dayLabel(iso)}</p>
-                </div>
+              {/* Left: date + day */}
+              <div className="w-20 flex-shrink-0">
+                <p className="text-sm font-semibold text-foreground">{fmtDay(iso)}</p>
+                <p className="text-[10px] text-muted-foreground">{dayLabel(iso)}</p>
+              </div>
+              {/* Middle: chips */}
+              <div className="flex-1 flex items-center gap-2 flex-wrap px-3">
                 {hasData ? (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {log.weight != null && <span className="text-xs font-medium text-foreground">{log.weight} kg</span>}
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                  <>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
                       trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>{sessionLabel}</span>
-                    {isOffPlan(log.offPlanMeal) && <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">Off Plan</span>}
-                  </div>
+                    {isOffPlan(log.offPlanMeal) && <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">Off Plan</span>}
+                  </>
                 ) : (
                   <span className="text-xs text-muted-foreground italic">No entry</span>
                 )}
               </div>
-              {hasData && (isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />)}
+              {/* Right: weight + chevron */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {hasData && log.weight != null && (
+                  <span className="text-sm font-semibold text-foreground">{log.weight} kg</span>
+                )}
+                {hasData && (isExpanded
+                  ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                  : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </div>
             </button>
             {isExpanded && log && (
               <div className="px-4 pb-4 bg-muted/20 border-t border-border">
