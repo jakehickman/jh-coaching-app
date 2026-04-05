@@ -65,13 +65,11 @@ function ClientsSection() {
   }, [profile, selectedId]);
 
   const clients = (allUsers ?? []).filter(u => u.role === "user");
-  const admins = (allUsers ?? []).filter(u => u.role === "admin");
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-2">
+      <div className="max-w-xs mb-2">
         <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Clients</p><p className="text-2xl font-bold text-foreground mt-1">{clients.length}</p></Card>
-        <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Coaches</p><p className="text-2xl font-bold text-foreground mt-1">{admins.length}</p></Card>
       </div>
 
       <div>
