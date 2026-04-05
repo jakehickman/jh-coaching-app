@@ -61,3 +61,4 @@
 - [x] Add Sleep Quality (1-5) to biofeedback
 - [x] Update coach Client Progress view to reflect new biofeedback fields
 - [x] Session type dropdown in daily log populated from client's training program day names
+- [x] Fix: Training completed today checkbox stuck/unable to uncheck in Daily Log

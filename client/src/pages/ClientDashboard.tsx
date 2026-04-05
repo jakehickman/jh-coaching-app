@@ -243,17 +243,18 @@ function DailyLogTab() {
       <div>
         <SectionLabel>Training</SectionLabel>
         <Card className="space-y-3">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <div
-              onClick={() => setForm(p => ({ ...p, trainingCompleted: !p.trainingCompleted }))}
-              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                form.trainingCompleted ? "bg-primary border-primary" : "border-border"
-              }`}
-            >
+          <button
+            type="button"
+            onClick={() => setForm(p => ({ ...p, trainingCompleted: !p.trainingCompleted }))}
+            className="flex items-center gap-3 cursor-pointer w-full text-left"
+          >
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+              form.trainingCompleted ? "bg-primary border-primary" : "border-border"
+            }`}>
               {form.trainingCompleted && <Check size={12} className="text-primary-foreground" />}
             </div>
             <span className="text-sm text-foreground">Training completed today</span>
-          </label>
+          </button>
           {form.trainingCompleted && (
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Session</label>
