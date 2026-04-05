@@ -418,8 +418,32 @@ function MeasurementsTab() {
 function MealPlanTab() {
   const [dayType, setDayType] = useState<"training" | "rest">("training");
   const { data: plan } = trpc.mealPlan.get.useQuery({ dayType });
+  const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
 
   const meals = (plan?.meals as any[]) ?? [];
+
+  // Calculate macros per meal and daily totals from food DB
+  const mealMacros = meals.map(meal =>
+    (meal.items ?? []).reduce((acc: any, item: any) => {
+      const food = foodDb.find((f: any) => f.name === item.food);
+      if (!food || !parseFloat(item.grams)) return acc;
+      const factor = parseFloat(item.grams) / 100;
+      return {
+        calories: acc.calories + Math.round(food.calories * factor),
+        protein: Math.round((acc.protein + food.protein * factor) * 10) / 10,
+        carbs: Math.round((acc.carbs + food.carbs * factor) * 10) / 10,
+        fiber: Math.round((acc.fiber + food.fiber * factor) * 10) / 10,
+        fat: Math.round((acc.fat + food.fat * factor) * 10) / 10,
+      };
+    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 })
+  );
+  const dailyTotals = mealMacros.reduce((acc: any, m: any) => ({
+    calories: acc.calories + m.calories,
+    protein: Math.round((acc.protein + m.protein) * 10) / 10,
+    carbs: Math.round((acc.carbs + m.carbs) * 10) / 10,
+    fiber: Math.round((acc.fiber + m.fiber) * 10) / 10,
+    fat: Math.round((acc.fat + m.fat) * 10) / 10,
+  }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
 
   return (
     <div className="space-y-6">
@@ -435,44 +459,76 @@ function MealPlanTab() {
       </div>
 
       {plan && (
-        <div>
-          <div className="grid grid-cols-4 gap-3 mb-6">
-            {[
-              { label: "Calories", value: plan.totalCalories },
-              { label: "Protein", value: plan.totalProtein ? `${plan.totalProtein}g` : null },
-              { label: "Carbs", value: plan.totalCarbs ? `${plan.totalCarbs}g` : null },
-              { label: "Fat", value: plan.totalFat ? `${plan.totalFat}g` : null },
-            ].map(({ label, value }) => value && (
-              <Card key={label} className="text-center">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
-                <p className="text-lg font-bold text-foreground mt-1">{value}</p>
-              </Card>
-            ))}
-          </div>
+        <div className="space-y-4">
+          {/* Daily totals */}
+          {meals.length > 0 && dailyTotals.calories > 0 && (
+            <Card>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">Daily Totals</p>
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  { label: "Calories", value: dailyTotals.calories, unit: "kcal", highlight: true },
+                  { label: "Protein", value: dailyTotals.protein, unit: "g" },
+                  { label: "Carbs", value: dailyTotals.carbs, unit: "g" },
+                  { label: "Fiber", value: dailyTotals.fiber, unit: "g" },
+                  { label: "Fat", value: dailyTotals.fat, unit: "g" },
+                ].map(({ label, value, unit, highlight }) => (
+                  <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
+                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                    <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{value} {unit}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
           {meals.length > 0 ? (
             <div className="space-y-4">
-              {meals.map((meal: any, i: number) => (
-                <Card key={i}>
-                  <p className="text-sm font-semibold text-foreground mb-3">{meal.name ?? `Meal ${i + 1}`}</p>
-                  {(meal.items ?? []).map((item: any, j: number) => (
-                    <div key={j} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                      <p className="text-sm text-foreground">{item.food}</p>
-                      <div className="flex items-center gap-4 text-right">
-                        <p className="text-xs text-muted-foreground">{item.amount}</p>
-                        {item.calories && <p className="text-xs font-medium text-foreground">{item.calories} kcal</p>}
+              {meals.map((meal: any, i: number) => {
+                const mm = mealMacros[i];
+                const hasMacros = mm.calories > 0;
+                return (
+                  <Card key={i}>
+                    <p className="text-sm font-semibold text-foreground mb-3">{meal.name ?? `Meal ${i + 1}`}</p>
+                    {(meal.items ?? []).map((item: any, j: number) => {
+                      const food = foodDb.find((f: any) => f.name === item.food);
+                      const grams = parseFloat(item.grams) || 0;
+                      const factor = grams / 100;
+                      const itemCal = food && grams ? Math.round(food.calories * factor) : null;
+                      const itemP = food && grams ? Math.round(food.protein * factor * 10) / 10 : null;
+                      const itemC = food && grams ? Math.round(food.carbs * factor * 10) / 10 : null;
+                      const itemF = food && grams ? Math.round(food.fat * factor * 10) / 10 : null;
+                      return (
+                        <div key={j} className="py-2 border-b border-border/50 last:border-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-foreground">{item.food || <span className="text-muted-foreground italic">Unknown food</span>}</p>
+                            <p className="text-xs text-muted-foreground">{grams > 0 ? `${grams}g` : ""}</p>
+                          </div>
+                          {itemCal !== null && (
+                            <div className="flex gap-3 mt-0.5">
+                              <span className="text-xs font-medium text-foreground">{itemCal} kcal</span>
+                              <span className="text-xs text-muted-foreground">P {itemP}g</span>
+                              <span className="text-xs text-muted-foreground">C {itemC}g</span>
+                              <span className="text-xs text-muted-foreground">F {itemF}g</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {hasMacros && (
+                      <div className="mt-3 pt-2 border-t border-border/40">
+                        <div className="flex gap-2 flex-wrap">
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground self-center">Meal:</span>
+                          <span className="text-xs font-semibold text-primary">{mm.calories} kcal</span>
+                          <span className="text-xs text-muted-foreground">P {mm.protein}g</span>
+                          <span className="text-xs text-muted-foreground">C {mm.carbs}g</span>
+                          <span className="text-xs text-muted-foreground">Fiber {mm.fiber}g</span>
+                          <span className="text-xs text-muted-foreground">F {mm.fat}g</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {meal.macros && (
-                    <div className="flex gap-3 mt-2 pt-2">
-                      {meal.macros.protein && <p className="text-xs text-muted-foreground">P: <span className="text-foreground">{meal.macros.protein}g</span></p>}
-                      {meal.macros.carbs && <p className="text-xs text-muted-foreground">C: <span className="text-foreground">{meal.macros.carbs}g</span></p>}
-                      {meal.macros.fat && <p className="text-xs text-muted-foreground">F: <span className="text-foreground">{meal.macros.fat}g</span></p>}
-                    </div>
-                  )}
-                </Card>
-              ))}
+                    )}
+                  </Card>
+                );
+              })}
             </div>
           ) : (
             <Card className="text-center py-8">
@@ -482,7 +538,7 @@ function MealPlanTab() {
           )}
 
           {plan.notes && (
-            <Card className="mt-4">
+            <Card>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Coach Notes</p>
               <p className="text-sm text-foreground">{plan.notes}</p>
             </Card>

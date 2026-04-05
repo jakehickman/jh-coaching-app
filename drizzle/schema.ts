@@ -237,3 +237,19 @@ export const weeklyCheckIns = mysqlTable("weekly_check_ins", {
 });
 
 export type WeeklyCheckIn = typeof weeklyCheckIns.$inferSelect;
+
+// Nutrition foods — food database with macros per 100g (USDA-sourced)
+export const nutritionFoods = mysqlTable("nutrition_foods", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  calories: float("calories").notNull().default(0),   // kcal per 100g
+  protein: float("protein").notNull().default(0),     // g per 100g
+  carbs: float("carbs").notNull().default(0),         // g per 100g
+  fiber: float("fiber").notNull().default(0),         // g per 100g
+  fat: float("fat").notNull().default(0),             // g per 100g
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type NutritionFood = typeof nutritionFoods.$inferSelect;
+export type InsertNutritionFood = typeof nutritionFoods.$inferInsert;

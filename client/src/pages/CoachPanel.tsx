@@ -621,6 +621,29 @@ function TrainingSection() {
   );
 }
 // ─── Section: Meal Plans ──────────────────────────────────────────────────────
+// Helper: compute macros for a single item given food db and grams
+function calcItemMacros(foodDb: any[], foodName: string, grams: number) {
+  const food = foodDb.find(f => f.name === foodName);
+  if (!food || !grams) return { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 };
+  const factor = grams / 100;
+  return {
+    calories: Math.round(food.calories * factor),
+    protein: Math.round(food.protein * factor * 10) / 10,
+    carbs: Math.round(food.carbs * factor * 10) / 10,
+    fiber: Math.round(food.fiber * factor * 10) / 10,
+    fat: Math.round(food.fat * factor * 10) / 10,
+  };
+}
+
+function MacroChip({ label, value, unit = "g", highlight = false }: { label: string; value: number; unit?: string; highlight?: boolean }) {
+  return (
+    <div className={`flex flex-col items-center px-2 py-1 rounded-lg ${highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60"}` }>
+      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className={`text-xs font-semibold ${highlight ? "text-primary" : "text-foreground"}`}>{value}{unit === "kcal" ? " kcal" : `g`}</span>
+    </div>
+  );
+}
+
 function MealPlansSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
   const [dayType, setDayType] = useState<"training" | "rest">("training");
@@ -628,35 +651,49 @@ function MealPlansSection() {
     { userId: selectedUserId!, dayType },
     { enabled: !!selectedUserId }
   );
+  const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
   const upsert = trpc.mealPlan.upsert.useMutation({
     onSuccess: () => { toast.success("Meal plan saved"); refetch(); }
   });
 
-  const [totals, setTotals] = useState({ calories: "", protein: "", carbs: "", fat: "" });
   const [planNotes, setPlanNotes] = useState("");
   const [meals, setMeals] = useState<any[]>([]);
 
   useEffect(() => {
     if (plan) {
-      setTotals({
-        calories: plan.totalCalories?.toString() ?? "",
-        protein: plan.totalProtein?.toString() ?? "",
-        carbs: plan.totalCarbs?.toString() ?? "",
-        fat: plan.totalFat?.toString() ?? "",
-      });
       setPlanNotes(plan.notes ?? "");
       setMeals((plan.meals as any[]) ?? []);
     } else {
-      setTotals({ calories: "", protein: "", carbs: "", fat: "" });
       setPlanNotes(""); setMeals([]);
     }
   }, [plan, dayType]);
 
-  const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, items: [], macros: {} }]);
+  // Auto-calculate macros from food db
+  const mealMacros = meals.map(meal =>
+    (meal.items ?? []).reduce((acc: any, item: any) => {
+      const m = calcItemMacros(foodDb, item.food, parseFloat(item.grams) || 0);
+      return {
+        calories: acc.calories + m.calories,
+        protein: Math.round((acc.protein + m.protein) * 10) / 10,
+        carbs: Math.round((acc.carbs + m.carbs) * 10) / 10,
+        fiber: Math.round((acc.fiber + m.fiber) * 10) / 10,
+        fat: Math.round((acc.fat + m.fat) * 10) / 10,
+      };
+    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 })
+  );
+  const dailyTotals = mealMacros.reduce((acc, m) => ({
+    calories: acc.calories + m.calories,
+    protein: Math.round((acc.protein + m.protein) * 10) / 10,
+    carbs: Math.round((acc.carbs + m.carbs) * 10) / 10,
+    fiber: Math.round((acc.fiber + m.fiber) * 10) / 10,
+    fat: Math.round((acc.fat + m.fat) * 10) / 10,
+  }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
+
+  const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, items: [] }]);
   const removeMeal = (i: number) => setMeals(m => m.filter((_, idx) => idx !== i));
   const updateMealName = (i: number, name: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, name } : meal));
   const addItem = (mealIdx: number) => setMeals(m => m.map((meal, idx) => idx === mealIdx
-    ? { ...meal, items: [...(meal.items ?? []), { food: "", amount: "", calories: "" }] }
+    ? { ...meal, items: [...(meal.items ?? []), { food: "", grams: "" }] }
     : meal));
   const removeItem = (mealIdx: number, itemIdx: number) => setMeals(m => m.map((meal, idx) => idx === mealIdx
     ? { ...meal, items: meal.items.filter((_: any, i: number) => i !== itemIdx) }
@@ -665,6 +702,8 @@ function MealPlansSection() {
     setMeals(m => m.map((meal, idx) => idx === mealIdx
       ? { ...meal, items: meal.items.map((item: any, i: number) => i === itemIdx ? { ...item, [field]: value } : item) }
       : meal));
+
+  const foodNames = foodDb.map(f => f.name).sort();
 
   return (
     <div className="space-y-6">
@@ -695,21 +734,19 @@ function MealPlansSection() {
             ))}
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
-            {[
-              { key: "calories", label: "Calories" },
-              { key: "protein", label: "Protein (g)" },
-              { key: "carbs", label: "Carbs (g)" },
-              { key: "fat", label: "Fat (g)" },
-            ].map(({ key, label }) => (
-              <div key={key}>
-                <label className="text-xs text-muted-foreground block mb-1">{label}</label>
-                <input type="number" value={(totals as any)[key]}
-                  onChange={e => setTotals(t => ({ ...t, [key]: e.target.value }))}
-                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+          {/* Daily totals summary */}
+          {meals.length > 0 && (
+            <Card>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">Daily Totals</p>
+              <div className="flex gap-2 flex-wrap">
+                <MacroChip label="Calories" value={dailyTotals.calories} unit="kcal" highlight />
+                <MacroChip label="Protein" value={dailyTotals.protein} />
+                <MacroChip label="Carbs" value={dailyTotals.carbs} />
+                <MacroChip label="Fiber" value={dailyTotals.fiber} />
+                <MacroChip label="Fat" value={dailyTotals.fat} />
               </div>
-            ))}
-          </div>
+            </Card>
+          )}
 
           <div className="space-y-4">
             {meals.map((meal, i) => (
@@ -723,31 +760,62 @@ function MealPlansSection() {
                 </div>
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-1 px-1">
-                    <p className="col-span-5 text-[10px] text-muted-foreground">Food</p>
-                    <p className="col-span-3 text-[10px] text-muted-foreground">Amount</p>
-                    <p className="col-span-3 text-[10px] text-muted-foreground">Calories</p>
-                    <p className="col-span-1 text-[10px] text-muted-foreground"></p>
+                    <p className="col-span-6 text-[10px] text-muted-foreground">Food</p>
+                    <p className="col-span-2 text-[10px] text-muted-foreground">Grams</p>
+                    <p className="col-span-3 text-[10px] text-muted-foreground">Macros</p>
+                    <p className="col-span-1"></p>
                   </div>
-                  {(meal.items ?? []).map((item: any, j: number) => (
-                    <div key={j} className="grid grid-cols-12 gap-1 items-center">
-                      <input type="text" value={item.food} onChange={e => updateItem(i, j, "food", e.target.value)}
-                        placeholder="Food item"
-                        className="col-span-5 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-                      <input type="text" value={item.amount} onChange={e => updateItem(i, j, "amount", e.target.value)}
-                        placeholder="200g"
-                        className="col-span-3 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-                      <input type="text" value={item.calories} onChange={e => updateItem(i, j, "calories", e.target.value)}
-                        placeholder="kcal"
-                        className="col-span-3 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-                      <button onClick={() => removeItem(i, j)} className="col-span-1 flex justify-center text-destructive hover:opacity-80">
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  ))}
+                  {(meal.items ?? []).map((item: any, j: number) => {
+                    const m = calcItemMacros(foodDb, item.food, parseFloat(item.grams) || 0);
+                    const hasData = item.food && parseFloat(item.grams) > 0;
+                    return (
+                      <div key={j} className="grid grid-cols-12 gap-1 items-center">
+                        <select
+                          value={item.food}
+                          onChange={e => updateItem(i, j, "food", e.target.value)}
+                          className="col-span-6 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        >
+                          <option value="">— select food —</option>
+                          {foodNames.map(name => (
+                            <option key={name} value={name}>{name}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="number" min="0" step="1"
+                          value={item.grams}
+                          onChange={e => updateItem(i, j, "grams", e.target.value)}
+                          placeholder="g"
+                          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <div className="col-span-3 text-[10px] text-muted-foreground leading-tight">
+                          {hasData ? (
+                            <span className="text-foreground font-medium">{m.calories} kcal</span>
+                          ) : <span className="text-muted-foreground/40">—</span>}
+                          {hasData && <div className="text-[9px] text-muted-foreground">P{m.protein} C{m.carbs} F{m.fat}</div>}
+                        </div>
+                        <button onClick={() => removeItem(i, j)} className="col-span-1 flex justify-center text-destructive hover:opacity-80">
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    );
+                  })}
                   <button onClick={() => addItem(i)} className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 mt-1">
                     <Plus size={12} /> Add Item
                   </button>
                 </div>
+                {/* Meal subtotal */}
+                {(meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
+                  <div className="mt-3 pt-3 border-t border-border/50">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Meal Total</p>
+                    <div className="flex gap-2 flex-wrap">
+                      <MacroChip label="Calories" value={mealMacros[i].calories} unit="kcal" highlight />
+                      <MacroChip label="Protein" value={mealMacros[i].protein} />
+                      <MacroChip label="Carbs" value={mealMacros[i].carbs} />
+                      <MacroChip label="Fiber" value={mealMacros[i].fiber} />
+                      <MacroChip label="Fat" value={mealMacros[i].fat} />
+                    </div>
+                  </div>
+                )}
               </Card>
             ))}
           </div>
@@ -766,10 +834,10 @@ function MealPlansSection() {
           <button
             onClick={() => upsert.mutate({
               userId: selectedUserId, dayType, meals,
-              totalCalories: totals.calories ? parseInt(totals.calories) : undefined,
-              totalProtein: totals.protein ? parseInt(totals.protein) : undefined,
-              totalCarbs: totals.carbs ? parseInt(totals.carbs) : undefined,
-              totalFat: totals.fat ? parseInt(totals.fat) : undefined,
+              totalCalories: dailyTotals.calories || undefined,
+              totalProtein: dailyTotals.protein ? Math.round(dailyTotals.protein) : undefined,
+              totalCarbs: dailyTotals.carbs ? Math.round(dailyTotals.carbs) : undefined,
+              totalFat: dailyTotals.fat ? Math.round(dailyTotals.fat) : undefined,
               notes: planNotes || undefined,
             })}
             disabled={upsert.isPending}
@@ -1183,6 +1251,137 @@ function ExerciseLibrarySection() {
   );
 }
 
+// ─── Section: Nutrition Data ────────────────────────────────────────────────
+type FoodRow = {
+  id?: number;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fiber: number;
+  fat: number;
+};
+const EMPTY_FOOD: FoodRow = { name: "", calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 };
+const MACRO_FIELDS = [
+  { key: "calories" as const, label: "Calories", unit: "kcal", step: 1 },
+  { key: "protein" as const, label: "Protein", unit: "g", step: 0.1 },
+  { key: "carbs" as const, label: "Carbs", unit: "g", step: 0.1 },
+  { key: "fiber" as const, label: "Fiber", unit: "g", step: 0.1 },
+  { key: "fat" as const, label: "Fat", unit: "g", step: 0.1 },
+];
+
+function NutritionDataSection() {
+  const { data: foods = [], refetch } = trpc.nutritionFoods.list.useQuery();
+  const upsert = trpc.nutritionFoods.upsert.useMutation({ onSuccess: () => { refetch(); setEditing(null); toast.success("Saved"); } });
+  const del = trpc.nutritionFoods.delete.useMutation({ onSuccess: () => { refetch(); toast.success("Deleted"); } });
+
+  const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<FoodRow | null>(null);
+  const [isNew, setIsNew] = useState(false);
+
+  const filtered = foods.filter(f => f.name.toLowerCase().includes(search.toLowerCase()));
+
+  function startNew() { setEditing({ ...EMPTY_FOOD }); setIsNew(true); }
+  function startEdit(f: FoodRow) { setEditing({ ...f }); setIsNew(false); }
+  function saveEditing() {
+    if (!editing || !editing.name.trim()) { toast.error("Food name is required"); return; }
+    upsert.mutate(editing as any);
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search foods…"
+            className="w-full pl-8 pr-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+        <button
+          onClick={startNew}
+          className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
+        >
+          <Plus size={14} /> Add Food
+        </button>
+      </div>
+
+      {editing && (
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-foreground">{isNew ? "Add New Food" : `Edit: ${editing.name}`}</p>
+            <button onClick={() => setEditing(null)} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
+          </div>
+          <input
+            value={editing.name}
+            onChange={e => setEditing(prev => prev ? { ...prev, name: e.target.value } : prev)}
+            placeholder="Food name"
+            className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {MACRO_FIELDS.map(f => (
+              <div key={f.key}>
+                <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">{f.label} ({f.unit})</label>
+                <input
+                  type="number" step={f.step} min="0"
+                  value={(editing as any)[f.key] ?? 0}
+                  onChange={e => setEditing(prev => prev ? { ...prev, [f.key]: parseFloat(e.target.value) || 0 } : prev)}
+                  className="w-full bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground">All values are per 100g of food</p>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setEditing(null)} className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg">Cancel</button>
+            <button onClick={saveEditing} disabled={upsert.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50">
+              <Save size={13} /> {upsert.isPending ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </Card>
+      )}
+
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-secondary/50">
+              <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[200px]">Food</th>
+              {MACRO_FIELDS.map(f => (
+                <th key={f.key} className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-right min-w-[80px]">{f.label}<br /><span className="text-[9px] normal-case font-normal">(per 100g)</span></th>
+              ))}
+              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[80px]">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && (
+              <tr><td colSpan={7} className="text-center py-8 text-muted-foreground text-sm">No foods found</td></tr>
+            )}
+            {filtered.map((food, i) => (
+              <tr key={food.id} className={`border-b border-border/50 hover:bg-secondary/30 transition-colors ${i % 2 === 0 ? "" : "bg-secondary/10"}`}>
+                <td className="px-4 py-2.5 font-medium text-foreground sticky left-0 bg-card">{food.name}</td>
+                <td className="px-3 py-2.5 text-right text-foreground">{food.calories}</td>
+                <td className="px-3 py-2.5 text-right text-foreground">{food.protein}</td>
+                <td className="px-3 py-2.5 text-right text-foreground">{food.carbs}</td>
+                <td className="px-3 py-2.5 text-right text-foreground">{food.fiber}</td>
+                <td className="px-3 py-2.5 text-right text-foreground">{food.fat}</td>
+                <td className="px-3 py-2.5 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <button onClick={() => startEdit(food as FoodRow)} className="text-muted-foreground hover:text-primary transition-colors"><Pencil size={13} /></button>
+                    <button onClick={() => del.mutate({ id: food.id! })} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={13} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-muted-foreground">{filtered.length} food{filtered.length !== 1 ? "s" : ""} · All nutritional values sourced from USDA FoodData Central (per 100g)</p>
+    </div>
+  );
+}
+
 // ─── Main CoachPanel ──────────────────────────────────────────────────────────
 const SECTION_MAP: Record<string, React.ReactNode> = {
   clients: <ClientsSection />,
@@ -1191,6 +1390,7 @@ const SECTION_MAP: Record<string, React.ReactNode> = {
   notes: <NotesSection />,
   progress: <ProgressSection />,
   "exercise-library": <ExerciseLibrarySection />,
+  "nutrition-data": <NutritionDataSection />,
 };
 const SECTION_TITLES: Record<string, string> = {
   clients: "Clients",
@@ -1199,7 +1399,8 @@ const SECTION_TITLES: Record<string, string> = {
   notes: "Coaching Notes",
   progress: "Client Progress",
   "exercise-library": "Exercise Library",
-};;
+  "nutrition-data": "Nutrition Data",
+};
 
 export default function CoachPanel() {
   const params = useParams<{ section?: string }>();

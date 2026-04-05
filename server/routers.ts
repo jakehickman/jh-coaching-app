@@ -333,5 +333,26 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(({ input }) => db.deleteExercise(input.id)),
   }),
+
+  // Nutrition Foods
+  nutritionFoods: router({
+    list: protectedProcedure.query(() => db.listNutritionFoods()),
+    upsert: adminProcedure
+      .input(
+        z.object({
+          id: z.number().optional(),
+          name: z.string(),
+          calories: z.number(),
+          protein: z.number(),
+          carbs: z.number(),
+          fiber: z.number(),
+          fat: z.number(),
+        })
+      )
+      .mutation(({ input }) => db.upsertNutritionFood(input as any)),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteNutritionFood(input.id)),
+  }),
 });
 export type AppRouter = typeof appRouter;

@@ -16,6 +16,9 @@ import {
   weeklyCheckIns,
   exerciseLibrary,
   InsertExerciseLibraryEntry,
+  nutritionFoods,
+  NutritionFood,
+  InsertNutritionFood,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -473,4 +476,28 @@ export async function deleteExercise(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(exerciseLibrary).where(eq(exerciseLibrary.id, id));
+}
+
+// ─── Nutrition Foods ─────────────────────────────────────────────────────────
+export async function listNutritionFoods() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(nutritionFoods).orderBy(nutritionFoods.name);
+}
+
+export async function upsertNutritionFood(data: InsertNutritionFood & { id?: number }) {
+  const db = await getDb();
+  if (!db) return;
+  if (data.id) {
+    const { id, ...rest } = data;
+    await db.update(nutritionFoods).set({ ...rest, updatedAt: new Date() } as any).where(eq(nutritionFoods.id, id));
+  } else {
+    await db.insert(nutritionFoods).values(data as any);
+  }
+}
+
+export async function deleteNutritionFood(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(nutritionFoods).where(eq(nutritionFoods.id, id));
 }

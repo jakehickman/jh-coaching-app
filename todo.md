@@ -47,3 +47,7 @@
 - [x] Re-seed all 55 exercises into exercise_library with correct muscle group values
 - [x] Remove copy program feature from Training Programs editor
 - [x] Remove Jake H demo client account and all associated demo data
+- [x] Create nutrition_foods DB table with calories, carbs, fiber, protein, fat per 100g
+- [x] Seed all 46 foods with USDA-sourced nutritional data
+- [x] Build Nutrition Data tab in Coach Panel (searchable table, add/edit/delete)
+- [x] Add per-meal macro totals and daily totals to Meal Plans section

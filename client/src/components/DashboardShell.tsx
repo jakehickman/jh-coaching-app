@@ -6,6 +6,7 @@ import {
   BarChart3,
   BookOpen,
   Calendar,
+  Salad,
   ChevronLeft,
   ClipboardList,
   Dumbbell,
@@ -46,6 +47,7 @@ const coachNav: NavItem[] = [
   { href: "/coach/notes", label: "Coaching Notes", icon: <ClipboardList size={16} /> },
   { href: "/coach/progress", label: "Client Progress", icon: <TrendingUp size={16} /> },
   { href: "/coach/exercise-library", label: "Exercise Library", icon: <BookOpen size={16} /> },
+  { href: "/coach/nutrition-data", label: "Nutrition Data", icon: <Salad size={16} /> },
 ];
 
 interface DashboardShellProps {
