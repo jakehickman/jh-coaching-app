@@ -320,7 +320,7 @@ function DailyLogTab() {
   return (
     <div className="space-y-6 max-w-lg">
       <div>
-        <SectionLabel>Select Date</SectionLabel>
+        <SectionLabel>Date</SectionLabel>
         <DateInput value={date} onChange={setDate} />
       </div>
 
