@@ -168,19 +168,23 @@ function OverviewTab() {
 
   const latestLog = logs?.[0];
 
-  // Training adherence — calendar days vs prescribed training days
+  // Training adherence — one full rotation window
+  // The schedule is e.g. ["A","B","Off","C","D","Off"] — rotation length = schedule.length
   const schedule: string[] = Array.isArray((program as any)?.schedule) ? (program as any).schedule : [];
+  const rotationLength = schedule.length > 0 ? schedule.length : 7;
   const prescribedDays = schedule.length > 0
     ? schedule.filter((s: string) => s !== 'Off').length
-    : 7;
-  const trainedThisWeek = allLogs.filter(l => {
+    : rotationLength;
+  // Look back exactly one rotation length in calendar days
+  const rotationStartDate = localDateStr(rotationLength - 1);
+  const trainedInRotation = allLogs.filter(l => {
     const d = toLocalDateStr(l.logDate);
-    return d >= day6ago && d <= today && l.trainingCompleted;
+    return d >= rotationStartDate && d <= today && l.trainingCompleted;
   }).length;
-  const adherence = prescribedDays > 0 ? Math.min(100, Math.round((trainedThisWeek / prescribedDays) * 100)) : 0;
+  const adherence = prescribedDays > 0 ? Math.min(100, Math.round((trainedInRotation / prescribedDays) * 100)) : 0;
   const adherenceSub = schedule.length > 0
-    ? `${trainedThisWeek}/${prescribedDays} prescribed days`
-    : `${trainedThisWeek} sessions this week`;
+    ? `${trainedInRotation}/${prescribedDays} days (last ${rotationLength}-day rotation)`
+    : `${trainedInRotation} sessions this rotation`;
 
   // Recent logs for display (last 7 entries)
   const recentLogs = allLogs.slice(0, 7);
