@@ -232,11 +232,10 @@ function OverviewTab() {
                 <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div>
                     <p className="text-sm font-medium text-foreground">{fmtDate(log.logDate)}</p>
-                    <p className="text-xs text-muted-foreground">{log.trainingType ?? (log.trainingCompleted ? "Training" : "Rest")}</p>
+                    <p className="text-xs text-muted-foreground">{log.trainingType ?? (log.trainingCompleted ? "Training" : "Off")}</p>
                   </div>
                   <div className="flex items-center gap-4 text-right">
                     {log.weight && <div><p className="text-sm font-semibold text-foreground">{log.weight} kg</p><p className="text-[10px] text-muted-foreground">weight</p></div>}
-                    {log.sleepHours && <div><p className="text-sm font-semibold text-foreground">{log.sleepHours}h</p><p className="text-[10px] text-muted-foreground">sleep</p></div>}
                     <div className={`w-2 h-2 rounded-full ${log.trainingCompleted ? "bg-primary" : "bg-muted"}`} />
                   </div>
                 </div>
