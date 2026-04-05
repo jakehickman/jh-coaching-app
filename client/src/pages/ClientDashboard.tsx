@@ -120,23 +120,45 @@ function OverviewTab() {
   const trainedDays = recentLogs.filter(l => l.trainingCompleted).length;
   const adherence = recentLogs.length > 0 ? Math.round((trainedDays / recentLogs.length) * 100) : 0;
 
-  const weights = recentLogs.filter(l => l.weight).map(l => l.weight as number);
-  const avgWeight = weights.length > 0 ? (weights.reduce((a, b) => a + b, 0) / weights.length).toFixed(1) : "—";
+  // 7-day avg weight using true calendar days
+  const todayMs = new Date().setHours(0, 0, 0, 0);
+  const DAY = 86400000;
+  const allLogs = logs ?? [];
+
+  const thisWeekWeights = allLogs
+    .filter(l => {
+      const d = new Date(String(l.logDate).slice(0, 10)).setHours(0, 0, 0, 0);
+      return d >= todayMs - 6 * DAY && d <= todayMs && l.weight != null;
+    })
+    .map(l => l.weight as number);
+
+  const prevWeekWeights = allLogs
+    .filter(l => {
+      const d = new Date(String(l.logDate).slice(0, 10)).setHours(0, 0, 0, 0);
+      return d >= todayMs - 13 * DAY && d <= todayMs - 7 * DAY && l.weight != null;
+    })
+    .map(l => l.weight as number);
+
+  const avgWeight = thisWeekWeights.length > 0
+    ? (thisWeekWeights.reduce((a, b) => a + b, 0) / thisWeekWeights.length).toFixed(1)
+    : "—";
+
+  const prevAvgWeight = prevWeekWeights.length > 0
+    ? prevWeekWeights.reduce((a, b) => a + b, 0) / prevWeekWeights.length
+    : null;
+
+  const weightChangePct = prevAvgWeight && thisWeekWeights.length > 0
+    ? (((thisWeekWeights.reduce((a, b) => a + b, 0) / thisWeekWeights.length) - prevAvgWeight) / prevAvgWeight * 100).toFixed(1)
+    : null;
 
   const latestLog = logs?.[0];
-  const prevWeekLogs = (logs ?? []).slice(7, 14);
-  const prevWeights = prevWeekLogs.filter(l => l.weight).map(l => l.weight as number);
-  const prevAvg = prevWeights.length > 0 ? prevWeights.reduce((a, b) => a + b, 0) / prevWeights.length : null;
-  const weightChange = prevAvg && weights.length > 0
-    ? ((weights.reduce((a, b) => a + b, 0) / weights.length) - prevAvg).toFixed(1)
-    : null;
 
   return (
     <div className="space-y-6">
       <div>
         <SectionLabel>Weekly Summary</SectionLabel>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <MetricCard label="7-Day Avg Weight" value={avgWeight ? `${avgWeight} kg` : "—"} sub={weightChange ? `${Number(weightChange) > 0 ? "+" : ""}${weightChange} kg vs last week` : undefined} />
+          <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? "+" : ""}${weightChangePct}% vs prev 7 days` : undefined} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={`${trainedDays}/${recentLogs.length} sessions`} />
           <MetricCard label="Latest Weight" value={latestLog?.weight ? `${latestLog.weight} kg` : "—"} sub={latestLog?.logDate ? String(latestLog.logDate).slice(0, 10) : undefined} />
           <MetricCard label="Goal Weight" value={profile?.goalWeight ? `${profile.goalWeight} kg` : "—"} sub={profile?.startWeight ? `Started: ${profile.startWeight} kg` : undefined} />
