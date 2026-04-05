@@ -187,6 +187,18 @@ function OverviewTab() {
     ? `${trainedInRotation}/${prescribedDays} days (last ${rotationLength}-day rotation)`
     : `${trainedInRotation} sessions this rotation`;
 
+  // Meal adherence — last 7 calendar days
+  const isOffPlan = (v: unknown) => v === true || v === 1 || v === '1';
+  const cur7Logs = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= day6ago && d <= today; });
+  const prev7Logs = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= day13ago && d <= day7ago; });
+  const curOnPlan = cur7Logs.filter(l => !isOffPlan(l.offPlanMeal)).length;
+  const mealAdherence = cur7Logs.length > 0 ? Math.round((curOnPlan / cur7Logs.length) * 100) : null;
+  const prevOnPlan = prev7Logs.filter(l => !isOffPlan(l.offPlanMeal)).length;
+  const prevMealAdherence = prev7Logs.length > 0 ? Math.round((prevOnPlan / prev7Logs.length) * 100) : null;
+  const mealAdherenceSub = cur7Logs.length > 0
+    ? `${curOnPlan}/${cur7Logs.length} on-plan days${prevMealAdherence != null ? ` · prev ${prevMealAdherence}%` : ""}`
+    : undefined;
+
   // Recent logs for display (last 7 entries)
   const recentLogs = allLogs.slice(0, 7);
 
@@ -197,7 +209,7 @@ function OverviewTab() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? "+" : ""}${weightChangePct}% vs prev 7 days` : undefined} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={adherenceSub} />
-          <MetricCard label="Latest Weight" value={latestLog?.weight ? `${latestLog.weight} kg` : "—"} sub={latestLog?.logDate ? fmtDate(latestLog.logDate) : undefined} />
+          <MetricCard label="Meal Adherence" value={mealAdherence != null ? `${mealAdherence}%` : "—"} sub={mealAdherenceSub} />
           <MetricCard label="Goal Weight" value={profile?.goalWeight ? `${profile.goalWeight} kg` : "—"} sub={profile?.startWeight ? `Started: ${profile.startWeight} kg` : undefined} />
         </div>
       </div>
