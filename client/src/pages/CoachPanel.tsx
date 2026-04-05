@@ -1304,18 +1304,17 @@ function ProgressSection() {
                           {history.slice(-8).map((entry, i) => {
                             const [y, m, d] = entry.date.split("-");
                             const dateLabel = y && m && d ? `${d}/${m}/${y}` : entry.date;
-                            const validSets = entry.sets.filter(s => s.weight != null || s.reps != null);
+                            const set1 = entry.sets.find(s => s.weight != null || s.reps != null) ?? null;
                             return (
-                              <div key={i} className="flex items-start justify-between border-t border-border pt-2 first:border-0 first:pt-0">
+                              <div key={i} className="flex items-center justify-between border-t border-border pt-2 first:border-0 first:pt-0">
                                 <p className="text-xs text-muted-foreground w-20 flex-shrink-0">{dateLabel}</p>
-                                <div className="flex flex-wrap gap-x-3 gap-y-0.5 justify-end">
-                                  {validSets.length > 0 ? validSets.map((s, si) => (
-                                    <p key={si} className="text-xs text-foreground">
-                                      <span className="text-muted-foreground text-[10px]">S{si + 1}: </span>
-                                      {s.weight != null ? `${s.weight}kg` : "—"} × {s.reps != null ? s.reps : "—"}
-                                    </p>
-                                  )) : <p className="text-xs text-muted-foreground">No data</p>}
-                                </div>
+                                {set1 ? (
+                                  <p className="text-xs font-medium text-foreground">
+                                    {set1.weight != null ? `${set1.weight}kg` : "—"} × {set1.reps != null ? set1.reps : "—"}
+                                  </p>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">No data</p>
+                                )}
                               </div>
                             );
                           })}
