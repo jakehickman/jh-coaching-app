@@ -1425,19 +1425,19 @@ function WorkoutLogTab() {
                   <p className="text-sm font-semibold text-foreground">{s.dayLabel}</p>
                   <p className="text-xs text-muted-foreground">{fmtDate(s.sessionDate)}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => { setSessionDate(toLocalDateStr(s.sessionDate)); selectDay(s.dayLabel); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                    className="text-xs text-primary hover:underline"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-sm font-medium text-primary hover:bg-secondary/70 transition-colors"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => { if (confirm("Delete this session?")) { setDeleting(s.id); deleteMutation.mutate({ id: s.id }); } }}
                     disabled={deleting === s.id}
-                    className="text-muted-foreground hover:text-destructive transition-colors"
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>
