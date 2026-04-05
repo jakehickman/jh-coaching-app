@@ -36,3 +36,5 @@
 - [x] Seed all exercise muscle group contribution data
 - [x] Build Exercise Library tab in coach panel (CRUD, muscle group columns, add new muscle group)
 - [x] Build weekly volume summary table on Training Programs tab with frequency multiplier
+- [x] Exercise name in Training Programs editor: searchable dropdown from Exercise Library
+- [x] Round weekly volume totals to nearest whole number

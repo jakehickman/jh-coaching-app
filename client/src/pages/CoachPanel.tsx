@@ -36,7 +36,7 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 // ─── Sortable Exercise Row ───────────────────────────────────────────────────
 function SortableExerciseRow({
-  id, ex, dayIdx, exIdx, updateExercise, removeExercise
+  id, ex, dayIdx, exIdx, updateExercise, removeExercise, exerciseNames
 }: {
   id: string;
   ex: any;
@@ -44,14 +44,20 @@ function SortableExerciseRow({
   exIdx: number;
   updateExercise: (d: number, e: number, f: string, v: string) => void;
   removeExercise: (d: number, e: number) => void;
+  exerciseNames: string[];
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const [showNotes, setShowNotes] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+  const filtered = searchTerm.length > 0
+    ? exerciseNames.filter(n => n.toLowerCase().includes(searchTerm.toLowerCase())).slice(0, 8)
+    : exerciseNames.slice(0, 8);
   return (
     <div ref={setNodeRef} style={style} className="space-y-1">
       <div className="grid grid-cols-12 gap-1 items-center">
@@ -62,9 +68,36 @@ function SortableExerciseRow({
         >
           <GripVertical size={13} />
         </div>
-        <input type="text" value={ex.name} onChange={e => updateExercise(dayIdx, exIdx, "name", e.target.value)}
-          placeholder="Exercise name"
-          className="col-span-6 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+        {/* Searchable exercise dropdown */}
+        <div className="col-span-6 relative">
+          <input
+            type="text"
+            value={dropdownOpen ? searchTerm : ex.name}
+            onChange={e => { setSearchTerm(e.target.value); setDropdownOpen(true); }}
+            onFocus={() => { setSearchTerm(""); setDropdownOpen(true); }}
+            onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+            placeholder="Exercise name"
+            className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          {dropdownOpen && filtered.length > 0 && (
+            <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+              {filtered.map(name => (
+                <button
+                  key={name}
+                  type="button"
+                  onMouseDown={() => {
+                    updateExercise(dayIdx, exIdx, "name", name);
+                    setSearchTerm("");
+                    setDropdownOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-xs text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <input type="text" value={ex.sets} onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
           placeholder="4"
           className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
@@ -236,7 +269,7 @@ function ClientsSection() {
 
 // ─── Section: Training Programs ───────────────────────────────────────────────
 function SortableDayCard({
-  id, day, dayIdx, sensors, updateDay, removeDay, addExercise, removeExercise, updateExercise, handleExDragEnd
+  id, day, dayIdx, sensors, updateDay, removeDay, addExercise, removeExercise, updateExercise, handleExDragEnd, exerciseNames
 }: {
   id: string; day: any; dayIdx: number; sensors: any;
   updateDay: (i: number, f: string, v: string) => void;
@@ -245,6 +278,7 @@ function SortableDayCard({
   removeExercise: (d: number, e: number) => void;
   updateExercise: (d: number, e: number, f: string, v: string) => void;
   handleExDragEnd: (dayIdx: number) => (event: DragEndEvent) => void;
+  exerciseNames: string[];
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
@@ -284,6 +318,7 @@ function SortableDayCard({
                   exIdx={j}
                   updateExercise={updateExercise}
                   removeExercise={removeExercise}
+                  exerciseNames={exerciseNames}
                 />
               ))}
             </SortableContext>
@@ -362,7 +397,7 @@ function TrainingSection() {
     }
     // Apply multiplier to weekly totals
     for (const key of Object.keys(weeklyTotals)) {
-      weeklyTotals[key] = Math.round(weeklyTotals[key] * multiplier * 10) / 10;
+      weeklyTotals[key] = Math.round(weeklyTotals[key] * multiplier);
     }
 
     return { dayTotals, weeklyTotals, multiplier };
@@ -548,6 +583,7 @@ function TrainingSection() {
                     removeExercise={removeExercise}
                     updateExercise={updateExercise}
                     handleExDragEnd={handleExDragEnd}
+                    exerciseNames={(exerciseLib as any[]).map((e: any) => e.name).sort()}
                   />
                 ))}
               </div>
