@@ -1102,7 +1102,14 @@ function TrainingTab() {
 function WorkoutLogTab() {
   const { data: program } = trpc.training.get.useQuery();
   const { data: sessions = [], refetch } = trpc.workoutSessions.list.useQuery();
+  const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
   const utils = trpc.useUtils();
+
+  // Build video URL lookup map from exercise library
+  const videoMap: Record<string, string> = Object.fromEntries(
+    (exerciseLib as any[]).filter((e: any) => e.videoUrl).map((e: any) => [e.name, e.videoUrl as string])
+  );
+  const [videoModal, setVideoModal] = useState<{ name: string; embedUrl: string } | null>(null);
 
   const today = (() => {
     const d = new Date();
@@ -1269,11 +1276,23 @@ function WorkoutLogTab() {
               const sets = exerciseData[ex.name] ?? [{ weight: "", reps: "", notes: "" }];
               const isExpanded = expandedSets[ex.name];
               const prevSets = prevExMap[ex.name] ?? [];
+              const exVideoUrl = videoMap[ex.name];
+              const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
               return (
                 <Card key={i}>
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1">
-                      <p className="text-base font-semibold text-foreground">{ex.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-base font-semibold text-foreground">{ex.name}</p>
+                        {exEmbedUrl && (
+                          <button
+                            onClick={() => setVideoModal({ name: ex.name, embedUrl: exEmbedUrl })}
+                            className="flex items-center gap-1 text-[10px] font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-400/10 px-1.5 py-0.5 rounded"
+                          >
+                            <Play size={10} fill="currentColor" /> Demo
+                          </button>
+                        )}
+                      </div>
                       {ex.notes && <p className="text-xs text-muted-foreground mt-0.5">{ex.notes}</p>}
                       <p className="text-xs text-muted-foreground mt-0.5">{ex.sets} sets × {ex.reps}</p>
                       {prevSets.length > 0 && (
@@ -1373,6 +1392,27 @@ function WorkoutLogTab() {
           </div>
         );
       })()}
+
+      {/* Video modal */}
+      {videoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setVideoModal(null)}>
+          <div className="bg-card rounded-xl overflow-hidden w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <p className="text-sm font-semibold text-foreground">{videoModal.name}</p>
+              <button onClick={() => setVideoModal(null)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+            </div>
+            <div className="aspect-video">
+              <iframe
+                src={videoModal.embedUrl}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title={videoModal.name}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Past sessions */}
       {sessions.length > 0 && (
