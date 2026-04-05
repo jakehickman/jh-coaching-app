@@ -14,6 +14,8 @@ import {
   timelineMilestones,
   coachingNotes,
   weeklyCheckIns,
+  exerciseLibrary,
+  InsertExerciseLibraryEntry,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -447,4 +449,28 @@ export async function upsertWeeklyCheckIn(data: {
   } else {
     await db.insert(weeklyCheckIns).values(data as any);
   }
+}
+
+// ─── Exercise Library ────────────────────────────────────────────────────────
+export async function listExercises() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(exerciseLibrary).orderBy(exerciseLibrary.name);
+}
+
+export async function upsertExercise(data: InsertExerciseLibraryEntry & { id?: number }) {
+  const db = await getDb();
+  if (!db) return;
+  if (data.id) {
+    const { id, ...rest } = data;
+    await db.update(exerciseLibrary).set({ ...rest, updatedAt: new Date() } as any).where(eq(exerciseLibrary.id, id));
+  } else {
+    await db.insert(exerciseLibrary).values(data as any);
+  }
+}
+
+export async function deleteExercise(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(exerciseLibrary).where(eq(exerciseLibrary.id, id));
 }

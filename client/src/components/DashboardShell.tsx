@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
+  BookOpen,
   Calendar,
   ChevronLeft,
   ClipboardList,
@@ -44,6 +45,7 @@ const coachNav: NavItem[] = [
   { href: "/coach/meal-plans", label: "Meal Plans", icon: <Zap size={16} /> },
   { href: "/coach/notes", label: "Coaching Notes", icon: <ClipboardList size={16} /> },
   { href: "/coach/progress", label: "Client Progress", icon: <TrendingUp size={16} /> },
+  { href: "/coach/exercise-library", label: "Exercise Library", icon: <BookOpen size={16} /> },
 ];
 
 interface DashboardShellProps {

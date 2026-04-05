@@ -1,0 +1,21 @@
+CREATE TABLE `exercise_library` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`name` varchar(128) NOT NULL,
+	`chest` float DEFAULT 0,
+	`frontDelts` float DEFAULT 0,
+	`sideDelts` float DEFAULT 0,
+	`triceps` float DEFAULT 0,
+	`lats` float DEFAULT 0,
+	`upperBack` float DEFAULT 0,
+	`rearDelts` float DEFAULT 0,
+	`biceps` float DEFAULT 0,
+	`quads` float DEFAULT 0,
+	`hams` float DEFAULT 0,
+	`glutes` float DEFAULT 0,
+	`calves` float DEFAULT 0,
+	`abs` float DEFAULT 0,
+	`customGroups` json,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `exercise_library_id` PRIMARY KEY(`id`)
+);

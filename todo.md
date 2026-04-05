@@ -32,3 +32,7 @@
 - [x] Remove Focus field from training day cards in Training Programs editor
 - [x] Training schedule rotation builder in Training Programs editor (Day 1 / Day 2 / Off / repeat)
 - [x] Add placeholder "Session" to training day name input in Training Programs editor
+- [x] Add exercise_library table to schema and migrate DB
+- [x] Seed all exercise muscle group contribution data
+- [x] Build Exercise Library tab in coach panel (CRUD, muscle group columns, add new muscle group)
+- [x] Build weekly volume summary table on Training Programs tab with frequency multiplier

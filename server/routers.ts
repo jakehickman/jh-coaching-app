@@ -302,6 +302,35 @@ export const appRouter = router({
         db.upsertWeeklyCheckIn({ userId: input.userId, weekStartDate: input.weekStartDate, coachFeedback: input.coachFeedback })
       ),
   }),
-});
 
+  // Exercise Library
+  exerciseLibrary: router({
+    list: protectedProcedure.query(() => db.listExercises()),
+    upsert: adminProcedure
+      .input(
+        z.object({
+          id: z.number().optional(),
+          name: z.string(),
+          chest: z.number().optional(),
+          frontDelts: z.number().optional(),
+          sideDelts: z.number().optional(),
+          triceps: z.number().optional(),
+          lats: z.number().optional(),
+          upperBack: z.number().optional(),
+          rearDelts: z.number().optional(),
+          biceps: z.number().optional(),
+          quads: z.number().optional(),
+          hams: z.number().optional(),
+          glutes: z.number().optional(),
+          calves: z.number().optional(),
+          abs: z.number().optional(),
+          customGroups: z.any().optional(),
+        })
+      )
+      .mutation(({ input }) => db.upsertExercise(input as any)),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteExercise(input.id)),
+  }),
+});
 export type AppRouter = typeof appRouter;

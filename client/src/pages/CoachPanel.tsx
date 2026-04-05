@@ -4,7 +4,7 @@ import { useParams, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical, BookOpen, Search, Pencil, X } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -313,6 +313,60 @@ function TrainingSection() {
   const [schedule, setSchedule] = useState<string[]>([]);
   const [copyFromId, setCopyFromId] = useState<string>("");
   const { data: allPrograms } = trpc.training.listAll.useQuery();
+  const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
+
+  // ── Volume calculation ──────────────────────────────────────────────────────
+  const volumeTable = (() => {
+    if (!days.length) return null;
+    // Frequency multiplier: 7 / number of slots in the rotation (Off counts as a slot)
+    const cycleLengthDays = schedule.length > 0 ? schedule.length : days.length;
+    const multiplier = 7 / cycleLengthDays;
+
+    // Build a map of exercise name -> muscle contributions from the library
+    const libMap = new Map<string, Record<string, number>>();
+    for (const ex of exerciseLib) {
+      const contributions: Record<string, number> = {};
+      for (const mg of MUSCLE_GROUPS) {
+        const val = (ex as any)[mg.key] as number ?? 0;
+        if (val > 0) contributions[mg.key] = val;
+      }
+      libMap.set(ex.name.toLowerCase(), contributions);
+    }
+
+    // Per-day totals
+    const dayTotals: Record<string, Record<string, number>> = {};
+    for (const day of days) {
+      const dayName = day.name || "Unnamed";
+      dayTotals[dayName] = {};
+      for (const ex of (day.exercises ?? [])) {
+        const sets = parseFloat(ex.sets) || 0;
+        const contrib = libMap.get((ex.name ?? "").toLowerCase());
+        if (!contrib || sets === 0) continue;
+        for (const [mgKey, val] of Object.entries(contrib)) {
+          dayTotals[dayName][mgKey] = (dayTotals[dayName][mgKey] ?? 0) + sets * val;
+        }
+      }
+    }
+
+    // Weekly totals
+    const weeklyTotals: Record<string, number> = {};
+    for (const day of days) {
+      const dayName = day.name || "Unnamed";
+      // How many times does this day appear in the schedule?
+      const occurrences = schedule.length > 0
+        ? schedule.filter(s => s === dayName).length
+        : 1;
+      for (const [mgKey, val] of Object.entries(dayTotals[dayName] ?? {})) {
+        weeklyTotals[mgKey] = (weeklyTotals[mgKey] ?? 0) + val * occurrences;
+      }
+    }
+    // Apply multiplier to weekly totals
+    for (const key of Object.keys(weeklyTotals)) {
+      weeklyTotals[key] = Math.round(weeklyTotals[key] * multiplier * 10) / 10;
+    }
+
+    return { dayTotals, weeklyTotals, multiplier };
+  })();
   useEffect(() => {
     if (program) {
       setProgramName(program.programName ?? "");
@@ -508,7 +562,7 @@ function TrainingSection() {
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
           </div>
-          <button
+           <button
             onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || undefined, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || undefined })}
             disabled={upsert.isPending}
             className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
@@ -516,12 +570,65 @@ function TrainingSection() {
             <Save size={15} />
             {upsert.isPending ? "Saving..." : "Save Training Program"}
           </button>
+
+          {/* ── Weekly Volume Table ── */}
+          {volumeTable && (
+            <div className="mt-6">
+              <SectionLabel>Weekly Volume Summary</SectionLabel>
+              <p className="text-xs text-muted-foreground mb-3">
+                Cycle: {schedule.length > 0 ? schedule.length : days.length} days · Multiplier: ×{volumeTable.multiplier.toFixed(3)} · Values = sets per week
+              </p>
+              <div className="overflow-x-auto rounded-xl border border-border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-secondary/50">
+                      <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[120px]">Muscle</th>
+                      {days.map(d => (
+                        <th key={d.name} className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[80px]">{d.name || "Unnamed"}</th>
+                      ))}
+                      <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-primary font-semibold text-center min-w-[80px]">Weekly</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MUSCLE_GROUPS.map(mg => {
+                      const weekly = volumeTable.weeklyTotals[mg.key] ?? 0;
+                      if (weekly === 0) return null;
+                      return (
+                        <tr key={mg.key} className="border-b border-border/50 hover:bg-secondary/20">
+                          <td className="px-4 py-2 font-medium text-foreground text-sm sticky left-0 bg-card">{mg.label}</td>
+                          {days.map(d => {
+                            const val = volumeTable.dayTotals[d.name || "Unnamed"]?.[mg.key] ?? 0;
+                            return (
+                              <td key={d.name} className="px-3 py-2 text-center">
+                                {val > 0 ? (
+                                  <span className="text-sm text-foreground/80">{Math.round(val * 10) / 10}</span>
+                                ) : (
+                                  <span className="text-muted-foreground/30">—</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                          <td className="px-3 py-2 text-center">
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
+                              weekly >= 10 ? "bg-primary/20 text-primary" :
+                              weekly >= 6 ? "bg-primary/10 text-primary/80" :
+                              "bg-secondary text-muted-foreground"
+                            }`}>{weekly}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Only muscle groups with &gt;0 weekly sets are shown. Match exercise names exactly to the Exercise Library for accurate tracking.</p>
+            </div>
+          )}
         </>
       )}
     </div>
   );
 }
-
 // ─── Section: Meal Plans ──────────────────────────────────────────────────────
 function MealPlansSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
@@ -904,6 +1011,172 @@ function ProgressSection() {
   );
 }
 
+// ─── Section: Exercise Library ───────────────────────────────────────────────
+const MUSCLE_GROUPS = [
+  { key: "chest", label: "Chest" },
+  { key: "frontDelts", label: "Front Delts" },
+  { key: "sideDelts", label: "Side Delts" },
+  { key: "triceps", label: "Triceps" },
+  { key: "lats", label: "Lats" },
+  { key: "upperBack", label: "Upper Back" },
+  { key: "rearDelts", label: "Rear Delts" },
+  { key: "biceps", label: "Biceps" },
+  { key: "quads", label: "Quads" },
+  { key: "hams", label: "Hams" },
+  { key: "glutes", label: "Glutes" },
+  { key: "calves", label: "Calves" },
+  { key: "abs", label: "Abs" },
+] as const;
+
+type MuscleKey = typeof MUSCLE_GROUPS[number]["key"];
+
+type ExerciseRow = {
+  id?: number;
+  name: string;
+  chest: number; frontDelts: number; sideDelts: number; triceps: number;
+  lats: number; upperBack: number; rearDelts: number; biceps: number;
+  quads: number; hams: number; glutes: number; calves: number; abs: number;
+};
+
+const EMPTY_EXERCISE: ExerciseRow = {
+  name: "", chest: 0, frontDelts: 0, sideDelts: 0, triceps: 0,
+  lats: 0, upperBack: 0, rearDelts: 0, biceps: 0,
+  quads: 0, hams: 0, glutes: 0, calves: 0, abs: 0,
+};
+
+function ExerciseLibrarySection() {
+  const { data: exercises = [], refetch } = trpc.exerciseLibrary.list.useQuery();
+  const upsert = trpc.exerciseLibrary.upsert.useMutation({ onSuccess: () => { refetch(); setEditing(null); toast.success("Saved"); } });
+  const del = trpc.exerciseLibrary.delete.useMutation({ onSuccess: () => { refetch(); toast.success("Deleted"); } });
+
+  const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<ExerciseRow | null>(null);
+  const [isNew, setIsNew] = useState(false);
+
+  const filtered = exercises.filter(e =>
+    e.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  function startNew() {
+    setEditing({ ...EMPTY_EXERCISE });
+    setIsNew(true);
+  }
+
+  function startEdit(ex: ExerciseRow) {
+    setEditing({ ...ex });
+    setIsNew(false);
+  }
+
+  function saveEditing() {
+    if (!editing || !editing.name.trim()) { toast.error("Exercise name is required"); return; }
+    upsert.mutate(editing as any);
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Header row */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search exercises…"
+            className="w-full pl-8 pr-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+        <button
+          onClick={startNew}
+          className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
+        >
+          <Plus size={14} /> Add Exercise
+        </button>
+      </div>
+
+      {/* Edit / Add form */}
+      {editing && (
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-foreground">{isNew ? "Add New Exercise" : `Edit: ${editing.name}`}</p>
+            <button onClick={() => setEditing(null)} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
+          </div>
+          <input
+            value={editing.name}
+            onChange={e => setEditing(prev => prev ? { ...prev, name: e.target.value } : prev)}
+            placeholder="Exercise name"
+            className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {MUSCLE_GROUPS.map(mg => (
+              <div key={mg.key}>
+                <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">{mg.label}</label>
+                <input
+                  type="number" step="0.25" min="0" max="2"
+                  value={(editing as any)[mg.key] ?? 0}
+                  onChange={e => setEditing(prev => prev ? { ...prev, [mg.key]: parseFloat(e.target.value) || 0 } : prev)}
+                  className="w-full bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setEditing(null)} className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg">Cancel</button>
+            <button onClick={saveEditing} disabled={upsert.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50">
+              <Save size={13} /> {upsert.isPending ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-secondary/50">
+              <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[180px]">Exercise</th>
+              {MUSCLE_GROUPS.map(mg => (
+                <th key={mg.key} className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[70px]">{mg.label}</th>
+              ))}
+              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[80px]">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && (
+              <tr><td colSpan={MUSCLE_GROUPS.length + 2} className="text-center py-8 text-muted-foreground text-sm">No exercises found</td></tr>
+            )}
+            {filtered.map((ex, i) => (
+              <tr key={ex.id} className={`border-b border-border/50 hover:bg-secondary/30 transition-colors ${i % 2 === 0 ? "" : "bg-secondary/10"}`}>
+                <td className="px-4 py-2.5 font-medium text-foreground sticky left-0 bg-card">{ex.name}</td>
+                {MUSCLE_GROUPS.map(mg => {
+                  const val = (ex as any)[mg.key] as number ?? 0;
+                  return (
+                    <td key={mg.key} className="px-3 py-2.5 text-center">
+                      {val > 0 ? (
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold ${
+                          val >= 1 ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary/70"
+                        }`}>{val}</span>
+                      ) : (
+                        <span className="text-muted-foreground/30">—</span>
+                      )}
+                    </td>
+                  );
+                })}
+                <td className="px-3 py-2.5 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <button onClick={() => startEdit(ex as ExerciseRow)} className="text-muted-foreground hover:text-primary transition-colors"><Pencil size={13} /></button>
+                    <button onClick={() => del.mutate({ id: ex.id! })} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={13} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-muted-foreground">{filtered.length} exercise{filtered.length !== 1 ? "s" : ""} · Values represent sets contributed per set performed (e.g. 0.5 = half a set)</p>
+    </div>
+  );
+}
+
 // ─── Main CoachPanel ──────────────────────────────────────────────────────────
 const SECTION_MAP: Record<string, React.ReactNode> = {
   clients: <ClientsSection />,
@@ -911,15 +1184,16 @@ const SECTION_MAP: Record<string, React.ReactNode> = {
   "meal-plans": <MealPlansSection />,
   notes: <NotesSection />,
   progress: <ProgressSection />,
+  "exercise-library": <ExerciseLibrarySection />,
 };
-
 const SECTION_TITLES: Record<string, string> = {
   clients: "Clients",
   training: "Training Programs",
   "meal-plans": "Meal Plans",
   notes: "Coaching Notes",
   progress: "Client Progress",
-};
+  "exercise-library": "Exercise Library",
+};;
 
 export default function CoachPanel() {
   const params = useParams<{ section?: string }>();

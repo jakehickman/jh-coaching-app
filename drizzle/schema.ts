@@ -190,6 +190,33 @@ export const coachingNotes = mysqlTable("coaching_notes", {
 
 export type CoachingNote = typeof coachingNotes.$inferSelect;
 
+// Exercise library — exercises with muscle group volume contributions
+export const exerciseLibrary = mysqlTable("exercise_library", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  // Muscle group contributions (sets per set performed)
+  chest: float("chest").default(0),
+  frontDelts: float("frontDelts").default(0),
+  sideDelts: float("sideDelts").default(0),
+  triceps: float("triceps").default(0),
+  lats: float("lats").default(0),
+  upperBack: float("upperBack").default(0),
+  rearDelts: float("rearDelts").default(0),
+  biceps: float("biceps").default(0),
+  quads: float("quads").default(0),
+  hams: float("hams").default(0),
+  glutes: float("glutes").default(0),
+  calves: float("calves").default(0),
+  abs: float("abs").default(0),
+  // Extra custom muscle groups stored as JSON: [{name, value}]
+  customGroups: json("customGroups"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ExerciseLibraryEntry = typeof exerciseLibrary.$inferSelect;
+export type InsertExerciseLibraryEntry = typeof exerciseLibrary.$inferInsert;
+
 // Weekly check-ins — structured weekly summary
 export const weeklyCheckIns = mysqlTable("weekly_check_ins", {
   id: int("id").autoincrement().primaryKey(),
