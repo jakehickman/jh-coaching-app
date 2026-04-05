@@ -48,7 +48,7 @@ function DateInput({ value, onChange, className = "" }: { value: string; onChang
     }
   };
 
-  const inputCls = `bg-secondary border border-border rounded-lg px-2 py-2 text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary`;
+  const inputCls = `bg-secondary border border-border rounded-lg px-2 py-3 text-base text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary`;
 
   return (
     <div className={`flex items-center gap-1 ${className}`}>
@@ -56,27 +56,27 @@ function DateInput({ value, onChange, className = "" }: { value: string; onChang
         type="number" min={1} max={31} placeholder="DD"
         value={d || ''}
         onChange={e => update(e.target.value, m || '', y || '')}
-        className={`${inputCls} w-14`}
+        className={`${inputCls} w-16`}
       />
-      <span className="text-muted-foreground text-sm">/</span>
+      <span className="text-muted-foreground">/</span>
       <input
         type="number" min={1} max={12} placeholder="MM"
         value={m || ''}
         onChange={e => update(d || '', e.target.value, y || '')}
-        className={`${inputCls} w-14`}
+        className={`${inputCls} w-16`}
       />
-      <span className="text-muted-foreground text-sm">/</span>
+      <span className="text-muted-foreground">/</span>
       <input
         type="number" min={2000} max={2100} placeholder="YYYY"
         value={y || ''}
         onChange={e => update(d || '', m || '', e.target.value)}
-        className={`${inputCls} w-20`}
+        className={`${inputCls} w-24`}
       />
     </div>
   );
 }
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">{children}</p>;
+  return <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">{children}</p>;
 }
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-card border border-border rounded-xl p-4 ${className}`}>{children}</div>;
@@ -84,22 +84,22 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 function MetricCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <Card>
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className="text-2xl font-bold text-foreground mt-1">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="text-3xl font-bold text-foreground mt-1">{value}</p>
+      {sub && <p className="text-sm text-muted-foreground mt-1">{sub}</p>}
     </Card>
   );
 }
 function ScoreInput({ label, value, onChange, max = 10 }: { label: string; value: number; onChange: (v: number) => void; max?: number }) {
   return (
     <div>
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <div className="flex gap-1 flex-wrap">
+      <p className="text-sm text-muted-foreground mb-2">{label}</p>
+      <div className="flex gap-1.5 flex-wrap">
         {Array.from({ length: max }, (_, i) => i + 1).map(n => (
           <button
             key={n}
             onClick={() => onChange(n)}
-            className={`w-8 h-8 rounded text-xs font-medium transition-colors ${
+            className={`w-10 h-10 rounded text-sm font-medium transition-colors ${
               value === n ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-secondary/80"
             }`}
           >
@@ -325,25 +325,25 @@ function DailyLogTab() {
         <Card className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Weight (kg)</label>
+              <label className="text-sm text-muted-foreground block mb-1.5">Weight (kg)</label>
               <input type="number" step="0.1" value={form.weight} onChange={f("weight")} placeholder="e.g. 82.5"
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Sleep (hours)</label>
+              <label className="text-sm text-muted-foreground block mb-1.5">Sleep (hours)</label>
               <input type="number" step="0.5" value={form.sleepHours} onChange={f("sleepHours")} placeholder="e.g. 7.5"
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Caffeine (servings)</label>
+              <label className="text-sm text-muted-foreground block mb-1.5">Caffeine (servings)</label>
               <input type="number" step="0.5" min="0" value={form.caffeineServings} onChange={f("caffeineServings")} placeholder="e.g. 2"
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
               <p className="text-[10px] text-muted-foreground mt-0.5">1 serving ≈ 80–100mg</p>
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Steps</label>
+              <label className="text-sm text-muted-foreground block mb-1.5">Steps</label>
               <input type="number" value={form.stepsCount} onChange={f("stepsCount")} placeholder="e.g. 8000"
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
           </div>
         </Card>
@@ -355,20 +355,20 @@ function DailyLogTab() {
           <button
             type="button"
             onClick={() => setForm(p => ({ ...p, trainingCompleted: !p.trainingCompleted }))}
-            className="flex items-center gap-3 cursor-pointer w-full text-left"
+            className="flex items-center gap-3 cursor-pointer w-full text-left py-1"
           >
-            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+            <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
               form.trainingCompleted ? "bg-primary border-primary" : "border-border"
             }`}>
-              {form.trainingCompleted && <Check size={12} className="text-primary-foreground" />}
+              {form.trainingCompleted && <Check size={14} className="text-primary-foreground" />}
             </div>
-            <span className="text-sm text-foreground">Training completed today</span>
+            <span className="text-base text-foreground">Training completed today</span>
           </button>
           {form.trainingCompleted && (
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Session</label>
+              <label className="text-sm text-muted-foreground block mb-1.5">Session</label>
               <select value={form.trainingType} onChange={f("trainingType")}
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
                 <option value="">Select session</option>
                 {sessionOptions.length > 0
                   ? sessionOptions.map(s => <option key={s} value={s}>{s}</option>)
@@ -405,16 +405,16 @@ function DailyLogTab() {
           <button
             type="button"
             onClick={() => setForm(p => ({ ...p, offPlanMeal: !p.offPlanMeal }))}
-            className="flex items-center gap-3 cursor-pointer w-full text-left"
+            className="flex items-center gap-3 cursor-pointer w-full text-left py-1"
           >
-            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+            <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
               form.offPlanMeal ? "bg-amber-500 border-amber-500" : "border-border"
             }`}>
-              {form.offPlanMeal && <Check size={12} className="text-white" />}
+              {form.offPlanMeal && <Check size={14} className="text-white" />}
             </div>
             <div>
-              <span className="text-sm text-foreground">Off plan meal today</span>
-              <p className="text-[10px] text-muted-foreground">Had 1 or more meals not in my prescribed plan</p>
+              <span className="text-base text-foreground">Off plan meal today</span>
+              <p className="text-xs text-muted-foreground mt-0.5">Had 1 or more meals not in my prescribed plan</p>
             </div>
           </button>
         </Card>
@@ -423,11 +423,11 @@ function DailyLogTab() {
       <div>
         <SectionLabel>Notes</SectionLabel>
         <textarea value={form.notes} onChange={f("notes")} rows={3} placeholder="Any notes for today..."
-          className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+          className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
       </div>
 
       <button onClick={handleSave} disabled={upsert.isPending}
-        className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
+        className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
         {upsert.isPending ? "Saving..." : "Save Log"}
       </button>
 
@@ -436,11 +436,11 @@ function DailyLogTab() {
           <SectionLabel>Recent Logs</SectionLabel>
           <div className="space-y-2">
             {(logs ?? []).slice(0, 14).map(log => (
-              <div key={log.id} className="flex items-center justify-between bg-secondary rounded-lg px-3 py-2">
+              <div key={log.id} className="flex items-center justify-between bg-secondary rounded-lg px-3 py-3">
                 <div>
-                  <p className="text-sm font-medium text-foreground">{fmtDate(String(log.logDate))}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {log.trainingType ?? (log.trainingCompleted ? "Training" : "Rest")}
+                  <p className="text-base font-medium text-foreground">{fmtDate(String(log.logDate))}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {log.trainingType ?? (log.trainingCompleted ? "Training" : "Off")}
                     {log.weight ? ` · ${log.weight}kg` : ""}
                     {log.offPlanMeal ? " · Off plan" : ""}
                   </p>
@@ -518,7 +518,7 @@ function MeasurementsTab() {
       {showForm && (
         <Card className="space-y-5">
           <div>
-            <label className="text-xs text-muted-foreground block mb-1">Date</label>
+            <label className="text-sm text-muted-foreground block mb-1.5">Date</label>
             <DateInput value={form.measureDate} onChange={v => setForm(p => ({ ...p, measureDate: v }))} />
           </div>
 
@@ -526,7 +526,7 @@ function MeasurementsTab() {
           <div>
             <p className="text-xs font-semibold text-foreground mb-2">Waist Circumference (cm)</p>
             <input type="number" step="0.1" value={form.waist} onChange={e => setForm(p => ({ ...p, waist: e.target.value }))} placeholder="e.g. 82.5"
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
 
           {/* Skinfold sites */}
@@ -550,9 +550,9 @@ function MeasurementsTab() {
           </div>
 
           <div>
-            <label className="text-xs text-muted-foreground block mb-1">Notes (optional)</label>
+            <label className="text-sm text-muted-foreground block mb-1.5">Notes (optional)</label>
             <input type="text" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional"
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
 
           <button onClick={() => add.mutate({
@@ -564,7 +564,7 @@ function MeasurementsTab() {
             thigh1: parseR(form.thigh.r1), thigh2: parseR(form.thigh.r2), thigh3: parseR(form.thigh.r3), thigh4: parseR(form.thigh.r4), thigh5: parseR(form.thigh.r5),
             notes: form.notes || undefined,
           })} disabled={add.isPending}
-            className="w-full py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+            className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-lg hover:opacity-90 disabled:opacity-50">
             {add.isPending ? "Saving..." : "Save Measurements"}
           </button>
         </Card>
@@ -606,7 +606,7 @@ function MeasurementsTab() {
               return (
                 <Card key={m.id}>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-semibold text-foreground">{fmtDate(m.measureDate)}</p>
+                    <p className="text-base font-semibold text-foreground">{fmtDate(m.measureDate)}</p>
                     <button onClick={() => { if (confirm("Delete this measurement entry?")) del.mutate({ id: m.id }); }}
                       className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded" title="Delete entry">
                       <Trash2 size={14} />
@@ -615,14 +615,14 @@ function MeasurementsTab() {
                   {/* Waist */}
                   {m.waist && (
                     <div className="mb-3">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Waist</p>
-                      <p className="text-base font-bold text-foreground">{m.waist} <span className="text-xs font-normal text-muted-foreground">cm</span></p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Waist</p>
+                      <p className="text-lg font-bold text-foreground">{m.waist} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
                     </div>
                   )}
                   {/* Skinfold averages */}
                   {siteAvgs.some(v => v !== null) && (
                     <>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Skinfold (avg mm)</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Skinfold (avg mm)</p>
                       <div className="grid grid-cols-4 gap-2 mb-2">
                         {[
                           { label: "Umbilical", avg: umbAvg },
@@ -631,8 +631,8 @@ function MeasurementsTab() {
                           { label: "Thigh", avg: thighAvg },
                         ].map(({ label, avg }) => (
                           <div key={label} className="text-center">
-                            <p className="text-[9px] text-muted-foreground">{label}</p>
-                            <p className="text-sm font-semibold text-foreground">{avg ?? "—"}</p>
+                            <p className="text-xs text-muted-foreground">{label}</p>
+                            <p className="text-base font-semibold text-foreground">{avg ?? "—"}</p>
                           </div>
                         ))}
                       </div>
@@ -876,7 +876,7 @@ function ShoppingListTab() {
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 font-semibold">Shopping For</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-muted-foreground block mb-1">Training Days</label>
+            <label className="text-sm text-muted-foreground block mb-1.5">Training Days</label>
             <div className="flex items-center gap-2">
               <button onClick={() => setTrainingDays(d => Math.max(0, d - 1))}
                 className="w-8 h-8 rounded-lg bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 flex items-center justify-center">−</button>
@@ -886,7 +886,7 @@ function ShoppingListTab() {
             </div>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground block mb-1">Rest Days</label>
+            <label className="text-sm text-muted-foreground block mb-1.5">Rest Days</label>
             <div className="flex items-center gap-2">
               <button onClick={() => setRestDays(d => Math.max(0, d - 1))}
                 className="w-8 h-8 rounded-lg bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 flex items-center justify-center">−</button>
