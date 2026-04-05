@@ -982,6 +982,7 @@ function ProgressSection() {
     { userId: selectedUserId! },
     { enabled: !!selectedUserId }
   );
+  const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
 
   // ── Calendar-day helpers ────────────────────────────────────────────────────
   const DAY = 86400000;
@@ -1281,47 +1282,82 @@ function ProgressSection() {
 
           {/* Exercise Progress Cards */}
           {workoutSessions.length > 0 && (() => {
-            // Build per-exercise history: { [exerciseName]: [{date, sets}] }
+            // Muscle group label map
+            const MUSCLE_LABELS: Record<string, string> = {
+              chest: 'Chest', frontDelts: 'Front Delts', sideDelts: 'Side Delts',
+              triceps: 'Triceps', lats: 'Lats', upperBack: 'Upper Back',
+              rearDelts: 'Rear Delts', biceps: 'Biceps', quads: 'Quads',
+              hams: 'Hamstrings', glutes: 'Glutes', calves: 'Calves', abs: 'Abs',
+            };
+            const MUSCLE_KEYS = Object.keys(MUSCLE_LABELS);
+
+            // Build lookup: exerciseName -> primary muscle label
+            const exToMuscle: Record<string, string> = {};
+            for (const ex of (exerciseLib as any[])) {
+              let best = 'Other', bestVal = 0;
+              for (const m of MUSCLE_KEYS) {
+                if ((ex[m] ?? 0) > bestVal) { bestVal = ex[m]; best = m; }
+              }
+              exToMuscle[ex.name] = MUSCLE_LABELS[best] ?? 'Other';
+            }
+
+            // Build per-exercise history
             const exerciseHistory: Record<string, Array<{ date: string; sets: Array<{ weight: number | null; reps: number | null }> }>> = {};
             for (const session of [...workoutSessions].reverse()) {
-              const dateStr = String(session.sessionDate).slice(0, 10);
+              const dateStr = toLocalDateStr(session.sessionDate);
               for (const ex of (session.exercises as any[])) {
                 if (!exerciseHistory[ex.name]) exerciseHistory[ex.name] = [];
                 exerciseHistory[ex.name].push({ date: dateStr, sets: ex.sets ?? [] });
               }
             }
-            const exerciseNames = Object.keys(exerciseHistory);
+
+            // Group exercises by muscle
+            const byMuscle: Record<string, string[]> = {};
+            for (const name of Object.keys(exerciseHistory)) {
+              const group = exToMuscle[name] ?? 'Other';
+              if (!byMuscle[group]) byMuscle[group] = [];
+              byMuscle[group].push(name);
+            }
+            const muscleGroups = Object.keys(byMuscle).sort();
+
             return (
               <div>
                 <SectionLabel>Exercise Progress</SectionLabel>
-                <div className="space-y-3">
-                  {exerciseNames.map(name => {
-                    const history = exerciseHistory[name];
-                    return (
-                      <Card key={name}>
-                        <p className="text-sm font-semibold text-foreground mb-2">{name}</p>
-                        <div className="space-y-2">
-                          {history.slice(-8).map((entry, i) => {
-                            const [y, m, d] = entry.date.split("-");
-                            const dateLabel = y && m && d ? `${d}/${m}/${y}` : entry.date;
-                            const set1 = entry.sets.find(s => s.weight != null || s.reps != null) ?? null;
-                            return (
-                              <div key={i} className="flex items-center justify-between border-t border-border pt-2 first:border-0 first:pt-0">
-                                <p className="text-xs text-muted-foreground w-20 flex-shrink-0">{dateLabel}</p>
-                                {set1 ? (
-                                  <p className="text-xs font-medium text-foreground">
-                                    {set1.weight != null ? `${set1.weight}kg` : "—"} × {set1.reps != null ? set1.reps : "—"}
-                                  </p>
-                                ) : (
-                                  <p className="text-xs text-muted-foreground">No data</p>
-                                )}
+                <div className="space-y-5">
+                  {muscleGroups.map(group => (
+                    <div key={group}>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">{group}</p>
+                      <div className="space-y-3">
+                        {byMuscle[group].map(name => {
+                          const history = exerciseHistory[name];
+                          return (
+                            <Card key={name}>
+                              <p className="text-sm font-semibold text-foreground mb-2">{name}</p>
+                              <div className="space-y-2">
+                                {history.slice(-8).map((entry, i) => {
+                                  const [y, m, d] = entry.date.split("-");
+                                  const dateLabel = y && m && d ? `${d}/${m}/${y}` : entry.date;
+                                  const set1 = entry.sets.find((s: any) => s.weight != null || s.reps != null) ?? null;
+                                  return (
+                                    <div key={i} className="flex items-center justify-between border-t border-border pt-2 first:border-0 first:pt-0">
+                                      <p className="text-xs text-muted-foreground w-20 flex-shrink-0">{dateLabel}</p>
+                                      {set1 ? (
+                                        <p className="text-xs font-medium text-foreground">
+                                          {(set1 as any).weight != null ? `${(set1 as any).weight}kg` : "—"} × {(set1 as any).reps != null ? (set1 as any).reps : "—"}
+                                        </p>
+                                      ) : (
+                                        <p className="text-xs text-muted-foreground">No data</p>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          })}
-                        </div>
-                      </Card>
-                    );
-                  })}
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             );
