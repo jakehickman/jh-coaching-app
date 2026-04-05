@@ -372,7 +372,7 @@ function OverviewTab() {
                 <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div>
                     <p className="text-sm font-medium text-foreground">{fmtDate(log.logDate)}</p>
-                    <p className="text-xs text-muted-foreground">{log.trainingType ?? (log.trainingCompleted ? "Training" : "Off")}</p>
+                    <p className="text-xs text-muted-foreground">{log.trainingType && log.trainingType !== 'Off' ? log.trainingType : (log.trainingCompleted ? "Training" : "Rest")}</p>
                   </div>
                   <div className="flex items-center gap-4 text-right">
                     {log.weight && <div><p className="text-sm font-semibold text-foreground">{log.weight} kg</p><p className="text-[10px] text-muted-foreground">weight</p></div>}
@@ -580,7 +580,7 @@ function DailyLogTab() {
                 <div>
                   <p className="text-base font-medium text-foreground">{fmtDate(String(log.logDate))}</p>
                   <p className="text-sm text-muted-foreground">
-                    {log.trainingType ?? (log.trainingCompleted ? "Training" : "Off")}
+                    {log.trainingType && log.trainingType !== 'Off' ? log.trainingType : (log.trainingCompleted ? "Training" : "Rest")}
                     {log.weight ? ` · ${log.weight}kg` : ""}
                     {log.offPlanMeal ? " · Off plan" : ""}
                   </p>

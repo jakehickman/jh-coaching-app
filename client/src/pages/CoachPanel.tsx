@@ -76,7 +76,7 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
   return <div className={`bg-card border border-border rounded-xl p-4 ${className}`}>{children}</div>;
 }
 function MuscleGroupSection({ group, children, globalToggle }: { group: string; children: React.ReactNode; globalToggle?: { expanded: boolean; gen: number } | null }) {
-  const [localOpen, setLocalOpen] = useState(true);
+  const [localOpen, setLocalOpen] = useState(false);
   const [lastGen, setLastGen] = useState(0);
   // When a new global toggle fires (gen changed), sync local state to it
   useEffect(() => {
@@ -1351,10 +1351,10 @@ function ProgressSection() {
                 <div className="flex items-center justify-between mb-3">
                   <SectionLabel>Exercise Progress</SectionLabel>
                   <button
-                    onClick={() => setGlobalToggle(prev => ({ expanded: !(prev?.expanded ?? true), gen: (prev?.gen ?? 0) + 1 }))}
+                    onClick={() => setGlobalToggle(prev => ({ expanded: !(prev?.expanded ?? false), gen: (prev?.gen ?? 0) + 1 }))}
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                   >
-                    {(globalToggle?.expanded ?? true) ? <><ChevronUp className="w-3 h-3" /> Collapse All</> : <><ChevronDown className="w-3 h-3" /> Expand All</>}
+                    {(globalToggle?.expanded ?? false) ? <><ChevronUp className="w-3 h-3" /> Collapse All</> : <><ChevronDown className="w-3 h-3" /> Expand All</>}
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -1406,7 +1406,7 @@ function ProgressSection() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm font-medium text-foreground">{String(log.logDate).slice(0, 10)}</p>
-                          <p className="text-xs text-muted-foreground">{log.trainingType ?? (log.trainingCompleted ? "Training" : "Rest")}</p>
+                          <p className="text-xs text-muted-foreground">{log.trainingType && log.trainingType !== 'Off' ? log.trainingType : (log.trainingCompleted ? "Training" : "Rest")}</p>
                         </div>
                         <div className="flex items-center gap-3">
                           {log.weight && <div className="text-right"><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
