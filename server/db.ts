@@ -179,6 +179,12 @@ export async function upsertDailyLog(data: {
   }
 }
 
+export async function deleteDailyLog(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(dailyLogs).where(and(eq(dailyLogs.id, id), eq(dailyLogs.userId, userId)));
+}
+
 // Measurements
 export async function getMeasurements(userId: number) {
   const db = await getDb();
@@ -303,15 +309,17 @@ export async function upsertTrainingProgram(data: {
   programName?: string;
   days?: unknown;
   schedule?: unknown;
-  notes?: string;
+  notes?: string | null;
 }) {
   const db = await getDb();
   if (!db) return;
   const existing = await getTrainingProgram(data.userId);
   if (existing) {
+    const updateData: any = { ...data, updatedAt: new Date() };
+    if (data.notes === null || data.notes === "") updateData.notes = null;
     await db
       .update(trainingPrograms)
-      .set({ ...data, updatedAt: new Date() } as any)
+      .set(updateData)
       .where(eq(trainingPrograms.id, existing.id));
   } else {
     await db.insert(trainingPrograms).values(data as any);

@@ -593,7 +593,7 @@ function TrainingSection() {
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
           </div>
            <button
-            onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || undefined, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || undefined })}
+            onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || undefined, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null })}
             disabled={upsert.isPending}
             className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
           >
@@ -929,13 +929,34 @@ function ProgressSection() {
     { userId: selectedUserId! },
     { enabled: !!selectedUserId }
   );
+  const { data: trainingProgram } = trpc.training.getForClient.useQuery(
+    { userId: selectedUserId! },
+    { enabled: !!selectedUserId }
+  );
 
   const weightData = (logs ?? []).filter(l => l.weight).slice(0, 14).reverse()
     .map(l => ({ date: String(l.logDate).slice(5), weight: l.weight }));
 
   const recentLogs = (logs ?? []).slice(0, 7);
+
+  // Training adherence: compare trained days against prescribed training days per week
+  // schedule is an array like ["Day 1","Day 2","Off","Day 3","Off","Off","Off"]
+  const schedule = (trainingProgram?.schedule as string[] | null) ?? null;
+  const prescribedDaysPerWeek = schedule
+    ? schedule.filter((s: string) => s && s.toLowerCase() !== "off").length
+    : null;
   const trainedDays = recentLogs.filter(l => l.trainingCompleted).length;
-  const adherence = recentLogs.length > 0 ? Math.round((trainedDays / recentLogs.length) * 100) : 0;
+  // If we have a schedule, expected training days = prescribedDaysPerWeek per 7 days
+  const expectedTrainingDays = prescribedDaysPerWeek != null
+    ? Math.round((prescribedDaysPerWeek / 7) * recentLogs.length)
+    : recentLogs.length;
+  const adherence = expectedTrainingDays > 0
+    ? Math.min(100, Math.round((trainedDays / expectedTrainingDays) * 100))
+    : 0;
+  const adherenceLabel = prescribedDaysPerWeek != null
+    ? `${trainedDays}/${expectedTrainingDays} prescribed days`
+    : `${trainedDays}/${recentLogs.length} logged days`;
+
   const onPlanDays = recentLogs.filter(l => !l.offPlanMeal).length;
   const mealAdherence = recentLogs.length > 0 ? Math.round((onPlanDays / recentLogs.length) * 100) : 0;
   const weights = recentLogs.filter(l => l.weight).map(l => l.weight as number);
@@ -961,7 +982,7 @@ function ProgressSection() {
         <>
           <div className="grid grid-cols-2 gap-3">
             <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">7-Day Avg Weight</p><p className="text-xl font-bold text-foreground mt-1">{avgWeight} kg</p></Card>
-            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Training Adherence</p><p className="text-xl font-bold text-foreground mt-1">{adherence}%</p><p className="text-[10px] text-muted-foreground">{trainedDays}/{recentLogs.length} days</p></Card>
+            <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Training Adherence</p><p className="text-xl font-bold text-foreground mt-1">{adherence}%</p><p className="text-[10px] text-muted-foreground">{adherenceLabel}</p></Card>
             <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meal Adherence</p><p className={`text-xl font-bold mt-1 ${mealAdherence >= 80 ? "text-green-400" : mealAdherence >= 60 ? "text-amber-400" : "text-red-400"}`}>{mealAdherence}%</p><p className="text-[10px] text-muted-foreground">{onPlanDays}/{recentLogs.length} on-plan days</p></Card>
             <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Measurements</p><p className="text-xl font-bold text-foreground mt-1">{(measurements ?? []).length}</p></Card>
           </div>

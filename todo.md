@@ -74,3 +74,9 @@
 - [x] Update Nutrition Data tab to show/edit serving info per food
 - [x] Fix: Client Meal Plan tab macro calculations incorrect for serving-size based foods
 - [x] Change "MEAL:" label to "TOTAL:" in client Meal Plan meal subtotal
+- [x] Redesign Shopping List: training/rest day count inputs, auto-calculate quantities from meal plans
+- [x] Remove Timeline tab from client dashboard
+- [x] Remove MESO 1 tab from client dashboard
+- [x] Fix: Training program coach notes not clearing when removed and saved
+- [x] Add delete option to daily log entries in client dashboard
+- [x] Fix training adherence: compare against prescribed training days per week from schedule

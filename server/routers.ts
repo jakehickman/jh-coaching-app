@@ -93,6 +93,9 @@ export const appRouter = router({
       .mutation(({ ctx, input }) =>
         db.upsertDailyLog({ userId: ctx.user.id, ...input })
       ),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) => db.deleteDailyLog(input.id, ctx.user.id)),
   }),
 
   // Measurements
@@ -191,7 +194,7 @@ export const appRouter = router({
           programName: z.string().optional(),
           days: z.any().optional(),
           schedule: z.any().optional(),
-          notes: z.string().optional(),
+          notes: z.string().nullable().optional(),
         })
       )
       .mutation(({ ctx, input }) =>

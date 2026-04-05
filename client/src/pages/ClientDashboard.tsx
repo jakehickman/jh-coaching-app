@@ -1,7 +1,7 @@
 import DashboardShell from "@/components/DashboardShell";
 import { trpc } from "@/lib/trpc";
 import { useParams, useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar
@@ -156,6 +156,9 @@ function DailyLogTab() {
   const { data: program } = trpc.training.get.useQuery();
   const upsert = trpc.dailyLog.upsert.useMutation({
     onSuccess: () => { toast.success("Log saved"); refetch(); }
+  });
+  const del = trpc.dailyLog.delete.useMutation({
+    onSuccess: () => { toast.success("Log deleted"); refetch(); }
   });
 
   // Build session options from training program day names
@@ -323,6 +326,34 @@ function DailyLogTab() {
         className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
         {upsert.isPending ? "Saving..." : "Save Log"}
       </button>
+
+      {(logs ?? []).length > 0 && (
+        <div>
+          <SectionLabel>Recent Logs</SectionLabel>
+          <div className="space-y-2">
+            {(logs ?? []).slice(0, 14).map(log => (
+              <div key={log.id} className="flex items-center justify-between bg-secondary rounded-lg px-3 py-2">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{fmtDate(String(log.logDate))}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {log.trainingType ?? (log.trainingCompleted ? "Training" : "Rest")}
+                    {log.weight ? ` · ${log.weight}kg` : ""}
+                    {log.offPlanMeal ? " · Off plan" : ""}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (confirm("Delete this log entry?")) del.mutate({ id: log.id });
+                  }}
+                  className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -678,61 +709,131 @@ function MealPlanTab() {
 
 // ─── Tab: Shopping List ───────────────────────────────────────────────────────
 function ShoppingListTab() {
-  const { data: items, refetch } = trpc.shopping.list.useQuery();
-  const toggle = trpc.shopping.toggle.useMutation({ onSuccess: () => refetch() });
+  const [trainingDays, setTrainingDays] = useState(4);
+  const [restDays, setRestDays] = useState(3);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
 
-  const grouped = (items ?? []).reduce((acc, item) => {
-    const cat = item.category ?? "Other";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
-    return acc;
-  }, {} as Record<string, typeof items>);
+  const { data: trainingPlan } = trpc.mealPlan.get.useQuery({ dayType: "training" });
+  const { data: restPlan } = trpc.mealPlan.get.useQuery({ dayType: "rest" });
+  const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
 
-  const checkedCount = (items ?? []).filter(i => i.checked).length;
-  const total = (items ?? []).length;
+  // Helper: convert serving amount to grams
+  function itemToGrams(food: any, amount: number): number {
+    if (!food) return amount;
+    return food.servingUnit && food.servingGrams ? amount * food.servingGrams : amount;
+  }
+
+  // Aggregate all food quantities across both plan types × day counts
+  const shoppingMap = useMemo(() => {
+    const map: Record<string, { totalGrams: number; food: any }> = {};
+
+    const addItems = (plan: any, multiplier: number) => {
+      if (!plan || multiplier === 0) return;
+      const meals = (plan.meals as any[]) ?? [];
+      meals.forEach(meal => {
+        (meal.items ?? []).forEach((item: any) => {
+          if (!item.food || !parseFloat(item.grams)) return;
+          const food = foodDb.find((f: any) => f.name === item.food);
+          const grams = itemToGrams(food, parseFloat(item.grams)) * multiplier;
+          if (!map[item.food]) map[item.food] = { totalGrams: 0, food };
+          map[item.food].totalGrams += grams;
+        });
+      });
+    };
+
+    addItems(trainingPlan, trainingDays);
+    addItems(restPlan, restDays);
+    return map;
+  }, [trainingPlan, restPlan, foodDb, trainingDays, restDays]);
+
+  const items = Object.entries(shoppingMap).sort(([a], [b]) => a.localeCompare(b));
+  const checkedCount = items.filter(([name]) => checked[name]).length;
+
+  // Format display quantity: prefer serving units when available
+  function formatQty(name: string, totalGrams: number, food: any): string {
+    if (food?.servingUnit && food?.servingGrams) {
+      const servings = totalGrams / food.servingGrams;
+      const rounded = Math.ceil(servings * 2) / 2; // round up to nearest 0.5
+      return `${rounded} ${food.servingUnit}${rounded !== 1 ? "s" : ""}`;
+    }
+    // Round up to nearest 10g for cleaner shopping quantities
+    const rounded = Math.ceil(totalGrams / 10) * 10;
+    return `${rounded}g`;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <SectionLabel>Shopping List</SectionLabel>
-          <p className="text-xs text-muted-foreground">{checkedCount}/{total} items checked</p>
+      {/* Day count inputs */}
+      <Card>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 font-semibold">Shopping For</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">Training Days</label>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setTrainingDays(d => Math.max(0, d - 1))}
+                className="w-8 h-8 rounded-lg bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 flex items-center justify-center">−</button>
+              <span className="text-lg font-bold text-foreground w-6 text-center">{trainingDays}</span>
+              <button onClick={() => setTrainingDays(d => Math.min(14, d + 1))}
+                className="w-8 h-8 rounded-lg bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 flex items-center justify-center">+</button>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">Rest Days</label>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setRestDays(d => Math.max(0, d - 1))}
+                className="w-8 h-8 rounded-lg bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 flex items-center justify-center">−</button>
+              <span className="text-lg font-bold text-foreground w-6 text-center">{restDays}</span>
+              <button onClick={() => setRestDays(d => Math.min(14, d + 1))}
+                className="w-8 h-8 rounded-lg bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 flex items-center justify-center">+</button>
+            </div>
+          </div>
         </div>
-        <div className="w-24 h-1.5 bg-secondary rounded-full overflow-hidden">
-          <div className="h-full bg-primary rounded-full transition-all" style={{ width: total > 0 ? `${(checkedCount / total) * 100}%` : "0%" }} />
-        </div>
-      </div>
+        <p className="text-xs text-muted-foreground mt-3">{trainingDays + restDays} day total · quantities calculated from your meal plan</p>
+      </Card>
 
-      {Object.keys(grouped).length === 0 && (
+      {/* Progress bar */}
+      {items.length > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">{checkedCount}/{items.length} items checked</p>
+          <div className="w-32 h-1.5 bg-secondary rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full transition-all" style={{ width: items.length > 0 ? `${(checkedCount / items.length) * 100}%` : "0%" }} />
+          </div>
+        </div>
+      )}
+
+      {items.length === 0 && (
         <Card className="text-center py-12">
-          <p className="text-muted-foreground text-sm">No shopping list items yet.</p>
-          <p className="text-xs text-muted-foreground mt-1">Your coach will add items here.</p>
+          <p className="text-muted-foreground text-sm">No meal plan set yet.</p>
+          <p className="text-xs text-muted-foreground mt-1">Your coach will add your meal plan and quantities will appear here.</p>
         </Card>
       )}
 
-      {Object.entries(grouped).map(([category, catItems]) => (
-        <div key={category}>
-          <SectionLabel>{category}</SectionLabel>
-          <Card className="space-y-1">
-            {(catItems ?? []).map(item => (
-              <label key={item.id} className="flex items-center gap-3 py-2.5 cursor-pointer group">
-                <div
-                  onClick={() => toggle.mutate({ id: item.id, checked: !item.checked })}
-                  className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                    item.checked ? "bg-primary border-primary" : "border-border group-hover:border-primary/50"
-                  }`}
-                >
-                  {item.checked && <Check size={12} className="text-primary-foreground" />}
+      {items.length > 0 && (
+        <Card className="space-y-1">
+          {items.map(([name, entry]) => {
+            const { totalGrams, food } = entry as { totalGrams: number; food: any };
+            const qty = formatQty(name, totalGrams, food);
+            const isChecked = !!checked[name];
+            return (
+              <button
+                key={name}
+                onClick={() => setChecked(prev => ({ ...prev, [name]: !prev[name] }))}
+                className="flex items-center gap-3 py-2.5 w-full text-left group"
+              >
+                <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                  isChecked ? "bg-primary border-primary" : "border-border group-hover:border-primary/50"
+                }`}>
+                  {isChecked && <Check size={12} className="text-primary-foreground" />}
                 </div>
-                <span className={`text-sm flex-1 ${item.checked ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                  {item.itemName}
+                <span className={`text-sm flex-1 ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  {name}
                 </span>
-                {item.quantity && <span className="text-xs text-muted-foreground">{item.quantity}</span>}
-              </label>
-            ))}
-          </Card>
-        </div>
-      ))}
+                <span className="text-xs text-muted-foreground font-medium">{qty}</span>
+              </button>
+            );
+          })}
+        </Card>
+      )}
     </div>
   );
 }
@@ -886,189 +987,6 @@ function TrainingTab() {
   );
 }
 
-// ─── Tab: MESO 1 ─────────────────────────────────────────────────────────────
-function MesoTab() {
-  const { data: cycles } = trpc.meso.cycles.useQuery();
-  const [selectedMeso, setSelectedMeso] = useState<number | null>(null);
-  const { data: sessions } = trpc.meso.sessions.useQuery(
-    { mesoId: selectedMeso! },
-    { enabled: !!selectedMeso }
-  );
-
-  useEffect(() => {
-    if (cycles && cycles.length > 0 && !selectedMeso) {
-      setSelectedMeso(cycles[0].id);
-    }
-  }, [cycles]);
-
-  const currentCycle = cycles?.find(c => c.id === selectedMeso);
-  const weeks = sessions ? Array.from(new Set(sessions.map(s => s.weekNumber))).sort((a, b) => (a ?? 0) - (b ?? 0)) : [];
-
-  return (
-    <div className="space-y-6">
-      {(cycles ?? []).length === 0 && (
-        <Card className="text-center py-12">
-          <p className="text-muted-foreground text-sm">No MESO cycles set up yet.</p>
-          <p className="text-xs text-muted-foreground mt-1">Your coach will set up your periodization here.</p>
-        </Card>
-      )}
-
-      {(cycles ?? []).length > 1 && (
-        <div className="flex gap-2 flex-wrap">
-          {cycles!.map(c => (
-            <button key={c.id} onClick={() => setSelectedMeso(c.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                selectedMeso === c.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}>
-              {c.mesoName ?? `MESO ${c.id}`}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {currentCycle && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-lg font-bold text-foreground">{currentCycle.mesoName ?? "MESO 1"}</p>
-              {currentCycle.startDate && currentCycle.endDate && (
-                <p className="text-xs text-muted-foreground">
-                  {fmtDate(currentCycle.startDate)} → {fmtDate(currentCycle.endDate)}
-                </p>
-              )}
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Total Weeks</p>
-              <p className="text-lg font-bold text-foreground">{currentCycle.totalWeeks}</p>
-            </div>
-          </div>
-
-          {weeks.map(week => (
-            <div key={week} className="mb-6">
-              <SectionLabel>Week {week}</SectionLabel>
-              <div className="space-y-3">
-                {sessions!.filter(s => s.weekNumber === week).map(session => (
-                  <Card key={session.id}>
-                    <p className="text-sm font-semibold text-foreground mb-3">{session.dayLabel}</p>
-                    {session.sessionDate && <p className="text-xs text-muted-foreground mb-2">{fmtDate(session.sessionDate)}</p>}
-                    {(session.exercises as any[])?.map((ex: any, i: number) => (
-                      <div key={i} className="mb-3">
-                        <p className="text-sm font-medium text-foreground mb-1">{ex.name}</p>
-                        <div className="grid grid-cols-4 gap-1 text-[10px] text-muted-foreground mb-1">
-                          <span>Set</span><span>Weight</span><span>Reps</span><span>RIR</span>
-                        </div>
-                        {(ex.sets ?? []).map((set: any, j: number) => (
-                          <div key={j} className="grid grid-cols-4 gap-1 text-xs py-1 border-t border-border">
-                            <span className="text-muted-foreground">{j + 1}</span>
-                            <span className="text-foreground">{set.weight ?? "—"}</span>
-                            <span className="text-foreground">{set.reps ?? "—"}</span>
-                            <span className="text-foreground">{set.rir ?? "—"}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Tab: Timeline ────────────────────────────────────────────────────────────
-function TimelineTab() {
-  const { data: milestones, refetch } = trpc.timeline.list.useQuery();
-  const toggle = trpc.timeline.toggle.useMutation({ onSuccess: () => refetch() });
-
-  const today = new Date();
-  const upcoming = (milestones ?? []).filter(m => new Date(String(m.milestoneDate)) >= today);
-  const past = (milestones ?? []).filter(m => new Date(String(m.milestoneDate)) < today);
-
-  const showDate = milestones?.find(m => m.category === "Show Day");
-  const daysToShow = showDate
-    ? Math.ceil((new Date(String(showDate.milestoneDate)).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    : null;
-
-  const categoryColors: Record<string, string> = {
-    "Show Day": "text-primary border-primary",
-    "Peak Week": "text-yellow-400 border-yellow-400",
-    "Check-in": "text-blue-400 border-blue-400",
-    "Adjustment": "text-purple-400 border-purple-400",
-    default: "text-muted-foreground border-border",
-  };
-
-  return (
-    <div className="space-y-6">
-      {daysToShow !== null && daysToShow > 0 && (
-        <Card className="text-center py-6">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Show Day Countdown</p>
-          <p className="text-5xl font-bold text-primary mt-2">{daysToShow}</p>
-          <p className="text-sm text-muted-foreground mt-1">days to go</p>
-        </Card>
-      )}
-
-      {(milestones ?? []).length === 0 && (
-        <Card className="text-center py-12">
-          <p className="text-muted-foreground text-sm">No timeline milestones set yet.</p>
-          <p className="text-xs text-muted-foreground mt-1">Your coach will add your show prep timeline here.</p>
-        </Card>
-      )}
-
-      {upcoming.length > 0 && (
-        <div>
-          <SectionLabel>Upcoming</SectionLabel>
-          <div className="relative pl-4">
-            <div className="absolute left-0 top-0 bottom-0 w-px bg-border" />
-            <div className="space-y-4">
-              {upcoming.map(m => {
-                const colorClass = categoryColors[m.category ?? ""] ?? categoryColors.default;
-                const daysAway = Math.ceil((new Date(String(m.milestoneDate)).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                return (
-                  <div key={m.id} className="relative pl-4">
-                    <div className={`absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 bg-background ${colorClass}`} />
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{m.title}</p>
-                        <p className="text-xs text-muted-foreground">{fmtDate(m.milestoneDate)} · {daysAway} days away</p>
-                        {m.description && <p className="text-xs text-muted-foreground mt-0.5">{m.description}</p>}
-                      </div>
-                      <button
-                        onClick={() => toggle.mutate({ id: m.id, completed: !m.completed })}
-                        className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center mt-0.5 transition-colors ${
-                          m.completed ? "bg-primary border-primary" : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        {m.completed && <Check size={11} className="text-primary-foreground" />}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {past.length > 0 && (
-        <div>
-          <SectionLabel>Completed</SectionLabel>
-          <div className="space-y-2">
-            {past.map(m => (
-              <div key={m.id} className="flex items-center gap-3 py-2 opacity-50">
-                <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                <p className="text-sm text-muted-foreground line-through">{m.title}</p>
-                <p className="text-xs text-muted-foreground ml-auto">{fmtDate(m.milestoneDate)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── Main ClientDashboard ─────────────────────────────────────────────────────
 const TAB_MAP: Record<string, React.ReactNode> = {
@@ -1078,8 +996,6 @@ const TAB_MAP: Record<string, React.ReactNode> = {
   "meal-plan": <MealPlanTab />,
   shopping: <ShoppingListTab />,
   training: <TrainingTab />,
-  meso: <MesoTab />,
-  timeline: <TimelineTab />,
 };
 
 const TAB_TITLES: Record<string, string> = {
@@ -1089,8 +1005,6 @@ const TAB_TITLES: Record<string, string> = {
   "meal-plan": "Meal Plan",
   shopping: "Shopping List",
   training: "Training Program",
-  meso: "MESO 1",
-  timeline: "Timeline",
 };
 
 export default function ClientDashboard() {
