@@ -31,3 +31,4 @@
 - [x] Remove Rest column from Training Programs editor
 - [x] Remove Focus field from training day cards in Training Programs editor
 - [x] Training schedule rotation builder in Training Programs editor (Day 1 / Day 2 / Off / repeat)
+- [x] Add placeholder "Session" to training day name input in Training Programs editor
