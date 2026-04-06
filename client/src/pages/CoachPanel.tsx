@@ -1232,10 +1232,10 @@ function calcItemMacros(foodDb: any[], foodName: string, amount: number) {
   const factor = grams / 100;
   return {
     calories: Math.round(food.calories * factor),
-    protein: Math.round(food.protein * factor * 10) / 10,
-    carbs: Math.round(food.carbs * factor * 10) / 10,
-    fiber: Math.round(food.fiber * factor * 10) / 10,
-    fat: Math.round(food.fat * factor * 10) / 10,
+    protein: Math.round(food.protein * factor),
+    carbs: Math.round(food.carbs * factor),
+    fiber: Math.round(food.fiber * factor),
+    fat: Math.round(food.fat * factor),
   };
 }
 // Helper: get the effective grams for a food item (for display)
@@ -1284,19 +1284,20 @@ function MealPlansSection() {
       const m = calcItemMacros(foodDb, item.food, parseFloat(item.grams) || 0);
       return {
         calories: acc.calories + m.calories,
-        protein: Math.round((acc.protein + m.protein) * 10) / 10,
-        carbs: Math.round((acc.carbs + m.carbs) * 10) / 10,
-        fiber: Math.round((acc.fiber + m.fiber) * 10) / 10,
-        fat: Math.round((acc.fat + m.fat) * 10) / 10,
+        protein: Math.round(acc.protein + m.protein),
+        carbs: Math.round(acc.carbs + m.carbs),
+        fiber: Math.round(acc.fiber + m.fiber),
+        fat: Math.round(acc.fat + m.fat),
       };
     }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 })
   );
+
   const dailyTotals = mealMacros.reduce((acc, m) => ({
-    calories: acc.calories + m.calories,
-    protein: Math.round((acc.protein + m.protein) * 10) / 10,
-    carbs: Math.round((acc.carbs + m.carbs) * 10) / 10,
-    fiber: Math.round((acc.fiber + m.fiber) * 10) / 10,
-    fat: Math.round((acc.fat + m.fat) * 10) / 10,
+    ...acc,
+    protein: Math.round(acc.protein + m.protein),
+    carbs: Math.round(acc.carbs + m.carbs),
+    fiber: Math.round(acc.fiber + m.fiber),
+    fat: Math.round(acc.fat + m.fat),
   }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
 
   const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", items: [] }]);

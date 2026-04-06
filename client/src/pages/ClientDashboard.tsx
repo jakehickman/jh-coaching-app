@@ -839,19 +839,19 @@ function MealPlanTab() {
       const factor = grams / 100;
       return {
         calories: acc.calories + Math.round(food.calories * factor),
-        protein: Math.round((acc.protein + food.protein * factor) * 10) / 10,
-        carbs: Math.round((acc.carbs + food.carbs * factor) * 10) / 10,
-        fiber: Math.round((acc.fiber + food.fiber * factor) * 10) / 10,
-        fat: Math.round((acc.fat + food.fat * factor) * 10) / 10,
+        protein: Math.round(acc.protein + food.protein * factor),
+        carbs: Math.round(acc.carbs + food.carbs * factor),
+        fiber: Math.round(acc.fiber + food.fiber * factor),
+        fat: Math.round(acc.fat + food.fat * factor),
       };
     }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 })
   );
   const dailyTotals = mealMacros.reduce((acc: any, m: any) => ({
     calories: acc.calories + m.calories,
-    protein: Math.round((acc.protein + m.protein) * 10) / 10,
-    carbs: Math.round((acc.carbs + m.carbs) * 10) / 10,
-    fiber: Math.round((acc.fiber + m.fiber) * 10) / 10,
-    fat: Math.round((acc.fat + m.fat) * 10) / 10,
+    protein: Math.round(acc.protein + m.protein),
+    carbs: Math.round(acc.carbs + m.carbs),
+    fiber: Math.round(acc.fiber + m.fiber),
+    fat: Math.round(acc.fat + m.fat),
   }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
 
   return (
