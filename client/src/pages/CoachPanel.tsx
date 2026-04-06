@@ -301,28 +301,6 @@ function ProgressHistoryTable({
     <div>
       <SectionLabel>Body Composition History</SectionLabel>
 
-      {/* Dual-line trend chart */}
-      {chartData.length >= 2 && (
-        <div className="bg-card border border-border rounded-xl p-4 mb-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Trend</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="week" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} />
-              <YAxis yAxisId="weight" orientation="left" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} unit=" kg" width={42} />
-              <YAxis yAxisId="skinfold" orientation="right" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} unit=" mm" width={36} />
-              <Tooltip
-                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
-                labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
-              />
-              <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
-              <Line yAxisId="weight" type="monotone" dataKey="weight" name="Avg Weight (kg)" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-              <Line yAxisId="skinfold" type="monotone" dataKey="skinfold" name="Skinfold (mm)" stroke="hsl(142 71% 45%)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
       {/* Compact weekly summary table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
