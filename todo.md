@@ -110,3 +110,4 @@
 - [x] Client workout log past sessions: show only set 1 performance (not all sets)
 - [x] Client workout log: remove "(primary)" label from set 1
 - [x] Client workout log: show only set 1 in "Last:" performance line when session is selected
+- [x] Recent daily logs: rename "Off" chip to "Rest" in both coach and client views

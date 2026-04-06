@@ -230,7 +230,7 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
         const trained = log ? isTrained(log.trainingCompleted) : false;
         const sessionLabel = log?.trainingType && log.trainingType !== 'Off'
           ? log.trainingType
-          : (trained ? 'Training' : 'Off');
+          : (trained ? 'Training' : 'Rest');
 
         return (
           <div key={iso} className="border-b border-border last:border-0">
