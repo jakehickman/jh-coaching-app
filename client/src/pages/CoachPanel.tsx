@@ -957,9 +957,12 @@ function TrainingSection() {
   const [days, setDays] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<string[]>([]);
 
-  // Persist draft to localStorage on every change
+  // Only write draft AFTER server data has been loaded into state (not on initial empty mount)
+  const trainingReadyToSaveDraft = useRef(false);
+
+  // Persist draft to localStorage on every change — but only after initial load
   useEffect(() => {
-    if (!trainingDraftKey) return;
+    if (!trainingDraftKey || !trainingReadyToSaveDraft.current) return;
     try { localStorage.setItem(trainingDraftKey, JSON.stringify({ programName, notes, days, schedule })); } catch {}
   }, [trainingDraftKey, programName, notes, days, schedule]);
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
@@ -1022,7 +1025,13 @@ function TrainingSection() {
     // If there's an unsaved draft for this user, restore it (don't overwrite with server data)
     const draftKey = `draft:training:${selectedUserId}`;
     const hasDraft = !!localStorage.getItem(draftKey);
-    if (hasDraft && trainingServerLoadedRef.current === selectedUserId) return;
+    if (hasDraft && trainingServerLoadedRef.current === selectedUserId) {
+      // Already loaded and draft exists — just enable draft saving
+      trainingReadyToSaveDraft.current = true;
+      return;
+    }
+    // Pause draft saving while we load server data
+    trainingReadyToSaveDraft.current = false;
     if (program) {
       setProgramName(program.programName ?? "");
       setNotes(program.notes ?? "");
@@ -1041,6 +1050,8 @@ function TrainingSection() {
       } catch {}
     }
     trainingServerLoadedRef.current = selectedUserId;
+    // Allow draft saving after state has settled (next tick)
+    setTimeout(() => { trainingReadyToSaveDraft.current = true; }, 0);
   }, [program, selectedUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addDay = () => setDays(d => [...d, { name: `Day ${d.length + 1}`, focus: "", exercises: [] }]);
@@ -1307,9 +1318,12 @@ function MealPlansSection() {
   const [planNotes, setPlanNotes] = useState("");
   const [meals, setMeals] = useState<any[]>([]);
 
-  // Persist draft to localStorage on every change
+  // Only write draft AFTER server data has been loaded into state (not on initial empty mount)
+  const mealReadyToSaveDraft = useRef(false);
+
+  // Persist draft to localStorage on every change — but only after initial load
   useEffect(() => {
-    if (!mealDraftKey) return;
+    if (!mealDraftKey || !mealReadyToSaveDraft.current) return;
     try { localStorage.setItem(mealDraftKey, JSON.stringify({ planNotes, meals })); } catch {}
   }, [mealDraftKey, planNotes, meals]);
 
@@ -1319,7 +1333,13 @@ function MealPlansSection() {
     if (!mealLoadKey) return;
     const draftKey = `draft:mealPlan:${mealLoadKey}`;
     const hasDraft = !!localStorage.getItem(draftKey);
-    if (hasDraft && mealServerLoadedRef.current === mealLoadKey) return;
+    if (hasDraft && mealServerLoadedRef.current === mealLoadKey) {
+      // Already loaded and draft exists — just enable draft saving
+      mealReadyToSaveDraft.current = true;
+      return;
+    }
+    // Pause draft saving while we load server data
+    mealReadyToSaveDraft.current = false;
     if (plan) {
       setPlanNotes(plan.notes ?? "");
       setMeals((plan.meals as any[]) ?? []);
@@ -1333,6 +1353,8 @@ function MealPlansSection() {
       } catch {}
     }
     mealServerLoadedRef.current = mealLoadKey;
+    // Allow draft saving after state has settled (next tick)
+    setTimeout(() => { mealReadyToSaveDraft.current = true; }, 0);
   }, [plan, mealLoadKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-calculate macros from food db
