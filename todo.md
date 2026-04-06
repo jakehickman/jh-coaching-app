@@ -125,3 +125,4 @@
 - [x] Remove showDate field from schema, server routers, and all UI references
 - [x] Add coaching notes UI to coach Client Progress tab (write notes with date/category, view history)
 - [x] Add client self-service settings page (display name, goal weight, start weight)
+- [x] Add "Unsaved changes" dot indicator on Meal Plans and Training Programs nav items when a draft exists in localStorage

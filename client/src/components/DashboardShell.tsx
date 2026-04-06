@@ -21,7 +21,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 
 interface NavItem {
@@ -69,6 +69,24 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
   });
 
   const nav = mode === "client" ? clientNav : coachNav;
+
+  // Track whether any localStorage draft exists for coach meal plans or training programs
+  const [hasMealDraft, setHasMealDraft] = useState(false);
+  const [hasTrainingDraft, setHasTrainingDraft] = useState(false);
+
+  useEffect(() => {
+    if (mode !== "coach") return;
+    function checkDrafts() {
+      const keys = Object.keys(localStorage);
+      setHasMealDraft(keys.some(k => k.startsWith("draft:mealPlan:")));
+      setHasTrainingDraft(keys.some(k => k.startsWith("draft:training:")));
+    }
+    checkDrafts();
+    window.addEventListener("storage", checkDrafts);
+    // Also poll lightly since same-tab localStorage changes don't fire "storage" event
+    const id = setInterval(checkDrafts, 3000);
+    return () => { window.removeEventListener("storage", checkDrafts); clearInterval(id); };
+  }, [mode]);
 
   if (loading) {
     return (
@@ -191,6 +209,12 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                   <span className="ml-auto flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500 text-black text-[10px] font-bold flex items-center justify-center">
                     {pendingCount}
                   </span>
+                )}
+                {item.href === "/coach/meal-plans" && hasMealDraft && (
+                  <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-amber-400" title="Unsaved changes" />
+                )}
+                {item.href === "/coach/training" && hasTrainingDraft && (
+                  <span className="ml-auto flex-shrink-0 w-2 h-2 rounded-full bg-amber-400" title="Unsaved changes" />
                 )}
               </Link>
             );
