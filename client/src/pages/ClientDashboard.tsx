@@ -522,8 +522,7 @@ function DailyLogTab() {
               {form.offPlanMeal && <Check size={14} className="text-white" />}
             </div>
             <div>
-              <span className="text-base text-foreground">Off plan meal today</span>
-              <p className="text-xs text-muted-foreground mt-0.5">Had 1 or more meals not in my prescribed plan</p>
+              <span className="text-base text-foreground">Off Plan Meal</span>
             </div>
           </button>
         </Card>
