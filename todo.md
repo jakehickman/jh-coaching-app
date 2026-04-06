@@ -151,3 +151,4 @@
 - [x] Fix: habit toggle in client Daily Log reverts after being checked
 - [x] Fix: habit toggle STILL reverts after tap (optimistic state not persisting)
 - [x] Fix: habit completion not shown as checked after navigating away and back to Daily Log tab
+- [x] Fix: habit completion rate not updating in client Overview HabitsSummary and coach CoachHabitsPanel (normDate bug)

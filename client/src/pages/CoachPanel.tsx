@@ -2764,8 +2764,17 @@ function CoachHabitsPanel({ clientId }: { clientId: number }) {
   }
   const last7 = last28.slice(-7);
 
+  // Helper: normalise completedDate (Date object or ISO string) to yyyy-mm-dd
+  const normCompDate = (val: any): string => {
+    if (!val) return '';
+    if (val instanceof Date) return `${val.getUTCFullYear()}-${String(val.getUTCMonth() + 1).padStart(2, '0')}-${String(val.getUTCDate()).padStart(2, '0')}`;
+    const s = String(val);
+    if (s.includes('T') || s.includes('Z')) { const d = new Date(s); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; }
+    return s.slice(0, 10);
+  };
+
   const completedSet = new Set(
-    completions.map((c: any) => `${c.habitId}:${String(c.completedDate).slice(0, 10)}`)
+    completions.map((c: any) => `${c.habitId}:${normCompDate(c.completedDate)}`)
   );
 
   const habitStats = habits.map((h: any) => {
