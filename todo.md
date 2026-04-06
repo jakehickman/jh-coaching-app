@@ -131,3 +131,4 @@
 - [x] Move app to /app prefix, free up / for homepage
 - [x] Fix exercise library: exercise names cannot be edited
 - [x] Fix exercise library: name change not persisting after save (videoUrl null rejected by Zod schema)
+- [x] Cascade exercise rename: update all training programs and workout logs when an exercise name changes in the library

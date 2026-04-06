@@ -527,7 +527,46 @@ export async function upsertExercise(data: InsertExerciseLibraryEntry & { id?: n
   if (!db) return;
   if (data.id) {
     const { id, ...rest } = data;
+    // Get old name before updating so we can cascade rename
+    const [existing] = await db.select({ name: exerciseLibrary.name }).from(exerciseLibrary).where(eq(exerciseLibrary.id, id));
     await db.update(exerciseLibrary).set({ ...rest, updatedAt: new Date() } as any).where(eq(exerciseLibrary.id, id));
+    // Cascade rename: update training programs and workout sessions if name changed
+    if (existing && data.name && existing.name !== data.name) {
+      const oldName = existing.name;
+      const newName = data.name;
+      // Update training programs
+      const programs = await db.select({ id: trainingPrograms.id, days: trainingPrograms.days }).from(trainingPrograms);
+      for (const prog of programs) {
+        const days = prog.days as any[];
+        if (!Array.isArray(days)) continue;
+        let changed = false;
+        const updatedDays = days.map((day: any) => {
+          if (!Array.isArray(day.exercises)) return day;
+          const updatedExercises = day.exercises.map((ex: any) => {
+            if (ex.name === oldName) { changed = true; return { ...ex, name: newName }; }
+            return ex;
+          });
+          return { ...day, exercises: updatedExercises };
+        });
+        if (changed) {
+          await db.update(trainingPrograms).set({ days: updatedDays } as any).where(eq(trainingPrograms.id, prog.id));
+        }
+      }
+      // Update workout sessions
+      const sessions = await db.select({ id: workoutSessions.id, exercises: workoutSessions.exercises }).from(workoutSessions);
+      for (const session of sessions) {
+        const exercises = session.exercises as any[];
+        if (!Array.isArray(exercises)) continue;
+        let changed = false;
+        const updatedExercises = exercises.map((ex: any) => {
+          if (ex.name === oldName) { changed = true; return { ...ex, name: newName }; }
+          return ex;
+        });
+        if (changed) {
+          await db.update(workoutSessions).set({ exercises: updatedExercises } as any).where(eq(workoutSessions.id, session.id));
+        }
+      }
+    }
   } else {
     await db.insert(exerciseLibrary).values(data as any);
   }

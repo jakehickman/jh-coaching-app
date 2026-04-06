@@ -2216,7 +2216,8 @@ function ExerciseLibrarySection() {
 
   function saveEditing() {
     if (!editing || !editing.name.trim()) { toast.error("Exercise name is required"); return; }
-    upsert.mutate(editing as any);
+    const payload = { ...editing, videoUrl: editing.videoUrl || undefined };
+    upsert.mutate(payload as any);
   }
 
   return (
