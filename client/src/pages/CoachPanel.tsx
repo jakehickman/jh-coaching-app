@@ -2764,13 +2764,12 @@ function CoachHabitsPanel({ clientId }: { clientId: number }) {
   }
   const last7 = last28.slice(-7);
 
-  // Helper: normalise completedDate (Date object or ISO string) to yyyy-mm-dd
+  // Helper: normalise a date value (Date object or ISO string) to yyyy-mm-dd using LOCAL timezone
+  // Must match last28 which is also built with local date parts
   const normCompDate = (val: any): string => {
     if (!val) return '';
-    if (val instanceof Date) return `${val.getUTCFullYear()}-${String(val.getUTCMonth() + 1).padStart(2, '0')}-${String(val.getUTCDate()).padStart(2, '0')}`;
-    const s = String(val);
-    if (s.includes('T') || s.includes('Z')) { const d = new Date(s); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; }
-    return s.slice(0, 10);
+    const d = val instanceof Date ? val : new Date(String(val));
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
   const completedSet = new Set(

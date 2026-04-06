@@ -388,13 +388,12 @@ function HabitsSummary() {
     last7.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
   }
 
-  // Helper: normalise completedDate (Date object or ISO string) to yyyy-mm-dd
+  // Helper: normalise a date value (Date object or ISO string) to yyyy-mm-dd using LOCAL timezone
+  // Must match last7 which is also built with local date parts
   const normDate = (val: any): string => {
     if (!val) return '';
-    if (val instanceof Date) return `${val.getUTCFullYear()}-${String(val.getUTCMonth() + 1).padStart(2, '0')}-${String(val.getUTCDate()).padStart(2, '0')}`;
-    const s = String(val);
-    if (s.includes('T') || s.includes('Z')) { const d = new Date(s); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; }
-    return s.slice(0, 10);
+    const d = val instanceof Date ? val : new Date(String(val));
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
   // Completion set: "habitId:date"
@@ -471,19 +470,12 @@ function HabitsCard({ date }: { date: string }) {
   }, []);
   const { data: completions = [], refetch } = trpc.habits.myCompletions.useQuery({ fromDate: from90 });
 
-  // Helper: normalise completedDate (Date object or ISO string) to yyyy-mm-dd
+  // Helper: normalise completedDate (Date object or ISO string) to yyyy-mm-dd using LOCAL timezone
+  // Must match the date prop (localToday) which is also in local timezone
   const normDate = (val: any): string => {
     if (!val) return '';
-    if (val instanceof Date) {
-      // Use UTC parts — the DATE column is stored as UTC midnight
-      return `${val.getUTCFullYear()}-${String(val.getUTCMonth() + 1).padStart(2, '0')}-${String(val.getUTCDate()).padStart(2, '0')}`;
-    }
-    const s = String(val);
-    if (s.includes('T') || s.includes('Z')) {
-      const d = new Date(s);
-      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-    }
-    return s.slice(0, 10);
+    const d = val instanceof Date ? val : new Date(String(val));
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
   // Local optimistic state: map of "habitId:date" -> boolean
