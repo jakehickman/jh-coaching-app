@@ -1405,7 +1405,7 @@ function MealPlansSection() {
                       qty?.focus();
                     };
                     return (
-                      <div key={j} className="grid grid-cols-12 gap-1 items-center">
+                      <div key={j} className="grid grid-cols-12 gap-1 items-start">
                         <div className="col-span-6">
                           <FoodCombobox
                             value={item.food}
@@ -1416,7 +1416,7 @@ function MealPlansSection() {
                             itemIdx={j}
                           />
                         </div>
-                        <div className="col-span-2 flex flex-col">
+                        <div className="col-span-2">
                           <input
                             type="number" min="0" step={isServingBased ? "0.5" : "1"}
                             data-meal={i}
@@ -1429,17 +1429,17 @@ function MealPlansSection() {
                             className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                           {isServingBased && (
-                            <span className="text-[9px] text-muted-foreground text-center mt-0.5">{selectedFood.servingUnit}{effectiveGrams ? ` (${effectiveGrams}g)` : ""}</span>
+                            <span className="text-[9px] text-muted-foreground block text-center mt-0.5">{selectedFood.servingUnit}{effectiveGrams ? ` (${effectiveGrams}g)` : ""}</span>
                           )}
-                          {!isServingBased && <span className="text-[9px] text-muted-foreground text-center mt-0.5">g</span>}
+                          {!isServingBased && <span className="text-[9px] text-muted-foreground block text-center mt-0.5">g</span>}
                         </div>
-                        <div className="col-span-3 text-[10px] text-muted-foreground leading-tight">
+                        <div className="col-span-3 text-[10px] text-muted-foreground leading-tight pt-1.5">
                           {hasData ? (
                             <span className="text-foreground font-medium">{m.calories} kcal</span>
                           ) : <span className="text-muted-foreground/40">—</span>}
                           {hasData && <div className="text-[9px] text-muted-foreground">P{m.protein} C{m.carbs} F{m.fat}</div>}
                         </div>
-                        <button onClick={() => removeItem(i, j)} className="col-span-1 flex justify-center text-destructive hover:opacity-80">
+                        <button onClick={() => removeItem(i, j)} className="col-span-1 flex justify-center text-destructive hover:opacity-80 pt-1.5">
                           <Trash2 size={12} />
                         </button>
                       </div>
