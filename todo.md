@@ -105,3 +105,8 @@
 - [x] Simplify nutrition food names: strip USDA program notes and trailing noise, keep prep context, sentence case
 - [ ] Remove Measurements section from client dashboard nav and routing
 - [x] Remove waist circumference and skinfold thickness cards from client Overview dashboard tab
+- [x] Client Measurements tab: allow editing past entries
+- [x] Fix waist trend graph not displaying properly on mobile in Measurements tab
+- [x] Client workout log past sessions: show only set 1 performance (not all sets)
+- [x] Client workout log: remove "(primary)" label from set 1
+- [x] Client workout log: show only set 1 in "Last:" performance line when session is selected

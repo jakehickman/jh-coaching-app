@@ -131,6 +131,21 @@ export const appRouter = router({
       .mutation(({ ctx, input }) =>
         db.addMeasurement({ userId: ctx.user.id, ...input })
       ),
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          measureDate: z.string().optional(),
+          waist: z.number().nullable().optional(),
+          umbilical1: z.number().nullable().optional(), umbilical2: z.number().nullable().optional(), umbilical3: z.number().nullable().optional(), umbilical4: z.number().nullable().optional(), umbilical5: z.number().nullable().optional(),
+          suprailiac1: z.number().nullable().optional(), suprailiac2: z.number().nullable().optional(), suprailiac3: z.number().nullable().optional(), suprailiac4: z.number().nullable().optional(), suprailiac5: z.number().nullable().optional(),
+          notes: z.string().nullable().optional(),
+        })
+      )
+      .mutation(({ ctx, input }) => {
+        const { id, ...data } = input;
+        return db.updateMeasurement(id, ctx.user.id, data);
+      }),
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(({ ctx, input }) => db.deleteMeasurement(input.id, ctx.user.id)),

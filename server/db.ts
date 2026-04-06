@@ -249,6 +249,20 @@ export async function addMeasurement(data: {
   await db.insert(measurements).values(data as any);
 }
 
+export async function updateMeasurement(id: number, userId: number, data: {
+  measureDate?: string;
+  waist?: number | null;
+  umbilical1?: number | null; umbilical2?: number | null; umbilical3?: number | null; umbilical4?: number | null; umbilical5?: number | null;
+  suprailiac1?: number | null; suprailiac2?: number | null; suprailiac3?: number | null; suprailiac4?: number | null; suprailiac5?: number | null;
+  calf1?: number | null; calf2?: number | null; calf3?: number | null; calf4?: number | null; calf5?: number | null;
+  thigh1?: number | null; thigh2?: number | null; thigh3?: number | null; thigh4?: number | null; thigh5?: number | null;
+  notes?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(measurements).set(data as any).where(and(eq(measurements.id, id), eq(measurements.userId, userId)));
+}
+
 // Meal Plans
 export async function getMealPlan(userId: number, dayType: "training" | "rest") {
   const db = await getDb();

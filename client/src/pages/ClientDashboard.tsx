@@ -6,7 +6,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar
 } from "recharts";
-import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus } from "lucide-react";
+import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -565,17 +565,23 @@ function avgReadings(vals: (number | null | undefined)[]): number | null {
 function MeasurementsTab() {
   const { data: measurements, refetch } = trpc.measurements.list.useQuery();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const emptySkinfold = { r1: "", r2: "", r3: "", r4: "", r5: "" };
-  const [form, setForm] = useState({
+  const blankForm = () => ({
     measureDate: localToday(),
     waist: "",
     umbilical: { ...emptySkinfold },
     suprailiac: { ...emptySkinfold },
-
     notes: "",
   });
+  const [form, setForm] = useState(blankForm);
+  const [editForm, setEditForm] = useState(blankForm);
+
   const add = trpc.measurements.add.useMutation({
-    onSuccess: () => { toast.success("Measurements saved"); setShowForm(false); refetch(); }
+    onSuccess: () => { toast.success("Measurements saved"); setShowForm(false); setForm(blankForm()); refetch(); }
+  });
+  const update = trpc.measurements.update.useMutation({
+    onSuccess: () => { toast.success("Entry updated"); setEditingId(null); refetch(); }
   });
   const del = trpc.measurements.delete.useMutation({
     onSuccess: () => { toast.success("Entry deleted"); refetch(); }
@@ -583,8 +589,23 @@ function MeasurementsTab() {
 
   const setReading = (site: string, r: string, val: string) =>
     setForm(p => ({ ...p, [site]: { ...(p as any)[site], [r]: val } }));
+  const setEditReading = (site: string, r: string, val: string) =>
+    setEditForm(p => ({ ...p, [site]: { ...(p as any)[site], [r]: val } }));
 
   const parseR = (v: string) => v ? parseFloat(v) : undefined;
+  const parseRNull = (v: string) => v ? parseFloat(v) : null;
+
+  const startEdit = (m: any) => {
+    const toStr = (v: number | null | undefined) => v != null ? String(v) : "";
+    setEditForm({
+      measureDate: toLocalDateStr(m.measureDate),
+      waist: toStr(m.waist),
+      umbilical: { r1: toStr(m.umbilical1), r2: toStr(m.umbilical2), r3: toStr(m.umbilical3), r4: toStr(m.umbilical4), r5: toStr(m.umbilical5) },
+      suprailiac: { r1: toStr(m.suprailiac1), r2: toStr(m.suprailiac2), r3: toStr(m.suprailiac3), r4: toStr(m.suprailiac4), r5: toStr(m.suprailiac5) },
+      notes: m.notes ?? "",
+    });
+    setEditingId(m.id);
+  };
 
   const waistData = (measurements ?? []).slice(0, 8).reverse().map(m => ({
     date: String(m.measureDate).slice(5, 10),
@@ -659,20 +680,22 @@ function MeasurementsTab() {
         <div>
           <SectionLabel>Waist Trend</SectionLabel>
           <Card>
-            <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={waistData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: "#666", fontSize: 10 }}
-                  interval="preserveStartEnd"
-                  tickLine={false}
-                />
-                <YAxis domain={["auto", "auto"]} tick={{ fill: "#666", fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }} labelStyle={{ color: "#fff" }} itemStyle={{ color: "#22c55e" }} />
-                <Line type="monotone" dataKey="waist" stroke="#22c55e" strokeWidth={2} dot={false} name="Waist (cm)" />
-              </LineChart>
-            </ResponsiveContainer>
+            <div style={{ width: "100%", height: 160 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={waistData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "#666", fontSize: 10 }}
+                    interval="preserveStartEnd"
+                    tickLine={false}
+                  />
+                  <YAxis domain={["auto", "auto"]} tick={{ fill: "#666", fontSize: 11 }} width={40} />
+                  <Tooltip contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }} labelStyle={{ color: "#fff" }} itemStyle={{ color: "#22c55e" }} />
+                  <Line type="monotone" dataKey="waist" stroke="#22c55e" strokeWidth={2} dot={false} name="Waist (cm)" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </Card>
         </div>
       )}
@@ -686,43 +709,100 @@ function MeasurementsTab() {
               const supAvg = avgReadings([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]);
               const siteAvgs = [umbAvg, supAvg];
               const total = siteAvgs.every(v => v !== null) ? parseFloat(siteAvgs.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
+              const isEditing = editingId === m.id;
               return (
                 <Card key={m.id}>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-base font-semibold text-foreground">{fmtDate(m.measureDate)}</p>
-                    <button onClick={() => { if (confirm("Delete this measurement entry?")) del.mutate({ id: m.id }); }}
-                      className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded" title="Delete entry">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  {/* Waist */}
-                  {m.waist && (
-                    <div className="mb-3">
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Waist</p>
-                      <p className="text-lg font-bold text-foreground">{m.waist} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => isEditing ? setEditingId(null) : startEdit(m)}
+                        className="text-muted-foreground hover:text-primary transition-colors p-1 rounded" title={isEditing ? "Cancel edit" : "Edit entry"}>
+                        {isEditing ? <X size={14} /> : <Pencil size={14} />}
+                      </button>
+                      <button onClick={() => { if (confirm("Delete this measurement entry?")) del.mutate({ id: m.id }); }}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded" title="Delete entry">
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                  )}
-                  {/* Skinfold averages */}
-                  {siteAvgs.some(v => v !== null) && (
-                    <>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Skinfold (avg mm)</p>
-                      <div className="grid grid-cols-4 gap-2 mb-2">
-                        {[
-                          { label: "Umbilical", avg: umbAvg },
-                          { label: "Suprailiac", avg: supAvg },
+                  </div>
 
-                        ].map(({ label, avg }) => (
-                          <div key={label} className="text-center">
-                            <p className="text-xs text-muted-foreground">{label}</p>
-                            <p className="text-base font-semibold text-foreground">{avg ?? "—"}</p>
+                  {isEditing ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm text-muted-foreground block mb-1.5">Date</label>
+                        <DateInput value={editForm.measureDate} onChange={v => setEditForm(p => ({ ...p, measureDate: v }))} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-foreground mb-2">Waist Circumference (cm)</p>
+                        <input type="number" step="0.1" value={editForm.waist}
+                          onChange={e => setEditForm(p => ({ ...p, waist: e.target.value }))} placeholder="e.g. 82.5"
+                          className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                      </div>
+                      <div className="space-y-4">
+                        <p className="text-xs font-semibold text-foreground">Skinfold Thickness — 5 readings per site (mm)</p>
+                        {SKINFOLD_SITES.map(({ key, label }) => (
+                          <div key={key}>
+                            <p className="text-xs text-muted-foreground mb-2">{label}</p>
+                            <div className="grid grid-cols-5 gap-1.5">
+                              {(["r1","r2","r3","r4","r5"] as const).map((r, i) => (
+                                <div key={r}>
+                                  <label className="text-[10px] text-muted-foreground block mb-1 text-center">{i+1}</label>
+                                  <input type="number" step="0.1" value={(editForm as any)[key][r]}
+                                    onChange={e => setEditReading(key, r, e.target.value)} placeholder="—"
+                                    className="w-full bg-secondary border border-border rounded-lg px-1.5 py-2 text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>
-                      {total !== null && (
-                        <div className="border-t border-border pt-2 flex items-center justify-between">
-                          <p className="text-xs text-muted-foreground">Total</p>
-                          <p className="text-sm font-bold text-primary">{total} mm</p>
+                      <div>
+                        <label className="text-sm text-muted-foreground block mb-1.5">Notes (optional)</label>
+                        <input type="text" value={editForm.notes}
+                          onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional"
+                          className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                      </div>
+                      <button onClick={() => update.mutate({
+                        id: m.id,
+                        measureDate: editForm.measureDate,
+                        waist: parseRNull(editForm.waist),
+                        umbilical1: parseRNull(editForm.umbilical.r1), umbilical2: parseRNull(editForm.umbilical.r2), umbilical3: parseRNull(editForm.umbilical.r3), umbilical4: parseRNull(editForm.umbilical.r4), umbilical5: parseRNull(editForm.umbilical.r5),
+                        suprailiac1: parseRNull(editForm.suprailiac.r1), suprailiac2: parseRNull(editForm.suprailiac.r2), suprailiac3: parseRNull(editForm.suprailiac.r3), suprailiac4: parseRNull(editForm.suprailiac.r4), suprailiac5: parseRNull(editForm.suprailiac.r5),
+                        notes: editForm.notes || null,
+                      })} disabled={update.isPending}
+                        className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+                        {update.isPending ? "Saving..." : "Save Changes"}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {m.waist && (
+                        <div className="mb-3">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Waist</p>
+                          <p className="text-lg font-bold text-foreground">{m.waist} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
                         </div>
+                      )}
+                      {siteAvgs.some(v => v !== null) && (
+                        <>
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Skinfold (avg mm)</p>
+                          <div className="grid grid-cols-4 gap-2 mb-2">
+                            {[
+                              { label: "Umbilical", avg: umbAvg },
+                              { label: "Suprailiac", avg: supAvg },
+                            ].map(({ label, avg }) => (
+                              <div key={label} className="text-center">
+                                <p className="text-xs text-muted-foreground">{label}</p>
+                                <p className="text-base font-semibold text-foreground">{avg ?? "—"}</p>
+                              </div>
+                            ))}
+                          </div>
+                          {total !== null && (
+                            <div className="border-t border-border pt-2 flex items-center justify-between">
+                              <p className="text-xs text-muted-foreground">Total</p>
+                              <p className="text-sm font-bold text-primary">{total} mm</p>
+                            </div>
+                          )}
+                        </>
                       )}
                     </>
                   )}
@@ -1375,7 +1455,7 @@ function WorkoutLogTab() {
                       <p className="text-xs text-muted-foreground mt-0.5">{ex.sets} sets × {ex.reps}</p>
                       {prevSets.length > 0 && (
                         <p className="text-xs text-primary/80 mt-1">
-                          Last: {prevSets.map((s, si) => `${s.weight ?? '—'}kg × ${s.reps ?? '—'}`).join(' | ')}
+                          Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
                         </p>
                       )}
                     </div>
@@ -1383,7 +1463,7 @@ function WorkoutLogTab() {
 
                   {/* Primary set — always visible, visually prominent */}
                   <div className="mb-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-primary mb-1.5">Set 1 (Primary)</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-primary mb-1.5">Set 1</p>
                     <div className="flex gap-2 items-center">
                       <div className="flex-1">
                         <p className="text-[10px] text-muted-foreground mb-1">Weight (kg)</p>
