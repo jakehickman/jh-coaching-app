@@ -172,6 +172,157 @@ function MuscleGroupSection({ group, children, globalToggle }: { group: string; 
   );
 }
 
+// ─── Progress History Table ─────────────────────────────────────────────────
+// Shows weekly avg weight (from daily logs) alongside measurement sessions
+// side-by-side so the coach can review body composition trends at a glance.
+function ProgressHistoryTable({
+  logs,
+  measurements,
+  startDate,
+}: {
+  logs: DailyLogRow[];
+  measurements: any[];
+  startDate?: string | null;
+}) {
+  // ── Build weekly buckets from daily logs ──────────────────────────────────
+  // Group logs by ISO week (Mon–Sun). Key = "YYYY-WW" for sorting.
+  function isoWeekKey(iso: string): string {
+    const d = new Date(iso + "T00:00:00");
+    // Get Monday of that week
+    const day = d.getDay(); // 0=Sun
+    const diff = (day === 0 ? -6 : 1 - day);
+    const mon = new Date(d);
+    mon.setDate(d.getDate() + diff);
+    const y = mon.getFullYear();
+    // ISO week number
+    const jan4 = new Date(y, 0, 4);
+    const weekNum = Math.ceil(((mon.getTime() - jan4.getTime()) / 86400000 + jan4.getDay() + 1) / 7);
+    return `${y}-${String(weekNum).padStart(2, "0")}`;
+  }
+  function weekLabel(key: string): string {
+    // Reconstruct Monday from year+week
+    const [y, w] = key.split("-").map(Number);
+    const jan4 = new Date(y, 0, 4);
+    const mon = new Date(jan4.getTime() + (w - Math.ceil((jan4.getDay() + 1) / 7)) * 7 * 86400000);
+    const sun = new Date(mon.getTime() + 6 * 86400000);
+    const fmt = (d: Date) => `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+    return `${fmt(mon)} – ${fmt(sun)}`;
+  }
+
+  // Bucket logs by week
+  const weekMap: Record<string, number[]> = {};
+  for (const log of logs) {
+    const iso = toLocalDateStr(log.logDate);
+    if (!iso) continue;
+    if (startDate && iso < startDate) continue;
+    if (log.weight == null) continue;
+    const key = isoWeekKey(iso);
+    if (!weekMap[key]) weekMap[key] = [];
+    weekMap[key].push(log.weight as number);
+  }
+  const weekKeys = Object.keys(weekMap).sort().reverse(); // newest first
+
+  // ── Measurement sessions sorted newest first ──────────────────────────────
+  function siteAvg(vals: (number | null | undefined)[]): number | null {
+    const nums = vals.filter((v): v is number => v != null);
+    return nums.length ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
+  }
+  const sortedM = [...measurements]
+    .filter(m => !startDate || toLocalDateStr(m.measureDate) >= startDate)
+    .sort((a, b) => toLocalDateStr(b.measureDate).localeCompare(toLocalDateStr(a.measureDate)));
+
+  if (weekKeys.length === 0 && sortedM.length === 0) return null;
+
+  // ── Determine row count (zip by index) ────────────────────────────────────
+  const rowCount = Math.max(weekKeys.length, sortedM.length);
+
+  return (
+    <div>
+      <SectionLabel>Weekly Weight &amp; Measurement History</SectionLabel>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        {/* Header */}
+        <div className="grid grid-cols-2 divide-x divide-border border-b border-border bg-muted/30">
+          <div className="px-4 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Week (Mon–Sun)</p>
+            <p className="text-[10px] text-muted-foreground">Avg Weight</p>
+          </div>
+          <div className="px-4 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Measurement Session</p>
+            <p className="text-[10px] text-muted-foreground">Waist · Umbilical · Suprailiac · Skinfold total</p>
+          </div>
+        </div>
+        {/* Rows */}
+        {Array.from({ length: rowCount }).map((_, i) => {
+          const wk = weekKeys[i];
+          const m = sortedM[i];
+          const weights = wk ? weekMap[wk] : null;
+          const avgW = weights ? weights.reduce((a, b) => a + b, 0) / weights.length : null;
+          const umbAvg = m ? siteAvg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]) : null;
+          const supAvg = m ? siteAvg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]) : null;
+          const skinfoldTotal = umbAvg != null && supAvg != null ? parseFloat((umbAvg + supAvg).toFixed(1))
+            : umbAvg ?? supAvg;
+          const mDate = m ? toLocalDateStr(m.measureDate).split("-").reverse().join("/") : null;
+          // Weight delta vs next row (older week)
+          const prevWk = weekKeys[i + 1];
+          const prevWeights = prevWk ? weekMap[prevWk] : null;
+          const prevAvgW = prevWeights ? prevWeights.reduce((a, b) => a + b, 0) / prevWeights.length : null;
+          const wDelta = avgW != null && prevAvgW != null ? parseFloat((avgW - prevAvgW).toFixed(2)) : null;
+          return (
+            <div key={i} className="grid grid-cols-2 divide-x divide-border border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+              {/* Weight column */}
+              <div className="px-4 py-3">
+                {wk ? (
+                  <>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">{weekLabel(wk)}</p>
+                    <p className="text-sm font-bold text-foreground">
+                      {avgW != null ? `${avgW.toFixed(2)} kg` : "—"}
+                    </p>
+                    {wDelta != null && (
+                      <p className={`text-[10px] font-medium mt-0.5 flex items-center gap-0.5 ${
+                        wDelta < 0 ? "text-green-400" : wDelta > 0 ? "text-red-400" : "text-muted-foreground"
+                      }`}>
+                        {wDelta < 0 ? <ArrowDown size={9}/> : wDelta > 0 ? <ArrowUp size={9}/> : <Minus size={9}/>}
+                        {wDelta > 0 ? "+" : ""}{wDelta} kg
+                      </p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{weights!.length} {weights!.length === 1 ? "entry" : "entries"}</p>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">—</p>
+                )}
+              </div>
+              {/* Measurement column */}
+              <div className="px-4 py-3">
+                {m ? (
+                  <>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">{mDate}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                      {m.waist != null && (
+                        <span className="text-xs text-foreground"><span className="text-muted-foreground">Waist </span><strong>{m.waist} cm</strong></span>
+                      )}
+                      {umbAvg != null && (
+                        <span className="text-xs text-foreground"><span className="text-muted-foreground">Umb </span><strong>{umbAvg} mm</strong></span>
+                      )}
+                      {supAvg != null && (
+                        <span className="text-xs text-foreground"><span className="text-muted-foreground">Sup </span><strong>{supAvg} mm</strong></span>
+                      )}
+                      {skinfoldTotal != null && (
+                        <span className="text-xs text-foreground"><span className="text-muted-foreground">Total </span><strong>{skinfoldTotal} mm</strong></span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">—</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Recent Logs Panel ──────────────────────────────────────────────────────
 type DailyLogRow = {
   id: number;
@@ -2189,6 +2340,12 @@ function ProgressSection() {
               toLocalDateStr={toLocalDateStr}
             />
           )}
+
+          <ProgressHistoryTable
+            logs={allLogs}
+            measurements={measurements ?? []}
+            startDate={clientStartDate}
+          />
 
           {(logs ?? []).length > 0 && (
             <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />

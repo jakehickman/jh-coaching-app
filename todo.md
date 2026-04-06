@@ -139,3 +139,4 @@
 - [x] Add edit functionality to coaching notes in coach Client Progress tab
 - [x] Nutrition food rename cascade: update all meal plans when a food name changes in Nutrition Data tab
 - [x] Hide calendar rows before client start date in coach Recent Daily Logs panel (Client Progress tab)
+- [x] Add side-by-side weekly avg weight history and measurement history table to Client Progress Overview tab
