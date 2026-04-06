@@ -458,6 +458,21 @@ function HabitsCard({ date }: { date: string }) {
   }, []);
   const { data: completions = [], refetch } = trpc.habits.myCompletions.useQuery({ fromDate: from90 });
 
+  // Helper: normalise completedDate (Date object or ISO string) to yyyy-mm-dd
+  const normDate = (val: any): string => {
+    if (!val) return '';
+    if (val instanceof Date) {
+      // Use UTC parts — the DATE column is stored as UTC midnight
+      return `${val.getUTCFullYear()}-${String(val.getUTCMonth() + 1).padStart(2, '0')}-${String(val.getUTCDate()).padStart(2, '0')}`;
+    }
+    const s = String(val);
+    if (s.includes('T') || s.includes('Z')) {
+      const d = new Date(s);
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    }
+    return s.slice(0, 10);
+  };
+
   // Local optimistic state: map of "habitId:date" -> boolean
   // We never clear this map — once the server confirms, serverDone takes over and the
   // optimistic entry is simply ignored (serverDone === optimistic[key] so no visual diff).
@@ -467,7 +482,7 @@ function HabitsCard({ date }: { date: string }) {
     onMutate: ({ habitId, date: d }) => {
       const key = `${habitId}:${d}`;
       const serverDone = completions.some(
-        (c: any) => c.habitId === habitId && String(c.completedDate).slice(0, 10) === d
+        (c: any) => c.habitId === habitId && normDate(c.completedDate) === d
       );
       const currentDone = key in optimistic ? optimistic[key] : serverDone;
       setOptimistic(prev => ({ ...prev, [key]: !currentDone }));
@@ -488,7 +503,7 @@ function HabitsCard({ date }: { date: string }) {
         {habits.map((h: any, i: number) => {
           const key = `${h.id}:${date}`;
           const serverDone = completions.some(
-            (c: any) => c.habitId === h.id && String(c.completedDate).slice(0, 10) === date
+            (c: any) => c.habitId === h.id && normDate(c.completedDate) === date
           );
           const done = key in optimistic ? optimistic[key] : serverDone;
           return (
