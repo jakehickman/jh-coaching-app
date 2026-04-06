@@ -4,7 +4,10 @@ import { useParams, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical, BookOpen, Search, Pencil, X, Play, ExternalLink } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical, BookOpen, Search, Pencil, X, Play, ExternalLink, Check, ChevronsUpDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Button } from "@/components/ui/button";
 import {
   DndContext,
   closestCenter,
@@ -443,6 +446,58 @@ function useClientSelector() {
   return { clients, selectedUserId, setSelectedUserId };
 }
 
+// ─── Searchable Client Combobox ───────────────────────────────────────────────
+function ClientCombobox({
+  clients,
+  selectedUserId,
+  onSelect,
+}: {
+  clients: { id: number; name?: string | null }[];
+  selectedUserId: number | null;
+  onSelect: (id: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = clients.find(c => c.id === selectedUserId);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full max-w-xs justify-between bg-card border-border text-foreground hover:bg-secondary"
+        >
+          <span className="truncate">{selected ? (selected.name ?? `User ${selected.id}`) : "Select client…"}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[280px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search clients…" />
+          <CommandList>
+            <CommandEmpty>No clients found.</CommandEmpty>
+            <CommandGroup>
+              {clients.map(c => (
+                <CommandItem
+                  key={c.id}
+                  value={c.name ?? `User ${c.id}`}
+                  onSelect={() => {
+                    onSelect(c.id);
+                    setOpen(false);
+                  }}
+                >
+                  <Check className={`mr-2 h-4 w-4 ${selectedUserId === c.id ? "opacity-100" : "opacity-0"}`} />
+                  {c.name ?? `User ${c.id}`}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 // ─── Section: Clients ─────────────────────────────────────────────────────────
 function ClientsSection() {
   const { data: allUsers, refetch } = trpc.users.list.useQuery();
@@ -815,17 +870,7 @@ function TrainingSection() {
   return (
     <div className="space-y-6">
       <div>
-        <SectionLabel>Select Client</SectionLabel>
-        <div className="flex gap-2 flex-wrap">
-          {clients.map(c => (
-            <button key={c.id} onClick={() => setSelectedUserId(c.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                selectedUserId === c.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}>
-              {c.name ?? `User ${c.id}`}
-            </button>
-          ))}
-        </div>
+        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
       </div>
       {selectedUserId && (
         <>
@@ -1066,17 +1111,7 @@ function MealPlansSection() {
   return (
     <div className="space-y-6">
       <div>
-        <SectionLabel>Select Client</SectionLabel>
-        <div className="flex gap-2 flex-wrap">
-          {clients.map(c => (
-            <button key={c.id} onClick={() => setSelectedUserId(c.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                selectedUserId === c.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}>
-              {c.name ?? `User ${c.id}`}
-            </button>
-          ))}
-        </div>
+        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
       </div>
 
       {selectedUserId && (
@@ -1373,17 +1408,7 @@ function ProgressSection() {
   return (
     <div className="space-y-6">
       <div>
-        <SectionLabel>Select Client</SectionLabel>
-        <div className="flex gap-2 flex-wrap">
-          {clients.map(c => (
-            <button key={c.id} onClick={() => setSelectedUserId(c.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                selectedUserId === c.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}>
-              {c.name ?? `User ${c.id}`}
-            </button>
-          ))}
-        </div>
+        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
       </div>
 
       {selectedUserId && (
