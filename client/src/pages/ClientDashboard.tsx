@@ -77,7 +77,7 @@ type DailyLogRow = {
   notes?: string | null;
 };
 
-function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
+function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?: string | null }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -88,10 +88,13 @@ function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
   }
 
   const allDays: string[] = [];
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 90; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    allDays.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    // Stop going back further than the client's start date
+    if (startDate && iso < startDate) break;
+    allDays.push(iso);
   }
   // Only include days that have a log entry, up to the limit
   const loggedDays = allDays.filter(iso => !!logMap[iso]);
@@ -353,7 +356,7 @@ function OverviewTab() {
 
       <div>
         <SectionLabel>Recent Logs</SectionLabel>
-        <RecentLogsPanel logs={allLogs} />
+        <RecentLogsPanel logs={allLogs} startDate={profile?.startDate ? toLocalDateStr(profile.startDate) : undefined} />
       </div>
     </div>
   );
@@ -363,14 +366,12 @@ function OverviewTab() {
 function DailyLogTab() {
   const today = localToday();
   const [date, setDate] = useState(today);
-
   const blankDailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, offPlanMeal: false, notes: "" };
   const [form, setForm, clearDraft] = useDraft(`draft:dailyLog:${date}`, blankDailyForm);
-
   // Track whether we've loaded server data for this date yet (avoid overwriting draft with blank)
   const serverLoadedRef = useRef<string | null>(null);
-
-  const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 30 });
+  const { data: profile } = trpc.profile.get.useQuery();
+  const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 90 });
   const { data: workoutSessions = [] } = trpc.workoutSessions.list.useQuery();
   const upsert = trpc.dailyLog.upsert.useMutation({
     onSuccess: () => { clearDraft(); toast.success("Log saved"); refetch(); }
@@ -543,7 +544,7 @@ function DailyLogTab() {
 
       <div>
         <SectionLabel>Recent Logs</SectionLabel>
-        <RecentLogsPanel logs={logs ?? []} />
+        <RecentLogsPanel logs={logs ?? []} startDate={profile?.startDate ? toLocalDateStr(profile.startDate) : undefined} />
       </div>
     </div>
   );
