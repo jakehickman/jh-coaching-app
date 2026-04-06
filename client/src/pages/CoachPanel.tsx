@@ -29,7 +29,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -173,9 +173,8 @@ function MuscleGroupSection({ group, children, globalToggle }: { group: string; 
 }
 
 // ─── Progress History Table ─────────────────────────────────────────────────
-// Spreadsheet-style: one row per day, weekly avg weight + change span the
-// full 7-day block (rowSpan), measurement values appear on the specific day
-// they were taken. Sorted oldest → newest (top = oldest).
+// One row per week. Dual-line trend chart above the table.
+// Change column = % of bodyweight gain/loss vs previous week.
 function ProgressHistoryTable({
   logs,
   measurements,
@@ -190,7 +189,7 @@ function ProgressHistoryTable({
     return nums.length ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
   }
 
-  // ── Build a map of iso date → log weight ─────────────────────────────────
+  // ── Build weight and measurement maps ──────────────────────────────────────
   const weightByDate: Record<string, number> = {};
   for (const log of logs) {
     const iso = toLocalDateStr(log.logDate);
@@ -199,7 +198,6 @@ function ProgressHistoryTable({
     weightByDate[iso] = log.weight as number;
   }
 
-  // ── Build a map of iso date → measurement ────────────────────────────────
   const measByDate: Record<string, any> = {};
   for (const m of measurements) {
     const iso = toLocalDateStr(m.measureDate);
@@ -208,19 +206,14 @@ function ProgressHistoryTable({
     measByDate[iso] = m;
   }
 
-  // ── Determine date range: from startDate (or earliest log) to today ───────
+  // ── Determine date range ────────────────────────────────────────────────────
   const today = new Date();
   const todayIso = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
-
-  const allDates = [
-    ...Object.keys(weightByDate),
-    ...Object.keys(measByDate),
-  ].sort();
+  const allDates = [...Object.keys(weightByDate), ...Object.keys(measByDate)].sort();
   if (allDates.length === 0) return null;
-
   const firstDate = startDate && startDate <= allDates[0] ? startDate : allDates[0];
 
-  // Generate every calendar day from firstDate to today
+  // Generate every calendar day
   const days: string[] = [];
   const cursor = new Date(firstDate + "T00:00:00");
   const end = new Date(todayIso + "T00:00:00");
@@ -229,104 +222,155 @@ function ProgressHistoryTable({
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  // ── Group days into Mon-Sun weeks ─────────────────────────────────────────
-  // Each week = array of iso strings. Week boundary = Monday.
+  // ── Group into Mon-Sun weeks ────────────────────────────────────────────────
   const weeks: string[][] = [];
   let currentWeek: string[] = [];
   for (const iso of days) {
-    const dow = new Date(iso + "T00:00:00").getDay(); // 0=Sun
-    if (dow === 1 && currentWeek.length > 0) {
-      weeks.push(currentWeek);
-      currentWeek = [];
-    }
+    const dow = new Date(iso + "T00:00:00").getDay();
+    if (dow === 1 && currentWeek.length > 0) { weeks.push(currentWeek); currentWeek = []; }
     currentWeek.push(iso);
   }
   if (currentWeek.length > 0) weeks.push(currentWeek);
 
-  // ── Compute weekly avg weight ─────────────────────────────────────────────
+  // ── Compute per-week stats ──────────────────────────────────────────────────
   function weekAvg(wkDays: string[]): number | null {
     const ws = wkDays.map(d => weightByDate[d]).filter((v): v is number => v != null);
     return ws.length ? parseFloat((ws.reduce((a, b) => a + b, 0) / ws.length).toFixed(2)) : null;
   }
-
-  // Reverse weeks so newest is at top
-  const reversedWeeks = [...weeks].reverse();
-
-  function fmtDate(iso: string) {
-    const [y, m, d] = iso.split("-");
-    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    return `${parseInt(d)} ${months[parseInt(m)-1]} ${y.slice(2)}`;
+  function weekEntries(wkDays: string[]): number {
+    return wkDays.filter(d => weightByDate[d] != null).length;
   }
+  // Best measurement in the week (prefer most recent)
+  function weekMeas(wkDays: string[]): any | null {
+    for (let i = wkDays.length - 1; i >= 0; i--) {
+      if (measByDate[wkDays[i]]) return measByDate[wkDays[i]];
+    }
+    return null;
+  }
+  function fmtWeekLabel(wkDays: string[]): string {
+    const fmt = (iso: string) => {
+      const [, m, d] = iso.split("-");
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      return `${parseInt(d)} ${months[parseInt(m)-1]}`;
+    };
+    return `${fmt(wkDays[0])} – ${fmt(wkDays[wkDays.length-1])}`;
+  }
+
+  // Build rows oldest→newest for chart, newest→oldest for table display
+  type WeekRow = {
+    label: string;
+    avg: number | null;
+    entries: number;
+    waist: number | null;
+    skinfold: number | null;
+    pctChange: number | null; // % vs previous week
+  };
+  const weekRows: WeekRow[] = weeks.map((wkDays, i) => {
+    const avg = weekAvg(wkDays);
+    const prevAvg = i > 0 ? weekAvg(weeks[i - 1]) : null;
+    const pctChange = avg != null && prevAvg != null && prevAvg !== 0
+      ? parseFloat(((avg - prevAvg) / prevAvg * 100).toFixed(2))
+      : null;
+    const m = weekMeas(wkDays);
+    const umbAvg = m ? siteAvg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]) : null;
+    const supAvg = m ? siteAvg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]) : null;
+    const skinfold = umbAvg != null && supAvg != null ? parseFloat((umbAvg + supAvg).toFixed(1)) : (umbAvg ?? supAvg);
+    return {
+      label: fmtWeekLabel(wkDays),
+      avg,
+      entries: weekEntries(wkDays),
+      waist: m?.waist ?? null,
+      skinfold,
+      pctChange,
+    };
+  });
+
+  if (weekRows.length === 0) return null;
+
+  // Chart data: oldest first
+  const chartData = weekRows.map(r => ({
+    week: r.label,
+    weight: r.avg,
+    skinfold: r.skinfold,
+  }));
+
+  // Table rows: newest first
+  const tableRows = [...weekRows].reverse();
 
   return (
     <div>
       <SectionLabel>Body Composition History</SectionLabel>
+
+      {/* Dual-line trend chart */}
+      {chartData.length >= 2 && (
+        <div className="bg-card border border-border rounded-xl p-4 mb-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Trend</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <LineChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="week" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} />
+              <YAxis yAxisId="weight" orientation="left" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} unit=" kg" width={42} />
+              <YAxis yAxisId="skinfold" orientation="right" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} unit=" mm" width={36} />
+              <Tooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+              />
+              <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
+              <Line yAxisId="weight" type="monotone" dataKey="weight" name="Avg Weight (kg)" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+              <Line yAxisId="skinfold" type="monotone" dataKey="skinfold" name="Skinfold (mm)" stroke="hsl(142 71% 45%)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Compact weekly summary table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="bg-muted/40 border-b border-border">
-                <th className="text-left px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-24">Date</th>
-                <th className="text-center px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-24">Weekly Avg</th>
-                <th className="text-center px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-20">Change</th>
-                <th className="text-center px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-20">Waist (cm)</th>
-                <th className="text-center px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-24">Skinfold (mm)</th>
+                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Week</th>
+                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Weight</th>
+                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Change</th>
+                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Waist</th>
+                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Skinfold</th>
+                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Entries</th>
               </tr>
             </thead>
             <tbody>
-              {reversedWeeks.map((wkDays, wi) => {
-                const avg = weekAvg(wkDays);
-                const prevWk = reversedWeeks[wi + 1];
-                const prevAvg = prevWk ? weekAvg(prevWk) : null;
-                const delta = avg != null && prevAvg != null
-                  ? parseFloat((avg - prevAvg).toFixed(2))
-                  : null;
-                const deltaKg = delta != null ? `${delta > 0 ? "+" : ""}${delta} kg` : "—";
-                const deltaColor = delta == null ? "text-muted-foreground"
-                  : delta < 0 ? "text-green-400" : delta > 0 ? "text-red-400" : "text-muted-foreground";
-                const rowSpan = wkDays.length;
-
-                return wkDays.map((iso, di) => {
-                  const m = measByDate[iso] ?? null;
-                  const umbAvg = m ? siteAvg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]) : null;
-                  const supAvg = m ? siteAvg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]) : null;
-                  const skinfoldTotal = umbAvg != null && supAvg != null
-                    ? parseFloat((umbAvg + supAvg).toFixed(1))
-                    : (umbAvg ?? supAvg);
-                  const isLastInWeek = di === wkDays.length - 1;
-                  const borderClass = isLastInWeek ? "border-b-2 border-border" : "border-b border-border/40";
-
-                  return (
-                    <tr key={iso} className={`${borderClass} hover:bg-muted/10 transition-colors`}>
-                      {/* Date */}
-                      <td className="px-3 py-2 text-foreground font-medium whitespace-nowrap">{fmtDate(iso)}</td>
-
-                      {/* Weekly avg — only on first row of week, spans all days */}
-                      {di === 0 && (
-                        <td rowSpan={rowSpan} className="px-3 py-2 text-center align-middle border-l border-border font-bold text-foreground">
-                          {avg != null ? `${avg} kg` : "—"}
-                        </td>
+              {tableRows.map((row, i) => {
+                const pctColor = row.pctChange == null ? "text-muted-foreground"
+                  : row.pctChange < 0 ? "text-green-400"
+                  : row.pctChange > 0 ? "text-red-400"
+                  : "text-muted-foreground";
+                const pctLabel = row.pctChange != null
+                  ? `${row.pctChange > 0 ? "+" : ""}${row.pctChange}%`
+                  : "—";
+                return (
+                  <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                    <td className="px-3 py-2.5 text-foreground font-medium whitespace-nowrap">{row.label}</td>
+                    <td className="px-3 py-2.5 text-center font-bold text-foreground border-l border-border">
+                      {row.avg != null ? `${row.avg} kg` : "—"}
+                    </td>
+                    <td className={`px-3 py-2.5 text-center font-semibold border-l border-border ${pctColor}`}>
+                      {row.pctChange != null && (
+                        row.pctChange < 0 ? <ArrowDown size={10} className="inline mr-0.5" /> :
+                        row.pctChange > 0 ? <ArrowUp size={10} className="inline mr-0.5" /> :
+                        <Minus size={10} className="inline mr-0.5" />
                       )}
-
-                      {/* Change — only on first row of week, spans all days */}
-                      {di === 0 && (
-                        <td rowSpan={rowSpan} className={`px-3 py-2 text-center align-middle border-l border-border font-semibold ${deltaColor}`}>
-                          {deltaKg}
-                        </td>
-                      )}
-
-                      {/* Waist — only on measurement day */}
-                      <td className="px-3 py-2 text-center border-l border-border text-foreground">
-                        {m?.waist != null ? m.waist : ""}
-                      </td>
-
-                      {/* Skinfold total — only on measurement day */}
-                      <td className="px-3 py-2 text-center border-l border-border text-foreground">
-                        {skinfoldTotal != null ? skinfoldTotal : ""}
-                      </td>
-                    </tr>
-                  );
-                });
+                      {pctLabel}
+                    </td>
+                    <td className="px-3 py-2.5 text-center border-l border-border text-foreground">
+                      {row.waist != null ? `${row.waist} cm` : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-center border-l border-border text-foreground">
+                      {row.skinfold != null ? `${row.skinfold} mm` : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-center border-l border-border text-muted-foreground">
+                      {row.entries}/7
+                    </td>
+                  </tr>
+                );
               })}
             </tbody>
           </table>

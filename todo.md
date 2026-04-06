@@ -141,3 +141,4 @@
 - [x] Hide calendar rows before client start date in coach Recent Daily Logs panel (Client Progress tab)
 - [x] Add side-by-side weekly avg weight history and measurement history table to Client Progress Overview tab
 - [x] Redesign history table: day-per-row with rowspan weekly avg, measurement on the day it was taken
+- [x] Replace with compact weekly summary table + dual-line trend chart (% BW change column)
