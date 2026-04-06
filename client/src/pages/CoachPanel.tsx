@@ -1550,17 +1550,7 @@ function ExerciseProgressTab({
                     })}
                   </div>
 
-                  {/* Latest top set highlight */}
-                  {latest?.topSet && (latest.topSet.weight != null || latest.topSet.reps != null) && (
-                    <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Latest top set</p>
-                      <p className="text-base font-bold text-foreground">
-                        {latest.topSet.weight != null ? `${latest.topSet.weight} kg` : ''}
-                        {latest.topSet.weight != null && latest.topSet.reps != null ? ' × ' : ''}
-                        {latest.topSet.reps != null ? `${latest.topSet.reps} reps` : ''}
-                      </p>
-                    </div>
-                  )}
+
                 </div>
               );
             })}
