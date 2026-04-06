@@ -1944,7 +1944,7 @@ function ExerciseLibrarySection() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-secondary/50">
-              <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[180px]">Exercise</th>
+              <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[260px]">Exercise</th>
               {MUSCLE_GROUPS.map(mg => (
                 <th key={mg.key} className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[70px]">{mg.label}</th>
               ))}
@@ -1957,7 +1957,7 @@ function ExerciseLibrarySection() {
             )}
             {filtered.map((ex, i) => (
               <tr key={ex.id} className={`border-b border-border/50 hover:bg-secondary/30 transition-colors ${i % 2 === 0 ? "" : "bg-secondary/10"}`}>
-                <td className="px-4 py-2.5 font-medium text-foreground sticky left-0 bg-card">
+                <td className="px-4 py-2.5 font-medium text-foreground sticky left-0 bg-card whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <span>{ex.name}</span>
                     {(ex as any).videoUrl && <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-red-500/20 text-red-400"><Play size={8} />Video</span>}
