@@ -450,47 +450,51 @@ function HabitsSummary() {
 function HabitsCard({ date }: { date: string }) {
   const utils = trpc.useUtils();
   const { data: habits = [] } = trpc.habits.myHabits.useQuery();
-  const { data: completions = [] } = trpc.habits.myCompletions.useQuery({ fromDate: date });
+  // Fetch last 90 days of completions with a stable cache key (no date dependency)
+  const from90 = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 89);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+  const { data: completions = [], refetch } = trpc.habits.myCompletions.useQuery({ fromDate: from90 });
+
+  // Local optimistic state: set of "habitId:date" strings
+  const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
+
   const toggleMutation = trpc.habits.toggleCompletion.useMutation({
-    onMutate: async ({ habitId, date: d }) => {
-      await utils.habits.myCompletions.cancel();
-      const prev = utils.habits.myCompletions.getData({ fromDate: d });
-      utils.habits.myCompletions.setData({ fromDate: d }, (old = []) => {
-        const exists = old.some((c: any) => c.habitId === habitId && String(c.completedDate).slice(0, 10) === d);
-        if (exists) return old.filter((c: any) => !(c.habitId === habitId && String(c.completedDate).slice(0, 10) === d));
-        return [...old, { id: -1, habitId, clientId: -1, completedDate: d as any, createdAt: new Date() }];
-      });
-      return { prev };
+    onMutate: ({ habitId, date: d }) => {
+      const key = `${habitId}:${d}`;
+      const serverDone = completions.some(
+        (c: any) => c.habitId === habitId && String(c.completedDate).slice(0, 10) === d
+      );
+      const currentDone = key in optimistic ? optimistic[key] : serverDone;
+      setOptimistic(prev => ({ ...prev, [key]: !currentDone }));
     },
-    onError: (_e, vars, ctx) => {
-      if (ctx?.prev) utils.habits.myCompletions.setData({ fromDate: vars.date }, ctx.prev);
-    },
-    onSettled: (_d, _e, vars) => {
-      utils.habits.myCompletions.invalidate({ fromDate: vars.date });
+    onSettled: () => {
+      refetch().then(() => setOptimistic({}));
     },
   });
 
   if (habits.length === 0) return null;
-
-  const completedIds = new Set(
-    completions
-      .filter((c: any) => String(c.completedDate).slice(0, 10) === date)
-      .map((c: any) => c.habitId)
-  );
 
   return (
     <div>
       <SectionLabel>Habits</SectionLabel>
       <Card className="space-y-1 p-0 overflow-hidden">
         {habits.map((h: any, i: number) => {
-          const done = completedIds.has(h.id);
+          const key = `${h.id}:${date}`;
+          const serverDone = completions.some(
+            (c: any) => c.habitId === h.id && String(c.completedDate).slice(0, 10) === date
+          );
+          const done = key in optimistic ? optimistic[key] : serverDone;
           return (
             <button
               key={h.id}
               onClick={() => toggleMutation.mutate({ habitId: h.id, date })}
+              disabled={toggleMutation.isPending}
               className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
                 i > 0 ? "border-t border-border" : ""
-              } ${done ? "bg-primary/5" : "hover:bg-muted/30"}`}
+              } ${done ? "bg-primary/5" : "hover:bg-muted/30"} disabled:opacity-70`}
             >
               {done
                 ? <CheckSquare size={20} className="text-primary shrink-0" />
