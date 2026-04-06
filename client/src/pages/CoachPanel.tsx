@@ -4,7 +4,8 @@ import { useParams, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical, BookOpen, Search, Pencil, X, Play, ExternalLink, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical, BookOpen, Search, Pencil, X, Play, ExternalLink, Check, ChevronsUpDown, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
@@ -1395,6 +1396,181 @@ function RecentLogsWithViewMore({ logs }: { logs: DailyLogRow[] }) {
   );
 }
 
+// ─── Exercise Progress Tab ───────────────────────────────────────────────────
+const MUSCLE_LABELS: Record<string, string> = {
+  chest: 'Chest', frontDelts: 'Front Delts', sideDelts: 'Side Delts',
+  triceps: 'Triceps', lats: 'Lats', upperBack: 'Upper Back',
+  rearDelts: 'Rear Delts', biceps: 'Biceps', quads: 'Quads',
+  hams: 'Hamstrings', glutes: 'Glutes', calves: 'Calves', abs: 'Abs',
+};
+const MUSCLE_KEYS = Object.keys(MUSCLE_LABELS);
+
+function ExerciseProgressTab({
+  workoutSessions, exerciseLib
+}: {
+  workoutSessions: any[];
+  exerciseLib: any[];
+}) {
+  const [selectedGroup, setSelectedGroup] = useState<string>('All');
+
+  // Build lookup: exerciseName -> primary muscle label
+  const exToMuscle: Record<string, string> = {};
+  for (const ex of exerciseLib) {
+    let best = 'Other', bestVal = 0;
+    for (const m of MUSCLE_KEYS) {
+      if ((ex[m] ?? 0) > bestVal) { bestVal = ex[m]; best = m; }
+    }
+    exToMuscle[ex.name] = MUSCLE_LABELS[best] ?? 'Other';
+  }
+
+  // Build per-exercise history (chronological)
+  const exerciseHistory: Record<string, Array<{ date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }> }>> = {};
+  for (const session of [...workoutSessions].reverse()) {
+    const dateStr = toLocalDateStr(session.sessionDate);
+    for (const ex of (session.exercises as any[])) {
+      if (!exerciseHistory[ex.name]) exerciseHistory[ex.name] = [];
+      const sets: Array<{ weight: number | null; reps: number | null }> = ex.sets ?? [];
+      // Top set = highest weight, or highest reps if no weights
+      const topSet = sets.reduce<{ weight: number | null; reps: number | null } | null>((best, s) => {
+        if (!best) return s;
+        const bw = best.weight ?? 0, sw = s.weight ?? 0;
+        if (sw > bw) return s;
+        if (sw === bw && (s.reps ?? 0) > (best.reps ?? 0)) return s;
+        return best;
+      }, null);
+      exerciseHistory[ex.name].push({ date: dateStr, topSet, allSets: sets });
+    }
+  }
+
+  // Group exercises by muscle
+  const byMuscle: Record<string, string[]> = {};
+  for (const name of Object.keys(exerciseHistory)) {
+    const group = exToMuscle[name] ?? 'Other';
+    if (!byMuscle[group]) byMuscle[group] = [];
+    if (!byMuscle[group].includes(name)) byMuscle[group].push(name);
+  }
+  const muscleGroups = ['All', ...Object.keys(byMuscle).sort()];
+
+  const visibleExercises = selectedGroup === 'All'
+    ? Object.keys(exerciseHistory).sort()
+    : (byMuscle[selectedGroup] ?? []).sort();
+
+  if (workoutSessions.length === 0) {
+    return <p className="text-sm text-muted-foreground">No workout sessions logged yet.</p>;
+  }
+
+  return (
+    <div className="flex gap-5 min-h-0">
+      {/* Left: muscle group sidebar */}
+      <div className="w-36 flex-shrink-0">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Muscle Group</p>
+        <div className="flex flex-col gap-0.5">
+          {muscleGroups.map(g => (
+            <button
+              key={g}
+              onClick={() => setSelectedGroup(g)}
+              className={`text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                selectedGroup === g
+                  ? 'bg-primary text-primary-foreground font-medium'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              }`}
+            >
+              {g}
+              {g !== 'All' && byMuscle[g] && (
+                <span className="ml-1.5 text-[10px] opacity-60">{byMuscle[g].length}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Right: exercise cards grid */}
+      <div className="flex-1 min-w-0">
+        {visibleExercises.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No exercises in this group yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            {visibleExercises.map(name => {
+              const history = exerciseHistory[name];
+              const last5 = history.slice(-5);
+              const latest = last5[last5.length - 1];
+              const prev = last5.length > 1 ? last5[last5.length - 2] : null;
+              const latestW = latest?.topSet?.weight ?? null;
+              const prevW = prev?.topSet?.weight ?? null;
+              const trend = latestW != null && prevW != null
+                ? latestW > prevW ? 'up' : latestW < prevW ? 'down' : 'flat'
+                : null;
+
+              return (
+                <div key={name} className="bg-card border border-border rounded-xl p-4">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{name}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{exToMuscle[name] ?? 'Other'} &middot; {history.length} session{history.length !== 1 ? 's' : ''}</p>
+                    </div>
+                    {trend === 'up' && <ArrowUp className="w-4 h-4 text-green-400 flex-shrink-0" />}
+                    {trend === 'down' && <ArrowDown className="w-4 h-4 text-red-400 flex-shrink-0" />}
+                    {trend === 'flat' && <Minus className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                  </div>
+
+                  {/* Session history table */}
+                  <div className="space-y-0">
+                    {last5.map((entry, i) => {
+                      const [y, m, d] = entry.date.split('-');
+                      const dateLabel = `${d}/${m}/${y}`;
+                      const isLatest = i === last5.length - 1;
+                      const prevEntry = i > 0 ? last5[i - 1] : null;
+                      const w = entry.topSet?.weight ?? null;
+                      const r = entry.topSet?.reps ?? null;
+                      const pw = prevEntry?.topSet?.weight ?? null;
+                      const pr = prevEntry?.topSet?.reps ?? null;
+                      const wUp = w != null && pw != null && w > pw;
+                      const wDown = w != null && pw != null && w < pw;
+                      return (
+                        <div
+                          key={i}
+                          className={`flex items-center justify-between py-1.5 ${
+                            i > 0 ? 'border-t border-border/50' : ''
+                          } ${isLatest ? 'opacity-100' : 'opacity-60'}`}
+                        >
+                          <p className="text-xs text-muted-foreground w-20 flex-shrink-0">{dateLabel}</p>
+                          <p className={`text-xs font-medium flex-1 text-right ${
+                            isLatest ? 'text-foreground' : 'text-muted-foreground'
+                          }`}>
+                            {w != null ? `${w} kg` : '—'}
+                            {r != null ? ` × ${r}` : ''}
+                          </p>
+                          <div className="w-5 flex justify-end flex-shrink-0">
+                            {wUp && <ArrowUp className="w-3 h-3 text-green-400" />}
+                            {wDown && <ArrowDown className="w-3 h-3 text-red-400" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Latest top set highlight */}
+                  {latest?.topSet && (latest.topSet.weight != null || latest.topSet.reps != null) && (
+                    <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Latest top set</p>
+                      <p className="text-base font-bold text-foreground">
+                        {latest.topSet.weight != null ? `${latest.topSet.weight} kg` : ''}
+                        {latest.topSet.weight != null && latest.topSet.reps != null ? ' × ' : ''}
+                        {latest.topSet.reps != null ? `${latest.topSet.reps} reps` : ''}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Section: Client Progress ─────────────────────────────────────────────────
 function ProgressSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
@@ -1544,16 +1720,22 @@ function ProgressSection() {
       </div>
     );
   }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
         <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
       </div>
 
       {selectedUserId && (
-        <>
-          {/* ── 7-Day Metric Averages ─────────────────────────────────── */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+          <div className="space-y-6">
+          {/* ── 7-Day Metric Averages ─────────────────────────────── */}
           <div>
             <SectionLabel>7-Day Averages (vs previous 7 days)</SectionLabel>
             <div className="grid grid-cols-2 gap-3">
@@ -1649,100 +1831,16 @@ function ProgressSection() {
             />
           )}
 
-          {/* Exercise Progress Cards */}
-          {workoutSessions.length > 0 && (() => {
-            // Muscle group label map
-            const MUSCLE_LABELS: Record<string, string> = {
-              chest: 'Chest', frontDelts: 'Front Delts', sideDelts: 'Side Delts',
-              triceps: 'Triceps', lats: 'Lats', upperBack: 'Upper Back',
-              rearDelts: 'Rear Delts', biceps: 'Biceps', quads: 'Quads',
-              hams: 'Hamstrings', glutes: 'Glutes', calves: 'Calves', abs: 'Abs',
-            };
-            const MUSCLE_KEYS = Object.keys(MUSCLE_LABELS);
-
-            // Build lookup: exerciseName -> primary muscle label
-            const exToMuscle: Record<string, string> = {};
-            for (const ex of (exerciseLib as any[])) {
-              let best = 'Other', bestVal = 0;
-              for (const m of MUSCLE_KEYS) {
-                if ((ex[m] ?? 0) > bestVal) { bestVal = ex[m]; best = m; }
-              }
-              exToMuscle[ex.name] = MUSCLE_LABELS[best] ?? 'Other';
-            }
-
-            // Build per-exercise history
-            const exerciseHistory: Record<string, Array<{ date: string; sets: Array<{ weight: number | null; reps: number | null }> }>> = {};
-            for (const session of [...workoutSessions].reverse()) {
-              const dateStr = toLocalDateStr(session.sessionDate);
-              for (const ex of (session.exercises as any[])) {
-                if (!exerciseHistory[ex.name]) exerciseHistory[ex.name] = [];
-                exerciseHistory[ex.name].push({ date: dateStr, sets: ex.sets ?? [] });
-              }
-            }
-
-            // Group exercises by muscle
-            const byMuscle: Record<string, string[]> = {};
-            for (const name of Object.keys(exerciseHistory)) {
-              const group = exToMuscle[name] ?? 'Other';
-              if (!byMuscle[group]) byMuscle[group] = [];
-              byMuscle[group].push(name);
-            }
-            const muscleGroups = Object.keys(byMuscle).sort();
-
-            return (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <SectionLabel>Exercise Progress</SectionLabel>
-                  <button
-                    onClick={() => setGlobalToggle(prev => ({ expanded: !(prev?.expanded ?? false), gen: (prev?.gen ?? 0) + 1 }))}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                  >
-                    {(globalToggle?.expanded ?? false) ? <><ChevronUp className="w-3 h-3" /> Collapse All</> : <><ChevronDown className="w-3 h-3" /> Expand All</>}
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {muscleGroups.map(group => (
-                    <MuscleGroupSection key={group} group={group} globalToggle={globalToggle}>
-                      <div className="space-y-3">
-                        {byMuscle[group].map(name => {
-                          const history = exerciseHistory[name];
-                          return (
-                            <Card key={name}>
-                              <p className="text-sm font-semibold text-foreground mb-2">{name}</p>
-                              <div className="space-y-2">
-                                {history.slice(-8).map((entry, i) => {
-                                  const [y, m, d] = entry.date.split("-");
-                                  const dateLabel = y && m && d ? `${d}/${m}/${y}` : entry.date;
-                                  const set1 = entry.sets.find((s: any) => s.weight != null || s.reps != null) ?? null;
-                                  return (
-                                    <div key={i} className="flex items-center justify-between border-t border-border pt-2 first:border-0 first:pt-0">
-                                      <p className="text-xs text-muted-foreground w-20 flex-shrink-0">{dateLabel}</p>
-                                      {set1 ? (
-                                        <p className="text-xs font-medium text-foreground">
-                                          {(set1 as any).weight != null ? `${(set1 as any).weight}kg` : "—"} × {(set1 as any).reps != null ? (set1 as any).reps : "—"}
-                                        </p>
-                                      ) : (
-                                        <p className="text-xs text-muted-foreground">No data</p>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    </MuscleGroupSection>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-
           {(logs ?? []).length > 0 && (
             <RecentLogsWithViewMore logs={logs ?? []} />
           )}
-        </>
+          </div>
+          </TabsContent>
+
+          <TabsContent value="exercise">
+            <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );
