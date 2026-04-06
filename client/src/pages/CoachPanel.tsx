@@ -1,7 +1,8 @@
 import DashboardShell from "@/components/DashboardShell";
 import { trpc } from "@/lib/trpc";
 import { useParams, useLocation } from "wouter";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useDraft } from "@/hooks/useDraft";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical, BookOpen, Search, Pencil, X, Play, ExternalLink, Check, ChevronsUpDown, ArrowUp, ArrowDown, Minus } from "lucide-react";
@@ -943,13 +944,24 @@ function TrainingSection() {
     { userId: selectedUserId! },
     { enabled: !!selectedUserId }
   );
+  const trainingDraftKey = selectedUserId ? `draft:training:${selectedUserId}` : null;
+
   const upsert = trpc.training.upsert.useMutation({
-    onSuccess: () => { toast.success("Training program saved"); refetch(); }
+    onSuccess: () => {
+      if (trainingDraftKey) { try { localStorage.removeItem(trainingDraftKey); } catch {} }
+      toast.success("Training program saved"); refetch();
+    }
   });
-   const [programName, setProgramName] = useState("");
+  const [programName, setProgramName] = useState("");
   const [notes, setNotes] = useState("");
   const [days, setDays] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<string[]>([]);
+
+  // Persist draft to localStorage on every change
+  useEffect(() => {
+    if (!trainingDraftKey) return;
+    try { localStorage.setItem(trainingDraftKey, JSON.stringify({ programName, notes, days, schedule })); } catch {}
+  }, [trainingDraftKey, programName, notes, days, schedule]);
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
 
   // ── Volume calculation ──────────────────────────────────────────────────────
@@ -1004,16 +1016,32 @@ function TrainingSection() {
 
     return { dayTotals, weeklyTotals, multiplier };
   })();
+  const trainingServerLoadedRef = useRef<number | null>(null);
   useEffect(() => {
+    if (!selectedUserId) return;
+    // If there's an unsaved draft for this user, restore it (don't overwrite with server data)
+    const draftKey = `draft:training:${selectedUserId}`;
+    const hasDraft = !!localStorage.getItem(draftKey);
+    if (hasDraft && trainingServerLoadedRef.current === selectedUserId) return;
     if (program) {
       setProgramName(program.programName ?? "");
       setNotes(program.notes ?? "");
       setDays((program.days as any[]) ?? []);
       setSchedule((program.schedule as string[]) ?? []);
-    } else {
+    } else if (!hasDraft) {
       setProgramName(""); setNotes(""); setDays([]); setSchedule([]);
+    } else {
+      // Restore draft when no server data exists yet
+      try {
+        const parsed = JSON.parse(localStorage.getItem(draftKey)!);
+        setProgramName(parsed.programName ?? "");
+        setNotes(parsed.notes ?? "");
+        setDays(parsed.days ?? []);
+        setSchedule(parsed.schedule ?? []);
+      } catch {}
     }
-  }, [program]);
+    trainingServerLoadedRef.current = selectedUserId;
+  }, [program, selectedUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addDay = () => setDays(d => [...d, { name: `Day ${d.length + 1}`, focus: "", exercises: [] }]);
   const removeDay = (i: number) => setDays(d => d.filter((_, idx) => idx !== i));
@@ -1262,21 +1290,45 @@ function MealPlansSection() {
     { enabled: !!selectedUserId }
   );
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
+  const mealDraftKey = selectedUserId ? `draft:mealPlan:${selectedUserId}:${dayType}` : null;
+
   const upsert = trpc.mealPlan.upsert.useMutation({
-    onSuccess: () => { toast.success("Meal plan saved"); refetch(); }
+    onSuccess: () => {
+      if (mealDraftKey) { try { localStorage.removeItem(mealDraftKey); } catch {} }
+      toast.success("Meal plan saved"); refetch();
+    }
   });
 
   const [planNotes, setPlanNotes] = useState("");
   const [meals, setMeals] = useState<any[]>([]);
 
+  // Persist draft to localStorage on every change
   useEffect(() => {
+    if (!mealDraftKey) return;
+    try { localStorage.setItem(mealDraftKey, JSON.stringify({ planNotes, meals })); } catch {}
+  }, [mealDraftKey, planNotes, meals]);
+
+  const mealServerLoadedRef = useRef<string | null>(null);
+  const mealLoadKey = selectedUserId ? `${selectedUserId}:${dayType}` : null;
+  useEffect(() => {
+    if (!mealLoadKey) return;
+    const draftKey = `draft:mealPlan:${mealLoadKey}`;
+    const hasDraft = !!localStorage.getItem(draftKey);
+    if (hasDraft && mealServerLoadedRef.current === mealLoadKey) return;
     if (plan) {
       setPlanNotes(plan.notes ?? "");
       setMeals((plan.meals as any[]) ?? []);
-    } else {
+    } else if (!hasDraft) {
       setPlanNotes(""); setMeals([]);
+    } else {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(draftKey)!);
+        setPlanNotes(parsed.planNotes ?? "");
+        setMeals(parsed.meals ?? []);
+      } catch {}
     }
-  }, [plan, dayType]);
+    mealServerLoadedRef.current = mealLoadKey;
+  }, [plan, mealLoadKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-calculate macros from food db
   const mealMacros = meals.map(meal =>
