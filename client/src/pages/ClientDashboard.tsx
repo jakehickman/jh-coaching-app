@@ -404,20 +404,24 @@ function HabitsSummary() {
 
   // Per-habit stats
   const habitStats = habits.map((h: any) => {
-    const last7Done = last7.filter(d => completedSet.has(`${h.id}:${d}`)).length;
-    const pct7 = Math.round((last7Done / 7) * 100);
+    // Only count days on/after assignment date as eligible
+    const assignedDateStr = normDate(h.assignedAt);
+    const eligible7 = last7.filter(d => d >= assignedDateStr);
+    const last7Done = eligible7.filter(d => completedSet.has(`${h.id}:${d}`)).length;
+    const pct7 = eligible7.length > 0 ? Math.round((last7Done / eligible7.length) * 100) : 0;
 
-    // Streak: count consecutive completed days ending today
+    // Streak: count consecutive completed days ending today (only from assignedDate)
     let streak = 0;
     for (let i = 0; i < 30; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (ds < assignedDateStr) break;
       if (completedSet.has(`${h.id}:${ds}`)) streak++;
       else break;
     }
 
-    return { ...h, last7Done, pct7, streak };
+    return { ...h, last7Done, pct7, streak, eligible7: eligible7.length };
   });
 
   const todayDone = habits.filter((h: any) => completedSet.has(`${h.id}:${today}`)).length;

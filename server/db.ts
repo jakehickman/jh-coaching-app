@@ -799,7 +799,7 @@ export async function listAssignedHabitsForClient(clientId: number) {
     .from(habitAssignments)
     .innerJoin(habits, eq(habitAssignments.habitId, habits.id))
     .where(and(eq(habitAssignments.clientId, clientId), eq(habitAssignments.active, true), eq(habits.deleted, false)));
-  return rows.map(r => r.habit);
+  return rows.map(r => ({ ...r.habit, assignedAt: r.assignment.assignedAt }));
 }
 
 export async function toggleHabitCompletion(habitId: number, clientId: number, completedDate: string): Promise<boolean> {

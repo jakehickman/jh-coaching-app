@@ -2778,14 +2778,19 @@ function CoachHabitsPanel({ clientId }: { clientId: number }) {
   );
 
   const habitStats = habits.map((h: any) => {
-    const done28 = last28.filter(d => completedSet.has(`${h.id}:${d}`)).length;
-    const done7 = last7.filter(d => completedSet.has(`${h.id}:${d}`)).length;
-    const pct28 = Math.round((done28 / 28) * 100);
-    const pct7 = Math.round((done7 / 7) * 100);
-    // Streak
+    // Only count days on/after assignment date as eligible
+    const assignedDateStr = normCompDate(h.assignedAt);
+    const eligible28 = last28.filter(d => d >= assignedDateStr);
+    const eligible7 = last7.filter(d => d >= assignedDateStr);
+    const done28 = eligible28.filter(d => completedSet.has(`${h.id}:${d}`)).length;
+    const done7 = eligible7.filter(d => completedSet.has(`${h.id}:${d}`)).length;
+    const pct28 = eligible28.length > 0 ? Math.round((done28 / eligible28.length) * 100) : 0;
+    const pct7 = eligible7.length > 0 ? Math.round((done7 / eligible7.length) * 100) : 0;
+    // Streak (only from assignedDate)
     let streak = 0;
     for (let i = 0; i < 28; i++) {
       const d = last28[last28.length - 1 - i];
+      if (!d || d < assignedDateStr) break;
       if (completedSet.has(`${h.id}:${d}`)) streak++;
       else break;
     }
