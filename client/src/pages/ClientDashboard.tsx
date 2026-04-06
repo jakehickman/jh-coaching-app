@@ -41,46 +41,17 @@ function fmtDate(val: unknown): string {
   return iso;
 }
 
-// DD/MM/YYYY date picker — always shows in Australian format regardless of browser locale
-// value and onChange use yyyy-mm-dd strings internally
+// Native HTML date picker — value and onChange use yyyy-mm-dd strings
+// The browser's date input always produces a yyyy-mm-dd string in local time,
+// so no timezone conversion is needed.
 function DateInput({ value, onChange, className = "" }: { value: string; onChange: (v: string) => void; className?: string }) {
-  const [y, m, d] = value ? value.split('-') : ['', '', ''];
-
-  const update = (newD: string, newM: string, newY: string) => {
-    if (newD.length <= 2 && newM.length <= 2 && newY.length <= 4) {
-      const dPad = newD.padStart(2, '0');
-      const mPad = newM.padStart(2, '0');
-      if (newY.length === 4 && newM.length >= 1 && newD.length >= 1) {
-        onChange(`${newY}-${mPad}-${dPad}`);
-      }
-    }
-  };
-
-  const inputCls = `bg-secondary border border-border rounded-lg px-2 py-3 text-base text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary`;
-
   return (
-    <div className={`flex items-center gap-1 ${className}`}>
-      <input
-        type="number" min={1} max={31} placeholder="DD"
-        value={d || ''}
-        onChange={e => update(e.target.value, m || '', y || '')}
-        className={`${inputCls} w-16`}
-      />
-      <span className="text-muted-foreground">/</span>
-      <input
-        type="number" min={1} max={12} placeholder="MM"
-        value={m || ''}
-        onChange={e => update(d || '', e.target.value, y || '')}
-        className={`${inputCls} w-16`}
-      />
-      <span className="text-muted-foreground">/</span>
-      <input
-        type="number" min={2000} max={2100} placeholder="YYYY"
-        value={y || ''}
-        onChange={e => update(d || '', m || '', e.target.value)}
-        className={`${inputCls} w-24`}
-      />
-    </div>
+    <input
+      type="date"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className={`bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary ${className}`}
+    />
   );
 }
 function SectionLabel({ children }: { children: React.ReactNode }) {

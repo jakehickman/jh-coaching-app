@@ -91,3 +91,4 @@
 - [x] Fix adherence: use 7 calendar days as denominator (unlogged = non-adherent)
 - [x] Limit recent logs in Coach Panel to 7 days with "View more" button
 - [x] Measurements section: side-by-side layout with delta and expandable detail confirmed complete
+- [x] Replace custom DD/MM/YYYY date inputs with native HTML date picker across all forms (daily log, measurements, workout log)

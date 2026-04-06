@@ -45,34 +45,15 @@ function toLocalDateStr(val: unknown): string {
   return s.slice(0, 10);
 }
 
-// DD/MM/YYYY date picker — locale-independent
+// Native HTML date picker — value and onChange use yyyy-mm-dd strings
 function DateInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [dd, mm, yyyy] = value ? value.split('-').length === 3
-    ? [value.split('-')[2], value.split('-')[1], value.split('-')[0]]
-    : ['', '', '']
-    : ['', '', ''];
-  const update = (newDd: string, newMm: string, newYyyy: string) => {
-    if (newDd.length <= 2 && newMm.length <= 2 && newYyyy.length === 4) {
-      const d = newDd.padStart(2, '0'), m = newMm.padStart(2, '0');
-      onChange(`${newYyyy}-${m}-${d}`);
-    } else {
-      onChange('');
-    }
-  };
   return (
-    <div className="flex items-center gap-1">
-      <input type="number" min={1} max={31} placeholder="DD" value={dd}
-        onChange={e => update(e.target.value, mm, yyyy)}
-        className="w-14 bg-secondary border border-border rounded-lg px-2 py-2 text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-      <span className="text-muted-foreground">/</span>
-      <input type="number" min={1} max={12} placeholder="MM" value={mm}
-        onChange={e => update(dd, e.target.value, yyyy)}
-        className="w-14 bg-secondary border border-border rounded-lg px-2 py-2 text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-      <span className="text-muted-foreground">/</span>
-      <input type="number" min={2000} max={2100} placeholder="YYYY" value={yyyy}
-        onChange={e => update(dd, mm, e.target.value)}
-        className="w-20 bg-secondary border border-border rounded-lg px-2 py-2 text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-    </div>
+    <input
+      type="date"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+    />
   );
 }
 
