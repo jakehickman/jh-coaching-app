@@ -1599,7 +1599,7 @@ function MealPlansSection() {
 
 
 // ─── Recent Logs with View More ─────────────────────────────────────────────
-function RecentLogsWithViewMore({ logs }: { logs: DailyLogRow[] }) {
+function RecentLogsWithViewMore({ logs, startDate }: { logs: DailyLogRow[]; startDate?: string | null }) {
   const [showAll, setShowAll] = useState(false);
   const INITIAL_DAYS = 7;
   const TOTAL_DAYS = 14;
@@ -1611,12 +1611,13 @@ function RecentLogsWithViewMore({ logs }: { logs: DailyLogRow[] }) {
     if (key) logMap[key] = log;
   }
 
-  // Generate last N calendar days (today first)
+  // Generate last N calendar days (today first), filtered to on/after client start date
   const allDays: string[] = [];
   for (let i = 0; i < TOTAL_DAYS; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    allDays.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if (!startDate || iso >= startDate) allDays.push(iso);
   }
   const visibleDays = showAll ? allDays : allDays.slice(0, INITIAL_DAYS);
 
@@ -1947,6 +1948,11 @@ function ProgressSection() {
     { enabled: !!selectedUserId }
   );
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
+  const { data: clientProfile } = trpc.profile.getById.useQuery(
+    { userId: selectedUserId! },
+    { enabled: !!selectedUserId }
+  );
+  const clientStartDate = clientProfile?.startDate ? toLocalDateStr(clientProfile.startDate) : null;
   // allExpandedState: null = no global action, true/false = last global action
   const [globalToggle, setGlobalToggle] = useState<{ expanded: boolean; gen: number } | null>(null);
 
@@ -2185,7 +2191,7 @@ function ProgressSection() {
           )}
 
           {(logs ?? []).length > 0 && (
-            <RecentLogsWithViewMore logs={logs ?? []} />
+            <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
           )}
           </div>
           </TabsContent>

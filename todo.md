@@ -138,3 +138,4 @@
 - [x] Restrict daily log date picker to client start date (prevent logging before start date)
 - [x] Add edit functionality to coaching notes in coach Client Progress tab
 - [x] Nutrition food rename cascade: update all meal plans when a food name changes in Nutrition Data tab
+- [x] Hide calendar rows before client start date in coach Recent Daily Logs panel (Client Progress tab)
