@@ -458,7 +458,9 @@ function HabitsCard({ date }: { date: string }) {
   }, []);
   const { data: completions = [], refetch } = trpc.habits.myCompletions.useQuery({ fromDate: from90 });
 
-  // Local optimistic state: set of "habitId:date" strings
+  // Local optimistic state: map of "habitId:date" -> boolean
+  // We never clear this map — once the server confirms, serverDone takes over and the
+  // optimistic entry is simply ignored (serverDone === optimistic[key] so no visual diff).
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
 
   const toggleMutation = trpc.habits.toggleCompletion.useMutation({
@@ -471,7 +473,9 @@ function HabitsCard({ date }: { date: string }) {
       setOptimistic(prev => ({ ...prev, [key]: !currentDone }));
     },
     onSettled: () => {
-      refetch().then(() => setOptimistic({}));
+      // Refetch to sync server state — do NOT clear optimistic map here,
+      // the optimistic value stays until the component unmounts (no flicker).
+      refetch();
     },
   });
 
