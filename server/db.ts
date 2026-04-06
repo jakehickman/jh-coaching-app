@@ -606,7 +606,31 @@ export async function upsertNutritionFood(data: InsertNutritionFood & { id?: num
   if (!db) return;
   if (data.id) {
     const { id, ...rest } = data;
+    // Get old name before updating so we can cascade rename to meal plans
+    const [existing] = await db.select({ name: nutritionFoods.name }).from(nutritionFoods).where(eq(nutritionFoods.id, id));
     await db.update(nutritionFoods).set({ ...rest, updatedAt: new Date() } as any).where(eq(nutritionFoods.id, id));
+    // Cascade rename: update all meal plans that reference the old food name
+    if (existing && data.name && existing.name !== data.name) {
+      const oldName = existing.name;
+      const newName = data.name;
+      const plans = await db.select({ id: mealPlans.id, meals: mealPlans.meals }).from(mealPlans);
+      for (const plan of plans) {
+        const meals = plan.meals as any[];
+        if (!Array.isArray(meals)) continue;
+        let changed = false;
+        const updatedMeals = meals.map((meal: any) => {
+          if (!Array.isArray(meal.items)) return meal;
+          const updatedItems = meal.items.map((item: any) => {
+            if (item.food === oldName) { changed = true; return { ...item, food: newName }; }
+            return item;
+          });
+          return { ...meal, items: updatedItems };
+        });
+        if (changed) {
+          await db.update(mealPlans).set({ meals: sql`${JSON.stringify(updatedMeals)}` } as any).where(eq(mealPlans.id, plan.id));
+        }
+      }
+    }
   } else {
     await db.insert(nutritionFoods).values(data as any);
   }
