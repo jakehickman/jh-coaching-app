@@ -2491,13 +2491,13 @@ function NutritionDataSection() {
 }
 
 // ─── Main CoachPanel ──────────────────────────────────────────────────────────
-const SECTION_MAP: Record<string, React.ReactNode> = {
-  clients: <ClientsSection />,
-  training: <TrainingSection />,
-  "meal-plans": <MealPlansSection />,
-  progress: <ProgressSection />,
-  "exercise-library": <ExerciseLibrarySection />,
-  "nutrition-data": <NutritionDataSection />,
+const SECTION_MAP: Record<string, () => React.ReactNode> = {
+  clients: () => <ClientsSection />,
+  training: () => <TrainingSection />,
+  "meal-plans": () => <MealPlansSection />,
+  progress: () => <ProgressSection />,
+  "exercise-library": () => <ExerciseLibrarySection />,
+  "nutrition-data": () => <NutritionDataSection />,
 };
 const SECTION_TITLES: Record<string, string> = {
   clients: "Clients",
@@ -2532,7 +2532,7 @@ export default function CoachPanel() {
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Coach Panel</p>
         <h1 className="text-xl font-bold text-foreground mt-0.5">{SECTION_TITLES[section] ?? "Coach Panel"}</h1>
       </div>
-      {SECTION_MAP[section] ?? <ClientsSection />}
+      {(SECTION_MAP[section] ?? (() => <ClientsSection />))()}
     </DashboardShell>
   );
 }
