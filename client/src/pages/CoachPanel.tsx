@@ -1289,6 +1289,11 @@ function MealPlansSection() {
     { userId: selectedUserId!, dayType },
     { enabled: !!selectedUserId }
   );
+  const oppositeDay = dayType === "training" ? "rest" : "training";
+  const { data: oppositePlan } = trpc.mealPlan.getForClient.useQuery(
+    { userId: selectedUserId!, dayType: oppositeDay },
+    { enabled: !!selectedUserId }
+  );
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
   const mealDraftKey = selectedUserId ? `draft:mealPlan:${selectedUserId}:${dayType}` : null;
 
@@ -1345,7 +1350,7 @@ function MealPlansSection() {
   );
 
   const dailyTotals = mealMacros.reduce((acc, m) => ({
-    ...acc,
+    calories: acc.calories + m.calories,
     protein: Math.round(acc.protein + m.protein),
     carbs: Math.round(acc.carbs + m.carbs),
     fiber: Math.round(acc.fiber + m.fiber),
@@ -1354,6 +1359,12 @@ function MealPlansSection() {
 
   const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", items: [] }]);
   const removeMeal = (i: number) => setMeals(m => m.filter((_, idx) => idx !== i));
+  const moveMeal = (from: number, to: number) => setMeals(m => {
+    const next = [...m];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    return next;
+  });
   const updateMealName = (i: number, name: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, name } : meal));
   const updateMealTime = (i: number, time: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, time } : meal));
   const addItem = (mealIdx: number) => setMeals(m => m.map((meal, idx) => idx === mealIdx
@@ -1377,7 +1388,7 @@ function MealPlansSection() {
 
       {selectedUserId && (
         <>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {(["training", "rest"] as const).map(t => (
               <button key={t} onClick={() => setDayType(t)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
@@ -1386,6 +1397,20 @@ function MealPlansSection() {
                 {t === "training" ? "Training Day" : "Rest Day"}
               </button>
             ))}
+            {oppositePlan && (oppositePlan.meals as any[])?.length > 0 && (
+              <button
+                onClick={() => {
+                  if (!window.confirm(`Copy meals from ${oppositeDay} day plan? This will replace the current meals.`)) return;
+                  setMeals(JSON.parse(JSON.stringify((oppositePlan.meals as any[]) ?? [])));
+                  setPlanNotes(oppositePlan.notes ?? "");
+                  toast.success(`Copied from ${oppositeDay} day plan`);
+                }}
+                className="ml-auto px-3 py-2 rounded-lg text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground border border-border flex items-center gap-1.5"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                Copy from {oppositeDay} day
+              </button>
+            )}
           </div>
 
           {/* Daily totals summary */}
@@ -1406,6 +1431,16 @@ function MealPlansSection() {
             {meals.map((meal, i) => (
               <Card key={i}>
                 <div className="flex items-center gap-2 mb-3">
+                  <div className="flex flex-col gap-0.5">
+                    <button onClick={() => i > 0 && moveMeal(i, i - 1)} disabled={i === 0}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-20 leading-none">
+                      <ArrowUp size={12} />
+                    </button>
+                    <button onClick={() => i < meals.length - 1 && moveMeal(i, i + 1)} disabled={i === meals.length - 1}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-20 leading-none">
+                      <ArrowDown size={12} />
+                    </button>
+                  </div>
                   <input type="text" value={meal.name} onChange={e => updateMealName(i, e.target.value)}
                     className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-primary" />
                   <input type="time" value={meal.time ?? ""} onChange={e => updateMealTime(i, e.target.value)}
