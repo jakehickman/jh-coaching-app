@@ -1,7 +1,8 @@
 import DashboardShell from "@/components/DashboardShell";
 import { trpc } from "@/lib/trpc";
 import { useParams, useLocation } from "wouter";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { useDraft } from "@/hooks/useDraft";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar
@@ -363,15 +364,17 @@ function OverviewTab() {
 function DailyLogTab() {
   const today = localToday();
   const [date, setDate] = useState(today);
-  const [form, setForm] = useState({
-    weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false,
-    trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, offPlanMeal: false, notes: ""
-  });
+
+  const blankDailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, offPlanMeal: false, notes: "" };
+  const [form, setForm, clearDraft] = useDraft(`draft:dailyLog:${date}`, blankDailyForm);
+
+  // Track whether we've loaded server data for this date yet (avoid overwriting draft with blank)
+  const serverLoadedRef = useRef<string | null>(null);
 
   const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 30 });
   const { data: workoutSessions = [] } = trpc.workoutSessions.list.useQuery();
   const upsert = trpc.dailyLog.upsert.useMutation({
-    onSuccess: () => { toast.success("Log saved"); refetch(); }
+    onSuccess: () => { clearDraft(); toast.success("Log saved"); refetch(); }
   });
   const del = trpc.dailyLog.delete.useMutation({
     onSuccess: () => { toast.success("Log deleted"); refetch(); }
@@ -388,9 +391,13 @@ function DailyLogTab() {
   const autoTrained = todaysSessions.length > 0;
   const autoTrainingType = todaysSessions.map(s => s.dayLabel).filter(Boolean).join(", ") || undefined;
 
-  // Load existing log for selected date
+  // Load existing log for selected date — only overwrite if no local draft exists
   useEffect(() => {
-    const existing = logs?.find(l => toLocalDateStr(l.logDate) === date);
+    if (!logs) return;
+    const cacheKey = `draft:dailyLog:${date}`;
+    const hasDraft = !!localStorage.getItem(cacheKey);
+    if (hasDraft && serverLoadedRef.current === date) return; // user has unsaved changes, keep them
+    const existing = logs.find(l => toLocalDateStr(l.logDate) === date);
     if (existing) {
       setForm({
         weight: existing.weight?.toString() ?? "",
@@ -404,9 +411,10 @@ function DailyLogTab() {
         offPlanMeal: existing.offPlanMeal ?? false,
         notes: existing.notes ?? "",
       });
-    } else {
-      setForm({ weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, offPlanMeal: false, notes: "" });
+    } else if (!hasDraft) {
+      setForm(blankDailyForm);
     }
+    serverLoadedRef.current = date;
   }, [date, logs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync auto-derived training fields whenever date or workout sessions change
@@ -1275,6 +1283,16 @@ function WorkoutLogTab() {
   // exerciseData: { [exerciseName]: Array<{weight: string, reps: string, notes: string}> }
   const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string }>>>({});
   const [sessionNotes, setSessionNotes] = useState("");
+
+  // Persist in-progress workout to localStorage so tab switches don't lose data
+  const workoutDraftKey = selectedDay ? `draft:workout:${sessionDate}:${selectedDay}` : null;
+  useEffect(() => {
+    if (!workoutDraftKey) return;
+    try { localStorage.setItem(workoutDraftKey, JSON.stringify({ exerciseData, sessionNotes })); } catch {}
+  }, [workoutDraftKey, exerciseData, sessionNotes]);
+  function clearWorkoutDraft() {
+    if (workoutDraftKey) { try { localStorage.removeItem(workoutDraftKey); } catch {} }
+  }
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
@@ -1303,7 +1321,7 @@ function WorkoutLogTab() {
     onError: () => { setDeleting(null); toast.error("Failed to delete."); },
   });
 
-  // When user picks a day, load existing session for that date+day or init blank
+  // When user picks a day, load existing session, or restore draft, or init blank
   function selectDay(label: string) {
     setSelectedDay(label);
     const dayDef = days.find(d => d.label === label);
@@ -1320,6 +1338,18 @@ function WorkoutLogTab() {
       setExerciseData(exData);
       setSessionNotes((existing.notes as string) ?? "");
     } else {
+      // Try to restore an in-progress draft first
+      const draftKey = `draft:workout:${sessionDate}:${label}`;
+      try {
+        const stored = localStorage.getItem(draftKey);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setExerciseData(parsed.exerciseData ?? {});
+          setSessionNotes(parsed.sessionNotes ?? "");
+          return;
+        }
+      } catch {}
+      // No draft — init blank sets from program definition
       const blank: Record<string, Array<{ weight: string; reps: string; notes: string }>> = {};
       for (const ex of (dayDef?.exercises ?? [])) {
         blank[ex.name] = [{ weight: "", reps: "", notes: "" }];
@@ -1369,6 +1399,7 @@ function WorkoutLogTab() {
       })),
     }));
     saveMutation.mutate({ sessionDate, dayLabel: selectedDay, exercises, notes: sessionNotes || null });
+    clearWorkoutDraft();
   }
 
   const inputCls = "bg-secondary border border-border rounded-lg px-2 py-3 text-base text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary w-full";
