@@ -130,3 +130,4 @@
 - [x] Fix meal plans amber dot false positive — rewrite with content-diff approach
 - [x] Move app to /app prefix, free up / for homepage
 - [x] Fix exercise library: exercise names cannot be edited
+- [x] Fix exercise library: name change not persisting after save (videoUrl null rejected by Zod schema)

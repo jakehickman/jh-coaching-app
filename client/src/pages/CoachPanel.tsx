@@ -2190,7 +2190,10 @@ const EMPTY_EXERCISE: ExerciseRow = {
 
 function ExerciseLibrarySection() {
   const { data: exercises = [], refetch } = trpc.exerciseLibrary.list.useQuery();
-  const upsert = trpc.exerciseLibrary.upsert.useMutation({ onSuccess: () => { refetch(); setEditing(null); toast.success("Saved"); } });
+  const upsert = trpc.exerciseLibrary.upsert.useMutation({ 
+    onSuccess: () => { refetch(); setEditing(null); toast.success("Saved"); },
+    onError: (err) => { toast.error(err.message || "Save failed"); }
+  });
   const del = trpc.exerciseLibrary.delete.useMutation({ onSuccess: () => { refetch(); toast.success("Deleted"); } });
 
   const [search, setSearch] = useState("");
