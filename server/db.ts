@@ -534,7 +534,7 @@ export async function upsertExercise(data: InsertExerciseLibraryEntry & { id?: n
     if (existing && data.name && existing.name !== data.name) {
       const oldName = existing.name;
       const newName = data.name;
-      // Update training programs
+      // Update training programs (use raw sql to ensure JSON is serialised correctly)
       const programs = await db.select({ id: trainingPrograms.id, days: trainingPrograms.days }).from(trainingPrograms);
       for (const prog of programs) {
         const days = prog.days as any[];
@@ -549,10 +549,10 @@ export async function upsertExercise(data: InsertExerciseLibraryEntry & { id?: n
           return { ...day, exercises: updatedExercises };
         });
         if (changed) {
-          await db.update(trainingPrograms).set({ days: updatedDays } as any).where(eq(trainingPrograms.id, prog.id));
+          await db.update(trainingPrograms).set({ days: sql`${JSON.stringify(updatedDays)}` } as any).where(eq(trainingPrograms.id, prog.id));
         }
       }
-      // Update workout sessions
+      // Update workout sessions (use raw sql to ensure JSON is serialised correctly)
       const sessions = await db.select({ id: workoutSessions.id, exercises: workoutSessions.exercises }).from(workoutSessions);
       for (const session of sessions) {
         const exercises = session.exercises as any[];
@@ -563,7 +563,7 @@ export async function upsertExercise(data: InsertExerciseLibraryEntry & { id?: n
           return ex;
         });
         if (changed) {
-          await db.update(workoutSessions).set({ exercises: updatedExercises } as any).where(eq(workoutSessions.id, session.id));
+          await db.update(workoutSessions).set({ exercises: sql`${JSON.stringify(updatedExercises)}` } as any).where(eq(workoutSessions.id, session.id));
         }
       }
     }
