@@ -549,31 +549,82 @@ function SortableExerciseRow({
 }
 
 // ─── Food Combobox ──────────────────────────────────────────────────────────
-function FoodCombobox({ value, onChange, foodNames }: { value: string; onChange: (v: string) => void; foodNames: string[] }) {
+function FoodCombobox({
+  value, onChange, foodNames, onSelectAdvance, mealIdx, itemIdx
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  foodNames: string[];
+  onSelectAdvance?: () => void;
+  mealIdx?: number;
+  itemIdx?: number;
+}) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [highlightedIdx, setHighlightedIdx] = useState(-1);
   const filtered = search.length > 0
     ? foodNames.filter(n => n.toLowerCase().includes(search.toLowerCase())).slice(0, 10)
     : foodNames.slice(0, 10);
+
+  const selectItem = (name: string) => {
+    onChange(name);
+    setSearch("");
+    setOpen(false);
+    setHighlightedIdx(-1);
+    setTimeout(() => onSelectAdvance?.(), 0);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (open && filtered.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setHighlightedIdx(i => Math.min(i + 1, filtered.length - 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setHighlightedIdx(i => Math.max(i - 1, 0));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        selectItem(filtered[highlightedIdx >= 0 ? highlightedIdx : 0]);
+      } else if (e.key === "Escape") {
+        setOpen(false);
+        setHighlightedIdx(-1);
+      } else if (e.key === "Tab") {
+        setOpen(false);
+        setHighlightedIdx(-1);
+      }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      onSelectAdvance?.();
+    }
+  };
+
   return (
     <div className="relative w-full">
       <input
         type="text"
+        data-meal={mealIdx}
+        data-item={itemIdx}
+        data-field="food"
         value={open ? search : value}
-        onChange={e => { setSearch(e.target.value); setOpen(true); }}
-        onFocus={() => { setSearch(""); setOpen(true); }}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onChange={e => { setSearch(e.target.value); setOpen(true); setHighlightedIdx(-1); }}
+        onFocus={() => { setSearch(""); setOpen(true); setHighlightedIdx(-1); }}
+        onBlur={() => setTimeout(() => { setOpen(false); setHighlightedIdx(-1); }, 150)}
+        onKeyDown={handleKeyDown}
         placeholder="Search food…"
         className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
       />
       {open && filtered.length > 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto">
-          {filtered.map(name => (
+          {filtered.map((name, idx) => (
             <button
               key={name}
               type="button"
-              onMouseDown={() => { onChange(name); setSearch(""); setOpen(false); }}
-              className="w-full text-left px-3 py-1.5 text-xs text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+              onMouseDown={() => selectItem(name)}
+              className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+                idx === highlightedIdx
+                  ? "bg-primary/20 text-primary"
+                  : "text-foreground hover:bg-primary/10 hover:text-primary"
+              }`}
             >
               {name}
             </button>
@@ -1329,6 +1380,30 @@ function MealPlansSection() {
                     const m = calcItemMacros(foodDb, item.food, amount);
                     const hasData = item.food && amount > 0;
                     const effectiveGrams = isServingBased ? getItemGrams(foodDb, item.food, amount) : null;
+                    const totalItems = (meal.items ?? []).length;
+                    const isLastItem = j === totalItems - 1;
+                    const focusNextFoodInput = () => {
+                      if (isLastItem) {
+                        addItem(i);
+                        setTimeout(() => {
+                          const next = document.querySelector<HTMLInputElement>(
+                            `[data-meal="${i}"][data-item="${j + 1}"][data-field="food"]`
+                          );
+                          next?.focus();
+                        }, 50);
+                      } else {
+                        const next = document.querySelector<HTMLInputElement>(
+                          `[data-meal="${i}"][data-item="${j + 1}"][data-field="food"]`
+                        );
+                        next?.focus();
+                      }
+                    };
+                    const focusQtyInput = () => {
+                      const qty = document.querySelector<HTMLInputElement>(
+                        `[data-meal="${i}"][data-item="${j}"][data-field="qty"]`
+                      );
+                      qty?.focus();
+                    };
                     return (
                       <div key={j} className="grid grid-cols-12 gap-1 items-center">
                         <div className="col-span-6">
@@ -1336,13 +1411,20 @@ function MealPlansSection() {
                             value={item.food}
                             onChange={v => updateItem(i, j, "food", v)}
                             foodNames={foodNames}
+                            onSelectAdvance={focusQtyInput}
+                            mealIdx={i}
+                            itemIdx={j}
                           />
                         </div>
                         <div className="col-span-2 flex flex-col">
                           <input
                             type="number" min="0" step={isServingBased ? "0.5" : "1"}
+                            data-meal={i}
+                            data-item={j}
+                            data-field="qty"
                             value={item.grams}
                             onChange={e => updateItem(i, j, "grams", e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextFoodInput(); } }}
                             placeholder={isServingBased ? "qty" : "g"}
                             className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                           />

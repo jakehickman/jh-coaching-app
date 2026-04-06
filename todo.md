@@ -114,3 +114,4 @@
 - [x] Improve mobile input area readability: higher contrast input fields, clearer labels and section separation
 - [x] Daily log: auto-derive "training completed" from workout log, remove manual toggle
 - [x] Training program editor: arrow key navigation in exercise dropdown, Tab/Enter flow between exercise > sets > reps > next row
+- [x] Meal plan editor: arrow key navigation in food dropdown, Enter flow between food > quantity > next row
