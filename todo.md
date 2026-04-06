@@ -101,4 +101,7 @@
 - [ ] Audit and replace all date fields across the app with native HTML date picker
 - [x] Client workout log past sessions: show first set weight x reps + total set count per exercise
 - [x] Merge Training Program and Workout Log into single Training nav item with sub-tabs
-- [ ] Exercise library: expand exercise name column so names don't wrap
+- [x] Exercise library: expand exercise name column so names don't wrap
+- [x] Simplify nutrition food names: strip USDA program notes and trailing noise, keep prep context, sentence case
+- [ ] Remove Measurements section from client dashboard nav and routing
+- [x] Remove waist circumference and skinfold thickness cards from client Overview dashboard tab
