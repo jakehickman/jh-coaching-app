@@ -282,6 +282,15 @@ class SDKServer {
           lastSignedIn: signedInAt,
         });
         user = await db.getUserByOpenId(userInfo.openId);
+        // Auto-create client profile with start date set to today (first sign-in)
+        if (user) {
+          const today = signedInAt.toISOString().split("T")[0];
+          await db.upsertClientProfile({
+            userId: user.id,
+            displayName: userInfo.name || undefined,
+            startDate: today,
+          });
+        }
       } catch (error) {
         console.error("[Auth] Failed to sync user from OAuth:", error);
         throw ForbiddenError("Failed to sync user info");
