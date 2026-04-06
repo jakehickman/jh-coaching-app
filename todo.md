@@ -153,3 +153,4 @@
 - [x] Fix: habit completion not shown as checked after navigating away and back to Daily Log tab
 - [x] Fix: habit completion rate not updating in client Overview HabitsSummary and coach CoachHabitsPanel (normDate bug)
 - [x] Fix: habit completion rate denominator should only count days since assignment date (not fixed 7/28 days)
+- [x] Remove start date field from habit create/edit form in coach Habits tab

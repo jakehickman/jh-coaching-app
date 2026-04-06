@@ -2865,7 +2865,7 @@ function HabitsSection() {
   const [showForm, setShowForm] = useState(false);
   const [editHabit, setEditHabit] = useState<any | null>(null);
   const [assignHabit, setAssignHabit] = useState<any | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", frequency: "daily" as "daily" | "x_per_week", targetDays: 3, startDate: "" });
+  const [form, setForm] = useState({ name: "", description: "", frequency: "daily" as "daily" | "x_per_week", targetDays: 3 });
   const [assignedClientIds, setAssignedClientIds] = useState<number[]>([]);
 
   const createMutation = trpc.habits.create.useMutation({ onSuccess: () => { utils.habits.list.invalidate(); setShowForm(false); resetForm(); } });
@@ -2873,11 +2873,11 @@ function HabitsSection() {
   const deleteMutation = trpc.habits.delete.useMutation({ onSuccess: () => utils.habits.list.invalidate() });
   const setAssignmentsMutation = trpc.habits.setAssignments.useMutation({ onSuccess: () => { utils.habits.list.invalidate(); setAssignHabit(null); } });
 
-  function resetForm() { setForm({ name: "", description: "", frequency: "daily", targetDays: 3, startDate: "" }); }
+  function resetForm() { setForm({ name: "", description: "", frequency: "daily", targetDays: 3 }); }
 
   function openEdit(h: any) {
     setEditHabit(h);
-    setForm({ name: h.name, description: h.description ?? "", frequency: h.frequency, targetDays: h.targetDays ?? 3, startDate: h.startDate ?? "" });
+    setForm({ name: h.name, description: h.description ?? "", frequency: h.frequency, targetDays: h.targetDays ?? 3 });
   }
 
   async function openAssign(h: any) {
@@ -2887,7 +2887,7 @@ function HabitsSection() {
   }
 
   function handleSubmit() {
-    const payload = { ...form, targetDays: form.frequency === "x_per_week" ? form.targetDays : 7, startDate: form.startDate || undefined };
+    const payload = { ...form, targetDays: form.frequency === "x_per_week" ? form.targetDays : 7 };
     if (editHabit) {
       updateMutation.mutate({ id: editHabit.id, ...payload });
     } else {
@@ -2936,10 +2936,7 @@ function HabitsSection() {
                 <input type="number" min={1} max={7} className="w-full mt-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground" value={form.targetDays} onChange={e => setForm(p => ({ ...p, targetDays: parseInt(e.target.value) || 1 }))} />
               </div>
             )}
-            <div>
-              <label className="text-xs text-muted-foreground">Start Date (optional)</label>
-              <input type="date" className="w-full mt-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} />
-            </div>
+
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Description (optional)</label>
