@@ -946,24 +946,37 @@ function TrainingSection() {
   );
   const trainingDraftKey = selectedUserId ? `draft:training:${selectedUserId}` : null;
 
-  const upsert = trpc.training.upsert.useMutation({
-    onSuccess: () => {
-      if (trainingDraftKey) { try { localStorage.removeItem(trainingDraftKey); } catch {} }
-      toast.success("Training program saved"); refetch();
-    }
-  });
   const [programName, setProgramName] = useState("");
   const [notes, setNotes] = useState("");
   const [days, setDays] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<string[]>([]);
 
-  // Only write draft AFTER server data has been loaded into state (not on initial empty mount)
-  const trainingReadyToSaveDraft = useRef(false);
+  // Snapshot of the last server-saved state — used to detect genuine changes
+  const trainingSavedSnapshot = useRef<{ programName: string; notes: string; days: any[]; schedule: string[] } | null>(null);
 
-  // Persist draft to localStorage on every change — but only after initial load
+  const upsert = trpc.training.upsert.useMutation({
+    onSuccess: () => {
+      // Update snapshot to current state and clear draft
+      trainingSavedSnapshot.current = { programName, notes, days, schedule };
+      if (trainingDraftKey) { try { localStorage.removeItem(trainingDraftKey); } catch {} }
+      toast.success("Training program saved"); refetch();
+    }
+  });
+
+  // Write draft only when state genuinely differs from the saved snapshot
   useEffect(() => {
-    if (!trainingDraftKey || !trainingReadyToSaveDraft.current) return;
-    try { localStorage.setItem(trainingDraftKey, JSON.stringify({ programName, notes, days, schedule })); } catch {}
+    if (!trainingDraftKey || !trainingSavedSnapshot.current) return;
+    const snap = trainingSavedSnapshot.current;
+    const isDirty =
+      programName !== snap.programName ||
+      notes !== snap.notes ||
+      JSON.stringify(days) !== JSON.stringify(snap.days) ||
+      JSON.stringify(schedule) !== JSON.stringify(snap.schedule);
+    if (isDirty) {
+      try { localStorage.setItem(trainingDraftKey, JSON.stringify({ programName, notes, days, schedule })); } catch {}
+    } else {
+      try { localStorage.removeItem(trainingDraftKey); } catch {}
+    }
   }, [trainingDraftKey, programName, notes, days, schedule]);
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
 
@@ -1022,36 +1035,20 @@ function TrainingSection() {
   const trainingServerLoadedRef = useRef<number | null>(null);
   useEffect(() => {
     if (!selectedUserId) return;
-    // If there's an unsaved draft for this user, restore it (don't overwrite with server data)
-    const draftKey = `draft:training:${selectedUserId}`;
-    const hasDraft = !!localStorage.getItem(draftKey);
-    if (hasDraft && trainingServerLoadedRef.current === selectedUserId) {
-      // Already loaded and draft exists — just enable draft saving
-      trainingReadyToSaveDraft.current = true;
-      return;
-    }
-    // Pause draft saving while we load server data
-    trainingReadyToSaveDraft.current = false;
-    if (program) {
-      setProgramName(program.programName ?? "");
-      setNotes(program.notes ?? "");
-      setDays((program.days as any[]) ?? []);
-      setSchedule((program.schedule as string[]) ?? []);
-    } else if (!hasDraft) {
-      setProgramName(""); setNotes(""); setDays([]); setSchedule([]);
-    } else {
-      // Restore draft when no server data exists yet
-      try {
-        const parsed = JSON.parse(localStorage.getItem(draftKey)!);
-        setProgramName(parsed.programName ?? "");
-        setNotes(parsed.notes ?? "");
-        setDays(parsed.days ?? []);
-        setSchedule(parsed.schedule ?? []);
-      } catch {}
-    }
+    if (trainingServerLoadedRef.current === selectedUserId) return; // already loaded
+    if (program === undefined) return; // still fetching
+    const serverName = program?.programName ?? "";
+    const serverNotes = program?.notes ?? "";
+    const serverDays = (program?.days as any[]) ?? [];
+    const serverSchedule = (program?.schedule as string[]) ?? [];
+    setProgramName(serverName);
+    setNotes(serverNotes);
+    setDays(serverDays);
+    setSchedule(serverSchedule);
+    trainingSavedSnapshot.current = { programName: serverName, notes: serverNotes, days: serverDays, schedule: serverSchedule };
+    // Clear any stale draft since we just loaded fresh server data
+    if (trainingDraftKey) { try { localStorage.removeItem(trainingDraftKey); } catch {} }
     trainingServerLoadedRef.current = selectedUserId;
-    // Allow draft saving after state has settled (next tick)
-    setTimeout(() => { trainingReadyToSaveDraft.current = true; }, 0);
   }, [program, selectedUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addDay = () => setDays(d => [...d, { name: `Day ${d.length + 1}`, focus: "", exercises: [] }]);
@@ -1308,54 +1305,52 @@ function MealPlansSection() {
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
   const mealDraftKey = selectedUserId ? `draft:mealPlan:${selectedUserId}:${dayType}` : null;
 
+  const [planNotes, setPlanNotes] = useState("");
+  const [meals, setMeals] = useState<any[]>([]);
+
+  // Snapshot of the last server-saved state — used to detect genuine changes
+  const mealSavedSnapshot = useRef<{ planNotes: string; meals: any[] } | null>(null);
+
   const upsert = trpc.mealPlan.upsert.useMutation({
     onSuccess: () => {
+      // Update snapshot to current state and clear draft
+      mealSavedSnapshot.current = { planNotes, meals };
       if (mealDraftKey) { try { localStorage.removeItem(mealDraftKey); } catch {} }
       toast.success("Meal plan saved"); refetch();
     }
   });
 
-  const [planNotes, setPlanNotes] = useState("");
-  const [meals, setMeals] = useState<any[]>([]);
-
-  // Only write draft AFTER server data has been loaded into state (not on initial empty mount)
-  const mealReadyToSaveDraft = useRef(false);
-
-  // Persist draft to localStorage on every change — but only after initial load
-  useEffect(() => {
-    if (!mealDraftKey || !mealReadyToSaveDraft.current) return;
-    try { localStorage.setItem(mealDraftKey, JSON.stringify({ planNotes, meals })); } catch {}
-  }, [mealDraftKey, planNotes, meals]);
-
-  const mealServerLoadedRef = useRef<string | null>(null);
+  // Load server data into state and update snapshot when plan or client/dayType changes
   const mealLoadKey = selectedUserId ? `${selectedUserId}:${dayType}` : null;
+  const mealServerLoadedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!mealLoadKey) return;
+    if (mealServerLoadedRef.current === mealLoadKey) return; // already loaded for this key
+    if (plan === undefined) return; // still fetching
+    const serverNotes = plan?.notes ?? "";
+    const serverMeals = (plan?.meals as any[]) ?? [];
+    setPlanNotes(serverNotes);
+    setMeals(serverMeals);
+    mealSavedSnapshot.current = { planNotes: serverNotes, meals: serverMeals };
+    // Clear any stale draft for this key since we just loaded fresh server data
     const draftKey = `draft:mealPlan:${mealLoadKey}`;
-    const hasDraft = !!localStorage.getItem(draftKey);
-    if (hasDraft && mealServerLoadedRef.current === mealLoadKey) {
-      // Already loaded and draft exists — just enable draft saving
-      mealReadyToSaveDraft.current = true;
-      return;
-    }
-    // Pause draft saving while we load server data
-    mealReadyToSaveDraft.current = false;
-    if (plan) {
-      setPlanNotes(plan.notes ?? "");
-      setMeals((plan.meals as any[]) ?? []);
-    } else if (!hasDraft) {
-      setPlanNotes(""); setMeals([]);
-    } else {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(draftKey)!);
-        setPlanNotes(parsed.planNotes ?? "");
-        setMeals(parsed.meals ?? []);
-      } catch {}
-    }
+    try { localStorage.removeItem(draftKey); } catch {}
     mealServerLoadedRef.current = mealLoadKey;
-    // Allow draft saving after state has settled (next tick)
-    setTimeout(() => { mealReadyToSaveDraft.current = true; }, 0);
   }, [plan, mealLoadKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Write draft only when state genuinely differs from the saved snapshot
+  useEffect(() => {
+    if (!mealDraftKey || !mealSavedSnapshot.current) return;
+    const snap = mealSavedSnapshot.current;
+    const isDirty =
+      planNotes !== snap.planNotes ||
+      JSON.stringify(meals) !== JSON.stringify(snap.meals);
+    if (isDirty) {
+      try { localStorage.setItem(mealDraftKey, JSON.stringify({ planNotes, meals })); } catch {}
+    } else {
+      try { localStorage.removeItem(mealDraftKey); } catch {}
+    }
+  }, [mealDraftKey, planNotes, meals]);
 
   // Auto-calculate macros from food db
   const mealMacros = meals.map(meal =>

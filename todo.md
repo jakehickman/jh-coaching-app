@@ -127,3 +127,4 @@
 - [x] Add client self-service settings page (display name, goal weight, start weight)
 - [x] Add "Unsaved changes" dot indicator on Meal Plans and Training Programs nav items when a draft exists in localStorage
 - [x] Fix unsaved-draft dot: only show when user has actually made changes, clear reliably on save
+- [x] Fix meal plans amber dot false positive — rewrite with content-diff approach
