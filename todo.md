@@ -116,3 +116,8 @@
 - [x] Training program editor: arrow key navigation in exercise dropdown, Tab/Enter flow between exercise > sets > reps > next row
 - [x] Meal plan editor: arrow key navigation in food dropdown, Enter flow between food > quantity > next row
 - [x] Meal plan: fix food and amount input boxes not aligned horizontally in food rows
+- [x] Nutrition database: full scrub - remove duplicates, simplify names to clean searchable basics
+- [ ] Nutrition database: trim to ~500 most common everyday food items
+- [ ] Improve global app readability and contrast (consistent with mobile improvements)
+- [ ] Remove all placeholder text from input boxes across the app
+- [ ] Home page: remove "Coach? Sign in to the coach panel" section

@@ -48,13 +48,6 @@ export default function Home() {
         Sign In to Your Dashboard
       </a>
 
-      <p className="mt-6 text-xs text-muted-foreground">
-        Coach?{" "}
-        <a href={getLoginUrl()} className="text-primary hover:underline">
-          Sign in to the coach panel
-        </a>
-      </p>
-
     </div>
   );
 }

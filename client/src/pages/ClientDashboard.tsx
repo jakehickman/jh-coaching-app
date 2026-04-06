@@ -450,24 +450,20 @@ function DailyLogTab() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm text-muted-foreground block mb-1.5">Weight (kg)</label>
-              <input type="number" step="0.1" value={form.weight} onChange={f("weight")} placeholder="e.g. 82.5"
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <input type="number" step="0.1" value={form.weight} onChange={f("weight")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
             <div>
               <label className="text-sm text-muted-foreground block mb-1.5">Sleep (hours)</label>
-              <input type="number" step="0.5" value={form.sleepHours} onChange={f("sleepHours")} placeholder="e.g. 7.5"
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <input type="number" step="0.5" value={form.sleepHours} onChange={f("sleepHours")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
             <div>
               <label className="text-sm text-muted-foreground block mb-1.5">Caffeine (servings)</label>
-              <input type="number" step="0.5" min="0" value={form.caffeineServings} onChange={f("caffeineServings")} placeholder="e.g. 2"
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <input type="number" step="0.5" min="0" value={form.caffeineServings} onChange={f("caffeineServings")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
               <p className="text-[10px] text-muted-foreground mt-0.5">1 serving ≈ 80–100mg</p>
             </div>
             <div>
               <label className="text-sm text-muted-foreground block mb-1.5">Steps</label>
-              <input type="number" value={form.stepsCount} onChange={f("stepsCount")} placeholder="e.g. 8000"
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <input type="number" value={form.stepsCount} onChange={f("stepsCount")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
           </div>
         </Card>
@@ -530,8 +526,7 @@ function DailyLogTab() {
 
       <div>
         <SectionLabel>Notes</SectionLabel>
-        <textarea value={form.notes} onChange={f("notes")} rows={3} placeholder="Any notes for today..."
-          className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+        <textarea value={form.notes} onChange={f("notes")} rows={3} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
       </div>
 
       <button onClick={handleSave} disabled={upsert.isPending}
@@ -629,7 +624,7 @@ function MeasurementsTab() {
           {/* Waist */}
           <div>
             <p className="text-xs font-semibold text-foreground mb-2">Waist Circumference (cm)</p>
-            <input type="number" step="0.1" value={form.waist} onChange={e => setForm(p => ({ ...p, waist: e.target.value }))} placeholder="e.g. 82.5"
+            <input type="number" step="0.1" value={form.waist} onChange={e => setForm(p => ({ ...p, waist: e.target.value }))}
               className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
 
@@ -644,7 +639,7 @@ function MeasurementsTab() {
                     <div key={r}>
                       <label className="text-[10px] text-muted-foreground block mb-1 text-center">{i+1}</label>
                       <input type="number" step="0.1" value={(form as any)[key][r]}
-                        onChange={e => setReading(key, r, e.target.value)} placeholder="—"
+                        onChange={e => setReading(key, r, e.target.value)}
                         className="w-full bg-secondary border border-border rounded-lg px-1.5 py-2 text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
                     </div>
                   ))}
@@ -655,7 +650,7 @@ function MeasurementsTab() {
 
           <div>
             <label className="text-sm text-muted-foreground block mb-1.5">Notes (optional)</label>
-            <input type="text" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional"
+            <input type="text" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
               className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
 
@@ -732,7 +727,7 @@ function MeasurementsTab() {
                       <div>
                         <p className="text-xs font-semibold text-foreground mb-2">Waist Circumference (cm)</p>
                         <input type="number" step="0.1" value={editForm.waist}
-                          onChange={e => setEditForm(p => ({ ...p, waist: e.target.value }))} placeholder="e.g. 82.5"
+                          onChange={e => setEditForm(p => ({ ...p, waist: e.target.value }))}
                           className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
                       </div>
                       <div className="space-y-4">
@@ -745,7 +740,7 @@ function MeasurementsTab() {
                                 <div key={r}>
                                   <label className="text-[10px] text-muted-foreground block mb-1 text-center">{i+1}</label>
                                   <input type="number" step="0.1" value={(editForm as any)[key][r]}
-                                    onChange={e => setEditReading(key, r, e.target.value)} placeholder="—"
+                                    onChange={e => setEditReading(key, r, e.target.value)}
                                     className="w-full bg-secondary border border-border rounded-lg px-1.5 py-2 text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
                                 </div>
                               ))}
@@ -756,7 +751,7 @@ function MeasurementsTab() {
                       <div>
                         <label className="text-sm text-muted-foreground block mb-1.5">Notes (optional)</label>
                         <input type="text" value={editForm.notes}
-                          onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional"
+                          onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))}
                           className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
                       </div>
                       <button onClick={() => update.mutate({
@@ -1465,7 +1460,7 @@ function WorkoutLogTab() {
                       <div className="flex-1">
                         <p className="text-[10px] text-muted-foreground mb-1">Weight (kg)</p>
                         <input
-                          type="number" inputMode="decimal" placeholder="kg"
+                          type="number" inputMode="decimal"
                           value={sets[0]?.weight ?? ""}
                           onChange={e => setSet(ex.name, 0, "weight", e.target.value)}
                           className={inputCls}
@@ -1474,7 +1469,7 @@ function WorkoutLogTab() {
                       <div className="flex-1">
                         <p className="text-[10px] text-muted-foreground mb-1">Reps</p>
                         <input
-                          type="number" inputMode="numeric" placeholder="reps"
+                          type="number" inputMode="numeric"
                           value={sets[0]?.reps ?? ""}
                           onChange={e => setSet(ex.name, 0, "reps", e.target.value)}
                           className={inputCls}
@@ -1495,7 +1490,7 @@ function WorkoutLogTab() {
                           <div className="flex gap-2">
                             <div className="flex-1">
                               <input
-                                type="number" inputMode="decimal" placeholder="kg"
+                                type="number" inputMode="decimal"
                                 value={s.weight ?? ""}
                                 onChange={e => setSet(ex.name, idx + 1, "weight", e.target.value)}
                                 className={inputCls}
@@ -1503,7 +1498,7 @@ function WorkoutLogTab() {
                             </div>
                             <div className="flex-1">
                               <input
-                                type="number" inputMode="numeric" placeholder="reps"
+                                type="number" inputMode="numeric"
                                 value={s.reps ?? ""}
                                 onChange={e => setSet(ex.name, idx + 1, "reps", e.target.value)}
                                 className={inputCls}
@@ -1531,7 +1526,7 @@ function WorkoutLogTab() {
               <textarea
                 value={sessionNotes}
                 onChange={e => setSessionNotes(e.target.value)}
-                placeholder="How did the session feel? Any PRs, issues, adjustments..."
+                
                 rows={3}
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
               />

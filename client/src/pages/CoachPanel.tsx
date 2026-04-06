@@ -476,7 +476,6 @@ function SortableExerciseRow({
             onFocus={() => { setSearchTerm(""); setDropdownOpen(true); setHighlightedIdx(-1); }}
             onBlur={() => setTimeout(() => { setDropdownOpen(false); setHighlightedIdx(-1); }, 150)}
             onKeyDown={handleExerciseKeyDown}
-            placeholder="Exercise name"
             className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
           {dropdownOpen && filtered.length > 0 && (
@@ -510,7 +509,6 @@ function SortableExerciseRow({
           value={ex.sets}
           onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
           onKeyDown={handleSetsKeyDown}
-          placeholder="4"
           className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
         <input
           ref={repsRef}
@@ -518,7 +516,6 @@ function SortableExerciseRow({
           value={ex.reps}
           onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
           onKeyDown={handleRepsKeyDown}
-          placeholder="8-12"
           className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
         <div className="col-span-1 flex items-center gap-0.5">
           <button
@@ -539,7 +536,7 @@ function SortableExerciseRow({
             type="text"
             value={ex.notes ?? ""}
             onChange={e => updateExercise(dayIdx, exIdx, "notes", e.target.value)}
-            placeholder="Coaching notes (e.g. tempo 3-1-1, pause at bottom)"
+
             className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:text-foreground"
           />
         </div>
@@ -896,7 +893,6 @@ function SortableDayCard({
             <GripVertical size={15} />
           </div>
           <input type="text" value={day.name} onChange={e => updateDay(dayIdx, "name", e.target.value)}
-            placeholder="Session"
             className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-medium" />
           <button onClick={() => removeDay(dayIdx)} className="text-destructive hover:opacity-80 flex-shrink-0">
             <Trash2 size={15} />
@@ -1358,7 +1354,6 @@ function MealPlansSection() {
               <Card key={i}>
                 <div className="flex items-center gap-2 mb-3">
                   <input type="text" value={meal.name} onChange={e => updateMealName(i, e.target.value)}
-                    placeholder="Meal name"
                     className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-primary" />
                   <input type="time" value={meal.time ?? ""} onChange={e => updateMealTime(i, e.target.value)}
                     className="w-28 bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
@@ -1425,7 +1420,6 @@ function MealPlansSection() {
                             value={item.grams}
                             onChange={e => updateItem(i, j, "grams", e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextFoodInput(); } }}
-                            placeholder={isServingBased ? "qty" : "g"}
                             className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                           {isServingBased && (
@@ -2078,7 +2072,6 @@ function ExerciseLibrarySection() {
           <input
             value={editing.name}
             onChange={e => setEditing(prev => prev ? { ...prev, name: e.target.value } : prev)}
-            placeholder="Exercise name"
             className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <div>
@@ -2086,7 +2079,6 @@ function ExerciseLibrarySection() {
             <input
               value={editing.videoUrl ?? ""}
               onChange={e => setEditing(prev => prev ? { ...prev, videoUrl: e.target.value } : prev)}
-              placeholder="https://www.youtube.com/watch?v=..."
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
@@ -2234,7 +2226,6 @@ function NutritionDataSection() {
           <input
             value={editing.name}
             onChange={e => setEditing(prev => prev ? { ...prev, name: e.target.value } : prev)}
-            placeholder="Food name"
             className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -2258,7 +2249,6 @@ function NutritionDataSection() {
                 type="text"
                 value={(editing as any).servingUnit ?? ""}
                 onChange={e => setEditing(prev => prev ? { ...prev, servingUnit: e.target.value || null } : prev)}
-                placeholder="Leave blank for per 100g only"
                 className="w-full bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -2268,7 +2258,6 @@ function NutritionDataSection() {
                 type="number" step="0.1" min="0"
                 value={(editing as any).servingGrams ?? ""}
                 onChange={e => setEditing(prev => prev ? { ...prev, servingGrams: e.target.value ? parseFloat(e.target.value) : null } : prev)}
-                placeholder="e.g. 50"
                 className="w-full bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
