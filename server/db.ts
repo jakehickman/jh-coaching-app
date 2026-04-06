@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lte } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -107,6 +107,16 @@ export async function setUserApproved(userId: number, approved: boolean) {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ approved }).where(eq(users.id, userId));
+}
+
+export async function getPendingApprovalCount(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(users)
+    .where(and(eq(users.approved, false), eq(users.role, 'user')));
+  return Number(result[0]?.count ?? 0);
 }
 
 export async function deleteUser(userId: number) {

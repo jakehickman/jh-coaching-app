@@ -61,6 +61,12 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     onSuccess: () => (window.location.href = "/"),
   });
 
+  // Pending approval count — only fetched for coach mode
+  const { data: pendingCount = 0 } = trpc.users.pendingCount.useQuery(undefined, {
+    enabled: mode === "coach" && user?.role === "admin",
+    refetchInterval: 60_000,
+  });
+
   const nav = mode === "client" ? clientNav : coachNav;
 
   if (loading) {
@@ -179,7 +185,12 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                 <span className={isActive ? "text-primary" : "text-muted-foreground"}>
                   {item.icon}
                 </span>
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.href === "/coach/clients" && pendingCount > 0 && (
+                  <span className="ml-auto flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500 text-black text-[10px] font-bold flex items-center justify-center">
+                    {pendingCount}
+                  </span>
+                )}
               </Link>
             );
           })}

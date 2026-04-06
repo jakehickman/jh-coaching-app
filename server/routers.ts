@@ -73,6 +73,7 @@ export const appRouter = router({
         if (input.userId === ctx.user.id) throw new TRPCError({ code: 'FORBIDDEN', message: 'Cannot delete your own account' });
         return db.deleteUser(input.userId);
       }),
+    pendingCount: adminProcedure.query(() => db.getPendingApprovalCount()),
   }),
 
   // Daily Logs

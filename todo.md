@@ -95,3 +95,4 @@
 - [x] Client Daily Log tab: show only last 7 log entries with expand to show more
 - [x] Nutrition data: remove all entries with "cooked" in the name
 - [x] Coach Panel Client Progress: move exercise progress to separate tab, desktop-optimised muscle group layout
+- [x] Clients nav item: show badge with count of users pending approval
