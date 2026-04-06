@@ -100,3 +100,4 @@
 - [x] Recent daily logs: show "Off Plan Meal" instead of "Off Plan" chip label
 - [ ] Audit and replace all date fields across the app with native HTML date picker
 - [x] Client workout log past sessions: show first set weight x reps + total set count per exercise
+- [x] Merge Training Program and Workout Log into single Training nav item with sub-tabs

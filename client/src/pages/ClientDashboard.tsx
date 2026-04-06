@@ -1666,6 +1666,29 @@ function WorkoutLogTab() {
   );
 }
 
+// ─── Combined Training Tab ───────────────────────────────────────────────────
+function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program" | "log" }) {
+  const [sub, setSub] = useState<"program" | "log">(defaultSub);
+  return (
+    <div>
+      <div className="flex gap-1 mb-6 bg-secondary rounded-lg p-1 w-fit">
+        {(["program", "log"] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setSub(s)}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              sub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {s === "program" ? "Program" : "Workout Log"}
+          </button>
+        ))}
+      </div>
+      {sub === "program" ? <TrainingTab /> : <WorkoutLogTab />}
+    </div>
+  );
+}
+
 // ─── Main ClientDashboard ─────────────────────────────────────────────────────
 const TAB_MAP: Record<string, React.ReactNode> = {
   overview: <OverviewTab />,
@@ -1673,8 +1696,8 @@ const TAB_MAP: Record<string, React.ReactNode> = {
   measurements: <MeasurementsTab />,
   "meal-plan": <MealPlanTab />,
   shopping: <ShoppingListTab />,
-  training: <TrainingTab />,
-  "workout-log": <WorkoutLogTab />,
+  training: <CombinedTrainingTab defaultSub="program" />,
+  "workout-log": <CombinedTrainingTab defaultSub="log" />,
 };
 
 const TAB_TITLES: Record<string, string> = {
@@ -1683,8 +1706,8 @@ const TAB_TITLES: Record<string, string> = {
   measurements: "Measurements",
   "meal-plan": "Meal Plan",
   shopping: "Shopping List",
-  training: "Training Program",
-  "workout-log": "Workout Log",
+  training: "Training",
+  "workout-log": "Training",
 };
 
 export default function ClientDashboard() {
