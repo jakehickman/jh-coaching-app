@@ -10,15 +10,17 @@ import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus } from "luc
 import { toast } from "sonner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-// Convert a DB date value (ISO timestamp or plain date string) to local yyyy-mm-dd
-// This handles the UTC offset — e.g. "2026-04-05T04:00:00.000Z" is April 6 in AEST (UTC+10)
+// Convert a DB date value (ISO timestamp or plain date string) to yyyy-mm-dd.
+// MySQL DATE columns are stored as the correct calendar date and returned as
+// UTC midnight timestamps (e.g. "2026-04-06T04:00:00.000Z" for April 6 AEST).
+// We MUST use UTC date parts to avoid the local timezone shifting the date back.
 function toLocalDateStr(val: unknown): string {
   if (!val) return "";
   const s = String(val);
-  // If it's a full ISO timestamp, parse as Date and use local date parts
+  // If it's a full ISO timestamp, use UTC date parts to preserve the stored date
   if (s.includes('T') || s.includes('Z')) {
     const d = new Date(s);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
   }
   // Plain date string like "2026-04-06" — use as-is
   return s.slice(0, 10);
