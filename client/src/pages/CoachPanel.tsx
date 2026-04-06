@@ -128,40 +128,16 @@ function MeasurementsCard({ latestM, prevM, latestSkinfold, prevSkinfold, skinfo
           {showMeasureDetail ? "Hide details" : "View site details"}
         </button>
         {showMeasureDetail && (
-          <div className="border-t border-border bg-muted/10 p-4 space-y-4">
+          <div className="border-t border-border bg-muted/10 p-4">
             <div className="grid grid-cols-2 gap-3">
-              {([{ label: "Umbilical avg", latest: umbAvg, prev: prevUmbAvg, unit: "mm" }, { label: "Suprailiac avg", latest: supAvg, prev: prevSupAvg, unit: "mm" }] as { label: string; latest: number | null; prev: number | null; unit: string }[]).map(({ label, latest, prev, unit }) => {
-                const diff = latest != null && prev != null ? parseFloat((latest - prev).toFixed(1)) : null;
-                return (
-                  <div key={label} className="bg-card rounded-lg p-3 border border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
-                    <p className="text-lg font-bold text-foreground">{latest != null ? <>{latest}<span className="text-xs font-normal text-muted-foreground ml-1">{unit}</span></> : "—"}</p>
-                    {diff != null && (
-                      <p className={`text-[10px] font-semibold mt-0.5 ${diff < 0 ? "text-green-400" : diff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                        {diff > 0 ? "+" : ""}{diff} {unit} vs prev
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Raw readings &mdash; {latestDate}</p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {(["Umbilical", "Suprailiac"] as const).map((site) => {
-                  const keys = site === "Umbilical"
-                    ? [latestM.umbilical1, latestM.umbilical2, latestM.umbilical3, latestM.umbilical4, latestM.umbilical5]
-                    : [latestM.suprailiac1, latestM.suprailiac2, latestM.suprailiac3, latestM.suprailiac4, latestM.suprailiac5];
-                  const filled = keys.filter(v => v != null);
-                  if (!filled.length) return null;
-                  return (
-                    <div key={site}>
-                      <p className="text-muted-foreground font-medium mb-1">{site}</p>
-                      <p className="text-foreground">{keys.map((v) => v != null ? `${v}mm` : null).filter(Boolean).join(" · ")}</p>
-                    </div>
-                  );
-                })}
-              </div>
+              {([{ label: "Umbilical avg", value: umbAvg }, { label: "Suprailiac avg", value: supAvg }] as { label: string; value: number | null }[]).map(({ label, value }) => (
+                <div key={label} className="bg-card rounded-lg p-3 border border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
+                  <p className="text-lg font-bold text-foreground">
+                    {value != null ? <>{value}<span className="text-xs font-normal text-muted-foreground ml-1">mm</span></> : "—"}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -278,7 +254,7 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                       trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>{sessionLabel}</span>
                     {isOffPlan(log.offPlanMeal) && (
-                      <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">Off Plan</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">Off Plan Meal</span>
                     )}
                   </>
                 ) : (

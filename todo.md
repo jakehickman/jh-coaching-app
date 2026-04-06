@@ -96,3 +96,7 @@
 - [x] Nutrition data: remove all entries with "cooked" in the name
 - [x] Coach Panel Client Progress: move exercise progress to separate tab, desktop-optimised muscle group layout
 - [x] Clients nav item: show badge with count of users pending approval
+- [x] Measurements: skinfold detail (umbilical/suprailiac avg) - remove vs prev comparison and raw readings
+- [x] Recent daily logs: show "Off Plan Meal" instead of "Off Plan" chip label
+- [ ] Audit and replace all date fields across the app with native HTML date picker
+- [x] Client workout log past sessions: show first set weight x reps + total set count per exercise

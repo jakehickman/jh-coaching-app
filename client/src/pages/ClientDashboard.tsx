@@ -137,7 +137,7 @@ function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
                     <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
                       trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>{sessionLabel}</span>
-                    {isOffPlan(log.offPlanMeal) && <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">Off Plan</span>}
+                    {isOffPlan(log.offPlanMeal) && <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">Off Plan Meal</span>}
                   </>
                 ) : (
                   <span className="text-xs text-muted-foreground italic">No entry</span>
@@ -164,7 +164,7 @@ function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
                   {log.hungerLevel != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
                   {log.caffeineServings != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Caffeine</p><p className="text-sm font-semibold text-foreground">{log.caffeineServings} srv</p></div>}
                   <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p><p className="text-sm font-semibold text-foreground">{sessionLabel}</p></div>
-                  <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p><p className="text-sm font-semibold text-foreground">{isOffPlan(log.offPlanMeal) ? 'Off Plan' : 'On Plan'}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p><p className="text-sm font-semibold text-foreground">{isOffPlan(log.offPlanMeal) ? 'Off Plan Meal' : 'On Plan'}</p></div>
                 </div>
                 {log.notes && (
                   <div className="mt-3 pt-3 border-t border-border">
@@ -1645,9 +1645,15 @@ function WorkoutLogTab() {
                 {(s.exercises as any[]).map((ex: any, i: number) => {
                   const validSets = (ex.sets ?? []).filter((st: any) => st.weight != null || st.reps != null);
                   if (!validSets.length) return null;
+                  const firstSet = validSets[0];
+                  const setCount = validSets.length;
                   return (
                     <p key={i} className="text-xs text-muted-foreground">
-                      <span className="text-foreground font-medium">{ex.name}</span>: {validSets.map((st: any) => `${st.weight ?? "—"}kg × ${st.reps ?? "—"}`).join(" | ")}
+                      <span className="text-foreground font-medium">{ex.name}</span>: 
+                      {firstSet.weight != null ? `${firstSet.weight}kg` : '—'}
+                      {' × '}
+                      {firstSet.reps != null ? `${firstSet.reps}` : '—'}
+                      <span className="text-muted-foreground/60 ml-1">({setCount} {setCount === 1 ? 'set' : 'sets'})</span>
                     </p>
                   );
                 })}
