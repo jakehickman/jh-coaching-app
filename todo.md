@@ -132,3 +132,4 @@
 - [x] Fix exercise library: exercise names cannot be edited
 - [x] Fix exercise library: name change not persisting after save (videoUrl null rejected by Zod schema)
 - [x] Cascade exercise rename: update all training programs and workout logs when an exercise name changes in the library
+- [x] Remove hardcoded muscle group text (Chest & Triceps etc.) from client training tab

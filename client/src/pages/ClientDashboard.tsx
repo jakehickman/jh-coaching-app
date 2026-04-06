@@ -1169,7 +1169,6 @@ function TrainingTab() {
           >
             <div className="text-left">
               <p className="text-sm font-semibold text-foreground">{day.name ?? `Day ${i + 1}`}</p>
-              {day.focus && <p className="text-xs text-muted-foreground mt-0.5">{day.focus}</p>}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">{(day.exercises ?? []).length} exercises</span>
