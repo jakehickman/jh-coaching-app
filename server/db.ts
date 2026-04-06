@@ -109,6 +109,14 @@ export async function setUserApproved(userId: number, approved: boolean) {
   await db.update(users).set({ approved }).where(eq(users.id, userId));
 }
 
+export async function deleteUser(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  // Delete related data first to avoid FK constraint errors
+  await db.delete(clientProfiles).where(eq(clientProfiles.userId, userId));
+  await db.delete(users).where(eq(users.id, userId));
+}
+
 export async function getClientProfile(userId: number) {
   const db = await getDb();
   if (!db) return undefined;

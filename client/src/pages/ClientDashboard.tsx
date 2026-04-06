@@ -24,6 +24,12 @@ function toLocalDateStr(val: unknown): string {
   return s.slice(0, 10);
 }
 
+// Get today's date as yyyy-mm-dd in the user's LOCAL timezone (not UTC)
+function localToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // Display a DB date value as dd/mm/yyyy in local time
 function fmtDate(val: unknown): string {
   if (!val) return "";
@@ -490,7 +496,7 @@ function OverviewTab() {
 
 // ─── Tab: Daily Log ───────────────────────────────────────────────────────────
 function DailyLogTab() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   const [date, setDate] = useState(today);
   const [form, setForm] = useState({
     weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false,
@@ -696,7 +702,7 @@ function MeasurementsTab() {
   const [showForm, setShowForm] = useState(false);
   const emptySkinfold = { r1: "", r2: "", r3: "", r4: "", r5: "" };
   const [form, setForm] = useState({
-    measureDate: new Date().toISOString().slice(0, 10),
+    measureDate: localToday(),
     waist: "",
     umbilical: { ...emptySkinfold },
     suprailiac: { ...emptySkinfold },

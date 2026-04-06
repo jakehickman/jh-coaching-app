@@ -453,6 +453,14 @@ function ClientsSection() {
       toast.success("Access updated");
     },
   });
+  const deleteUser = trpc.users.delete.useMutation({
+    onSuccess: () => {
+      utils.users.list.invalidate();
+      setSelectedId(null);
+      toast.success("User deleted");
+    },
+    onError: (e) => toast.error(e.message),
+  });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const { data: profile } = trpc.profile.getById.useQuery(
     { userId: selectedId! },
@@ -512,19 +520,33 @@ function ClientsSection() {
                 {user.role}
               </span>
               {user.role !== "admin" && (
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    setApproved.mutate({ userId: user.id, approved: !(user as any).approved });
-                  }}
-                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                    (user as any).approved
-                      ? "border-primary/40 text-primary bg-primary/10 hover:bg-primary/20"
-                      : "border-border text-muted-foreground bg-secondary hover:border-primary/40 hover:text-primary"
-                  }`}
-                >
-                  {(user as any).approved ? "Approved" : "Approve"}
-                </button>
+                <>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      setApproved.mutate({ userId: user.id, approved: !(user as any).approved });
+                    }}
+                    className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                      (user as any).approved
+                        ? "border-primary/40 text-primary bg-primary/10 hover:bg-primary/20"
+                        : "border-border text-muted-foreground bg-secondary hover:border-primary/40 hover:text-primary"
+                    }`}
+                  >
+                    {(user as any).approved ? "Approved" : "Approve"}
+                  </button>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (window.confirm(`Delete ${user.name ?? 'this user'}? This cannot be undone.`)) {
+                        deleteUser.mutate({ userId: user.id });
+                      }
+                    }}
+                    className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                    title="Delete user"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </>
               )}
             </div>
           ))}

@@ -67,6 +67,12 @@ export const appRouter = router({
     setApproved: adminProcedure
       .input(z.object({ userId: z.number(), approved: z.boolean() }))
       .mutation(({ input }) => db.setUserApproved(input.userId, input.approved)),
+    delete: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(({ ctx, input }) => {
+        if (input.userId === ctx.user.id) throw new TRPCError({ code: 'FORBIDDEN', message: 'Cannot delete your own account' });
+        return db.deleteUser(input.userId);
+      }),
   }),
 
   // Daily Logs
