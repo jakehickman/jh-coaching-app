@@ -82,6 +82,112 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-card border border-border rounded-xl p-4 ${className}`}>{children}</div>;
 }
+function MeasurementsCard({ latestM, prevM, latestSkinfold, prevSkinfold, skinfoldDiff, waistDiff, toLocalDateStr: toDateStr }: {
+  latestM: Record<string, unknown>;
+  prevM: Record<string, unknown> | null;
+  latestSkinfold: number | null;
+  prevSkinfold: number | null;
+  skinfoldDiff: number | null;
+  waistDiff: number | null;
+  toLocalDateStr: (d: unknown) => string;
+}) {
+  const [showMeasureDetail, setShowMeasureDetail] = useState(false);
+  const latestDate = toDateStr(latestM.measureDate).split("-").reverse().join("/");
+  const prevDate = prevM ? toDateStr(prevM.measureDate).split("-").reverse().join("/") : null;
+
+  function siteAvg(vals: (number | null | undefined)[]): number | null {
+    const nums = vals.filter((v): v is number => v != null);
+    return nums.length ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
+  }
+  const umbAvg = siteAvg([latestM.umbilical1 as number, latestM.umbilical2 as number, latestM.umbilical3 as number, latestM.umbilical4 as number, latestM.umbilical5 as number]);
+  const supAvg = siteAvg([latestM.suprailiac1 as number, latestM.suprailiac2 as number, latestM.suprailiac3 as number, latestM.suprailiac4 as number, latestM.suprailiac5 as number]);
+  const prevUmbAvg = prevM ? siteAvg([prevM.umbilical1 as number, prevM.umbilical2 as number, prevM.umbilical3 as number, prevM.umbilical4 as number, prevM.umbilical5 as number]) : null;
+  const prevSupAvg = prevM ? siteAvg([prevM.suprailiac1 as number, prevM.suprailiac2 as number, prevM.suprailiac3 as number, prevM.suprailiac4 as number, prevM.suprailiac5 as number]) : null;
+
+  return (
+    <div>
+      <SectionLabel>Measurements</SectionLabel>
+      <Card className="space-y-0 p-0 overflow-hidden">
+        <div className="grid grid-cols-2 divide-x divide-border">
+          <div className="p-4">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Waist Circumference</p>
+            <p className="text-xs text-muted-foreground mb-1">{latestDate}</p>
+            {latestM.waist != null ? (
+              <p className="text-2xl font-bold text-foreground">{latestM.waist as number}<span className="text-sm font-normal text-muted-foreground ml-1">cm</span></p>
+            ) : (
+              <p className="text-sm text-muted-foreground">&mdash;</p>
+            )}
+            {waistDiff != null && prevDate && (
+              <p className={`text-xs font-semibold mt-1 ${waistDiff < 0 ? "text-green-400" : waistDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                {waistDiff > 0 ? "+" : ""}{waistDiff} cm vs {prevDate}
+              </p>
+            )}
+          </div>
+          <div className="p-4">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Skinfold Total</p>
+            <p className="text-xs text-muted-foreground mb-1">{latestDate}</p>
+            {latestSkinfold != null ? (
+              <p className="text-2xl font-bold text-foreground">{latestSkinfold}<span className="text-sm font-normal text-muted-foreground ml-1">mm</span></p>
+            ) : (
+              <p className="text-sm text-muted-foreground">&mdash;</p>
+            )}
+            {skinfoldDiff != null && prevDate && (
+              <p className={`text-xs font-semibold mt-1 ${skinfoldDiff < 0 ? "text-green-400" : skinfoldDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                {skinfoldDiff > 0 ? "+" : ""}{skinfoldDiff} mm vs {prevDate}
+              </p>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={() => setShowMeasureDetail(v => !v)}
+          className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-foreground border-t border-border hover:bg-muted/20 transition-colors"
+        >
+          {showMeasureDetail ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {showMeasureDetail ? "Hide details" : "View site details"}
+        </button>
+        {showMeasureDetail && (
+          <div className="border-t border-border bg-muted/10 p-4 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {([{ label: "Umbilical avg", latest: umbAvg, prev: prevUmbAvg, unit: "mm" }, { label: "Suprailiac avg", latest: supAvg, prev: prevSupAvg, unit: "mm" }] as { label: string; latest: number | null; prev: number | null; unit: string }[]).map(({ label, latest, prev, unit }) => {
+                const diff = latest != null && prev != null ? parseFloat((latest - prev).toFixed(1)) : null;
+                return (
+                  <div key={label} className="bg-card rounded-lg p-3 border border-border">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
+                    <p className="text-lg font-bold text-foreground">{latest != null ? <>{latest}<span className="text-xs font-normal text-muted-foreground ml-1">{unit}</span></> : "—"}</p>
+                    {diff != null && (
+                      <p className={`text-[10px] font-semibold mt-0.5 ${diff < 0 ? "text-green-400" : diff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                        {diff > 0 ? "+" : ""}{diff} {unit} vs prev
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Raw readings &mdash; {latestDate}</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {(["Umbilical", "Suprailiac"] as const).map((site) => {
+                  const keys = site === "Umbilical"
+                    ? [latestM.umbilical1, latestM.umbilical2, latestM.umbilical3, latestM.umbilical4, latestM.umbilical5]
+                    : [latestM.suprailiac1, latestM.suprailiac2, latestM.suprailiac3, latestM.suprailiac4, latestM.suprailiac5];
+                  const filled = keys.filter(v => v != null);
+                  if (!filled.length) return null;
+                  return (
+                    <div key={site}>
+                      <p className="text-muted-foreground font-medium mb-1">{site}</p>
+                      <p className="text-foreground">{keys.map((v) => v != null ? `${v}mm` : null).filter(Boolean).join(" · ")}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 function MuscleGroupSection({ group, children, globalToggle }: { group: string; children: React.ReactNode; globalToggle?: { expanded: boolean; gen: number } | null }) {
   const [localOpen, setLocalOpen] = useState(false);
   const [lastGen, setLastGen] = useState(0);
@@ -1500,115 +1606,17 @@ function ProgressSection() {
           )}
 
           {/* ── Measurements ─────────────────────────────────────────── */}
-          {latestM && (() => {
-            const [showMeasureDetail, setShowMeasureDetail] = (useState as Function)(false);
-            const latestDate = toLocalDateStr(latestM.measureDate).split("-").reverse().join("/");
-            const prevDate = prevM ? toLocalDateStr(prevM.measureDate).split("-").reverse().join("/") : null;
-
-            // Per-site averages for detail view
-            function siteAvg(vals: (number | null | undefined)[]): number | null {
-              const nums = vals.filter((v): v is number => v != null);
-              return nums.length ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
-            }
-            const umbAvg = siteAvg([latestM.umbilical1, latestM.umbilical2, latestM.umbilical3, latestM.umbilical4, latestM.umbilical5]);
-            const supAvg = siteAvg([latestM.suprailiac1, latestM.suprailiac2, latestM.suprailiac3, latestM.suprailiac4, latestM.suprailiac5]);
-            const prevUmbAvg = prevM ? siteAvg([prevM.umbilical1, prevM.umbilical2, prevM.umbilical3, prevM.umbilical4, prevM.umbilical5]) : null;
-            const prevSupAvg = prevM ? siteAvg([prevM.suprailiac1, prevM.suprailiac2, prevM.suprailiac3, prevM.suprailiac4, prevM.suprailiac5]) : null;
-
-            return (
-              <div>
-                <SectionLabel>Measurements</SectionLabel>
-                <Card className="space-y-0 p-0 overflow-hidden">
-                  {/* Main row: waist + skinfold side by side */}
-                  <div className="grid grid-cols-2 divide-x divide-border">
-                    {/* Waist */}
-                    <div className="p-4">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Waist Circumference</p>
-                      <p className="text-xs text-muted-foreground mb-1">{latestDate}</p>
-                      {latestM.waist != null ? (
-                        <p className="text-2xl font-bold text-foreground">{latestM.waist}<span className="text-sm font-normal text-muted-foreground ml-1">cm</span></p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">—</p>
-                      )}
-                      {waistDiff != null && prevDate && (
-                        <p className={`text-xs font-semibold mt-1 ${waistDiff < 0 ? "text-green-400" : waistDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                          {waistDiff > 0 ? "+" : ""}{waistDiff} cm vs {prevDate}
-                        </p>
-                      )}
-                    </div>
-                    {/* Skinfold */}
-                    <div className="p-4">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Skinfold Total</p>
-                      <p className="text-xs text-muted-foreground mb-1">{latestDate}</p>
-                      {latestSkinfold != null ? (
-                        <p className="text-2xl font-bold text-foreground">{latestSkinfold}<span className="text-sm font-normal text-muted-foreground ml-1">mm</span></p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">—</p>
-                      )}
-                      {skinfoldDiff != null && prevDate && (
-                        <p className={`text-xs font-semibold mt-1 ${skinfoldDiff < 0 ? "text-green-400" : skinfoldDiff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                          {skinfoldDiff > 0 ? "+" : ""}{skinfoldDiff} mm vs {prevDate}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Expand toggle */}
-                  <button
-                    onClick={() => setShowMeasureDetail((v: boolean) => !v)}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-foreground border-t border-border hover:bg-muted/20 transition-colors"
-                  >
-                    {showMeasureDetail ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                    {showMeasureDetail ? "Hide details" : "View site details"}
-                  </button>
-
-                  {/* Expanded detail */}
-                  {showMeasureDetail && (
-                    <div className="border-t border-border bg-muted/10 p-4 space-y-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        {([
-                          { label: "Umbilical avg", latest: umbAvg, prev: prevUmbAvg, unit: "mm" },
-                          { label: "Suprailiac avg", latest: supAvg, prev: prevSupAvg, unit: "mm" },
-                        ] as { label: string; latest: number | null; prev: number | null; unit: string }[]).map(({ label, latest, prev, unit }) => {
-                          const diff = latest != null && prev != null ? parseFloat((latest - prev).toFixed(1)) : null;
-                          return (
-                            <div key={label} className="bg-card rounded-lg p-3 border border-border">
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
-                              <p className="text-lg font-bold text-foreground">{latest != null ? <>{latest}<span className="text-xs font-normal text-muted-foreground ml-1">{unit}</span></> : "—"}</p>
-                              {diff != null && (
-                                <p className={`text-[10px] font-semibold mt-0.5 ${diff < 0 ? "text-green-400" : diff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                                  {diff > 0 ? "+" : ""}{diff} {unit} vs prev
-                                </p>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {/* Raw readings for latest */}
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Raw readings — {latestDate}</p>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          {(["Umbilical", "Suprailiac"] as const).map((site) => {
-                            const keys = site === "Umbilical"
-                              ? [latestM.umbilical1, latestM.umbilical2, latestM.umbilical3, latestM.umbilical4, latestM.umbilical5]
-                              : [latestM.suprailiac1, latestM.suprailiac2, latestM.suprailiac3, latestM.suprailiac4, latestM.suprailiac5];
-                            const filled = keys.filter(v => v != null);
-                            if (!filled.length) return null;
-                            return (
-                              <div key={site}>
-                                <p className="text-muted-foreground font-medium mb-1">{site}</p>
-                                <p className="text-foreground">{keys.map((v, i) => v != null ? `${v}mm` : null).filter(Boolean).join(" · ")}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              </div>
-            );
-          })()}
+          {latestM && (
+            <MeasurementsCard
+              latestM={latestM}
+              prevM={prevM}
+              latestSkinfold={latestSkinfold}
+              prevSkinfold={prevSkinfold}
+              skinfoldDiff={skinfoldDiff}
+              waistDiff={waistDiff}
+              toLocalDateStr={toLocalDateStr}
+            />
+          )}
 
           {/* Exercise Progress Cards */}
           {workoutSessions.length > 0 && (() => {
