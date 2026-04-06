@@ -369,7 +369,7 @@ function DailyLogTab() {
   });
 
   const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 30 });
-  const { data: program } = trpc.training.get.useQuery();
+  const { data: workoutSessions = [] } = trpc.workoutSessions.list.useQuery();
   const upsert = trpc.dailyLog.upsert.useMutation({
     onSuccess: () => { toast.success("Log saved"); refetch(); }
   });
@@ -377,12 +377,16 @@ function DailyLogTab() {
     onSuccess: () => { toast.success("Log deleted"); refetch(); }
   });
 
-  // Build session options from training program day names
-  const sessionOptions: string[] = program?.days
-    ? (program.days as Array<{ name?: string }>)
-        .map((d, i) => d.name || `Day ${i + 1}`)
-        .filter(Boolean)
-    : [];
+  // Auto-derive training status from workout sessions for the selected date
+  // sessionDate may be a Date object or a string depending on the driver
+  const toDateStr = (v: Date | string | null | undefined): string => {
+    if (!v) return "";
+    if (typeof v === "string") return v.slice(0, 10);
+    return v.toISOString().slice(0, 10);
+  };
+  const todaysSessions = workoutSessions.filter(s => toDateStr(s.sessionDate as Date | string) === date);
+  const autoTrained = todaysSessions.length > 0;
+  const autoTrainingType = todaysSessions.map(s => s.dayLabel).filter(Boolean).join(", ") || undefined;
 
   // Load existing log for selected date
   useEffect(() => {
@@ -403,7 +407,16 @@ function DailyLogTab() {
     } else {
       setForm({ weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, offPlanMeal: false, notes: "" });
     }
-  }, [date, logs]);
+  }, [date, logs]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync auto-derived training fields whenever date or workout sessions change
+  useEffect(() => {
+    setForm(prev => ({
+      ...prev,
+      trainingCompleted: autoTrained,
+      trainingType: autoTrainingType ?? prev.trainingType,
+    }));
+  }, [date, autoTrained, autoTrainingType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = () => {
     upsert.mutate({
@@ -462,41 +475,26 @@ function DailyLogTab() {
 
       <div>
         <SectionLabel>Training</SectionLabel>
-        <Card className="space-y-3">
-          <button
-            type="button"
-            onClick={() => setForm(p => ({ ...p, trainingCompleted: !p.trainingCompleted }))}
-            className="flex items-center gap-3 cursor-pointer w-full text-left py-1"
-          >
-            <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
-              form.trainingCompleted ? "bg-primary border-primary" : "border-border"
-            }`}>
-              {form.trainingCompleted && <Check size={14} className="text-primary-foreground" />}
+        <Card>
+          {autoTrained ? (
+            <div className="flex items-center gap-3 py-1">
+              <div className="w-6 h-6 rounded border-2 bg-primary border-primary flex items-center justify-center flex-shrink-0">
+                <Check size={14} className="text-primary-foreground" />
+              </div>
+              <div>
+                <span className="text-base text-foreground">Training logged</span>
+                {autoTrainingType && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{autoTrainingType}</p>
+                )}
+              </div>
             </div>
-            <span className="text-base text-foreground">Training completed today</span>
-          </button>
-          {form.trainingCompleted && (
-            <div>
-              <label className="text-sm text-muted-foreground block mb-1.5">Session</label>
-              <select value={form.trainingType} onChange={f("trainingType")}
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
-                <option value="">Select session</option>
-                {sessionOptions.length > 0
-                  ? sessionOptions.map(s => <option key={s} value={s}>{s}</option>)
-                  : [
-                      <option key="ub" value="Upper Body">Upper Body</option>,
-                      <option key="lb" value="Lower Body">Lower Body</option>,
-                      <option key="push" value="Push">Push</option>,
-                      <option key="pull" value="Pull">Pull</option>,
-                      <option key="legs" value="Legs">Legs</option>,
-                      <option key="fb" value="Full Body">Full Body</option>,
-                      <option key="cardio" value="Cardio">Cardio</option>,
-                    ]
-                }
-              </select>
-              {sessionOptions.length === 0 && (
-                <p className="text-[10px] text-muted-foreground mt-0.5">No training program assigned yet — showing generic options</p>
-              )}
+          ) : (
+            <div className="flex items-center gap-3 py-1">
+              <div className="w-6 h-6 rounded border-2 border-border flex items-center justify-center flex-shrink-0" />
+              <div>
+                <span className="text-base text-muted-foreground">No training logged</span>
+                <p className="text-xs text-muted-foreground mt-0.5">Log a workout in Training → Workout Log to mark this day</p>
+              </div>
             </div>
           )}
         </Card>

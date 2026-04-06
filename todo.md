@@ -112,3 +112,4 @@
 - [x] Client workout log: show only set 1 in "Last:" performance line when session is selected
 - [x] Recent daily logs: rename "Off" chip to "Rest" in both coach and client views
 - [x] Improve mobile input area readability: higher contrast input fields, clearer labels and section separation
+- [x] Daily log: auto-derive "training completed" from workout log, remove manual toggle
