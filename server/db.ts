@@ -725,3 +725,107 @@ export async function markOnboardingReviewed(id: number, reviewed: boolean) {
     .set({ reviewed })
     .where(eq(onboardingSubmissions.id, id));
 }
+
+// ─── Habits ──────────────────────────────────────────────────────────────────
+import {
+  habits,
+  habitAssignments,
+  habitCompletions,
+  Habit,
+  InsertHabit,
+} from "../drizzle/schema";
+
+export async function listHabitsByCoach(coachId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(habits)
+    .where(and(eq(habits.coachId, coachId), eq(habits.deleted, false)))
+    .orderBy(habits.createdAt);
+}
+
+export async function createHabit(data: Omit<InsertHabit, "id" | "createdAt" | "updatedAt" | "deleted">) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(habits).values({ ...data, deleted: false });
+  return result;
+}
+
+export async function updateHabit(id: number, coachId: number, data: Partial<Pick<Habit, "name" | "description" | "frequency" | "targetDays" | "startDate">>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(habits).set(data).where(and(eq(habits.id, id), eq(habits.coachId, coachId)));
+}
+
+export async function deleteHabit(id: number, coachId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(habits).set({ deleted: true }).where(and(eq(habits.id, id), eq(habits.coachId, coachId)));
+}
+
+export async function getHabitAssignments(habitId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(habitAssignments).where(eq(habitAssignments.habitId, habitId));
+}
+
+export async function setHabitAssignments(habitId: number, clientIds: number[]) {
+  const db = await getDb();
+  if (!db) return;
+  // Deactivate all existing assignments for this habit
+  await db.update(habitAssignments).set({ active: false }).where(eq(habitAssignments.habitId, habitId));
+  if (clientIds.length === 0) return;
+  // Upsert: reactivate or insert for each clientId
+  for (const clientId of clientIds) {
+    const existing = await db
+      .select()
+      .from(habitAssignments)
+      .where(and(eq(habitAssignments.habitId, habitId), eq(habitAssignments.clientId, clientId)));
+    if (existing.length > 0) {
+      await db.update(habitAssignments).set({ active: true }).where(and(eq(habitAssignments.habitId, habitId), eq(habitAssignments.clientId, clientId)));
+    } else {
+      await db.insert(habitAssignments).values({ habitId, clientId, active: true });
+    }
+  }
+}
+
+export async function listAssignedHabitsForClient(clientId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // Return active assigned habits that are not deleted
+  const rows = await db
+    .select({ habit: habits, assignment: habitAssignments })
+    .from(habitAssignments)
+    .innerJoin(habits, eq(habitAssignments.habitId, habits.id))
+    .where(and(eq(habitAssignments.clientId, clientId), eq(habitAssignments.active, true), eq(habits.deleted, false)));
+  return rows.map(r => r.habit);
+}
+
+export async function toggleHabitCompletion(habitId: number, clientId: number, completedDate: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const existing = await db
+    .select()
+    .from(habitCompletions)
+    .where(and(eq(habitCompletions.habitId, habitId), eq(habitCompletions.clientId, clientId), eq(habitCompletions.completedDate, completedDate as any)));
+  if (existing.length > 0) {
+    await db.delete(habitCompletions).where(and(eq(habitCompletions.habitId, habitId), eq(habitCompletions.clientId, clientId), eq(habitCompletions.completedDate, completedDate as any)));
+    return false; // now incomplete
+  } else {
+    await db.insert(habitCompletions).values({ habitId, clientId, completedDate: completedDate as any });
+    return true; // now complete
+  }
+}
+
+export async function getHabitCompletionsForClient(clientId: number, fromDate?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(habitCompletions.clientId, clientId)];
+  if (fromDate) conditions.push(gte(habitCompletions.completedDate, fromDate as any));
+  return db.select().from(habitCompletions).where(and(...conditions));
+}
+
+export async function getHabitCompletionsForCoach(clientId: number, fromDate?: string) {
+  return getHabitCompletionsForClient(clientId, fromDate);
+}

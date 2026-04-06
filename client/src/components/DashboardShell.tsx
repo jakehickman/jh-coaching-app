@@ -8,6 +8,7 @@ import {
   Calendar,
   Salad,
   ChevronLeft,
+  CheckSquare,
   ClipboardList,
   Dumbbell,
   Home,
@@ -47,6 +48,7 @@ const coachNav: NavItem[] = [
   { href: "/coach/progress", label: "Client Progress", icon: <TrendingUp size={18} /> },
   { href: "/coach/exercise-library", label: "Exercise Library", icon: <BookOpen size={18} /> },
   { href: "/coach/nutrition-data", label: "Nutrition Data", icon: <Salad size={18} /> },
+  { href: "/coach/habits", label: "Habits", icon: <CheckSquare size={18} /> },
 ];
 
 interface DashboardShellProps {

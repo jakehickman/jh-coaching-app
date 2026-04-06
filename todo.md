@@ -142,3 +142,9 @@
 - [x] Add side-by-side weekly avg weight history and measurement history table to Client Progress Overview tab
 - [x] Redesign history table: day-per-row with rowspan weekly avg, measurement on the day it was taken
 - [x] Replace with compact weekly summary table + dual-line trend chart (% BW change column)
+- [x] Habit tracking: DB schema (habits, habit_assignments, habit_completions)
+- [x] Habit tracking: server db helpers and tRPC procedures
+- [x] Habit tracking: coach Habits tab (create/edit/delete/assign)
+- [x] Habit tracking: client Daily Log habit cards (toggle completion)
+- [x] Habit tracking: client Dashboard habit history (streaks, rates, trends)
+- [x] Habit tracking: coach Client Progress habit section (adherence + heatmap)

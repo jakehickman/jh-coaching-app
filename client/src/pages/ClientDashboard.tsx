@@ -7,7 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar
 } from "recharts";
-import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil } from "lucide-react";
+import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil, CheckSquare, Square } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -356,6 +356,8 @@ function OverviewTab() {
 
 
 
+      <HabitsSummary />
+
       <div>
         <SectionLabel>Recent Logs</SectionLabel>
         <RecentLogsPanel logs={allLogs} startDate={profile?.startDate ? toLocalDateStr(profile.startDate) : undefined} />
@@ -364,7 +366,149 @@ function OverviewTab() {
   );
 }
 
+// ─── Habits Summary (Overview tab) ─────────────────────────────────────────
+function HabitsSummary() {
+  const { data: habits = [] } = trpc.habits.myHabits.useQuery();
+  const from30 = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 29);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+  const { data: completions = [] } = trpc.habits.myCompletions.useQuery({ fromDate: from30 });
+
+  if (habits.length === 0) return null;
+
+  const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+
+  // Build last 7 days array
+  const last7: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    last7.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+  }
+
+  // Completion set: "habitId:date"
+  const completedSet = new Set(
+    completions.map((c: any) => `${c.habitId}:${String(c.completedDate).slice(0, 10)}`)
+  );
+
+  // Per-habit stats
+  const habitStats = habits.map((h: any) => {
+    const last7Done = last7.filter(d => completedSet.has(`${h.id}:${d}`)).length;
+    const pct7 = Math.round((last7Done / 7) * 100);
+
+    // Streak: count consecutive completed days ending today
+    let streak = 0;
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (completedSet.has(`${h.id}:${ds}`)) streak++;
+      else break;
+    }
+
+    return { ...h, last7Done, pct7, streak };
+  });
+
+  const todayDone = habits.filter((h: any) => completedSet.has(`${h.id}:${today}`)).length;
+
+  return (
+    <div>
+      <SectionLabel>Habits — Today {todayDone}/{habits.length}</SectionLabel>
+      <Card className="space-y-0 p-0 overflow-hidden">
+        {habitStats.map((h: any, i: number) => {
+          const todayComplete = completedSet.has(`${h.id}:${today}`);
+          return (
+            <div key={h.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}` }>
+              {todayComplete
+                ? <CheckSquare size={18} className="text-primary shrink-0" />
+                : <Square size={18} className="text-muted-foreground shrink-0" />
+              }
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">{h.name}</p>
+                <p className="text-xs text-muted-foreground">{h.pct7}% last 7 days · {h.streak > 0 ? `${h.streak}-day streak` : "No streak"}</p>
+              </div>
+              {/* 7-day mini dots */}
+              <div className="flex gap-0.5 shrink-0">
+                {last7.map(d => (
+                  <div key={d} className={`w-2.5 h-2.5 rounded-full ${
+                    completedSet.has(`${h.id}:${d}`) ? "bg-primary" : "bg-muted"
+                  }`} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </Card>
+    </div>
+  );
+}
+
 // ─── Tab: Daily Log ───────────────────────────────────────────────────────────
+// ─── Habits Card (inside Daily Log) ─────────────────────────────────────────
+function HabitsCard({ date }: { date: string }) {
+  const utils = trpc.useUtils();
+  const { data: habits = [] } = trpc.habits.myHabits.useQuery();
+  const { data: completions = [] } = trpc.habits.myCompletions.useQuery({ fromDate: date });
+  const toggleMutation = trpc.habits.toggleCompletion.useMutation({
+    onMutate: async ({ habitId, date: d }) => {
+      await utils.habits.myCompletions.cancel();
+      const prev = utils.habits.myCompletions.getData({ fromDate: d });
+      utils.habits.myCompletions.setData({ fromDate: d }, (old = []) => {
+        const exists = old.some((c: any) => c.habitId === habitId && String(c.completedDate).slice(0, 10) === d);
+        if (exists) return old.filter((c: any) => !(c.habitId === habitId && String(c.completedDate).slice(0, 10) === d));
+        return [...old, { id: -1, habitId, clientId: -1, completedDate: d as any, createdAt: new Date() }];
+      });
+      return { prev };
+    },
+    onError: (_e, vars, ctx) => {
+      if (ctx?.prev) utils.habits.myCompletions.setData({ fromDate: vars.date }, ctx.prev);
+    },
+    onSettled: (_d, _e, vars) => {
+      utils.habits.myCompletions.invalidate({ fromDate: vars.date });
+    },
+  });
+
+  if (habits.length === 0) return null;
+
+  const completedIds = new Set(
+    completions
+      .filter((c: any) => String(c.completedDate).slice(0, 10) === date)
+      .map((c: any) => c.habitId)
+  );
+
+  return (
+    <div>
+      <SectionLabel>Habits</SectionLabel>
+      <Card className="space-y-1 p-0 overflow-hidden">
+        {habits.map((h: any, i: number) => {
+          const done = completedIds.has(h.id);
+          return (
+            <button
+              key={h.id}
+              onClick={() => toggleMutation.mutate({ habitId: h.id, date })}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                i > 0 ? "border-t border-border" : ""
+              } ${done ? "bg-primary/5" : "hover:bg-muted/30"}`}
+            >
+              {done
+                ? <CheckSquare size={20} className="text-primary shrink-0" />
+                : <Square size={20} className="text-muted-foreground shrink-0" />
+              }
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium ${done ? "text-primary" : "text-foreground"}`}>{h.name}</p>
+                {h.description && <p className="text-xs text-muted-foreground truncate">{h.description}</p>}
+              </div>
+              {done && <Check size={14} className="text-primary shrink-0" />}
+            </button>
+          );
+        })}
+      </Card>
+    </div>
+  );
+}
+
 function DailyLogTab() {
   const today = localToday();
   const [date, setDate] = useState(today);
@@ -543,6 +687,8 @@ function DailyLogTab() {
         <SectionLabel>Notes</SectionLabel>
         <textarea value={form.notes} onChange={f("notes")} rows={3} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
       </div>
+
+      <HabitsCard date={date} />
 
       <button onClick={handleSave} disabled={upsert.isPending}
         className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">

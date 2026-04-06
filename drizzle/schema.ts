@@ -310,3 +310,42 @@ export const onboardingSubmissions = mysqlTable("onboarding_submissions", {
 
 export type OnboardingSubmission = typeof onboardingSubmissions.$inferSelect;
 export type InsertOnboardingSubmission = typeof onboardingSubmissions.$inferInsert;
+
+// Habits — coach-created habits
+export const habits = mysqlTable("habits", {
+  id: int("id").autoincrement().primaryKey(),
+  coachId: int("coachId").notNull(), // FK -> users.id (coach)
+  name: varchar("name", { length: 128 }).notNull(),
+  description: text("description"),
+  frequency: mysqlEnum("frequency", ["daily", "x_per_week"]).notNull().default("daily"),
+  targetDays: int("targetDays").default(7), // 1-7, used when frequency = x_per_week
+  startDate: date("startDate"),
+  deleted: boolean("deleted").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Habit = typeof habits.$inferSelect;
+export type InsertHabit = typeof habits.$inferInsert;
+
+// Habit assignments — which clients have which habits assigned
+export const habitAssignments = mysqlTable("habit_assignments", {
+  id: int("id").autoincrement().primaryKey(),
+  habitId: int("habitId").notNull(), // FK -> habits.id
+  clientId: int("clientId").notNull(), // FK -> users.id (client)
+  active: boolean("active").default(true).notNull(),
+  assignedAt: timestamp("assignedAt").defaultNow().notNull(),
+});
+
+export type HabitAssignment = typeof habitAssignments.$inferSelect;
+
+// Habit completions — one row per completed day per habit per client
+export const habitCompletions = mysqlTable("habit_completions", {
+  id: int("id").autoincrement().primaryKey(),
+  habitId: int("habitId").notNull(), // FK -> habits.id
+  clientId: int("clientId").notNull(), // FK -> users.id (client)
+  completedDate: date("completedDate").notNull(), // yyyy-mm-dd
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type HabitCompletion = typeof habitCompletions.$inferSelect;
