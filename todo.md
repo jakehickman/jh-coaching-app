@@ -87,3 +87,7 @@
 - [x] Coach Client Progress: per-exercise progress cards showing weight/reps across sessions
 - [x] Workout Log: show last session weight x reps below each exercise name
 - [x] Workout Log: auto-tick training completed and set session type in Daily Log on save
+- [x] Fix timezone bug: daily log dates save to wrong day for Sydney (UTC+10) users
+- [x] Fix adherence: use 7 calendar days as denominator (unlogged = non-adherent)
+- [x] Limit recent logs in Coach Panel to 7 days with "View more" button
+- [x] Measurements section: side-by-side layout with delta and expandable detail confirmed complete

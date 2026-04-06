@@ -229,7 +229,7 @@ type DailyLogRow = {
   notes?: string | null;
 };
 
-function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
+function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDays?: string[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Build a map of yyyy-mm-dd -> log
@@ -239,13 +239,16 @@ function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
     if (key) logMap[key] = log;
   }
 
-  // Generate last 14 calendar days (today first)
-  const days: string[] = [];
-  for (let i = 0; i < 14; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
-  }
+  // Use provided visibleDays or generate last 14 calendar days (today first)
+  const days: string[] = visibleDays ?? (() => {
+    const result: string[] = [];
+    for (let i = 0; i < 14; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      result.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    }
+    return result;
+  })();
 
   function fmtDay(iso: string) {
     const [y, m, d] = iso.split('-');
@@ -1365,6 +1368,52 @@ function MealPlansSection() {
 }
 
 
+// ─── Recent Logs with View More ─────────────────────────────────────────────
+function RecentLogsWithViewMore({ logs }: { logs: DailyLogRow[] }) {
+  const [showAll, setShowAll] = useState(false);
+  const INITIAL_DAYS = 7;
+  const TOTAL_DAYS = 14;
+
+  // Build a map of yyyy-mm-dd -> log
+  const logMap: Record<string, DailyLogRow> = {};
+  for (const log of logs) {
+    const key = toLocalDateStr(log.logDate);
+    if (key) logMap[key] = log;
+  }
+
+  // Generate last N calendar days (today first)
+  const allDays: string[] = [];
+  for (let i = 0; i < TOTAL_DAYS; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    allDays.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+  }
+  const visibleDays = showAll ? allDays : allDays.slice(0, INITIAL_DAYS);
+
+  return (
+    <div>
+      <SectionLabel>Recent Daily Logs</SectionLabel>
+      <RecentLogsPanel logs={logs} visibleDays={visibleDays} />
+      {!showAll && (
+        <button
+          onClick={() => setShowAll(true)}
+          className="w-full mt-2 py-2 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg hover:border-border/80 transition-colors"
+        >
+          View more (14 days)
+        </button>
+      )}
+      {showAll && (
+        <button
+          onClick={() => setShowAll(false)}
+          className="w-full mt-2 py-2 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg hover:border-border/80 transition-colors"
+        >
+          Show less
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Section: Client Progress ─────────────────────────────────────────────────
 function ProgressSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
@@ -1433,12 +1482,13 @@ function ProgressSection() {
   const curAvgSteps = avgOf(cur7.map(l => l.stepsCount as number | null));
   const prevAvgSteps = avgOf(prev7.map(l => l.stepsCount as number | null));
 
-  // ── Meal adherence: on-plan days / total logged days in window ──────────────
+  // ── Meal adherence: on-plan days / 7 calendar days (unlogged = non-adherent) ──
   const isOffPlan = (v: unknown) => v === true || v === 1 || v === '1';
   const curOnPlan = cur7.filter(l => !isOffPlan(l.offPlanMeal)).length;
-  const mealAdherence = cur7.length > 0 ? Math.round((curOnPlan / cur7.length) * 100) : null;
+  // Use 7 calendar days as denominator — missing logs count as non-adherent
+  const mealAdherence = Math.round((curOnPlan / 7) * 100);
   const prevOnPlan = prev7.filter(l => !isOffPlan(l.offPlanMeal)).length;
-  const prevMealAdherence = prev7.length > 0 ? Math.round((prevOnPlan / prev7.length) * 100) : null;
+  const prevMealAdherence = Math.round((prevOnPlan / 7) * 100);
 
   // ── Training adherence: calendar-day window vs rotation length ──────────────
   const schedule = (trainingProgram?.schedule as string[] | null) ?? null;
@@ -1540,8 +1590,8 @@ function ProgressSection() {
               />
               <ProgCard
                 label="Meal Adherence"
-                value={mealAdherence != null ? `${mealAdherence}%` : "—"}
-                sub={`${curOnPlan}/${cur7.length} on-plan days`}
+                value={`${mealAdherence}%`}
+                sub={`${curOnPlan}/7 on-plan days (7-day window)`}
                 change={prevMealAdherence != null && mealAdherence != null
                   ? `${mealAdherence >= prevMealAdherence ? "+" : ""}${mealAdherence - prevMealAdherence}%`
                   : undefined}
@@ -1709,10 +1759,7 @@ function ProgressSection() {
           })()}
 
           {(logs ?? []).length > 0 && (
-            <div>
-              <SectionLabel>Recent Daily Logs</SectionLabel>
-              <RecentLogsPanel logs={(logs ?? []).slice(0, 14)} />
-            </div>
+            <RecentLogsWithViewMore logs={logs ?? []} />
           )}
         </>
       )}
