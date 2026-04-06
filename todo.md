@@ -134,3 +134,4 @@
 - [x] Cascade exercise rename: update all training programs and workout logs when an exercise name changes in the library
 - [x] Remove hardcoded muscle group text (Chest & Triceps etc.) from client training tab
 - [x] Filter recent daily logs to only show dates on or after client start date
+- [ ] Send owner notification when a new client signs up
