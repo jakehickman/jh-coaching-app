@@ -37,7 +37,6 @@ export const appRouter = router({
           startDate: z.string().optional(),
           goalWeight: z.number().optional(),
           startWeight: z.number().optional(),
-          showDate: z.string().optional(),
           notes: z.string().optional(),
         })
       )
@@ -53,7 +52,6 @@ export const appRouter = router({
           startDate: z.string().optional(),
           goalWeight: z.number().optional(),
           startWeight: z.number().optional(),
-          showDate: z.string().optional(),
           notes: z.string().nullable().optional(),
         })
       )
@@ -286,6 +284,9 @@ export const appRouter = router({
       .mutation(({ ctx, input }) =>
         db.addCoachingNote({ coachId: ctx.user.id, ...input })
       ),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteCoachingNote(input.id)),
   }),
 
   // Weekly Check-ins

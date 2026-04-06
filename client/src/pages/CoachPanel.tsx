@@ -1793,6 +1793,75 @@ function ExerciseProgressTab({
 }
 
 // ─── Section: Client Progress ─────────────────────────────────────────────────
+const NOTE_CATEGORIES = ["General", "Nutrition", "Training", "Check-in", "Adjustment", "Milestone"];
+
+function CoachingNotesTab({ clientId }: { clientId: number }) {
+  const { data: notes = [], refetch } = trpc.notes.list.useQuery({ clientId });
+  const add = trpc.notes.add.useMutation({ onSuccess: () => { refetch(); setForm({ noteDate: localToday(), content: "", category: "General" }); toast.success("Note saved"); } });
+  const del = trpc.notes.delete.useMutation({ onSuccess: () => { refetch(); toast.success("Note deleted"); } });
+  const [form, setForm] = useState({ noteDate: localToday(), content: "", category: "General" });
+
+  function localToday() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function fmtDate(val: unknown) {
+    const s = String(val ?? "").slice(0, 10);
+    const [y, m, d] = s.split('-');
+    return y && m && d ? `${d}/${m}/${y}` : s;
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Add note form */}
+      <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Add Note</p>
+        <div className="flex gap-3">
+          <input type="date" value={form.noteDate} onChange={e => setForm(p => ({ ...p, noteDate: e.target.value }))}
+            className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+          <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
+            className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+            {NOTE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))}
+          rows={3} className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+        <button onClick={() => { if (!form.content.trim()) { toast.error("Note content required"); return; } add.mutate({ clientId, ...form }); }}
+          disabled={add.isPending}
+          className="px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 disabled:opacity-50">
+          {add.isPending ? "Saving..." : "Save Note"}
+        </button>
+      </div>
+      {/* Notes history */}
+      {notes.length === 0 ? (
+        <div className="bg-card border border-border rounded-xl p-6 text-center">
+          <p className="text-sm text-muted-foreground">No notes yet. Add the first note above.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {notes.map((note: any) => (
+            <div key={note.id} className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xs text-muted-foreground">{fmtDate(note.noteDate)}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-primary/20 text-primary">{note.category ?? "General"}</span>
+                  </div>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
+                </div>
+                <button onClick={() => del.mutate({ id: note.id })} disabled={del.isPending}
+                  className="text-muted-foreground hover:text-red-400 transition-colors flex-shrink-0 mt-0.5">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProgressSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
   const { data: logs } = trpc.dailyLog.listForClient.useQuery(
@@ -1800,10 +1869,6 @@ function ProgressSection() {
     { enabled: !!selectedUserId }
   );
   const { data: measurements } = trpc.measurements.listForClient.useQuery(
-    { userId: selectedUserId! },
-    { enabled: !!selectedUserId }
-  );
-  const { data: checkIns } = trpc.checkIn.listForClient.useQuery(
     { userId: selectedUserId! },
     { enabled: !!selectedUserId }
   );
@@ -1952,6 +2017,7 @@ function ProgressSection() {
           <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
+            <TabsTrigger value="notes">Coaching Notes</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -2060,6 +2126,10 @@ function ProgressSection() {
 
           <TabsContent value="exercise">
             <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
+          </TabsContent>
+
+          <TabsContent value="notes">
+            <CoachingNotesTab clientId={selectedUserId!} />
           </TabsContent>
         </Tabs>
       )}

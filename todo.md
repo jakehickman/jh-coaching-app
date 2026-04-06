@@ -121,3 +121,7 @@
 - [ ] Improve global app readability and contrast (consistent with mobile improvements)
 - [ ] Remove all placeholder text from input boxes across the app
 - [ ] Home page: remove "Coach? Sign in to the coach panel" section
+- [x] Remove unused checkIns queries from client OverviewTab and coach ProgressSection (dead code)
+- [x] Remove showDate field from schema, server routers, and all UI references
+- [x] Add coaching notes UI to coach Client Progress tab (write notes with date/category, view history)
+- [x] Add client self-service settings page (display name, goal weight, start weight)

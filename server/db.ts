@@ -145,7 +145,6 @@ export async function upsertClientProfile(data: {
   startDate?: string;
   goalWeight?: number;
   startWeight?: number;
-  showDate?: string;
   notes?: string | null;
 }) {
   const db = await getDb();
@@ -461,6 +460,12 @@ export async function addCoachingNote(data: {
   const db = await getDb();
   if (!db) return;
   await db.insert(coachingNotes).values(data as any);
+}
+
+export async function deleteCoachingNote(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(coachingNotes).where(eq(coachingNotes.id, id));
 }
 
 // Weekly Check-ins

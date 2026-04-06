@@ -9,6 +9,7 @@ import ClientDashboard from "./pages/ClientDashboard";
 import CoachPanel from "./pages/CoachPanel";
 import CoachingLanding from "./pages/CoachingLanding";
 import Onboarding from "./pages/Onboarding";
+import Settings from "./pages/Settings";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={ClientDashboard} />
       <Route path="/dashboard/:tab" component={ClientDashboard} />
+      <Route path="/dashboard/settings" component={Settings} />
       <Route path="/coach" component={CoachPanel} />
       <Route path="/coach/:section" component={CoachPanel} />
       <Route path="/coaching" component={CoachingLanding} />

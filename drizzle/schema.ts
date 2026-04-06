@@ -36,7 +36,6 @@ export const clientProfiles = mysqlTable("client_profiles", {
   startDate: date("startDate"),
   goalWeight: float("goalWeight"),
   startWeight: float("startWeight"),
-  showDate: date("showDate"), // for timeline/show prep
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

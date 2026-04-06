@@ -225,7 +225,6 @@ function ScoreInput({ label, value, onChange, max = 10 }: { label: string; value
 // ─── Tab: Overview / Dashboard ────────────────────────────────────────────────
 function OverviewTab() {
   const { data: logs } = trpc.dailyLog.list.useQuery({ limit: 30 });
-  const { data: checkIns } = trpc.checkIn.list.useQuery();
   const { data: profile } = trpc.profile.get.useQuery();
   const { data: program } = trpc.training.get.useQuery();
   const { data: measurements } = trpc.measurements.list.useQuery();
