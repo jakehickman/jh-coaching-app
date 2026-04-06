@@ -92,3 +92,4 @@
 - [x] Limit recent logs in Coach Panel to 7 days with "View more" button
 - [x] Measurements section: side-by-side layout with delta and expandable detail confirmed complete
 - [x] Replace custom DD/MM/YYYY date inputs with native HTML date picker across all forms (daily log, measurements, workout log)
+- [x] Client Daily Log tab: show only last 7 log entries with expand to show more

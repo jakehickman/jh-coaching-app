@@ -78,6 +78,7 @@ type DailyLogRow = {
 
 function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const logMap: Record<string, DailyLogRow> = {};
   for (const log of logs) {
@@ -85,12 +86,15 @@ function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
     if (key) logMap[key] = log;
   }
 
-  const days: string[] = [];
-  for (let i = 0; i < 14; i++) {
+  const allDays: string[] = [];
+  for (let i = 0; i < 30; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    allDays.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
   }
+  // Only include days that have a log entry, up to the limit
+  const loggedDays = allDays.filter(iso => !!logMap[iso]);
+  const days = showAll ? loggedDays : loggedDays.slice(0, 7);
 
   function fmtDay(iso: string) {
     const [y, m, d] = iso.split('-');
@@ -108,7 +112,7 @@ function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
       {days.map((iso) => {
         const log = logMap[iso] ?? null;
         const isExpanded = expandedId === iso;
-        const hasData = !!log;
+        const hasData = !!log; // always true since we filter to logged days only
         const trained = log ? isTrained(log.trainingCompleted) : false;
         const sessionLabel = log?.trainingType && log.trainingType !== 'Off'
           ? log.trainingType
@@ -173,6 +177,16 @@ function RecentLogsPanel({ logs }: { logs: DailyLogRow[] }) {
           </div>
         );
       })}
+      {loggedDays.length > 7 && (
+        <button
+          onClick={() => setShowAll(v => !v)}
+          className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted-foreground hover:text-foreground border-t border-border hover:bg-muted/20 transition-colors"
+        >
+          {showAll
+            ? <><ChevronUp className="w-3.5 h-3.5" /> Show less</>
+            : <><ChevronDown className="w-3.5 h-3.5" /> View more ({loggedDays.length - 7} older entries)</>}
+        </button>
+      )}
     </div>
   );
 }
