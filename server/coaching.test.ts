@@ -17,6 +17,9 @@ vi.mock("./db", () => ({
   getTimelineMilestones: vi.fn().mockResolvedValue([]),
   getWeeklyCheckIns: vi.fn().mockResolvedValue([]),
   getCoachingNotes: vi.fn().mockResolvedValue([]),
+  addCoachingNote: vi.fn().mockResolvedValue(undefined),
+  deleteCoachingNote: vi.fn().mockResolvedValue(undefined),
+  updateCoachingNote: vi.fn().mockResolvedValue(undefined),
   getClientProfile: vi.fn().mockResolvedValue(null),
   getAllUsers: vi.fn().mockResolvedValue([]),
   getClientProfileById: vi.fn().mockResolvedValue(null),
@@ -164,5 +167,25 @@ describe("notes (coach)", () => {
     const caller = appRouter.createCaller(createUserContext("admin"));
     const result = await caller.notes.list({ clientId: 7 });
     expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("update requires admin role", async () => {
+    const caller = appRouter.createCaller(createUserContext("user"));
+    await expect(caller.notes.update({ id: 1, content: "edited" })).rejects.toThrow();
+  });
+
+  it("update succeeds for admin", async () => {
+    const caller = appRouter.createCaller(createUserContext("admin"));
+    await expect(caller.notes.update({ id: 1, content: "edited content", category: "Training" })).resolves.not.toThrow();
+  });
+
+  it("delete requires admin role", async () => {
+    const caller = appRouter.createCaller(createUserContext("user"));
+    await expect(caller.notes.delete({ id: 1 })).rejects.toThrow();
+  });
+
+  it("delete succeeds for admin", async () => {
+    const caller = appRouter.createCaller(createUserContext("admin"));
+    await expect(caller.notes.delete({ id: 1 })).resolves.not.toThrow();
   });
 });

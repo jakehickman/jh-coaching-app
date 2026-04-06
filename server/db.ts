@@ -468,6 +468,22 @@ export async function deleteCoachingNote(id: number) {
   await db.delete(coachingNotes).where(eq(coachingNotes.id, id));
 }
 
+export async function updateCoachingNote(data: {
+  id: number;
+  noteDate?: string;
+  content?: string;
+  category?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  const { id, ...fields } = data;
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (fields.noteDate !== undefined) updateData.noteDate = fields.noteDate;
+  if (fields.content !== undefined) updateData.content = fields.content;
+  if (fields.category !== undefined) updateData.category = fields.category;
+  await db.update(coachingNotes).set(updateData as any).where(eq(coachingNotes.id, id));
+}
+
 // Weekly Check-ins
 export async function getWeeklyCheckIns(userId: number, limit = 12) {
   const db = await getDb();

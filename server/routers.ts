@@ -287,6 +287,16 @@ export const appRouter = router({
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(({ input }) => db.deleteCoachingNote(input.id)),
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          noteDate: z.string().optional(),
+          content: z.string().optional(),
+          category: z.string().optional(),
+        })
+      )
+      .mutation(({ input }) => db.updateCoachingNote(input)),
   }),
 
   // Weekly Check-ins

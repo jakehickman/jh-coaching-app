@@ -1816,7 +1816,10 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
   const { data: notes = [], refetch } = trpc.notes.list.useQuery({ clientId });
   const add = trpc.notes.add.useMutation({ onSuccess: () => { refetch(); setForm({ noteDate: localToday(), content: "", category: "General" }); toast.success("Note saved"); } });
   const del = trpc.notes.delete.useMutation({ onSuccess: () => { refetch(); toast.success("Note deleted"); } });
+  const update = trpc.notes.update.useMutation({ onSuccess: () => { refetch(); setEditingId(null); toast.success("Note updated"); } });
   const [form, setForm] = useState({ noteDate: localToday(), content: "", category: "General" });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ noteDate: "", content: "", category: "General" });
 
   function localToday() {
     const d = new Date();
@@ -1826,6 +1829,17 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
     const s = String(val ?? "").slice(0, 10);
     const [y, m, d] = s.split('-');
     return y && m && d ? `${d}/${m}/${y}` : s;
+  }
+  function startEdit(note: any) {
+    setEditingId(note.id);
+    setEditForm({
+      noteDate: String(note.noteDate ?? "").slice(0, 10),
+      content: note.content ?? "",
+      category: note.category ?? "General",
+    });
+  }
+  function cancelEdit() {
+    setEditingId(null);
   }
 
   return (
@@ -1858,19 +1872,54 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
         <div className="space-y-2">
           {notes.map((note: any) => (
             <div key={note.id} className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xs text-muted-foreground">{fmtDate(note.noteDate)}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-primary/20 text-primary">{note.category ?? "General"}</span>
+              {editingId === note.id ? (
+                /* ── Edit mode ── */
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <input type="date" value={editForm.noteDate} onChange={e => setEditForm(p => ({ ...p, noteDate: e.target.value }))}
+                      className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <select value={editForm.category} onChange={e => setEditForm(p => ({ ...p, category: e.target.value }))}
+                      className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+                      {NOTE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
                   </div>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
+                  <textarea value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))}
+                    rows={3} className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { if (!editForm.content.trim()) { toast.error("Note content required"); return; } update.mutate({ id: note.id, ...editForm }); }}
+                      disabled={update.isPending}
+                      className="px-3 py-1.5 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5">
+                      <Check size={13} />{update.isPending ? "Saving..." : "Save"}
+                    </button>
+                    <button onClick={cancelEdit}
+                      className="px-3 py-1.5 bg-secondary text-foreground text-sm rounded-lg hover:opacity-80 flex items-center gap-1.5">
+                      <X size={13} />Cancel
+                    </button>
+                  </div>
                 </div>
-                <button onClick={() => del.mutate({ id: note.id })} disabled={del.isPending}
-                  className="text-muted-foreground hover:text-red-400 transition-colors flex-shrink-0 mt-0.5">
-                  <Trash2 size={14} />
-                </button>
-              </div>
+              ) : (
+                /* ── View mode ── */
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-xs text-muted-foreground">{fmtDate(note.noteDate)}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-primary/20 text-primary">{note.category ?? "General"}</span>
+                    </div>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                    <button onClick={() => startEdit(note)}
+                      className="text-muted-foreground hover:text-foreground transition-colors">
+                      <Pencil size={13} />
+                    </button>
+                    <button onClick={() => del.mutate({ id: note.id })} disabled={del.isPending}
+                      className="text-muted-foreground hover:text-red-400 transition-colors">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

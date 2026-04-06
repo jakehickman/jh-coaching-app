@@ -45,11 +45,13 @@ function fmtDate(val: unknown): string {
 // Native HTML date picker — value and onChange use yyyy-mm-dd strings
 // The browser's date input always produces a yyyy-mm-dd string in local time,
 // so no timezone conversion is needed.
-function DateInput({ value, onChange, className = "" }: { value: string; onChange: (v: string) => void; className?: string }) {
+function DateInput({ value, onChange, className = "", min, max }: { value: string; onChange: (v: string) => void; className?: string; min?: string; max?: string }) {
   return (
     <input
       type="date"
       value={value}
+      min={min}
+      max={max}
       onChange={e => onChange(e.target.value)}
       className={`bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary ${className}`}
     />
@@ -449,7 +451,12 @@ function DailyLogTab() {
     <div className="space-y-6 max-w-lg">
       <div>
         <SectionLabel>Date</SectionLabel>
-        <DateInput value={date} onChange={setDate} />
+        <DateInput
+          value={date}
+          onChange={setDate}
+          min={profile?.startDate ? toLocalDateStr(profile.startDate) : undefined}
+          max={today}
+        />
       </div>
 
       <div>
