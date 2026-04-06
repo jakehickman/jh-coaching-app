@@ -1,7 +1,7 @@
 import DashboardShell from "@/components/DashboardShell";
 import { trpc } from "@/lib/trpc";
 import { useParams, useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical, BookOpen, Search, Pencil, X, Play, ExternalLink, Check, ChevronsUpDown, ArrowUp, ArrowDown, Minus } from "lucide-react";
@@ -363,7 +363,7 @@ function SortableScheduleSlot({
 
 // ─── Sortable Exercise Row ───────────────────────────────────────────────────
 function SortableExerciseRow({
-  id, ex, dayIdx, exIdx, updateExercise, removeExercise, exerciseNames
+  id, ex, dayIdx, exIdx, updateExercise, removeExercise, exerciseNames, addExercise, totalExercises
 }: {
   id: string;
   ex: any;
@@ -372,11 +372,16 @@ function SortableExerciseRow({
   updateExercise: (d: number, e: number, f: string, v: string) => void;
   removeExercise: (d: number, e: number) => void;
   exerciseNames: string[];
+  addExercise: (dayIdx: number) => void;
+  totalExercises: number;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const [showNotes, setShowNotes] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [highlightedIdx, setHighlightedIdx] = useState(-1);
+  const setsRef = useRef<HTMLInputElement>(null);
+  const repsRef = useRef<HTMLInputElement>(null);
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -385,6 +390,70 @@ function SortableExerciseRow({
   const filtered = searchTerm.length > 0
     ? exerciseNames.filter(n => n.toLowerCase().includes(searchTerm.toLowerCase())).slice(0, 8)
     : exerciseNames.slice(0, 8);
+
+  // Focus the exercise input on the next row, or add a new row if this is the last one
+  const focusNextRow = () => {
+    const isLastRow = exIdx === totalExercises - 1;
+    if (isLastRow) {
+      addExercise(dayIdx);
+      // After state update, focus will be handled by the new row mounting
+      setTimeout(() => {
+        const nextInput = document.querySelector<HTMLInputElement>(
+          `[data-day="${dayIdx}"][data-ex="${exIdx + 1}"][data-field="exercise"]`
+        );
+        nextInput?.focus();
+      }, 50);
+    } else {
+      const nextInput = document.querySelector<HTMLInputElement>(
+        `[data-day="${dayIdx}"][data-ex="${exIdx + 1}"][data-field="exercise"]`
+      );
+      nextInput?.focus();
+    }
+  };
+
+  const handleExerciseKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (dropdownOpen && filtered.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setHighlightedIdx(i => Math.min(i + 1, filtered.length - 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setHighlightedIdx(i => Math.max(i - 1, 0));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const idx = highlightedIdx >= 0 ? highlightedIdx : 0;
+        updateExercise(dayIdx, exIdx, "name", filtered[idx]);
+        setSearchTerm("");
+        setDropdownOpen(false);
+        setHighlightedIdx(-1);
+        setTimeout(() => setsRef.current?.focus(), 0);
+      } else if (e.key === "Escape") {
+        setDropdownOpen(false);
+        setHighlightedIdx(-1);
+      } else if (e.key === "Tab") {
+        // Let Tab close dropdown and move to sets naturally
+        setDropdownOpen(false);
+        setHighlightedIdx(-1);
+      }
+    } else if (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey)) {
+      if (e.key === "Enter") e.preventDefault();
+      setsRef.current?.focus();
+    }
+  };
+
+  const handleSetsKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey)) {
+      if (e.key === "Enter") { e.preventDefault(); repsRef.current?.focus(); }
+    }
+  };
+
+  const handleRepsKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      focusNextRow();
+    }
+  };
+
   return (
     <div ref={setNodeRef} style={style} className="space-y-1">
       <div className="grid grid-cols-12 gap-1 items-center">
@@ -399,16 +468,20 @@ function SortableExerciseRow({
         <div className="col-span-6 relative">
           <input
             type="text"
+            data-day={dayIdx}
+            data-ex={exIdx}
+            data-field="exercise"
             value={dropdownOpen ? searchTerm : ex.name}
-            onChange={e => { setSearchTerm(e.target.value); setDropdownOpen(true); }}
-            onFocus={() => { setSearchTerm(""); setDropdownOpen(true); }}
-            onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+            onChange={e => { setSearchTerm(e.target.value); setDropdownOpen(true); setHighlightedIdx(-1); }}
+            onFocus={() => { setSearchTerm(""); setDropdownOpen(true); setHighlightedIdx(-1); }}
+            onBlur={() => setTimeout(() => { setDropdownOpen(false); setHighlightedIdx(-1); }, 150)}
+            onKeyDown={handleExerciseKeyDown}
             placeholder="Exercise name"
             className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
           {dropdownOpen && filtered.length > 0 && (
             <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
-              {filtered.map(name => (
+              {filtered.map((name, idx) => (
                 <button
                   key={name}
                   type="button"
@@ -416,8 +489,14 @@ function SortableExerciseRow({
                     updateExercise(dayIdx, exIdx, "name", name);
                     setSearchTerm("");
                     setDropdownOpen(false);
+                    setHighlightedIdx(-1);
+                    setTimeout(() => setsRef.current?.focus(), 0);
                   }}
-                  className="w-full text-left px-3 py-1.5 text-xs text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                  className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+                    idx === highlightedIdx
+                      ? "bg-primary/20 text-primary"
+                      : "text-foreground hover:bg-primary/10 hover:text-primary"
+                  }`}
                 >
                   {name}
                 </button>
@@ -425,10 +504,20 @@ function SortableExerciseRow({
             </div>
           )}
         </div>
-        <input type="text" value={ex.sets} onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
+        <input
+          ref={setsRef}
+          type="text"
+          value={ex.sets}
+          onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
+          onKeyDown={handleSetsKeyDown}
           placeholder="4"
           className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-        <input type="text" value={ex.reps} onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
+        <input
+          ref={repsRef}
+          type="text"
+          value={ex.reps}
+          onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
+          onKeyDown={handleRepsKeyDown}
           placeholder="8-12"
           className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
         <div className="col-span-1 flex items-center gap-0.5">
@@ -785,6 +874,8 @@ function SortableDayCard({
                   updateExercise={updateExercise}
                   removeExercise={removeExercise}
                   exerciseNames={exerciseNames}
+                  addExercise={addExercise}
+                  totalExercises={(day.exercises ?? []).length}
                 />
               ))}
             </SortableContext>
