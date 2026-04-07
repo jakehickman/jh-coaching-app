@@ -347,15 +347,49 @@ function ProgressHistoryTable({
                 </div>
                 <div className="bg-card px-3 py-2.5">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist</p>
-                  <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
-                    {row.waist != null ? `${row.waist} cm` : <span className="text-muted-foreground text-sm">—</span>}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
+                      {row.waist != null ? `${row.waist} cm` : <span className="text-muted-foreground text-sm">—</span>}
+                    </p>
+                    {(() => {
+                      const prev = tableRows[i + 1]?.waist;
+                      if (row.waist == null || prev == null) return null;
+                      const diff = parseFloat((row.waist - prev).toFixed(1));
+                      if (diff === 0) return null;
+                      const isDown = diff < 0;
+                      return (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                          isDown ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+                        }`}>
+                          {isDown ? <ArrowDown size={9} /> : <ArrowUp size={9} />}
+                          {diff > 0 ? '+' : ''}{diff} cm
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
                 <div className="bg-card px-3 py-2.5">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Skinfold</p>
-                  <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
-                    {row.skinfold != null ? `${row.skinfold} mm` : <span className="text-muted-foreground text-sm">—</span>}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
+                      {row.skinfold != null ? `${row.skinfold} mm` : <span className="text-muted-foreground text-sm">—</span>}
+                    </p>
+                    {(() => {
+                      const prev = tableRows[i + 1]?.skinfold;
+                      if (row.skinfold == null || prev == null) return null;
+                      const diff = parseFloat((row.skinfold - prev).toFixed(1));
+                      if (diff === 0) return null;
+                      const isDown = diff < 0;
+                      return (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                          isDown ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+                        }`}>
+                          {isDown ? <ArrowDown size={9} /> : <ArrowUp size={9} />}
+                          {diff > 0 ? '+' : ''}{diff} mm
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
             </div>
@@ -2026,9 +2060,9 @@ function ExerciseProgressTab({
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {visibleExercises.map(name => {
               const history = exerciseHistory[name];
-              const last5 = history.slice(-5);
-              const latest = last5[last5.length - 1];
-              const prev = last5.length > 1 ? last5[last5.length - 2] : null;
+              const last5 = history.slice(-5).reverse();
+              const latest = last5[0];
+              const prev = last5.length > 1 ? last5[1] : null;
               const latestW = latest?.topSet?.weight ?? null;
               const prevW = prev?.topSet?.weight ?? null;
               const trend = latestW != null && prevW != null
@@ -2053,8 +2087,8 @@ function ExerciseProgressTab({
                     {last5.map((entry, i) => {
                       const [y, m, d] = entry.date.split('-');
                       const dateLabel = `${d}/${m}/${y}`;
-                      const isLatest = i === last5.length - 1;
-                      const prevEntry = i > 0 ? last5[i - 1] : null;
+                      const isLatest = i === 0;
+                      const prevEntry = i < last5.length - 1 ? last5[i + 1] : null;
                       const w = entry.topSet?.weight ?? null;
                       const r = entry.topSet?.reps ?? null;
                       const pw = prevEntry?.topSet?.weight ?? null;
@@ -2543,7 +2577,9 @@ function ProgressSection() {
                 <ProgCard
                   label="Training Adherence"
                   value={trainingAdherence != null ? `${trainingAdherence}%` : "—"}
-                  sub={trainingAdherenceLabel}
+                  sub={prescribedPerRotation != null
+                    ? `${trainedInRotation}/${prescribedPerRotation} sessions completed`
+                    : `${trainedInRotation} sessions completed`}
                 />
                 <ProgCard
                   label="Off-Plan Meals (7d)"

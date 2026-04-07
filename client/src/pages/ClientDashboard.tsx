@@ -136,14 +136,14 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
                 <p className="text-sm font-semibold text-foreground">{fmtDay(iso)}</p>
                 <p className="text-[10px] text-muted-foreground">{dayLabel(iso)}</p>
               </div>
-              {/* Middle: chips */}
-              <div className="flex-1 flex items-center gap-2 flex-wrap px-3">
+              {/* Middle: fixed-width chip so Off Plan label always aligns */}
+              <div className="flex-1 flex items-center gap-2 px-3">
                 {hasData ? (
                   <>
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium w-24 text-center flex-shrink-0 ${
                       trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>{sessionLabel}</span>
-                    {hasOffPlanMeals(log.offPlanMeals) && <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">{(log.offPlanMeals ?? 0) > 1 ? `${log.offPlanMeals} Off Plan Meals` : 'Off Plan Meal'}</span>}
+                    {hasOffPlanMeals(log.offPlanMeals) ? <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">{(log.offPlanMeals ?? 0) > 1 ? `${log.offPlanMeals} Off Plan Meals` : 'Off Plan Meal'}</span> : null}
                   </>
                 ) : (
                   <span className="text-xs text-muted-foreground italic">No entry</span>
