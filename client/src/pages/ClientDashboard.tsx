@@ -330,12 +330,12 @@ function OverviewTab() {
       <div>
         <SectionLabel>Weekly Summary</SectionLabel>
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} />
+          <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={adherenceSub} />
-          <MetricCard label="Off-Plan Meals (7d)" value={offPlanTotal7.toString()} sub={offPlanTotal7 === 0 ? 'All on-plan' : `${curOnPlan}/7 on-plan days`} />
+          <MetricCard label="Off-Plan Meals (7d)" value={offPlanTotal7.toString()} />
           {stepGoal ? (
             <MetricCard
-              label="Daily Steps"
+              label="Avg Daily Steps"
               value={avgSteps7 != null ? avgSteps7.toLocaleString() : "—"}
               sub={`Goal: ${stepGoal.toLocaleString()}`}
             />
@@ -442,60 +442,77 @@ function HabitsSummary() {
 
   const todayDone = habits.filter((h: any) => completedSet.has(`${h.id}:${today}`)).length;
 
-  // Day-of-week labels for the heatmap header
+  // Day-of-week labels (single letter)
   const dayLabels = last7.map(d => {
     const dt = new Date(d + 'T12:00:00');
     return dt.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1);
   });
 
+  const allDoneToday = todayDone === habits.length && habits.length > 0;
+
   return (
     <div>
-      <SectionLabel>Habits — Today {todayDone}/{habits.length}</SectionLabel>
-      <Card className="p-4">
-        {/* Heatmap header: day labels */}
-        <div className="flex items-center mb-2">
+      <div className="flex items-center justify-between mb-2 px-0.5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Habits</p>
+        <span className={`text-xs font-semibold ${
+          allDoneToday ? 'text-primary' : 'text-muted-foreground'
+        }`}>
+          {todayDone}/{habits.length} today
+        </span>
+      </div>
+      <Card className="p-0 overflow-hidden">
+        {/* Column headers */}
+        <div className="flex items-center gap-3 px-4 pt-3 pb-1.5 border-b border-border/50">
           <div className="flex-1 min-w-0" />
-          <div className="flex gap-1.5">
+          <div className="flex gap-1">
             {dayLabels.map((lbl, i) => (
-              <div key={i} className="w-7 text-center text-[10px] text-muted-foreground font-medium">{lbl}</div>
+              <div key={i} className="w-6 text-center text-[10px] text-muted-foreground/60 font-medium">{lbl}</div>
             ))}
           </div>
         </div>
-        {/* Heatmap rows */}
-        <div className="space-y-2">
-          {habitStats.map((h: any) => {
-            const todayComplete = completedSet.has(`${h.id}:${today}`);
-            return (
-              <div key={h.id} className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${todayComplete ? 'text-primary' : 'text-foreground'}`}>{h.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{h.pct7}% this week{h.streak > 1 ? ` · ${h.streak}-day streak` : ''}</p>
-                </div>
-                <div className="flex gap-1.5 shrink-0">
-                  {last7.map(d => {
-                    const done = completedSet.has(`${h.id}:${d}`);
-                    const isToday = d === today;
-                    return (
-                      <div
-                        key={d}
-                        title={d}
-                        className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
-                          done
-                            ? 'bg-primary'
-                            : isToday
-                            ? 'bg-muted border-2 border-primary/40'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        {done && <Check size={12} className="text-primary-foreground" />}
-                      </div>
-                    );
-                  })}
-                </div>
+        {/* Habit rows */}
+        {habitStats.map((h: any, idx: number) => {
+          const todayComplete = completedSet.has(`${h.id}:${today}`);
+          return (
+            <div
+              key={h.id}
+              className={`flex items-center gap-3 px-4 py-3 ${
+                idx > 0 ? 'border-t border-border/50' : ''
+              }`}
+            >
+              {/* Status dot */}
+              <div className={`w-2 h-2 rounded-full shrink-0 ${
+                todayComplete ? 'bg-primary' : 'bg-muted-foreground/30'
+              }`} />
+              {/* Name + streak */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{h.name}</p>
+                {h.streak > 1 && (
+                  <p className="text-[10px] text-primary/80">{h.streak}-day streak</p>
+                )}
               </div>
-            );
-          })}
-        </div>
+              {/* 7-day cells */}
+              <div className="flex gap-1 shrink-0">
+                {last7.map(d => {
+                  const done = completedSet.has(`${h.id}:${d}`);
+                  const isToday = d === today;
+                  return (
+                    <div
+                      key={d}
+                      className={`w-6 h-6 rounded ${
+                        done
+                          ? 'bg-primary'
+                          : isToday
+                          ? 'bg-muted ring-1 ring-primary/30'
+                          : 'bg-muted'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </Card>
     </div>
   );

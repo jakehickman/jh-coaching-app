@@ -207,3 +207,9 @@
 - [x] Overview: replace meal adherence % with off-plan meals count (last 7 days)
 - [x] Daily Log: remove steps progress bar, just show the number input
 - [x] Settings tab: removed from client nav (was an unimplemented placeholder)
+
+## Overview Card Improvements (Round 2)
+- [x] Weight card: restore % change vs prev 7 days sub-text
+- [x] Off-plan meals card: remove sub-text entirely
+- [x] Steps card: rename to "Avg Daily Steps" and show 7-day average as value
+- [x] Habits card: redesign to be non-editable, cleaner layout
