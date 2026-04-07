@@ -373,7 +373,7 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
   execPortionEstimate: mysqlEnum("execPortionEstimate", ["never","1_2_times","3_5_times","6_plus_times"]),
   execUntrackedExtras: mysqlEnum("execUntrackedExtras", ["never","1_2_times","3_5_times","6_plus_times"]),
   execChangedFoods: mysqlEnum("execChangedFoods", ["never","1_2_times","3_5_times","6_plus_times"]),
-  execUnloggedItems: mysqlEnum("execUnloggedItems", ["never","1_2_times","3_5_times","6_plus_times"]),
+
   // Section 2: Adherence Barrier
   adherenceBarrier: mysqlEnum("adherenceBarrier", [
     "no_issues","hunger","cravings","social_events",

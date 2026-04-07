@@ -435,7 +435,7 @@ export const appRouter = router({
         execPortionEstimate: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
         execUntrackedExtras: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
         execChangedFoods: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
-        execUnloggedItems: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
+
         // Section 2: Adherence Barrier
         adherenceBarrier: z.enum(["no_issues","hunger","cravings","social_events","busy_time","poor_planning","low_motivation","travel_disruption","other"]).optional(),
         barrierExplain: z.string().max(500).optional(),

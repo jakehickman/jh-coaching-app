@@ -2282,7 +2282,7 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
           </div>
 
           {/* Execution Accuracy */}
-          {(ci.execPortionEstimate || ci.execUntrackedExtras || ci.execChangedFoods || ci.execUnloggedItems) && (
+          {(ci.execPortionEstimate || ci.execUntrackedExtras || ci.execChangedFoods) && (
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Execution Accuracy</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
@@ -2290,7 +2290,6 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
                   { label: 'Estimated portions', val: ci.execPortionEstimate },
                   { label: 'Untracked extras', val: ci.execUntrackedExtras },
                   { label: 'Changed foods', val: ci.execChangedFoods },
-                  { label: 'Unlogged items', val: ci.execUnloggedItems },
                 ].map(row => (
                   <div key={row.label} className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">{row.label}</span>

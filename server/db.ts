@@ -843,7 +843,7 @@ export async function submitCheckIn(data: {
   execPortionEstimate?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
   execUntrackedExtras?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
   execChangedFoods?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
-  execUnloggedItems?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
+
   // Section 2: Adherence Barrier
   adherenceBarrier?: "no_issues" | "hunger" | "cravings" | "social_events" | "busy_time" | "poor_planning" | "low_motivation" | "travel_disruption" | "other";
   barrierExplain?: string;

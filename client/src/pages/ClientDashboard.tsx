@@ -1949,7 +1949,7 @@ function CheckInsTab() {
     execPortionEstimate: '' as FreqVal,
     execUntrackedExtras: '' as FreqVal,
     execChangedFoods: '' as FreqVal,
-    execUnloggedItems: '' as FreqVal,
+
     adherenceBarrier: '' as BarrierVal,
     barrierExplain: '',
     focusNextWeek: '',
@@ -1963,7 +1963,7 @@ function CheckInsTab() {
         execPortionEstimate: (existingCheckIn.execPortionEstimate ?? '') as FreqVal,
         execUntrackedExtras: (existingCheckIn.execUntrackedExtras ?? '') as FreqVal,
         execChangedFoods: (existingCheckIn.execChangedFoods ?? '') as FreqVal,
-        execUnloggedItems: (existingCheckIn.execUnloggedItems ?? '') as FreqVal,
+
         adherenceBarrier: (existingCheckIn.adherenceBarrier ?? '') as BarrierVal,
         barrierExplain: existingCheckIn.barrierExplain ?? '',
         focusNextWeek: existingCheckIn.focusNextWeek ?? '',
@@ -1981,7 +1981,7 @@ function CheckInsTab() {
   });
 
   const handleSubmit = () => {
-    const execFields = [form.execPortionEstimate, form.execUntrackedExtras, form.execChangedFoods, form.execUnloggedItems];
+    const execFields = [form.execPortionEstimate, form.execUntrackedExtras, form.execChangedFoods];
     if (execFields.some(f => !f)) { toast.error('Please answer all execution accuracy questions.'); return; }
     if (!form.adherenceBarrier) { toast.error('Please select your main adherence barrier.'); return; }
     submitMutation.mutate({
@@ -1989,7 +1989,7 @@ function CheckInsTab() {
       execPortionEstimate: form.execPortionEstimate as any,
       execUntrackedExtras: form.execUntrackedExtras as any,
       execChangedFoods: form.execChangedFoods as any,
-      execUnloggedItems: form.execUnloggedItems as any,
+
       adherenceBarrier: form.adherenceBarrier as any,
       barrierExplain: form.barrierExplain || undefined,
       focusNextWeek: form.focusNextWeek || undefined,
@@ -2106,10 +2106,7 @@ function CheckInsTab() {
             label="How often did you change foods from your plan?"
             field="execChangedFoods"
           />
-          <FreqQuestion
-            label="How often did you consume something without logging it?"
-            field="execUnloggedItems"
-          />
+
         </Card>
 
         {/* Section 2: Adherence Barrier */}
