@@ -199,3 +199,11 @@
 - [x] Fix: habit streak breaks at today if today not yet completed (should start from last completed day)
 - [x] Fix: "04/01 (this wk)" week label wraps in habit heatmap — shorten to "This week"
 - [x] Fix: habit 28-day % shows 100% despite missed days (denominator includes today even if not completed — was actually caused by assignedAt being today in seed data)
+
+## Client Dashboard Fixes
+- [x] Overview: remove prev-7d comparison deltas from all metric cards
+- [x] Overview: replace habit dots with a 7-day heatmap grid
+- [x] Overview: simplify steps card — just show step goal, remove "N/7 days hit goal" text
+- [x] Overview: replace meal adherence % with off-plan meals count (last 7 days)
+- [x] Daily Log: remove steps progress bar, just show the number input
+- [x] Settings tab: removed from client nav (was an unimplemented placeholder)

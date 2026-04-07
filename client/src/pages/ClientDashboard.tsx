@@ -330,14 +330,14 @@ function OverviewTab() {
       <div>
         <SectionLabel>Weekly Summary</SectionLabel>
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? "+" : ""}${weightChangePct}% vs prev 7 days` : undefined} />
+          <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={adherenceSub} />
-          <MetricCard label="Meal Adherence" value={`${mealAdherence}%`} sub={mealAdherenceSub} />
+          <MetricCard label="Off-Plan Meals (7d)" value={offPlanTotal7.toString()} sub={offPlanTotal7 === 0 ? 'All on-plan' : `${curOnPlan}/7 on-plan days`} />
           {stepGoal ? (
             <MetricCard
               label="Daily Steps"
               value={avgSteps7 != null ? avgSteps7.toLocaleString() : "—"}
-              sub={stepsGoalDays != null ? `${stepsGoalDays}/7 days hit goal (${stepGoal.toLocaleString()})` : `Goal: ${stepGoal.toLocaleString()}`}
+              sub={`Goal: ${stepGoal.toLocaleString()}`}
             />
           ) : (
             <MetricCard label="Goal Weight" value={profile?.goalWeight ? `${profile.goalWeight} kg` : "—"} sub={profile?.startWeight ? `Started: ${profile.startWeight} kg` : undefined} />
@@ -442,33 +442,60 @@ function HabitsSummary() {
 
   const todayDone = habits.filter((h: any) => completedSet.has(`${h.id}:${today}`)).length;
 
+  // Day-of-week labels for the heatmap header
+  const dayLabels = last7.map(d => {
+    const dt = new Date(d + 'T12:00:00');
+    return dt.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1);
+  });
+
   return (
     <div>
       <SectionLabel>Habits — Today {todayDone}/{habits.length}</SectionLabel>
-      <Card className="space-y-0 p-0 overflow-hidden">
-        {habitStats.map((h: any, i: number) => {
-          const todayComplete = completedSet.has(`${h.id}:${today}`);
-          return (
-            <div key={h.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}` }>
-              {todayComplete
-                ? <CheckSquare size={18} className="text-primary shrink-0" />
-                : <Square size={18} className="text-muted-foreground shrink-0" />
-              }
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{h.name}</p>
-                <p className="text-xs text-muted-foreground">{h.pct7}% last 7 days · {h.streak > 0 ? `${h.streak}-day streak` : "No streak"}</p>
+      <Card className="p-4">
+        {/* Heatmap header: day labels */}
+        <div className="flex items-center mb-2">
+          <div className="flex-1 min-w-0" />
+          <div className="flex gap-1.5">
+            {dayLabels.map((lbl, i) => (
+              <div key={i} className="w-7 text-center text-[10px] text-muted-foreground font-medium">{lbl}</div>
+            ))}
+          </div>
+        </div>
+        {/* Heatmap rows */}
+        <div className="space-y-2">
+          {habitStats.map((h: any) => {
+            const todayComplete = completedSet.has(`${h.id}:${today}`);
+            return (
+              <div key={h.id} className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium truncate ${todayComplete ? 'text-primary' : 'text-foreground'}`}>{h.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{h.pct7}% this week{h.streak > 1 ? ` · ${h.streak}-day streak` : ''}</p>
+                </div>
+                <div className="flex gap-1.5 shrink-0">
+                  {last7.map(d => {
+                    const done = completedSet.has(`${h.id}:${d}`);
+                    const isToday = d === today;
+                    return (
+                      <div
+                        key={d}
+                        title={d}
+                        className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
+                          done
+                            ? 'bg-primary'
+                            : isToday
+                            ? 'bg-muted border-2 border-primary/40'
+                            : 'bg-muted'
+                        }`}
+                      >
+                        {done && <Check size={12} className="text-primary-foreground" />}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              {/* 7-day mini dots */}
-              <div className="flex gap-0.5 shrink-0">
-                {last7.map(d => (
-                  <div key={d} className={`w-2.5 h-2.5 rounded-full ${
-                    completedSet.has(`${h.id}:${d}`) ? "bg-primary" : "bg-muted"
-                  }`} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </Card>
     </div>
   );
@@ -674,21 +701,6 @@ function DailyLogTab() {
                 )}
               </div>
               <input type="number" value={form.stepsCount} onChange={f("stepsCount")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-              {(profile as any)?.stepGoal && form.stepsCount && (
-                <div className="mt-1.5">
-                  <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        parseInt(form.stepsCount) >= (profile as any).stepGoal ? 'bg-green-500' : 'bg-primary'
-                      }`}
-                      style={{ width: `${Math.min(100, Math.round((parseInt(form.stepsCount) / (profile as any).stepGoal) * 100))}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {Math.round((parseInt(form.stepsCount) / (profile as any).stepGoal) * 100)}% of goal
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </Card>
