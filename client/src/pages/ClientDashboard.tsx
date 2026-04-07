@@ -162,15 +162,15 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
             </button>
             {isExpanded && log && (
               <div className="px-4 pb-4 bg-muted/20 border-t border-border">
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2 pt-3">
-                  {log.weight != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Weight</p><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
-                  {log.stepsCount != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>}
-                  {log.sleepHours != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Hours</p><p className="text-sm font-semibold text-foreground">{log.sleepHours} hrs</p></div>}
-                  {log.sleepQuality != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
-                  {log.hungerLevel != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
-                  {log.caffeineServings != null && <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Caffeine</p><p className="text-sm font-semibold text-foreground">{log.caffeineServings} srv</p></div>}
-                  <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p><p className="text-sm font-semibold text-foreground">{sessionLabel}</p></div>
-                  <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p><p className="text-sm font-semibold text-foreground">{(log.offPlanMeals ?? 0) > 0 ? `${log.offPlanMeals} off-plan` : 'On Plan'}</p></div>
+                <div className="flex flex-wrap gap-x-4 gap-y-2 pt-3">
+                  {log.weight != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Weight</p><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
+                  <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p><p className="text-sm font-semibold text-foreground">{sessionLabel}</p></div>
+                  <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p><p className="text-sm font-semibold text-foreground">{(log.offPlanMeals ?? 0) > 0 ? `${log.offPlanMeals} off-plan` : 'On Plan'}</p></div>
+                  {log.stepsCount != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>}
+                  {log.sleepHours != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep</p><p className="text-sm font-semibold text-foreground">{log.sleepHours} hrs</p></div>}
+                  {log.sleepQuality != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
+                  {log.hungerLevel != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
+                  {log.caffeineServings != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Caffeine</p><p className="text-sm font-semibold text-foreground">{log.caffeineServings} srv</p></div>}
                 </div>
                 {log.notes && (
                   <div className="mt-3 pt-3 border-t border-border">
@@ -331,7 +331,7 @@ function OverviewTab() {
         <SectionLabel>Weekly Summary</SectionLabel>
         <div className="grid grid-cols-2 gap-3">
           <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
-          <MetricCard label="Training Adherence" value={`${adherence}%`} />
+          <MetricCard label="Training Adherence" value={`${adherence}%`} sub={schedule.length > 0 ? `${trainedInRotation}/${prescribedDays} sessions completed` : `${trainedInRotation} sessions completed`} />
           <MetricCard label="Off-Plan Meals (7d)" value={offPlanTotal7.toString()} />
           {stepGoal ? (
             <MetricCard
