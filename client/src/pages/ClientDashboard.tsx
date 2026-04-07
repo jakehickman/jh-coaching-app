@@ -328,11 +328,11 @@ function OverviewTab() {
   return (
     <div className="space-y-6">
       <div>
-        <SectionLabel>Weekly Summary</SectionLabel>
+        <SectionLabel>Weekly Summary (last 7 days)</SectionLabel>
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
+          <MetricCard label="Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={schedule.length > 0 ? `${trainedInRotation}/${prescribedDays} sessions completed` : `${trainedInRotation} sessions completed`} />
-          <MetricCard label="Off-Plan Meals (7d)" value={offPlanTotal7.toString()} />
+          <MetricCard label="Off-Plan Meals" value={offPlanTotal7.toString()} />
           {stepGoal ? (
             <MetricCard
               label="Avg Daily Steps"
