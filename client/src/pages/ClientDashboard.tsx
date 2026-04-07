@@ -2065,9 +2065,9 @@ function CheckInsTab() {
       <Card className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Each Week, Submit:</p>
         {[
-          { icon: '🎥', title: 'Video or voice note', desc: 'A short review of your week.' },
-          { icon: '📸', title: 'Progress photos & form clips', desc: 'Front, side, back. Include form clips for feedback.' },
-          { icon: '📋', title: 'This check-in form', desc: 'I will review your check-in and reply with a video response within 24 hours.' },
+          { icon: '🎥', title: 'Video or voice note', desc: 'Send me a 2–3 min video or voice note on WhatsApp. Cover: how your week went, training and nutrition highlights, anything you struggled with, and one thing you want to improve.' },
+          { icon: '📸', title: 'Progress photos & form clips', desc: 'Send progress photos (front, side, back) and any form clips to me on WhatsApp. Same lighting and position each week for the best comparison.' },
+          { icon: '📋', title: 'This check-in form', desc: 'Covers meal plan accuracy and adherence.' },
         ].map(item => (
           <div key={item.title} className="flex gap-3">
             <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
@@ -2093,10 +2093,7 @@ function CheckInsTab() {
 
         {/* Section 1: Execution Accuracy */}
         <Card className="space-y-5 mb-4">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Meal Plan Execution Accuracy</p>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">This is about how closely you followed your meal plan as written. Estimate as best you can — it doesn't need to be exact. Exclude fully off-plan meals. Seasonings and low-calorie condiments are fine and don't need to be counted.</p>
-          </div>
+
           <FreqQuestion
             label="How often did you estimate portions instead of following the exact quantities in your plan?"
             field="execPortionEstimate"
@@ -2110,7 +2107,7 @@ function CheckInsTab() {
             field="execChangedFoods"
           />
           <FreqQuestion
-            label="How often did you miss or skip parts of your planned meals?"
+            label="How often did you skip or leave out part of a planned meal? (not including fully off-plan meals)"
             field="execMissedMeals"
           />
         </Card>
@@ -2151,7 +2148,7 @@ function CheckInsTab() {
 
         {/* Section 3: Focus for Next Week */}
         <Card className="space-y-3 mb-4">
-          <p className="text-sm font-semibold text-foreground">What will you improve or focus on this week?</p>
+          <p className="text-sm font-semibold text-foreground">What's one thing you want to improve or focus on this week?</p>
           <input
             type="text"
             value={form.focusNextWeek}
