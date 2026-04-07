@@ -3183,13 +3183,13 @@ function HabitsSection() {
     <div className="xl:grid xl:grid-cols-[1fr_360px] xl:gap-6 xl:items-start">
       {/* Left: habits list */}
       <div className="space-y-4">
-        <p className="text-xs text-muted-foreground">Click <strong>New Habit</strong> to create a habit, or <strong>Assign</strong> on any habit to manage client assignments.</p>
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{habits.length} habit{habits.length !== 1 ? "s" : ""} created</p>
           <Button size="sm" onClick={() => { setShowForm(true); setEditHabit(null); resetForm(); }}>
             <Plus size={14} className="mr-1" /> New Habit
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground">Click <strong>New Habit</strong> to create a habit, or <strong>Assign</strong> on any habit to manage client assignments.</p>
 
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading habits...</p>
