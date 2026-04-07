@@ -937,21 +937,9 @@ export async function getCoachSettings() {
 }
 
 export async function upsertCoachSettings(data: {
-  checkInSectionHeader?: string | null;
   checkInVideoDesc?: string | null;
   checkInPhotosDesc?: string | null;
   checkInFormDesc?: string | null;
-  checkInExpectationLine?: string | null;
-  checkInExecSectionTitle?: string | null;
-  checkInExecHelper?: string | null;
-  checkInExecQ1?: string | null;
-  checkInExecQ2?: string | null;
-  checkInExecQ3?: string | null;
-  checkInExecQ4?: string | null;
-  checkInBarrierQuestion?: string | null;
-  checkInBarrierOptions?: string[] | null;
-  checkInBarrierExplainLabel?: string | null;
-  checkInFocusQuestion?: string | null;
 }) {
   const db = await getDb();
   if (!db) return;

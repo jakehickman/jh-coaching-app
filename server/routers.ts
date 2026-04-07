@@ -555,21 +555,9 @@ export const appRouter = router({
     get: publicProcedure.query(() => db.getCoachSettings()),
     upsert: adminProcedure
       .input(z.object({
-        checkInSectionHeader: z.string().nullable().optional(),
         checkInVideoDesc: z.string().nullable().optional(),
         checkInPhotosDesc: z.string().nullable().optional(),
         checkInFormDesc: z.string().nullable().optional(),
-        checkInExpectationLine: z.string().nullable().optional(),
-        checkInExecSectionTitle: z.string().nullable().optional(),
-        checkInExecHelper: z.string().nullable().optional(),
-        checkInExecQ1: z.string().nullable().optional(),
-        checkInExecQ2: z.string().nullable().optional(),
-        checkInExecQ3: z.string().nullable().optional(),
-        checkInExecQ4: z.string().nullable().optional(),
-        checkInBarrierQuestion: z.string().nullable().optional(),
-        checkInBarrierOptions: z.array(z.string()).nullable().optional(),
-        checkInBarrierExplainLabel: z.string().nullable().optional(),
-        checkInFocusQuestion: z.string().nullable().optional(),
       }))
       .mutation(({ input }) => db.upsertCoachSettings(input)),
   }),

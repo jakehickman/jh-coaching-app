@@ -1931,31 +1931,11 @@ function CheckInsTab() {
   const { data: coachSettings } = trpc.coachSettings.get.useQuery();
   const today = localToday();
 
-  const CI_D = {
-    sectionHeader: "Each Week, Submit:",
+  const CHECK_IN_DEFAULTS = {
     videoDesc: "Send me a 2\u20133 min video or voice note on WhatsApp. Cover: how your week went, training and nutrition highlights, anything you struggled with, and one thing you want to improve.",
     photosDesc: "Send progress photos (front, side, back) and any form clips to me on WhatsApp. Same lighting and position each week for the best comparison.",
     formDesc: "Covers meal plan accuracy and adherence.",
-    expectationLine: "I will review your check-in and reply with a video response within 24 hours.",
-    execQ1: "How often did you estimate portions instead of following the exact quantities in your plan?",
-    execQ2: "How often did you add extras not included in your plan? (exclude seasonings and low-calorie condiments)",
-    execQ3: "How often did you change meals, foods, or ingredients from your plan?",
-    execQ4: "How often did you skip or leave out part of a planned meal? (not including fully off-plan meals)",
-    barrierQuestion: "What was the main thing that made sticking to the meal plan difficult this week?",
-    barrierOptions: ["No issues", "Hunger", "Cravings", "Social events", "Busy / time constraints", "Poor planning", "Low motivation", "Travel / routine disruption", "Other"],
-    barrierExplainLabel: "Briefly explain (1\u20132 lines)",
-    focusQuestion: "What\u2019s one thing you want to improve or focus on this week?",
   };
-  // Resolved values from coach settings (with fallback to defaults)
-  const ciSectionHeader = coachSettings?.checkInSectionHeader ?? CI_D.sectionHeader;
-  const ciExpectationLine = coachSettings?.checkInExpectationLine ?? CI_D.expectationLine;
-  const ciExecQ1 = coachSettings?.checkInExecQ1 ?? CI_D.execQ1;
-  const ciExecQ2 = coachSettings?.checkInExecQ2 ?? CI_D.execQ2;
-  const ciExecQ3 = coachSettings?.checkInExecQ3 ?? CI_D.execQ3;
-  const ciExecQ4 = coachSettings?.checkInExecQ4 ?? CI_D.execQ4;
-  const ciBarrierQuestion = coachSettings?.checkInBarrierQuestion ?? CI_D.barrierQuestion;
-  const ciBarrierExplainLabel = coachSettings?.checkInBarrierExplainLabel ?? CI_D.barrierExplainLabel;
-  const ciFocusQuestion = coachSettings?.checkInFocusQuestion ?? CI_D.focusQuestion;
 
   // Compute Monday of the current week
   const getMondayOfWeek = (dateStr: string) => {
@@ -2041,26 +2021,17 @@ function CheckInsTab() {
     { value: '6_plus_times', label: '6+ times' },
   ];
 
-  // Barrier options: use coach-customised list if set, otherwise fall back to defaults
-  // We map custom labels to the fixed BarrierVal keys positionally
-  const DEFAULT_BARRIER_VALUES: BarrierVal[] = ['no_issues','hunger','cravings','social_events','busy_time','poor_planning','low_motivation','travel_disruption','other'];
-  const rawBarrierOpts = coachSettings?.checkInBarrierOptions;
-  const BARRIER_OPTIONS: { value: BarrierVal; label: string }[] = rawBarrierOpts && rawBarrierOpts.length > 0
-    ? rawBarrierOpts.filter(Boolean).map((label, i) => ({
-        value: DEFAULT_BARRIER_VALUES[i] ?? ('other' as BarrierVal),
-        label,
-      }))
-    : [
-        { value: 'no_issues', label: 'No issues' },
-        { value: 'hunger', label: 'Hunger' },
-        { value: 'cravings', label: 'Cravings' },
-        { value: 'social_events', label: 'Social events' },
-        { value: 'busy_time', label: 'Busy / time constraints' },
-        { value: 'poor_planning', label: 'Poor planning' },
-        { value: 'low_motivation', label: 'Low motivation' },
-        { value: 'travel_disruption', label: 'Travel / routine disruption' },
-        { value: 'other', label: 'Other' },
-      ];
+  const BARRIER_OPTIONS: { value: BarrierVal; label: string }[] = [
+    { value: 'no_issues', label: 'No issues' },
+    { value: 'hunger', label: 'Hunger' },
+    { value: 'cravings', label: 'Cravings' },
+    { value: 'social_events', label: 'Social events' },
+    { value: 'busy_time', label: 'Busy / time constraints' },
+    { value: 'poor_planning', label: 'Poor planning' },
+    { value: 'low_motivation', label: 'Low motivation' },
+    { value: 'travel_disruption', label: 'Travel / routine disruption' },
+    { value: 'other', label: 'Other' },
+  ];
 
   const FreqQuestion = ({ label, field }: { label: string; field: keyof typeof blankForm }) => (
     <div>
@@ -2092,18 +2063,18 @@ function CheckInsTab() {
           <span className="text-primary text-base">📅</span>
           <div>
             <p className="text-sm font-semibold text-foreground">Check-in Day: {dayLabel}</p>
-            <p className="text-xs text-muted-foreground">Please check-in with me every {dayLabel}</p>
+            <p className="text-xs text-muted-foreground">Your coach expects your check-in every {dayLabel}</p>
           </div>
         </div>
       )}
 
       {/* What to Submit */}
       <Card className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{ciSectionHeader}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Each Week, Submit:</p>
         {[
-          { icon: '🎥', title: 'Video or voice note', desc: coachSettings?.checkInVideoDesc ?? CI_D.videoDesc },
-          { icon: '📸', title: 'Progress photos & form clips', desc: coachSettings?.checkInPhotosDesc ?? CI_D.photosDesc },
-          { icon: '📋', title: 'This check-in form', desc: coachSettings?.checkInFormDesc ?? CI_D.formDesc },
+          { icon: '🎥', title: 'Video or voice note', desc: coachSettings?.checkInVideoDesc ?? CHECK_IN_DEFAULTS.videoDesc },
+          { icon: '📸', title: 'Progress photos & form clips', desc: coachSettings?.checkInPhotosDesc ?? CHECK_IN_DEFAULTS.photosDesc },
+          { icon: '📋', title: 'This check-in form', desc: coachSettings?.checkInFormDesc ?? CHECK_IN_DEFAULTS.formDesc },
         ].map(item => (
           <div key={item.title} className="flex gap-3">
             <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
@@ -2114,11 +2085,6 @@ function CheckInsTab() {
           </div>
         ))}
       </Card>
-
-      {/* Expectation line */}
-      {ciExpectationLine && (
-        <p className="text-xs text-muted-foreground italic px-1">{ciExpectationLine}</p>
-      )}
 
       {/* Coach Reply (if exists) */}
       {submitted && existingCheckIn?.coachReply && (
@@ -2135,21 +2101,27 @@ function CheckInsTab() {
         {/* Section 1: Execution Accuracy */}
         <Card className="space-y-5 mb-4">
 
-          {coachSettings?.checkInExecSectionTitle && (
-            <p className="text-sm font-semibold text-foreground">{coachSettings.checkInExecSectionTitle}</p>
-          )}
-          {coachSettings?.checkInExecHelper && (
-            <p className="text-xs text-muted-foreground italic">{coachSettings.checkInExecHelper}</p>
-          )}
-          <FreqQuestion label={ciExecQ1} field="execPortionEstimate" />
-          <FreqQuestion label={ciExecQ2} field="execUntrackedExtras" />
-          <FreqQuestion label={ciExecQ3} field="execChangedFoods" />
-          <FreqQuestion label={ciExecQ4} field="execMissedMeals" />
+          <FreqQuestion
+            label="How often did you estimate portions instead of following the exact quantities in your plan?"
+            field="execPortionEstimate"
+          />
+          <FreqQuestion
+            label="How often did you add extras not included in your plan? (exclude seasonings and low-calorie condiments)"
+            field="execUntrackedExtras"
+          />
+          <FreqQuestion
+            label="How often did you change meals, foods, or ingredients from your plan?"
+            field="execChangedFoods"
+          />
+          <FreqQuestion
+            label="How often did you skip or leave out part of a planned meal? (not including fully off-plan meals)"
+            field="execMissedMeals"
+          />
         </Card>
 
         {/* Section 2: Adherence Barrier */}
         <Card className="space-y-4 mb-4">
-          <p className="text-sm font-semibold text-foreground">{ciBarrierQuestion}</p>
+          <p className="text-sm font-semibold text-foreground">What was the main thing that made sticking to the meal plan difficult this week?</p>
           <div className="grid grid-cols-2 gap-2">
             {BARRIER_OPTIONS.map(opt => (
               <button
@@ -2169,7 +2141,8 @@ function CheckInsTab() {
           {/* Conditional explain field */}
           {form.adherenceBarrier && form.adherenceBarrier !== 'no_issues' && (
             <div>
-              <p className="text-sm text-foreground mb-2">{ciBarrierExplainLabel}</p>          <textarea
+              <p className="text-sm text-foreground mb-2">Briefly explain <span className="text-muted-foreground">(1–2 lines)</span></p>
+              <textarea
                 value={form.barrierExplain}
                 onChange={e => setForm(p => ({ ...p, barrierExplain: e.target.value }))}
                 rows={2}
@@ -2182,7 +2155,7 @@ function CheckInsTab() {
 
         {/* Section 3: Focus for Next Week */}
         <Card className="space-y-3 mb-4">
-          <p className="text-sm font-semibold text-foreground">{ciFocusQuestion}</p>
+          <p className="text-sm font-semibold text-foreground">What's one thing you want to improve or focus on this week?</p>
           <input
             type="text"
             value={form.focusNextWeek}
