@@ -375,10 +375,6 @@ function OverviewTab() {
 
       <HabitsSummary />
 
-      <div>
-        <SectionLabel>Recent Logs</SectionLabel>
-        <RecentLogsPanel logs={allLogs} startDate={profile?.startDate ? toLocalDateStr(profile.startDate) : undefined} />
-      </div>
     </div>
   );
 }
