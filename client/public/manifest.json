@@ -2,7 +2,7 @@
   "name": "JH Coaching",
   "short_name": "JH Coaching",
   "description": "JH Coaching Client Dashboard",
-  "start_url": "/dashboard/overview",
+  "start_url": "/app/dashboard/overview",
   "display": "standalone",
   "background_color": "#09090b",
   "theme_color": "#09090b",
