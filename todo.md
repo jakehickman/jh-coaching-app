@@ -196,3 +196,6 @@
 - [x] Remove dedicated measurements card from Client Progress overview
 - [x] Fix habit completion rate calculation (shows 100% when days are missing)
 - [x] Limit body composition history to last 4 weeks with "View more" option
+- [x] Fix: habit streak breaks at today if today not yet completed (should start from last completed day)
+- [x] Fix: "04/01 (this wk)" week label wraps in habit heatmap — shorten to "This week"
+- [x] Fix: habit 28-day % shows 100% despite missed days (denominator includes today even if not completed — was actually caused by assignedAt being today in seed data)

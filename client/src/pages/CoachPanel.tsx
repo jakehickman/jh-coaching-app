@@ -2996,12 +2996,20 @@ function CoachHabitsPanel({ clientId }: { clientId: number }) {
     const done7 = eligible7.filter(d => completedSet.has(`${h.id}:${d}`)).length;
     const pct28 = eligible28.length > 0 ? Math.round((done28 / eligible28.length) * 100) : 0;
     const pct7 = eligible7.length > 0 ? Math.round((done7 / eligible7.length) * 100) : 0;
-    // Streak (only from assignedDate)
+    // Streak: walk backwards from today, skipping today if not yet completed
+    // (a client who completed yesterday but not yet today should not lose their streak)
     let streak = 0;
+    let startedCounting = false;
     for (let i = 0; i < 28; i++) {
       const d = last28[last28.length - 1 - i];
       if (!d || d < assignedDateStr) break;
-      if (completedSet.has(`${h.id}:${d}`)) streak++;
+      const done = completedSet.has(`${h.id}:${d}`);
+      if (!startedCounting) {
+        // Skip today if not completed — don't break the streak for an incomplete day yet
+        if (!done && i === 0) continue;
+        startedCounting = true;
+      }
+      if (done) streak++;
       else break;
     }
     return { ...h, pct28, pct7, streak, done28, done7 };
@@ -3011,7 +3019,7 @@ function CoachHabitsPanel({ clientId }: { clientId: number }) {
   const weeks = [last28.slice(0, 7), last28.slice(7, 14), last28.slice(14, 21), last28.slice(21, 28)];
   const weekLabels = weeks.map((w, i) => {
     const start = w[0].slice(5).replace('-', '/');
-    return i === 3 ? `${start} (this wk)` : start;
+    return i === 3 ? 'This week' : start;
   });
 
   return (
