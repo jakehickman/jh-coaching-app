@@ -2227,10 +2227,6 @@ export default function ClientDashboard() {
 
   return (
     <DashboardShell mode="client">
-      <div className="mb-6">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Client Dashboard</p>
-        <h1 className="text-xl font-bold text-foreground mt-0.5">{TAB_TITLES[tab] ?? "Dashboard"}</h1>
-      </div>
       {TAB_MAP[tab] ?? <OverviewTab />}
     </DashboardShell>
   );
