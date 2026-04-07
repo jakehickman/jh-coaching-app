@@ -346,7 +346,7 @@ function ProgressHistoryTable({
                   </div>
                 </div>
                 <div className="bg-card px-3 py-2.5">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist Circumference</p>
                   <div className="flex items-center gap-1.5">
                     <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
                       {row.waist != null ? `${row.waist} cm` : <span className="text-muted-foreground text-sm">—</span>}
@@ -369,7 +369,7 @@ function ProgressHistoryTable({
                   </div>
                 </div>
                 <div className="bg-card px-3 py-2.5">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Skinfold</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Skinfold Thickness</p>
                   <div className="flex items-center gap-1.5">
                     <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
                       {row.skinfold != null ? `${row.skinfold} mm` : <span className="text-muted-foreground text-sm">—</span>}
@@ -2542,7 +2542,7 @@ function ProgressSection() {
       <div className="bg-secondary rounded-xl p-3">
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
         <p className="text-xl font-bold text-foreground">{value}</p>
-        {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+
       </div>
     );
   }
