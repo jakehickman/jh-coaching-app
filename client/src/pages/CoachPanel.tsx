@@ -2564,8 +2564,7 @@ function ProgressSection() {
                     value={curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—"}
                     sub={(() => {
                       const goal = (clientProfile as any)?.stepGoal as number | null;
-                      const goalDays = goal ? cur7.filter(l => (l.stepsCount ?? 0) >= goal).length : null;
-                      return goal ? `Goal: ${goal.toLocaleString()} steps · ${goalDays ?? 0}/7 days hit` : undefined;
+                      return goal ? `Goal: ${goal.toLocaleString()} steps` : undefined;
                     })()}
                   />
                 )}
