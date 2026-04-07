@@ -2092,7 +2092,7 @@ function CheckInsTab() {
           <span className="text-primary text-base">📅</span>
           <div>
             <p className="text-sm font-semibold text-foreground">Check-in Day: {dayLabel}</p>
-            <p className="text-xs text-muted-foreground">Your coach expects your check-in every {dayLabel}</p>
+            <p className="text-xs text-muted-foreground">Please check-in with me every {dayLabel}</p>
           </div>
         </div>
       )}
