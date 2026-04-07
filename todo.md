@@ -154,4 +154,22 @@
 - [x] Fix: habit completion rate not updating in client Overview HabitsSummary and coach CoachHabitsPanel (normDate bug)
 - [x] Fix: habit completion rate denominator should only count days since assignment date (not fixed 7/28 days)
 - [x] Remove start date field from habit create/edit form in coach Habits tab
-- [ ] Fix: habit completion rate 50% instead of 100% when assigned and completed same day (assignedAt timezone mismatch)
+- [x] Fix: habit completion rate 50% instead of 100% when assigned and completed same day (assignedAt timezone mismatch)
+- [x] Weekly Check-in: add checkInDay field to client_profiles schema
+- [x] Weekly Check-in: add check_in_submissions table to schema
+- [x] Weekly Check-in: coach can assign check-in day per client in Client Profile tab
+- [x] Weekly Check-in: client Check-ins tab with instructions, form, and submission history
+- [x] Weekly Check-in: check-in form (diet adherence, guided prompts, text responses)
+- [x] Weekly Check-in: coach view of submitted check-ins in Client Progress tab
+- [ ] Weekly Check-in: push notification on assigned check-in day (deferred — requires native push setup)
+- [x] Step Goal: add stepGoal field to client_profiles schema
+- [x] Step Goal: coach can assign daily step goal per client
+- [x] Step Goal: step count field in client Daily Log
+- [x] Step Goal: step goal display in client Daily Log (progress vs goal)
+- [x] Step Goal: step data visible in coach Client Progress view
+- [x] Off-Plan Meals: replace checkbox with numeric counter in Daily Log
+- [x] Off-Plan Meals: track daily total and rolling 7-day total
+- [x] Off-Plan Meals: 7-day rolling total visible in coach Client Progress view
+- [x] Off-Plan Meals: integrate with meal adherence % calculation
+- [x] Weekly Comparison Table: redesign as card-based mobile-first layout
+- [x] Weekly Comparison Table: clear trends, visual hierarchy, readable typography

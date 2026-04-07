@@ -34,6 +34,7 @@ interface NavItem {
 const clientNav: NavItem[] = [
   { href: "/dashboard/overview", label: "Dashboard", icon: <Home size={18} /> },
   { href: "/dashboard/daily-log", label: "Daily Log", icon: <ClipboardList size={18} /> },
+  { href: "/dashboard/check-ins", label: "Check-ins", icon: <Calendar size={18} /> },
   { href: "/dashboard/measurements", label: "Measurements", icon: <Ruler size={18} /> },
   { href: "/dashboard/meal-plan", label: "Meal Plan", icon: <Zap size={18} /> },
   { href: "/dashboard/shopping", label: "Shopping List", icon: <ShoppingCart size={18} /> },

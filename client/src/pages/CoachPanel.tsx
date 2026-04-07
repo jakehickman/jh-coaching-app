@@ -300,59 +300,62 @@ function ProgressHistoryTable({
   return (
     <div>
       <SectionLabel>Body Composition History</SectionLabel>
-
-      {/* Compact weekly summary table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr className="bg-muted/40 border-b border-border">
-                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Week</th>
-                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Weight</th>
-                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Change</th>
-                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Waist</th>
-                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Skinfold</th>
-                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Entries</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableRows.map((row, i) => {
-                const pctColor = row.pctChange == null ? "text-muted-foreground"
-                  : row.pctChange < 0 ? "text-green-400"
-                  : row.pctChange > 0 ? "text-red-400"
-                  : "text-muted-foreground";
-                const pctLabel = row.pctChange != null
-                  ? `${row.pctChange > 0 ? "+" : ""}${row.pctChange}%`
-                  : "—";
-                return (
-                  <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                    <td className="px-3 py-2.5 text-foreground font-medium whitespace-nowrap">{row.label}</td>
-                    <td className="px-3 py-2.5 text-center font-bold text-foreground border-l border-border">
-                      {row.avg != null ? `${row.avg} kg` : "—"}
-                    </td>
-                    <td className={`px-3 py-2.5 text-center font-semibold border-l border-border ${pctColor}`}>
-                      {row.pctChange != null && (
-                        row.pctChange < 0 ? <ArrowDown size={10} className="inline mr-0.5" /> :
-                        row.pctChange > 0 ? <ArrowUp size={10} className="inline mr-0.5" /> :
-                        <Minus size={10} className="inline mr-0.5" />
-                      )}
+      <div className="space-y-3">
+        {tableRows.map((row, i) => {
+          const isFirst = i === 0;
+          const pctDown = row.pctChange != null && row.pctChange < 0;
+          const pctUp = row.pctChange != null && row.pctChange > 0;
+          const pctColor = row.pctChange == null ? 'text-muted-foreground' : pctDown ? 'text-green-400' : pctUp ? 'text-red-400' : 'text-muted-foreground';
+          const pctBg = row.pctChange == null ? 'bg-secondary' : pctDown ? 'bg-green-500/15' : pctUp ? 'bg-red-500/15' : 'bg-secondary';
+          const pctLabel = row.pctChange != null ? `${row.pctChange > 0 ? '+' : ''}${row.pctChange}%` : null;
+          return (
+            <div
+              key={i}
+              className={`rounded-xl border transition-colors ${
+                isFirst ? 'border-primary/30 bg-primary/5' : 'border-border bg-card'
+              }`}
+            >
+              {/* Week header */}
+              <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                <div className="flex items-center gap-2">
+                  {isFirst && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold uppercase tracking-wide">Latest</span>}
+                  <p className={`text-sm font-semibold ${isFirst ? 'text-foreground' : 'text-muted-foreground'}`}>{row.label}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {pctLabel && (
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5 ${pctColor} ${pctBg}`}>
+                      {pctDown ? <ArrowDown size={10} /> : pctUp ? <ArrowUp size={10} /> : <Minus size={10} />}
                       {pctLabel}
-                    </td>
-                    <td className="px-3 py-2.5 text-center border-l border-border text-foreground">
-                      {row.waist != null ? `${row.waist} cm` : "—"}
-                    </td>
-                    <td className="px-3 py-2.5 text-center border-l border-border text-foreground">
-                      {row.skinfold != null ? `${row.skinfold} mm` : "—"}
-                    </td>
-                    <td className="px-3 py-2.5 text-center border-l border-border text-muted-foreground">
-                      {row.entries}/7
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </span>
+                  )}
+                  <span className="text-[10px] text-muted-foreground">{row.entries}/7 days</span>
+                </div>
+              </div>
+
+              {/* Metrics row */}
+              <div className="grid grid-cols-3 gap-px bg-border mx-4 mb-3 rounded-lg overflow-hidden">
+                <div className="bg-card px-3 py-2.5">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Avg Weight</p>
+                  <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
+                    {row.avg != null ? `${row.avg} kg` : <span className="text-muted-foreground text-sm">—</span>}
+                  </p>
+                </div>
+                <div className="bg-card px-3 py-2.5">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist</p>
+                  <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
+                    {row.waist != null ? `${row.waist} cm` : <span className="text-muted-foreground text-sm">—</span>}
+                  </p>
+                </div>
+                <div className="bg-card px-3 py-2.5">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Skinfold</p>
+                  <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
+                    {row.skinfold != null ? `${row.skinfold} mm` : <span className="text-muted-foreground text-sm">—</span>}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -370,7 +373,7 @@ type DailyLogRow = {
   stepsCount?: number | null;
   sleepQuality?: number | null;
   hungerLevel?: number | null;
-  offPlanMeal?: boolean | number | null;
+  offPlanMeals?: number | null;
   notes?: string | null;
 };
 
@@ -440,8 +443,8 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                     <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
                       trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>{sessionLabel}</span>
-                    {isOffPlan(log.offPlanMeal) && (
-                      <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">Off Plan Meal</span>
+                    {(log.offPlanMeals ?? 0) > 0 && (
+                      <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">{(log.offPlanMeals ?? 0) > 1 ? `${log.offPlanMeals} Off Plan Meals` : 'Off Plan Meal'}</span>
                     )}
                   </>
                 ) : (
@@ -488,7 +491,7 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                   </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p>
-                    <p className="text-sm font-semibold text-foreground">{isOffPlan(log.offPlanMeal) ? 'Off Plan' : 'On Plan'}</p>
+                    <p className="text-sm font-semibold text-foreground">{(log.offPlanMeals ?? 0) > 0 ? `${log.offPlanMeals} off-plan` : 'On Plan'}</p>
                   </div>
                 </div>
                 {log.notes && (
@@ -922,8 +925,17 @@ function ClientsSection() {
     }
   });
 
+  const updateClientConfig = trpc.clientConfig.update.useMutation({
+    onSuccess: () => {
+      toast.success("Config updated");
+      utils.profile.getById.invalidate({ userId: selectedId! });
+    }
+  });
+
   const [form, setForm] = useState({
-    startDate: "", goalWeight: "", startWeight: "", notes: ""
+    startDate: "", goalWeight: "", startWeight: "", notes: "",
+    checkInDay: "" as "" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
+    stepGoal: "",
   });
 
   useEffect(() => {
@@ -933,9 +945,11 @@ function ClientsSection() {
         goalWeight: profile.goalWeight?.toString() ?? "",
         startWeight: profile.startWeight?.toString() ?? "",
         notes: profile.notes ?? "",
+        checkInDay: ((profile as any).checkInDay ?? "") as any,
+        stepGoal: (profile as any).stepGoal?.toString() ?? "",
       });
     } else {
-      setForm({ startDate: "", goalWeight: "", startWeight: "", notes: "" });
+      setForm({ startDate: "", goalWeight: "", startWeight: "", notes: "", checkInDay: "", stepGoal: "" });
     }
   }, [profile, selectedId]);
 
@@ -1037,19 +1051,54 @@ function ClientsSection() {
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
               />
             </div>
-            <button
-              onClick={() => upsertProfile.mutate({
-                userId: selectedId,
-                startDate: form.startDate || undefined,
-                goalWeight: form.goalWeight ? parseFloat(form.goalWeight) : undefined,
-                startWeight: form.startWeight ? parseFloat(form.startWeight) : undefined,
-                notes: form.notes || null,
-              })}
-              disabled={upsertProfile.isPending}
-              className="w-full py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
-            >
-              {upsertProfile.isPending ? "Saving..." : "Save Profile"}
-            </button>
+            {/* Check-in Day + Step Goal */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Check-in Day</label>
+                <select
+                  value={form.checkInDay}
+                  onChange={e => setForm(p => ({ ...p, checkInDay: e.target.value as any }))}
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Not set</option>
+                  {['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => (
+                    <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Daily Step Goal</label>
+                <input
+                  type="number"
+                  value={form.stepGoal}
+                  onChange={e => setForm(p => ({ ...p, stepGoal: e.target.value }))}
+                  placeholder="e.g. 10000"
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  upsertProfile.mutate({
+                    userId: selectedId,
+                    startDate: form.startDate || undefined,
+                    goalWeight: form.goalWeight ? parseFloat(form.goalWeight) : undefined,
+                    startWeight: form.startWeight ? parseFloat(form.startWeight) : undefined,
+                    notes: form.notes || null,
+                  });
+                  updateClientConfig.mutate({
+                    userId: selectedId,
+                    checkInDay: form.checkInDay || null,
+                    stepGoal: form.stepGoal ? parseInt(form.stepGoal) : null,
+                  });
+                }}
+                disabled={upsertProfile.isPending || updateClientConfig.isPending}
+                className="flex-1 py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
+              >
+                {(upsertProfile.isPending || updateClientConfig.isPending) ? "Saving..." : "Save Profile"}
+              </button>
+            </div>
           </Card>
         </div>
       )}
@@ -2115,6 +2164,136 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
   );
 }
 
+// ─── Coach Check-ins Tab ─────────────────────────────────────────────────────
+function CoachCheckInsTab({ clientId }: { clientId: number }) {
+  const { data: checkIns = [], refetch } = trpc.checkIn.clientList.useQuery({ clientId });
+  const replyMutation = trpc.checkIn.reply.useMutation({
+    onSuccess: () => { toast.success('Reply saved'); refetch(); setReplyId(null); setReplyText(''); },
+    onError: () => toast.error('Failed to save reply'),
+  });
+  const [replyId, setReplyId] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState('');
+
+  const fmtDate = (iso: string) => {
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const adherenceColors: Record<string, string> = {
+    fully: 'bg-green-500/20 text-green-400',
+    mostly: 'bg-amber-500/20 text-amber-400',
+    partially: 'bg-orange-500/20 text-orange-400',
+    poorly: 'bg-red-500/20 text-red-400',
+  };
+
+  if (checkIns.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground text-sm">No check-ins submitted yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {checkIns.map(ci => (
+        <Card key={ci.id} className="space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Week of {fmtDate(toLocalDateStr(ci.weekStartDate))}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Submitted {new Date(ci.submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {ci.dietAdherence && (
+                <span className={`text-[10px] px-2 py-0.5 rounded font-medium capitalize ${adherenceColors[ci.dietAdherence] ?? 'bg-secondary text-muted-foreground'}`}>
+                  {ci.dietAdherence}
+                </span>
+              )}
+              {ci.overallFeeling != null && (
+                <span className="text-[10px] px-2 py-0.5 rounded bg-secondary text-muted-foreground font-medium">
+                  Feeling: {ci.overallFeeling}/5
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Responses */}
+          <div className="space-y-3">
+            {ci.dietAdherenceReason && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Adherence Reason</p>
+                <p className="text-sm text-foreground">{ci.dietAdherenceReason}</p>
+              </div>
+            )}
+            {ci.wentWell && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">What Went Well</p>
+                <p className="text-sm text-foreground">{ci.wentWell}</p>
+              </div>
+            )}
+            {ci.challenges && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Challenges</p>
+                <p className="text-sm text-foreground">{ci.challenges}</p>
+              </div>
+            )}
+            {ci.wins && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Wins</p>
+                <p className="text-sm text-foreground">{ci.wins}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Coach Reply */}
+          {ci.coachReply && replyId !== ci.id && (
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+              <p className="text-[10px] text-primary uppercase tracking-wider mb-1">Your Reply</p>
+              <p className="text-sm text-foreground">{ci.coachReply}</p>
+            </div>
+          )}
+
+          {/* Reply form */}
+          {replyId === ci.id ? (
+            <div className="space-y-2">
+              <textarea
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                rows={4}
+                placeholder="Write your reply to the client..."
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => replyMutation.mutate({ id: ci.id, coachReply: replyText })}
+                  disabled={replyMutation.isPending || !replyText.trim()}
+                  className="flex-1 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 disabled:opacity-50"
+                >
+                  {replyMutation.isPending ? 'Saving...' : 'Save Reply'}
+                </button>
+                <button
+                  onClick={() => { setReplyId(null); setReplyText(''); }}
+                  className="px-4 py-2 border border-border text-sm text-muted-foreground rounded-lg hover:text-foreground"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setReplyId(ci.id); setReplyText(ci.coachReply ?? ''); }}
+              className="text-xs text-primary hover:opacity-80 font-medium"
+            >
+              {ci.coachReply ? 'Edit Reply' : '+ Add Reply'}
+            </button>
+          )}
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 function ProgressSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
   const { data: logs } = trpc.dailyLog.listForClient.useQuery(
@@ -2184,12 +2363,12 @@ function ProgressSection() {
   const prevAvgSteps = avgOf(prev7.map(l => l.stepsCount as number | null));
 
   // ── Meal adherence: on-plan days / 7 calendar days (unlogged = non-adherent) ──
-  const isOffPlan = (v: unknown) => v === true || v === 1 || v === '1';
-  const curOnPlan = cur7.filter(l => !isOffPlan(l.offPlanMeal)).length;
+  const curOnPlan = cur7.filter(l => (l.offPlanMeals ?? 0) === 0).length;
   // Use 7 calendar days as denominator — missing logs count as non-adherent
   const mealAdherence = Math.round((curOnPlan / 7) * 100);
-  const prevOnPlan = prev7.filter(l => !isOffPlan(l.offPlanMeal)).length;
+  const prevOnPlan = prev7.filter(l => (l.offPlanMeals ?? 0) === 0).length;
   const prevMealAdherence = Math.round((prevOnPlan / 7) * 100);
+  const offPlanTotal7 = cur7.reduce((sum, l) => sum + (l.offPlanMeals ?? 0), 0);
 
   // ── Training adherence: calendar-day window vs rotation length ──────────────
   const schedule = (trainingProgram?.schedule as string[] | null) ?? null;
@@ -2271,11 +2450,12 @@ function ProgressSection() {
       </div>
 
       {selectedUserId && (
-        <Tabs defaultValue="overview" className="w-full">
+          <Tabs defaultValue="overview" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
             <TabsTrigger value="notes">Coaching Notes</TabsTrigger>
+            <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -2299,7 +2479,7 @@ function ProgressSection() {
               <ProgCard
                 label="Meal Adherence"
                 value={`${mealAdherence}%`}
-                sub={`${curOnPlan}/7 on-plan days (7-day window)`}
+                sub={`${curOnPlan}/7 on-plan days · ${offPlanTotal7} off-plan meals this week`}
                 change={prevMealAdherence != null && mealAdherence != null
                   ? `${mealAdherence >= prevMealAdherence ? "+" : ""}${mealAdherence - prevMealAdherence}%`
                   : undefined}
@@ -2329,11 +2509,17 @@ function ProgressSection() {
                   ? (curAvgSleep >= prevAvgSleep ? "green" : "red")
                   : "neutral"}
               />
-              {(curAvgSteps != null || prevAvgSteps != null) && (
+              {(curAvgSteps != null || prevAvgSteps != null || (clientProfile as any)?.stepGoal) && (
                 <ProgCard
                   label="Avg Steps"
                   value={curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—"}
-                  sub={prevAvgSteps != null ? `Prev: ${Math.round(prevAvgSteps).toLocaleString()}` : undefined}
+                  sub={(() => {
+                    const goal = (clientProfile as any)?.stepGoal as number | null;
+                    const goalDays = goal ? cur7.filter(l => (l.stepsCount ?? 0) >= goal).length : null;
+                    const prevStr = prevAvgSteps != null ? `Prev: ${Math.round(prevAvgSteps).toLocaleString()}` : null;
+                    const goalStr = goal ? `Goal: ${goal.toLocaleString()} · ${goalDays ?? 0}/7 days hit` : null;
+                    return [prevStr, goalStr].filter(Boolean).join(' · ') || undefined;
+                  })()}
                   change={curAvgSteps != null && prevAvgSteps != null
                     ? `${(curAvgSteps - prevAvgSteps) >= 0 ? "+" : ""}${Math.round(curAvgSteps - prevAvgSteps).toLocaleString()}`
                     : undefined}
@@ -2396,6 +2582,10 @@ function ProgressSection() {
 
           <TabsContent value="notes">
             <CoachingNotesTab clientId={selectedUserId!} />
+          </TabsContent>
+
+          <TabsContent value="check-ins">
+            <CoachCheckInsTab clientId={selectedUserId!} />
           </TabsContent>
         </Tabs>
       )}

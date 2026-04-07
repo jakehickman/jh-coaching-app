@@ -28,6 +28,26 @@ vi.mock("./db", () => ({
   getDailyLogsForClient: vi.fn().mockResolvedValue([]),
   getMeasurementsForClient: vi.fn().mockResolvedValue([]),
   getCheckInsForClient: vi.fn().mockResolvedValue([]),
+  listCheckInsForClient: vi.fn().mockResolvedValue([]),
+  getCheckInForWeek: vi.fn().mockResolvedValue(null),
+  submitCheckIn: vi.fn().mockResolvedValue({ id: 1 }),
+  replyToCheckIn: vi.fn().mockResolvedValue(undefined),
+  updateClientProfileExtended: vi.fn().mockResolvedValue(undefined),
+  upsertDailyLog: vi.fn().mockResolvedValue(undefined),
+  getHabitsForClient: vi.fn().mockResolvedValue([]),
+  getHabitCompletionsForClient: vi.fn().mockResolvedValue([]),
+  getMyHabits: vi.fn().mockResolvedValue([]),
+  getMyHabitCompletions: vi.fn().mockResolvedValue([]),
+  toggleHabitCompletion: vi.fn().mockResolvedValue(undefined),
+  assignHabitToClient: vi.fn().mockResolvedValue(undefined),
+  unassignHabitFromClient: vi.fn().mockResolvedValue(undefined),
+  getExerciseLibrary: vi.fn().mockResolvedValue([]),
+  upsertExercise: vi.fn().mockResolvedValue(undefined),
+  deleteExercise: vi.fn().mockResolvedValue(undefined),
+  getWorkoutSessions: vi.fn().mockResolvedValue([]),
+  getWorkoutSessionsForClient: vi.fn().mockResolvedValue([]),
+  upsertWorkoutSession: vi.fn().mockResolvedValue(undefined),
+  deleteWorkoutSession: vi.fn().mockResolvedValue(undefined),
 }));
 
 function createUserContext(role: "user" | "admin" = "user"): TrpcContext {
@@ -150,9 +170,9 @@ describe("timeline", () => {
 });
 
 describe("checkIn", () => {
-  it("list returns empty array when no check-ins", async () => {
+  it("myList returns empty array when no check-ins", async () => {
     const caller = appRouter.createCaller(createUserContext("user"));
-    const result = await caller.checkIn.list();
+    const result = await caller.checkIn.myList();
     expect(Array.isArray(result)).toBe(true);
   });
 });

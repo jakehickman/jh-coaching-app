@@ -22,6 +22,9 @@ import {
   workoutSessions,
   onboardingSubmissions,
   InsertOnboardingSubmission,
+  checkInSubmissions,
+  CheckInSubmission,
+  InsertCheckInSubmission,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -194,7 +197,7 @@ export async function upsertDailyLog(data: {
   stepsCount?: number;
   sleepQuality?: number;
   hungerLevel?: number;
-  offPlanMeal?: boolean;
+  offPlanMeals?: number;
   notes?: string;
 }) {
   const db = await getDb();
@@ -828,4 +831,93 @@ export async function getHabitCompletionsForClient(clientId: number, fromDate?: 
 
 export async function getHabitCompletionsForCoach(clientId: number, fromDate?: string) {
   return getHabitCompletionsForClient(clientId, fromDate);
+}
+
+// ─── Check-in Submissions ────────────────────────────────────────────────────
+
+export async function submitCheckIn(data: {
+  clientId: number;
+  coachId?: number;
+  weekStartDate: string;
+  dietAdherence?: "fully" | "mostly" | "partially" | "poorly";
+  dietAdherenceReason?: string;
+  wentWell?: string;
+  challenges?: string;
+  wins?: string;
+  overallFeeling?: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  // Upsert: one submission per client per week
+  const existing = await db
+    .select()
+    .from(checkInSubmissions)
+    .where(
+      and(
+        eq(checkInSubmissions.clientId, data.clientId),
+        eq(checkInSubmissions.weekStartDate, data.weekStartDate as any)
+      )
+    )
+    .limit(1);
+  if (existing.length > 0) {
+    await db
+      .update(checkInSubmissions)
+      .set({ ...data, updatedAt: new Date() } as any)
+      .where(eq(checkInSubmissions.id, existing[0].id));
+    return existing[0].id;
+  } else {
+    const [result] = await db.insert(checkInSubmissions).values(data as any);
+    return (result as any)?.insertId ?? null;
+  }
+}
+
+export async function listCheckInsForClient(clientId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(checkInSubmissions)
+    .where(eq(checkInSubmissions.clientId, clientId))
+    .orderBy(desc(checkInSubmissions.weekStartDate));
+}
+
+export async function getCheckInForWeek(clientId: number, weekStartDate: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(checkInSubmissions)
+    .where(
+      and(
+        eq(checkInSubmissions.clientId, clientId),
+        eq(checkInSubmissions.weekStartDate, weekStartDate as any)
+      )
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function replyToCheckIn(id: number, coachReply: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(checkInSubmissions)
+    .set({ coachReply, coachRepliedAt: new Date(), updatedAt: new Date() } as any)
+    .where(eq(checkInSubmissions.id, id));
+}
+
+// ─── Client Profile: step goal + check-in day ────────────────────────────────
+
+export async function updateClientProfileExtended(userId: number, data: {
+  checkInDay?: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | null;
+  stepGoal?: number | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select().from(clientProfiles).where(eq(clientProfiles.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(clientProfiles).set(data as any).where(eq(clientProfiles.userId, userId));
+  } else {
+    await db.insert(clientProfiles).values({ userId, ...data } as any);
+  }
 }

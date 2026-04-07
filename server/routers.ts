@@ -94,7 +94,7 @@ export const appRouter = router({
           stepsCount: z.number().optional(),
           sleepQuality: z.number().min(1).max(5).optional(),
           hungerLevel: z.number().min(1).max(5).optional(),
-          offPlanMeal: z.boolean().optional(),
+          offPlanMeals: z.number().int().min(0).optional(),
           notes: z.string().optional(),
         })
       )
@@ -299,43 +299,7 @@ export const appRouter = router({
       .mutation(({ input }) => db.updateCoachingNote(input)),
   }),
 
-  // Weekly Check-ins
-  checkIn: router({
-    list: protectedProcedure.query(({ ctx }) =>
-      db.getWeeklyCheckIns(ctx.user.id)
-    ),
-    listForClient: adminProcedure
-      .input(z.object({ userId: z.number() }))
-      .query(({ input }) => db.getWeeklyCheckIns(input.userId)),
-    upsert: protectedProcedure
-      .input(
-        z.object({
-          weekStartDate: z.string(),
-          avgWeight: z.number().optional(),
-          weightChange: z.number().optional(),
-          trainingAdherence: z.number().min(0).max(100).optional(),
-          nutritionAdherence: z.number().min(0).max(100).optional(),
-          overallFeeling: z.number().min(1).max(10).optional(),
-          wins: z.string().optional(),
-          challenges: z.string().optional(),
-          nextWeekGoals: z.string().optional(),
-        })
-      )
-      .mutation(({ ctx, input }) =>
-        db.upsertWeeklyCheckIn({ userId: ctx.user.id, ...input })
-      ),
-    addCoachFeedback: adminProcedure
-      .input(
-        z.object({
-          userId: z.number(),
-          weekStartDate: z.string(),
-          coachFeedback: z.string(),
-        })
-      )
-      .mutation(({ input }) =>
-        db.upsertWeeklyCheckIn({ userId: input.userId, weekStartDate: input.weekStartDate, coachFeedback: input.coachFeedback })
-      ),
-  }),
+  // (old weeklyCheckIns router removed — replaced by checkIn router below)
 
   // Exercise Library
   exerciseLibrary: router({
@@ -459,6 +423,57 @@ export const appRouter = router({
     markReviewed: adminProcedure
       .input(z.object({ id: z.number(), reviewed: z.boolean() }))
       .mutation(({ input }) => db.markOnboardingReviewed(input.id, input.reviewed)),
+  }),
+
+  // Check-in submissions
+  checkIn: router({
+    // Client: submit or update their check-in for the current week
+    submit: protectedProcedure
+      .input(z.object({
+        weekStartDate: z.string(), // yyyy-mm-dd (Monday)
+        dietAdherence: z.enum(["fully","mostly","partially","poorly"]).optional(),
+        dietAdherenceReason: z.string().optional(),
+        wentWell: z.string().optional(),
+        challenges: z.string().optional(),
+        wins: z.string().optional(),
+        overallFeeling: z.number().int().min(1).max(5).optional(),
+      }))
+      .mutation(({ ctx, input }) =>
+        db.submitCheckIn({ clientId: ctx.user.id, ...input })
+      ),
+    // Client: list their own check-ins
+    myList: protectedProcedure.query(({ ctx }) =>
+      db.listCheckInsForClient(ctx.user.id)
+    ),
+    // Client: get check-in for a specific week
+    myWeek: protectedProcedure
+      .input(z.object({ weekStartDate: z.string() }))
+      .query(({ ctx, input }) =>
+        db.getCheckInForWeek(ctx.user.id, input.weekStartDate)
+      ),
+    // Coach: list check-ins for a client
+    clientList: adminProcedure
+      .input(z.object({ clientId: z.number() }))
+      .query(({ input }) => db.listCheckInsForClient(input.clientId)),
+    // Coach: reply to a check-in
+    reply: adminProcedure
+      .input(z.object({ id: z.number(), coachReply: z.string() }))
+      .mutation(({ input }) => db.replyToCheckIn(input.id, input.coachReply)),
+  }),
+
+  // Client profile extended (check-in day + step goal) — coach sets these
+  clientConfig: router({
+    // Coach: update check-in day and step goal for a client
+    update: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        checkInDay: z.enum(["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]).nullable().optional(),
+        stepGoal: z.number().int().min(0).nullable().optional(),
+      }))
+      .mutation(({ input }) => {
+        const { userId, ...data } = input;
+        return db.updateClientProfileExtended(userId, data);
+      }),
   }),
 
   // Habits

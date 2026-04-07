@@ -37,6 +37,8 @@ export const clientProfiles = mysqlTable("client_profiles", {
   goalWeight: float("goalWeight"),
   startWeight: float("startWeight"),
   notes: text("notes"),
+  checkInDay: mysqlEnum("checkInDay", ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]),
+  stepGoal: int("stepGoal"), // daily step goal
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -56,7 +58,7 @@ export const dailyLogs = mysqlTable("daily_logs", {
   stepsCount: int("stepsCount"),
   sleepQuality: int("sleepQuality"), // 1-5
   hungerLevel: int("hungerLevel"), // 1-5
-  offPlanMeal: boolean("offPlanMeal").default(false),
+  offPlanMeals: int("offPlanMeals").default(0), // number of off-plan meals that day
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -349,3 +351,28 @@ export const habitCompletions = mysqlTable("habit_completions", {
 });
 
 export type HabitCompletion = typeof habitCompletions.$inferSelect;
+
+// Check-in submissions — client weekly check-in form responses
+export const checkInSubmissions = mysqlTable("check_in_submissions", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("clientId").notNull(), // FK -> users.id
+  coachId: int("coachId"), // FK -> users.id
+  weekStartDate: date("weekStartDate").notNull(), // Monday of the check-in week
+  // Diet adherence
+  dietAdherence: mysqlEnum("dietAdherence", ["fully","mostly","partially","poorly"]),
+  dietAdherenceReason: text("dietAdherenceReason"), // if not fully adherent
+  // Guided prompts
+  wentWell: text("wentWell"),
+  challenges: text("challenges"),
+  wins: text("wins"),
+  // Overall feeling
+  overallFeeling: int("overallFeeling"), // 1-5
+  // Coach reply
+  coachReply: text("coachReply"),
+  coachRepliedAt: timestamp("coachRepliedAt"),
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CheckInSubmission = typeof checkInSubmissions.$inferSelect;
+export type InsertCheckInSubmission = typeof checkInSubmissions.$inferInsert;
