@@ -199,10 +199,10 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
 
 function MetricCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <Card>
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className="text-3xl font-bold text-foreground mt-1">{value}</p>
-      {sub && <p className="text-sm text-muted-foreground mt-1">{sub}</p>}
+    <Card className="p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="text-2xl font-bold text-foreground mt-1 leading-tight">{value}</p>
+      {sub && <p className="text-xs text-muted-foreground mt-1 leading-snug">{sub}</p>}
     </Card>
   );
 }
@@ -210,12 +210,12 @@ function ScoreInput({ label, value, onChange, max = 10 }: { label: string; value
   return (
     <div>
       <p className="text-sm text-muted-foreground mb-2">{label}</p>
-      <div className="flex gap-1.5 flex-wrap">
+      <div className="flex gap-2">
         {Array.from({ length: max }, (_, i) => i + 1).map(n => (
           <button
             key={n}
             onClick={() => onChange(n)}
-            className={`w-10 h-10 rounded text-sm font-medium transition-colors ${
+            className={`flex-1 h-11 rounded-lg text-sm font-semibold transition-colors touch-manipulation ${
               value === n ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-secondary/80"
             }`}
           >
@@ -329,7 +329,7 @@ function OverviewTab() {
     <div className="space-y-6">
       <div>
         <SectionLabel>Weekly Summary</SectionLabel>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? "+" : ""}${weightChangePct}% vs prev 7 days` : undefined} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={adherenceSub} />
           <MetricCard label="Meal Adherence" value={`${mealAdherence}%`} sub={mealAdherenceSub} />
@@ -637,7 +637,7 @@ function DailyLogTab() {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
 
   return (
-    <div className="space-y-6 max-w-lg">
+    <div className="space-y-6">
       <div>
         <SectionLabel>Date</SectionLabel>
         <DateInput
@@ -645,6 +645,7 @@ function DailyLogTab() {
           onChange={setDate}
           min={profile?.startDate ? toLocalDateStr(profile.startDate) : undefined}
           max={today}
+          className="w-full"
         />
       </div>
 
@@ -1969,7 +1970,7 @@ function CheckInsTab() {
   const feelingLabels = ['', 'Very Low', 'Low', 'Okay', 'Good', 'Great'];
 
   return (
-    <div className="space-y-6 max-w-lg">
+    <div className="space-y-6">
       {/* Check-in Day Banner */}
       {dayLabel && (
         <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 flex items-center gap-3">

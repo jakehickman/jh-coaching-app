@@ -173,3 +173,19 @@
 - [x] Off-Plan Meals: integrate with meal adherence % calculation
 - [x] Weekly Comparison Table: redesign as card-based mobile-first layout
 - [x] Weekly Comparison Table: clear trends, visual hierarchy, readable typography
+
+## Desktop / Mobile Optimisation
+
+- [ ] Coach shell: wider sidebar (240px), full-width content area, remove mobile hamburger constraints
+- [ ] Coach shell: denser header, tighter nav item spacing, desktop-first breakpoints
+- [ ] Coach Clients panel: wider table columns, inline action buttons, stats row at top
+- [ ] Coach Training Programs: multi-column day grid, wider exercise table
+- [ ] Coach Meal Plans: multi-column layout for plan details
+- [ ] Coach Habits panel: wider table, inline edit/assign controls
+- [ ] Coach Client Progress: two-column layout (metrics left, charts right), wider comparison cards
+- [ ] Coach Exercise Library: wider search + table layout
+- [ ] Client Daily Log: mobile-first single-column form, large tap targets, no horizontal overflow
+- [ ] Client Overview: stacked metric cards, full-width charts on mobile
+- [ ] Client Check-ins tab: mobile-friendly form, large submit button
+- [ ] Client Habits tab: large checkbox targets, readable text
+- [ ] Client nav: bottom tab bar or compact top nav on mobile

@@ -956,76 +956,88 @@ function ClientsSection() {
   const clients = allUsers ?? [];
 
   return (
-    <div className="space-y-6">
-      <div className="max-w-xs mb-2">
-        <Card><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Clients</p><p className="text-2xl font-bold text-foreground mt-1">{clients.length}</p></Card>
-      </div>
-
-      <div>
-        <SectionLabel>All Users</SectionLabel>
-        <div className="space-y-2">
-          {(allUsers ?? []).map(user => (
-            <div
-              key={user.id}
-              onClick={() => setSelectedId(user.id === selectedId ? null : user.id)}
-              className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                selectedId === user.id ? "border-primary bg-primary/5" : "border-border bg-card hover:border-border/80"
-              }`}
-            >
-              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
-                {user.name?.charAt(0)?.toUpperCase() ?? "?"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{user.name ?? "Unnamed"}</p>
-                <p className="text-xs text-muted-foreground">{user.email ?? "No email"}</p>
-              </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${user.role === "admin" ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
-                {user.role}
-              </span>
-              {user.role !== "admin" && (
-                <>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      setApproved.mutate({ userId: user.id, approved: !(user as any).approved });
-                    }}
-                    className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                      (user as any).approved
-                        ? "border-primary/40 text-primary bg-primary/10 hover:bg-primary/20"
-                        : "border-border text-muted-foreground bg-secondary hover:border-primary/40 hover:text-primary"
-                    }`}
-                  >
-                    {(user as any).approved ? "Approved" : "Approve"}
-                  </button>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      if (window.confirm(`Delete ${user.name ?? 'this user'}? This cannot be undone.`)) {
-                        deleteUser.mutate({ userId: user.id });
-                      }
-                    }}
-                    className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                    title="Delete user"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </>
-              )}
-            </div>
-          ))}
+    <div className="space-y-4">
+      {/* Stats row */}
+      <div className="flex items-center gap-4">
+        <div className="bg-card border border-border rounded-lg px-5 py-3 flex items-center gap-3">
+          <Users size={16} className="text-muted-foreground" />
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Clients</p>
+            <p className="text-xl font-bold text-foreground">{clients.length}</p>
+          </div>
         </div>
       </div>
 
-      {selectedId && (
+      {/* Two-column desktop layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5 items-start">
+        {/* Left: client list */}
         <div>
-          <SectionLabel>Client Profile</SectionLabel>
-          <Card className="space-y-3">
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">Start Date</label>
-                <DateInput value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} />
+          <SectionLabel>All Users</SectionLabel>
+          <div className="space-y-1.5">
+            {(allUsers ?? []).map(user => (
+              <div
+                key={user.id}
+                onClick={() => setSelectedId(user.id === selectedId ? null : user.id)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${
+                  selectedId === user.id ? "border-primary bg-primary/5" : "border-border bg-card hover:border-border/80"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
+                  {user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{user.name ?? "Unnamed"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email ?? "No email"}</p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${user.role === "admin" ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
+                    {user.role}
+                  </span>
+                  {user.role !== "admin" && (
+                    <>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setApproved.mutate({ userId: user.id, approved: !(user as any).approved });
+                        }}
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${
+                          (user as any).approved
+                            ? "border-primary/40 text-primary bg-primary/10 hover:bg-primary/20"
+                            : "border-border text-muted-foreground bg-secondary hover:border-primary/40 hover:text-primary"
+                        }`}
+                      >
+                        {(user as any).approved ? "Approved" : "Approve"}
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (window.confirm(`Delete ${user.name ?? 'this user'}? This cannot be undone.`)) {
+                            deleteUser.mutate({ userId: user.id });
+                          }
+                        }}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                        title="Delete user"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: profile form */}
+        {selectedId ? (
+          <div>
+            <SectionLabel>Client Profile</SectionLabel>
+            <Card className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="text-xs text-muted-foreground block mb-1">Start Date</label>
+                  <DateInput value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} />
+                </div>
                 {([
                   { key: "startWeight", label: "Start Weight (kg)", type: "number" },
                   { key: "goalWeight", label: "Goal Weight (kg)", type: "number" },
@@ -1040,44 +1052,39 @@ function ClientsSection() {
                     />
                   </div>
                 ))}
-              </div>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Notes</label>
-              <textarea
-                value={form.notes}
-                onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                rows={2}
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              />
-            </div>
-            {/* Check-in Day + Step Goal */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">Check-in Day</label>
-                <select
-                  value={form.checkInDay}
-                  onChange={e => setForm(p => ({ ...p, checkInDay: e.target.value as any }))}
-                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">Not set</option>
-                  {['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => (
-                    <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
-                  ))}
-                </select>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Check-in Day</label>
+                  <select
+                    value={form.checkInDay}
+                    onChange={e => setForm(p => ({ ...p, checkInDay: e.target.value as any }))}
+                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="">Not set</option>
+                    {['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => (
+                      <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Daily Step Goal</label>
+                  <input
+                    type="number"
+                    value={form.stepGoal}
+                    onChange={e => setForm(p => ({ ...p, stepGoal: e.target.value }))}
+                    placeholder="e.g. 10000"
+                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">Daily Step Goal</label>
-                <input
-                  type="number"
-                  value={form.stepGoal}
-                  onChange={e => setForm(p => ({ ...p, stepGoal: e.target.value }))}
-                  placeholder="e.g. 10000"
-                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                <label className="text-xs text-muted-foreground block mb-1">Notes</label>
+                <textarea
+                  value={form.notes}
+                  onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                  rows={3}
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                 />
               </div>
-            </div>
-            <div className="flex gap-2">
               <button
                 onClick={() => {
                   upsertProfile.mutate({
@@ -1094,14 +1101,18 @@ function ClientsSection() {
                   });
                 }}
                 disabled={upsertProfile.isPending || updateClientConfig.isPending}
-                className="flex-1 py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
+                className="w-full py-2 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
               >
                 {(upsertProfile.isPending || updateClientConfig.isPending) ? "Saving..." : "Save Profile"}
               </button>
-            </div>
-          </Card>
-        </div>
-      )}
+            </Card>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-40 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
+            Select a client to view their profile
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1352,7 +1363,8 @@ function TrainingSection() {
         <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
       </div>
       {selectedUserId && (
-        <>
+        <div className="xl:grid xl:grid-cols-[1fr_320px] xl:gap-6 xl:items-start">
+        <div className="space-y-6">
           {/* ── Training Schedule ── */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -1431,10 +1443,13 @@ function TrainingSection() {
             <Save size={15} />
             {upsert.isPending ? "Saving..." : "Save Training Program"}
           </button>
+        </div>{/* end left column */}
 
+        {/* Right column: volume summary */}
+        <div className="space-y-6">
           {/* ── Weekly Volume Table ── */}
           {volumeTable && (
-            <div className="mt-6">
+            <div>
               <SectionLabel>Weekly Volume Summary</SectionLabel>
               <p className="text-xs text-muted-foreground mb-3">
                 Cycle: {schedule.length > 0 ? schedule.length : days.length} days · Multiplier: ×{volumeTable.multiplier.toFixed(3)} · Values = sets per week
@@ -1487,7 +1502,8 @@ function TrainingSection() {
               <p className="text-xs text-muted-foreground mt-2">Only muscle groups with &gt;0 weekly sets are shown. Match exercise names exactly to the Exercise Library for accurate tracking.</p>
             </div>
           )}
-        </>
+        </div>
+        </div>
       )}
     </div>
   );
@@ -1639,7 +1655,8 @@ function MealPlansSection() {
       </div>
 
       {selectedUserId && (
-        <>
+        <div className="xl:grid xl:grid-cols-[1fr_280px] xl:gap-6 xl:items-start">
+        <div className="space-y-6">
           <div className="flex items-center gap-2 flex-wrap">
             {(["training", "rest"] as const).map(t => (
               <button key={t} onClick={() => setDayType(t)}
@@ -1826,7 +1843,29 @@ function MealPlansSection() {
             <Save size={15} />
             {upsert.isPending ? "Saving..." : "Save Meal Plan"}
           </button>
-        </>
+        </div>{/* end left column */}
+
+        {/* Right column: macro summary sticky panel */}
+        <div className="space-y-4">
+          {meals.length > 0 && (
+            <Card className="sticky top-20">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Daily Totals</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="col-span-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 text-center">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Calories</p>
+                  <p className="text-xl font-bold text-primary">{dailyTotals.calories} <span className="text-xs font-normal">kcal</span></p>
+                </div>
+                {[{l:'Protein',v:dailyTotals.protein},{l:'Carbs',v:dailyTotals.carbs},{l:'Fiber',v:dailyTotals.fiber},{l:'Fat',v:dailyTotals.fat}].map(({l,v}) => (
+                  <div key={l} className="bg-secondary rounded-lg px-2 py-2 text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{l}</p>
+                    <p className="text-sm font-bold text-foreground">{v}g</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+        </div>
       )}
     </div>
   );
@@ -2460,107 +2499,110 @@ function ProgressSection() {
 
           <TabsContent value="overview">
           <div className="space-y-6">
-          {/* ── 7-Day Metric Averages ─────────────────────────────── */}
-          <div>
-            <SectionLabel>7-Day Averages (vs previous 7 days)</SectionLabel>
-            <div className="grid grid-cols-2 gap-3">
-              <ProgCard
-                label="Avg Weight"
-                value={curAvgWeight != null ? `${curAvgWeight.toFixed(1)} kg` : "—"}
-                sub={prevAvgWeight != null ? `Prev: ${prevAvgWeight.toFixed(1)} kg` : undefined}
-                change={weightPct ?? undefined}
-                changeColor={weightPct ? (parseFloat(weightPct) < 0 ? "green" : "red") : "neutral"}
-              />
-              <ProgCard
-                label="Training Adherence"
-                value={trainingAdherence != null ? `${trainingAdherence}%` : "—"}
-                sub={trainingAdherenceLabel}
-              />
-              <ProgCard
-                label="Meal Adherence"
-                value={`${mealAdherence}%`}
-                sub={`${curOnPlan}/7 on-plan days · ${offPlanTotal7} off-plan meals this week`}
-                change={prevMealAdherence != null && mealAdherence != null
-                  ? `${mealAdherence >= prevMealAdherence ? "+" : ""}${mealAdherence - prevMealAdherence}%`
-                  : undefined}
-                changeColor={mealAdherence != null && prevMealAdherence != null
-                  ? (mealAdherence >= prevMealAdherence ? "green" : "red")
-                  : "neutral"}
-              />
-              <ProgCard
-                label="Avg Hunger"
-                value={curAvgHunger != null ? `${curAvgHunger.toFixed(1)}/5` : "—"}
-                sub={prevAvgHunger != null ? `Prev: ${prevAvgHunger.toFixed(1)}/5` : undefined}
-                change={curAvgHunger != null && prevAvgHunger != null
-                  ? `${(curAvgHunger - prevAvgHunger) >= 0 ? "+" : ""}${(curAvgHunger - prevAvgHunger).toFixed(1)}`
-                  : undefined}
-                changeColor={curAvgHunger != null && prevAvgHunger != null
-                  ? (curAvgHunger <= prevAvgHunger ? "green" : "amber")
-                  : "neutral"}
-              />
-              <ProgCard
-                label="Avg Sleep Quality"
-                value={curAvgSleep != null ? `${curAvgSleep.toFixed(1)}/5` : "—"}
-                sub={prevAvgSleep != null ? `Prev: ${prevAvgSleep.toFixed(1)}/5` : undefined}
-                change={curAvgSleep != null && prevAvgSleep != null
-                  ? `${(curAvgSleep - prevAvgSleep) >= 0 ? "+" : ""}${(curAvgSleep - prevAvgSleep).toFixed(1)}`
-                  : undefined}
-                changeColor={curAvgSleep != null && prevAvgSleep != null
-                  ? (curAvgSleep >= prevAvgSleep ? "green" : "red")
-                  : "neutral"}
-              />
-              {(curAvgSteps != null || prevAvgSteps != null || (clientProfile as any)?.stepGoal) && (
+          {/* ── Desktop two-column: metrics left, chart+measurements right ── */}
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-5 items-start">
+            {/* Left: metric cards */}
+            <div>
+              <SectionLabel>7-Day Averages (vs previous 7 days)</SectionLabel>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <ProgCard
-                  label="Avg Steps"
-                  value={curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—"}
-                  sub={(() => {
-                    const goal = (clientProfile as any)?.stepGoal as number | null;
-                    const goalDays = goal ? cur7.filter(l => (l.stepsCount ?? 0) >= goal).length : null;
-                    const prevStr = prevAvgSteps != null ? `Prev: ${Math.round(prevAvgSteps).toLocaleString()}` : null;
-                    const goalStr = goal ? `Goal: ${goal.toLocaleString()} · ${goalDays ?? 0}/7 days hit` : null;
-                    return [prevStr, goalStr].filter(Boolean).join(' · ') || undefined;
-                  })()}
-                  change={curAvgSteps != null && prevAvgSteps != null
-                    ? `${(curAvgSteps - prevAvgSteps) >= 0 ? "+" : ""}${Math.round(curAvgSteps - prevAvgSteps).toLocaleString()}`
+                  label="Avg Weight"
+                  value={curAvgWeight != null ? `${curAvgWeight.toFixed(1)} kg` : "—"}
+                  sub={prevAvgWeight != null ? `Prev: ${prevAvgWeight.toFixed(1)} kg` : undefined}
+                  change={weightPct ?? undefined}
+                  changeColor={weightPct ? (parseFloat(weightPct) < 0 ? "green" : "red") : "neutral"}
+                />
+                <ProgCard
+                  label="Training Adherence"
+                  value={trainingAdherence != null ? `${trainingAdherence}%` : "—"}
+                  sub={trainingAdherenceLabel}
+                />
+                <ProgCard
+                  label="Meal Adherence"
+                  value={`${mealAdherence}%`}
+                  sub={`${curOnPlan}/7 on-plan · ${offPlanTotal7} off-plan meals`}
+                  change={prevMealAdherence != null && mealAdherence != null
+                    ? `${mealAdherence >= prevMealAdherence ? "+" : ""}${mealAdherence - prevMealAdherence}%`
                     : undefined}
-                  changeColor={curAvgSteps != null && prevAvgSteps != null
-                    ? (curAvgSteps >= prevAvgSteps ? "green" : "amber")
+                  changeColor={mealAdherence != null && prevMealAdherence != null
+                    ? (mealAdherence >= prevMealAdherence ? "green" : "red")
                     : "neutral"}
+                />
+                <ProgCard
+                  label="Avg Hunger"
+                  value={curAvgHunger != null ? `${curAvgHunger.toFixed(1)}/5` : "—"}
+                  sub={prevAvgHunger != null ? `Prev: ${prevAvgHunger.toFixed(1)}/5` : undefined}
+                  change={curAvgHunger != null && prevAvgHunger != null
+                    ? `${(curAvgHunger - prevAvgHunger) >= 0 ? "+" : ""}${(curAvgHunger - prevAvgHunger).toFixed(1)}`
+                    : undefined}
+                  changeColor={curAvgHunger != null && prevAvgHunger != null
+                    ? (curAvgHunger <= prevAvgHunger ? "green" : "amber")
+                    : "neutral"}
+                />
+                <ProgCard
+                  label="Avg Sleep Quality"
+                  value={curAvgSleep != null ? `${curAvgSleep.toFixed(1)}/5` : "—"}
+                  sub={prevAvgSleep != null ? `Prev: ${prevAvgSleep.toFixed(1)}/5` : undefined}
+                  change={curAvgSleep != null && prevAvgSleep != null
+                    ? `${(curAvgSleep - prevAvgSleep) >= 0 ? "+" : ""}${(curAvgSleep - prevAvgSleep).toFixed(1)}`
+                    : undefined}
+                  changeColor={curAvgSleep != null && prevAvgSleep != null
+                    ? (curAvgSleep >= prevAvgSleep ? "green" : "red")
+                    : "neutral"}
+                />
+                {(curAvgSteps != null || prevAvgSteps != null || (clientProfile as any)?.stepGoal) && (
+                  <ProgCard
+                    label="Avg Steps"
+                    value={curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—"}
+                    sub={(() => {
+                      const goal = (clientProfile as any)?.stepGoal as number | null;
+                      const goalDays = goal ? cur7.filter(l => (l.stepsCount ?? 0) >= goal).length : null;
+                      const prevStr = prevAvgSteps != null ? `Prev: ${Math.round(prevAvgSteps).toLocaleString()}` : null;
+                      const goalStr = goal ? `Goal: ${goal.toLocaleString()} · ${goalDays ?? 0}/7 hit` : null;
+                      return [prevStr, goalStr].filter(Boolean).join(' · ') || undefined;
+                    })()}
+                    change={curAvgSteps != null && prevAvgSteps != null
+                      ? `${(curAvgSteps - prevAvgSteps) >= 0 ? "+" : ""}${Math.round(curAvgSteps - prevAvgSteps).toLocaleString()}`
+                      : undefined}
+                    changeColor={curAvgSteps != null && prevAvgSteps != null
+                      ? (curAvgSteps >= prevAvgSteps ? "green" : "amber")
+                      : "neutral"}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Right: weight chart + measurements */}
+            <div className="space-y-4">
+              {weightData.length > 1 && (
+                <div>
+                  <SectionLabel>Weight Trend (last 14 entries)</SectionLabel>
+                  <Card>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <LineChart data={weightData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                        <XAxis dataKey="date" tick={{ fill: "#666", fontSize: 10 }} interval="preserveStartEnd" />
+                        <YAxis domain={["auto", "auto"]} tick={{ fill: "#666", fontSize: 10 }} width={36} />
+                        <Tooltip contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }} labelStyle={{ color: "#fff" }} itemStyle={{ color: "#22c55e" }} formatter={(v: number) => [`${v} kg`, "Weight"]} />
+                        <Line type="monotone" dataKey="weight" stroke="#22c55e" strokeWidth={2} dot={{ r: 3, fill: "#22c55e" }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </div>
+              )}
+              {latestM && (
+                <MeasurementsCard
+                  latestM={latestM}
+                  prevM={prevM}
+                  latestSkinfold={latestSkinfold}
+                  prevSkinfold={prevSkinfold}
+                  skinfoldDiff={skinfoldDiff}
+                  waistDiff={waistDiff}
+                  toLocalDateStr={toLocalDateStr}
                 />
               )}
             </div>
           </div>
-
-          {/* ── Weight Trend Chart ────────────────────────────────────── */}
-          {weightData.length > 1 && (
-            <div>
-              <SectionLabel>Weight Trend (last 14 entries)</SectionLabel>
-              <Card>
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={weightData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                    <XAxis dataKey="date" tick={{ fill: "#666", fontSize: 10 }} interval="preserveStartEnd" />
-                    <YAxis domain={["auto", "auto"]} tick={{ fill: "#666", fontSize: 10 }} width={36} />
-                    <Tooltip contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }} labelStyle={{ color: "#fff" }} itemStyle={{ color: "#22c55e" }} formatter={(v: number) => [`${v} kg`, "Weight"]} />
-                    <Line type="monotone" dataKey="weight" stroke="#22c55e" strokeWidth={2} dot={{ r: 3, fill: "#22c55e" }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Card>
-            </div>
-          )}
-
-          {/* ── Measurements ─────────────────────────────────────────── */}
-          {latestM && (
-            <MeasurementsCard
-              latestM={latestM}
-              prevM={prevM}
-              latestSkinfold={latestSkinfold}
-              prevSkinfold={prevSkinfold}
-              skinfoldDiff={skinfoldDiff}
-              waistDiff={waistDiff}
-              toLocalDateStr={toLocalDateStr}
-            />
-          )}
 
           <ProgressHistoryTable
             logs={allLogs}
@@ -2660,10 +2702,10 @@ function ExerciseLibrarySection() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Header row */}
       <div className="flex items-center gap-3">
-        <div className="relative flex-1">
+        <div className="relative flex-1 max-w-sm">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
@@ -2678,20 +2720,27 @@ function ExerciseLibrarySection() {
         >
           <Plus size={14} /> Add Exercise
         </button>
+        <p className="ml-auto text-xs text-muted-foreground">{filtered.length} exercise{filtered.length !== 1 ? "s" : ""}</p>
       </div>
+
+      {/* Desktop: side-by-side form + table when editing */}
+      <div className={editing ? "grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-5 items-start" : ""}>
 
       {/* Edit / Add form */}
       {editing && (
-        <Card className="space-y-4">
+        <Card className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">{isNew ? "Add New Exercise" : `Edit: ${editing.name}`}</p>
             <button onClick={() => setEditing(null)} className="text-muted-foreground hover:text-foreground"><X size={15} /></button>
           </div>
-          <input
-            value={editing.name}
-            onChange={e => setEditing(prev => prev ? { ...prev, name: e.target.value } : prev)}
-            className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          />
+          <div>
+            <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">Exercise Name</label>
+            <input
+              value={editing.name}
+              onChange={e => setEditing(prev => prev ? { ...prev, name: e.target.value } : prev)}
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
           <div>
             <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">Demo Video URL (YouTube)</label>
             <input
@@ -2700,7 +2749,7 @@ function ExerciseLibrarySection() {
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {MUSCLE_GROUPS.map(mg => (
               <div key={mg.key}>
                 <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">{mg.label}</label>
@@ -2713,7 +2762,7 @@ function ExerciseLibrarySection() {
               </div>
             ))}
           </div>
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-2 justify-end pt-1">
             <button onClick={() => setEditing(null)} className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg">Cancel</button>
             <button onClick={saveEditing} disabled={upsert.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50">
               <Save size={13} /> {upsert.isPending ? "Saving…" : "Save"}
@@ -2771,7 +2820,8 @@ function ExerciseLibrarySection() {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-muted-foreground">{filtered.length} exercise{filtered.length !== 1 ? "s" : ""} · Values represent sets contributed per set performed (e.g. 0.5 = half a set)</p>
+      </div>{/* end grid wrapper */}
+      <p className="text-xs text-muted-foreground">Values represent sets contributed per set performed (e.g. 0.5 = half a set)</p>
     </div>
   );
 }
@@ -3094,20 +3144,51 @@ function HabitsSection() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{habits.length} habit{habits.length !== 1 ? "s" : ""} created</p>
-        <Button size="sm" onClick={() => { setShowForm(true); setEditHabit(null); resetForm(); }}>
-          <Plus size={14} className="mr-1" /> New Habit
-        </Button>
+    <div className="xl:grid xl:grid-cols-[1fr_360px] xl:gap-6 xl:items-start">
+      {/* Left: habits list */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">{habits.length} habit{habits.length !== 1 ? "s" : ""} created</p>
+          <Button size="sm" onClick={() => { setShowForm(true); setEditHabit(null); resetForm(); }}>
+            <Plus size={14} className="mr-1" /> New Habit
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading habits...</p>
+        ) : habits.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <CheckSquare size={32} className="mx-auto mb-3 opacity-30" />
+            <p className="text-sm">No habits yet. Create your first habit to get started.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {habits.map((h: any) => (
+              <div key={h.id} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{h.name}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">{freqLabel(h)}</span>
+                    {h.description && <span className="text-xs text-muted-foreground truncate">{h.description}</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={() => openAssign(h)}>Assign</Button>
+                  <button onClick={() => openEdit(h)} className="text-muted-foreground hover:text-foreground transition-colors p-1"><Pencil size={13} /></button>
+                  <button onClick={() => { if (confirm(`Delete "${h.name}"?`)) deleteMutation.mutate({ id: h.id }); }} className="text-muted-foreground hover:text-destructive transition-colors p-1"><Trash2 size={13} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Create / Edit Form */}
-      {(showForm || editHabit) && (
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          <p className="text-sm font-semibold text-foreground">{editHabit ? "Edit Habit" : "New Habit"}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Right: create/edit form or assign panel */}
+      <div className="space-y-4">
+        {/* Create / Edit Form */}
+        {(showForm || editHabit) && (
+          <div className="bg-card border border-border rounded-xl p-4 space-y-3 sticky top-20">
+            <p className="text-sm font-semibold text-foreground">{editHabit ? "Edit Habit" : "New Habit"}</p>
             <div>
               <label className="text-xs text-muted-foreground">Habit Name *</label>
               <input className="w-full mt-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
@@ -3125,71 +3206,47 @@ function HabitsSection() {
                 <input type="number" min={1} max={7} className="w-full mt-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground" value={form.targetDays} onChange={e => setForm(p => ({ ...p, targetDays: parseInt(e.target.value) || 1 }))} />
               </div>
             )}
-
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Description (optional)</label>
-            <textarea className="w-full mt-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground resize-none" rows={2} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={() => { setShowForm(false); setEditHabit(null); resetForm(); }}>Cancel</Button>
-            <Button size="sm" onClick={handleSubmit} disabled={!form.name.trim() || createMutation.isPending || updateMutation.isPending}>
-              {editHabit ? "Save Changes" : "Create Habit"}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Assign Modal */}
-      {assignHabit && (
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          <p className="text-sm font-semibold text-foreground">Assign "{assignHabit.name}" to clients</p>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {clients.length === 0 && <p className="text-xs text-muted-foreground">No clients found.</p>}
-            {clients.map((c: any) => (
-              <label key={c.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 accent-primary" checked={assignedClientIds.includes(c.id)} onChange={() => toggleClientAssign(c.id)} />
-                <span className="text-sm text-foreground">{c.name ?? c.email ?? `User ${c.id}`}</span>
-              </label>
-            ))}
-          </div>
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={() => setAssignHabit(null)}>Cancel</Button>
-            <Button size="sm" onClick={() => setAssignmentsMutation.mutate({ habitId: assignHabit.id, clientIds: assignedClientIds })} disabled={setAssignmentsMutation.isPending}>
-              Save Assignments
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Habits List */}
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading habits...</p>
-      ) : habits.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <CheckSquare size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No habits yet. Create your first habit to get started.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {habits.map((h: any) => (
-            <div key={h.id} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{h.name}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">{freqLabel(h)}</span>
-                  {h.description && <span className="text-xs text-muted-foreground truncate">{h.description}</span>}
-                </div>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={() => openAssign(h)}>Assign</Button>
-                <button onClick={() => openEdit(h)} className="text-muted-foreground hover:text-foreground transition-colors p-1"><Pencil size={13} /></button>
-                <button onClick={() => { if (confirm(`Delete "${h.name}"?`)) deleteMutation.mutate({ id: h.id }); }} className="text-muted-foreground hover:text-destructive transition-colors p-1"><Trash2 size={13} /></button>
-              </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Description (optional)</label>
+              <textarea className="w-full mt-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground resize-none" rows={2} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
             </div>
-          ))}
-        </div>
-      )}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => { setShowForm(false); setEditHabit(null); resetForm(); }}>Cancel</Button>
+              <Button size="sm" onClick={handleSubmit} disabled={!form.name.trim() || createMutation.isPending || updateMutation.isPending}>
+                {editHabit ? "Save Changes" : "Create Habit"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Assign panel */}
+        {assignHabit && (
+          <div className="bg-card border border-border rounded-xl p-4 space-y-3 sticky top-20">
+            <p className="text-sm font-semibold text-foreground">Assign "{assignHabit.name}"</p>
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {clients.length === 0 && <p className="text-xs text-muted-foreground">No clients found.</p>}
+              {clients.map((c: any) => (
+                <label key={c.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 accent-primary" checked={assignedClientIds.includes(c.id)} onChange={() => toggleClientAssign(c.id)} />
+                  <span className="text-sm text-foreground">{c.name ?? c.email ?? `User ${c.id}`}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setAssignHabit(null)}>Cancel</Button>
+              <Button size="sm" onClick={() => setAssignmentsMutation.mutate({ habitId: assignHabit.id, clientIds: assignedClientIds })} disabled={setAssignmentsMutation.isPending}>
+                Save Assignments
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!showForm && !editHabit && !assignHabit && (
+          <div className="bg-card border border-border rounded-xl p-4 text-center">
+            <p className="text-xs text-muted-foreground">Click <strong>New Habit</strong> to create a habit, or <strong>Assign</strong> on any habit to manage client assignments.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
