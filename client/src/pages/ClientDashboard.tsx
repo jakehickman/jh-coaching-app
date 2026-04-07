@@ -2067,7 +2067,7 @@ function CheckInsTab() {
         {[
           { icon: '🎥', title: 'Video or voice note', desc: 'A short review of your week.' },
           { icon: '📸', title: 'Progress photos & form clips', desc: 'Front, side, back. Include form clips for feedback.' },
-          { icon: '📋', title: 'This check-in form', desc: 'Your coach reviews all submissions and replies with a video response.' },
+          { icon: '📋', title: 'This check-in form', desc: 'I will review your check-in and reply with a video response within 24 hours.' },
         ].map(item => (
           <div key={item.title} className="flex gap-3">
             <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
