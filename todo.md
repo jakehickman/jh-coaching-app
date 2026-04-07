@@ -231,3 +231,10 @@
 - [x] Backend: getCoachSettings and upsertCoachSettings db helpers + tRPC procedures
 - [x] Coach: add Settings section to CoachPanel with editable text fields
 - [x] Client: CheckInsTab pulls instruction text from DB (falls back to hardcoded defaults)
+
+## Check-in Page Builder
+- [ ] Schema: extend coach_settings with all remaining editable fields (expectation line, section header, question labels, barrier options)
+- [ ] DB migration: apply extended coach_settings columns
+- [ ] Backend: update upsertCoachSettings with all new fields
+- [ ] Coach: full Check-in Page Builder UI with live mobile preview
+- [ ] Client: CheckInsTab uses all new DB fields with fallback to defaults

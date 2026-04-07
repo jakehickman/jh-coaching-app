@@ -396,10 +396,27 @@ export type InsertCheckInSubmission = typeof checkInSubmissions.$inferInsert;
 // Coach settings — singleton row storing global customisable text
 export const coachSettings = mysqlTable("coach_settings", {
   id: int("id").autoincrement().primaryKey(),
-  // Check-in page instruction text (falls back to hardcoded defaults if null)
+  // Check-in page — section header
+  checkInSectionHeader: text("checkInSectionHeader"),
+  // Check-in page — instruction descriptions
   checkInVideoDesc: text("checkInVideoDesc"),
   checkInPhotosDesc: text("checkInPhotosDesc"),
   checkInFormDesc: text("checkInFormDesc"),
+  // Check-in page — expectation line
+  checkInExpectationLine: text("checkInExpectationLine"),
+  // Check-in page — execution accuracy section
+  checkInExecSectionTitle: text("checkInExecSectionTitle"),
+  checkInExecHelper: text("checkInExecHelper"),
+  checkInExecQ1: text("checkInExecQ1"),
+  checkInExecQ2: text("checkInExecQ2"),
+  checkInExecQ3: text("checkInExecQ3"),
+  checkInExecQ4: text("checkInExecQ4"),
+  // Check-in page — adherence barrier section
+  checkInBarrierQuestion: text("checkInBarrierQuestion"),
+  checkInBarrierOptions: json("checkInBarrierOptions").$type<string[]>(),
+  checkInBarrierExplainLabel: text("checkInBarrierExplainLabel"),
+  // Check-in page — focus section
+  checkInFocusQuestion: text("checkInFocusQuestion"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 export type CoachSettings = typeof coachSettings.$inferSelect;

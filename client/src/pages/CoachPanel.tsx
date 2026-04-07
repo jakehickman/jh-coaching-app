@@ -3253,84 +3253,295 @@ function HabitsSection() {
 }
 
 // ─── Coach Settings Section ─────────────────────────────────────────────────
-const CHECK_IN_DEFAULTS = {
+const CI_DEFAULTS = {
+  sectionHeader: "Each Week, Submit:",
   videoDesc: "Send me a 2\u20133 min video or voice note on WhatsApp. Cover: how your week went, training and nutrition highlights, anything you struggled with, and one thing you want to improve.",
   photosDesc: "Send progress photos (front, side, back) and any form clips to me on WhatsApp. Same lighting and position each week for the best comparison.",
   formDesc: "Covers meal plan accuracy and adherence.",
+  expectationLine: "I will review your check-in and reply with a video response within 24 hours.",
+  execSectionTitle: "",
+  execHelper: "",
+  execQ1: "How often did you estimate portions instead of following the exact quantities in your plan?",
+  execQ2: "How often did you add extras not included in your plan? (exclude seasonings and low-calorie condiments)",
+  execQ3: "How often did you change meals, foods, or ingredients from your plan?",
+  execQ4: "How often did you skip or leave out part of a planned meal? (not including fully off-plan meals)",
+  barrierQuestion: "What was the main thing that made sticking to the meal plan difficult this week?",
+  barrierOptions: ["No issues", "Hunger", "Cravings", "Social events", "Busy / time constraints", "Poor planning", "Low motivation", "Travel / routine disruption", "Other"],
+  barrierExplainLabel: "Briefly explain (1\u20132 lines)",
+  focusQuestion: "What\u2019s one thing you want to improve or focus on this week?",
 };
+
+type CIForm = {
+  checkInSectionHeader: string;
+  checkInVideoDesc: string;
+  checkInPhotosDesc: string;
+  checkInFormDesc: string;
+  checkInExpectationLine: string;
+  checkInExecSectionTitle: string;
+  checkInExecHelper: string;
+  checkInExecQ1: string;
+  checkInExecQ2: string;
+  checkInExecQ3: string;
+  checkInExecQ4: string;
+  checkInBarrierQuestion: string;
+  checkInBarrierOptions: string[];
+  checkInBarrierExplainLabel: string;
+  checkInFocusQuestion: string;
+};
+
+function CheckInPagePreview({ f }: { f: CIForm }) {
+  const FREQ = ['Never', '1\u20132 times', '3\u20135 times', '6+ times'];
+  const barriers = f.checkInBarrierOptions.filter(Boolean);
+  return (
+    <div className="bg-[#0a0a0a] rounded-2xl border border-white/10 overflow-hidden" style={{ width: 320, minHeight: 560 }}>
+      {/* Phone notch */}
+      <div className="bg-[#111] px-4 py-2 flex items-center justify-between border-b border-white/5">
+        <span className="text-[10px] text-white/40 font-medium">Check-ins</span>
+        <div className="w-16 h-1 rounded-full bg-white/10" />
+      </div>
+      <div className="p-3 space-y-3 overflow-y-auto" style={{ maxHeight: 600, fontSize: 11 }}>
+        {/* What to submit */}
+        <div className="bg-white/5 rounded-xl p-3 space-y-2">
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-white/40">{f.checkInSectionHeader || CI_DEFAULTS.sectionHeader}</p>
+          {[
+            { icon: '\uD83C\uDFA5', title: 'Video or voice note', desc: f.checkInVideoDesc || CI_DEFAULTS.videoDesc },
+            { icon: '\uD83D\uDCF8', title: 'Progress photos & form clips', desc: f.checkInPhotosDesc || CI_DEFAULTS.photosDesc },
+            { icon: '\uD83D\uDCCB', title: 'This check-in form', desc: f.checkInFormDesc || CI_DEFAULTS.formDesc },
+          ].map(item => (
+            <div key={item.title} className="flex gap-2">
+              <span className="flex-shrink-0 mt-0.5">{item.icon}</span>
+              <div>
+                <p className="font-medium text-white/90">{item.title}</p>
+                <p className="text-white/50 leading-tight">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Expectation */}
+        {(f.checkInExpectationLine || CI_DEFAULTS.expectationLine) && (
+          <div className="bg-white/5 rounded-xl px-3 py-2">
+            <p className="text-white/60 italic">{f.checkInExpectationLine || CI_DEFAULTS.expectationLine}</p>
+          </div>
+        )}
+        {/* Form header */}
+        <p className="text-[9px] font-semibold uppercase tracking-wider text-white/40 px-1">Check-in Form</p>
+        {/* Exec questions */}
+        <div className="bg-white/5 rounded-xl p-3 space-y-2">
+          {f.checkInExecSectionTitle && <p className="font-semibold text-white/90">{f.checkInExecSectionTitle}</p>}
+          {f.checkInExecHelper && <p className="text-white/40 italic">{f.checkInExecHelper}</p>}
+          {[f.checkInExecQ1 || CI_DEFAULTS.execQ1, f.checkInExecQ2 || CI_DEFAULTS.execQ2, f.checkInExecQ3 || CI_DEFAULTS.execQ3, f.checkInExecQ4 || CI_DEFAULTS.execQ4].map((q, i) => (
+            <div key={i}>
+              <p className="text-white/80 mb-1">{q}</p>
+              <div className="grid grid-cols-2 gap-1">
+                {FREQ.map(f => <div key={f} className="bg-white/10 rounded px-1.5 py-1 text-white/50 text-center">{f}</div>)}
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Barrier */}
+        <div className="bg-white/5 rounded-xl p-3 space-y-2">
+          <p className="font-semibold text-white/90">{f.checkInBarrierQuestion || CI_DEFAULTS.barrierQuestion}</p>
+          <div className="grid grid-cols-2 gap-1">
+            {(barriers.length > 0 ? barriers : CI_DEFAULTS.barrierOptions).map((opt, i) => (
+              <div key={i} className="bg-white/10 rounded px-2 py-1.5 text-white/60 text-center">{opt}</div>
+            ))}
+          </div>
+          <div className="bg-white/10 rounded px-2 py-1.5 text-white/40">{f.checkInBarrierExplainLabel || CI_DEFAULTS.barrierExplainLabel}</div>
+        </div>
+        {/* Focus */}
+        <div className="bg-white/5 rounded-xl p-3">
+          <p className="font-semibold text-white/90 mb-1.5">{f.checkInFocusQuestion || CI_DEFAULTS.focusQuestion}</p>
+          <div className="bg-white/10 rounded px-2 py-2 text-white/30">Type here...</div>
+        </div>
+        {/* Submit */}
+        <div className="bg-green-500/80 rounded-xl py-3 text-center font-semibold text-white">Submit Check-in</div>
+      </div>
+    </div>
+  );
+}
 
 function CoachSettingsSection() {
   const { data: settings, refetch } = trpc.coachSettings.get.useQuery();
-  const upsert = trpc.coachSettings.upsert.useMutation({ onSuccess: () => { refetch(); toast.success("Settings saved"); } });
-
-  const [form, setForm] = useState({
-    checkInVideoDesc: "",
-    checkInPhotosDesc: "",
-    checkInFormDesc: "",
-  });
+  const upsert = trpc.coachSettings.upsert.useMutation({ onSuccess: () => { refetch(); toast.success("Saved"); } });
   const [loaded, setLoaded] = useState(false);
+  const [form, setForm] = useState<CIForm>({
+    checkInSectionHeader: CI_DEFAULTS.sectionHeader,
+    checkInVideoDesc: CI_DEFAULTS.videoDesc,
+    checkInPhotosDesc: CI_DEFAULTS.photosDesc,
+    checkInFormDesc: CI_DEFAULTS.formDesc,
+    checkInExpectationLine: CI_DEFAULTS.expectationLine,
+    checkInExecSectionTitle: CI_DEFAULTS.execSectionTitle,
+    checkInExecHelper: CI_DEFAULTS.execHelper,
+    checkInExecQ1: CI_DEFAULTS.execQ1,
+    checkInExecQ2: CI_DEFAULTS.execQ2,
+    checkInExecQ3: CI_DEFAULTS.execQ3,
+    checkInExecQ4: CI_DEFAULTS.execQ4,
+    checkInBarrierQuestion: CI_DEFAULTS.barrierQuestion,
+    checkInBarrierOptions: [...CI_DEFAULTS.barrierOptions],
+    checkInBarrierExplainLabel: CI_DEFAULTS.barrierExplainLabel,
+    checkInFocusQuestion: CI_DEFAULTS.focusQuestion,
+  });
 
   useEffect(() => {
     if (settings !== undefined && !loaded) {
       setForm({
-        checkInVideoDesc: settings?.checkInVideoDesc ?? CHECK_IN_DEFAULTS.videoDesc,
-        checkInPhotosDesc: settings?.checkInPhotosDesc ?? CHECK_IN_DEFAULTS.photosDesc,
-        checkInFormDesc: settings?.checkInFormDesc ?? CHECK_IN_DEFAULTS.formDesc,
+        checkInSectionHeader: settings?.checkInSectionHeader ?? CI_DEFAULTS.sectionHeader,
+        checkInVideoDesc: settings?.checkInVideoDesc ?? CI_DEFAULTS.videoDesc,
+        checkInPhotosDesc: settings?.checkInPhotosDesc ?? CI_DEFAULTS.photosDesc,
+        checkInFormDesc: settings?.checkInFormDesc ?? CI_DEFAULTS.formDesc,
+        checkInExpectationLine: settings?.checkInExpectationLine ?? CI_DEFAULTS.expectationLine,
+        checkInExecSectionTitle: settings?.checkInExecSectionTitle ?? CI_DEFAULTS.execSectionTitle,
+        checkInExecHelper: settings?.checkInExecHelper ?? CI_DEFAULTS.execHelper,
+        checkInExecQ1: settings?.checkInExecQ1 ?? CI_DEFAULTS.execQ1,
+        checkInExecQ2: settings?.checkInExecQ2 ?? CI_DEFAULTS.execQ2,
+        checkInExecQ3: settings?.checkInExecQ3 ?? CI_DEFAULTS.execQ3,
+        checkInExecQ4: settings?.checkInExecQ4 ?? CI_DEFAULTS.execQ4,
+        checkInBarrierQuestion: settings?.checkInBarrierQuestion ?? CI_DEFAULTS.barrierQuestion,
+        checkInBarrierOptions: settings?.checkInBarrierOptions ?? [...CI_DEFAULTS.barrierOptions],
+        checkInBarrierExplainLabel: settings?.checkInBarrierExplainLabel ?? CI_DEFAULTS.barrierExplainLabel,
+        checkInFocusQuestion: settings?.checkInFocusQuestion ?? CI_DEFAULTS.focusQuestion,
       });
       setLoaded(true);
     }
   }, [settings, loaded]);
 
+  const set = (key: keyof CIForm, val: string | string[]) => setForm(p => ({ ...p, [key]: val }));
+  const resetField = (key: keyof CIForm) => {
+    const map: Record<keyof CIForm, string | string[]> = {
+      checkInSectionHeader: CI_DEFAULTS.sectionHeader,
+      checkInVideoDesc: CI_DEFAULTS.videoDesc,
+      checkInPhotosDesc: CI_DEFAULTS.photosDesc,
+      checkInFormDesc: CI_DEFAULTS.formDesc,
+      checkInExpectationLine: CI_DEFAULTS.expectationLine,
+      checkInExecSectionTitle: CI_DEFAULTS.execSectionTitle,
+      checkInExecHelper: CI_DEFAULTS.execHelper,
+      checkInExecQ1: CI_DEFAULTS.execQ1,
+      checkInExecQ2: CI_DEFAULTS.execQ2,
+      checkInExecQ3: CI_DEFAULTS.execQ3,
+      checkInExecQ4: CI_DEFAULTS.execQ4,
+      checkInBarrierQuestion: CI_DEFAULTS.barrierQuestion,
+      checkInBarrierOptions: [...CI_DEFAULTS.barrierOptions],
+      checkInBarrierExplainLabel: CI_DEFAULTS.barrierExplainLabel,
+      checkInFocusQuestion: CI_DEFAULTS.focusQuestion,
+    };
+    setForm(p => ({ ...p, [key]: map[key] }));
+  };
+
   const handleSave = () => {
     upsert.mutate({
+      checkInSectionHeader: form.checkInSectionHeader || null,
       checkInVideoDesc: form.checkInVideoDesc || null,
       checkInPhotosDesc: form.checkInPhotosDesc || null,
       checkInFormDesc: form.checkInFormDesc || null,
+      checkInExpectationLine: form.checkInExpectationLine || null,
+      checkInExecSectionTitle: form.checkInExecSectionTitle || null,
+      checkInExecHelper: form.checkInExecHelper || null,
+      checkInExecQ1: form.checkInExecQ1 || null,
+      checkInExecQ2: form.checkInExecQ2 || null,
+      checkInExecQ3: form.checkInExecQ3 || null,
+      checkInExecQ4: form.checkInExecQ4 || null,
+      checkInBarrierQuestion: form.checkInBarrierQuestion || null,
+      checkInBarrierOptions: form.checkInBarrierOptions.length ? form.checkInBarrierOptions : null,
+      checkInBarrierExplainLabel: form.checkInBarrierExplainLabel || null,
+      checkInFocusQuestion: form.checkInFocusQuestion || null,
     });
   };
 
-  const handleReset = (field: keyof typeof form, defaultVal: string) => {
-    setForm(p => ({ ...p, [field]: defaultVal }));
-  };
+  const Field = ({ label, fieldKey, rows = 1, placeholder }: { label: string; fieldKey: keyof CIForm; rows?: number; placeholder?: string }) => (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-muted-foreground">{label}</label>
+        <button onClick={() => resetField(fieldKey)} className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">reset</button>
+      </div>
+      {rows > 1 ? (
+        <textarea
+          value={form[fieldKey] as string}
+          onChange={e => set(fieldKey, e.target.value)}
+          rows={rows}
+          placeholder={placeholder}
+          className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+        />
+      ) : (
+        <input
+          type="text"
+          value={form[fieldKey] as string}
+          onChange={e => set(fieldKey, e.target.value)}
+          placeholder={placeholder}
+          className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        />
+      )}
+    </div>
+  );
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <h2 className="text-base font-semibold text-foreground">Check-in Page Instructions</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">These descriptions appear on the client\u2019s Check-ins tab under \u201cEach Week, Submit\u201d.</p>
+    <div className="flex gap-8 items-start">
+      {/* ── Left: editor ── */}
+      <div className="flex-1 min-w-0 space-y-6">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Check-in Page Builder</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">Edit any text — the preview updates live. Save when ready.</p>
+        </div>
+
+        {/* Instructions section */}
+        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Instructions Card</p>
+          <Field label="Section header" fieldKey="checkInSectionHeader" placeholder={CI_DEFAULTS.sectionHeader} />
+          <Field label="Video / voice note description" fieldKey="checkInVideoDesc" rows={3} placeholder={CI_DEFAULTS.videoDesc} />
+          <Field label="Photos & form clips description" fieldKey="checkInPhotosDesc" rows={3} placeholder={CI_DEFAULTS.photosDesc} />
+          <Field label="Check-in form description" fieldKey="checkInFormDesc" rows={2} placeholder={CI_DEFAULTS.formDesc} />
+          <Field label="Expectation line (shown below the card)" fieldKey="checkInExpectationLine" rows={2} placeholder={CI_DEFAULTS.expectationLine} />
+        </div>
+
+        {/* Execution questions */}
+        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Execution Accuracy Questions</p>
+          <Field label="Section title (optional)" fieldKey="checkInExecSectionTitle" placeholder="Leave blank to hide" />
+          <Field label="Helper text (optional)" fieldKey="checkInExecHelper" rows={2} placeholder="Leave blank to hide" />
+          <Field label="Question 1" fieldKey="checkInExecQ1" rows={2} />
+          <Field label="Question 2" fieldKey="checkInExecQ2" rows={2} />
+          <Field label="Question 3" fieldKey="checkInExecQ3" rows={2} />
+          <Field label="Question 4" fieldKey="checkInExecQ4" rows={2} />
+        </div>
+
+        {/* Barrier section */}
+        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Adherence Barrier</p>
+          <Field label="Question" fieldKey="checkInBarrierQuestion" rows={2} />
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-muted-foreground">Options (one per line)</label>
+              <button onClick={() => resetField('checkInBarrierOptions')} className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">reset</button>
+            </div>
+            <textarea
+              value={form.checkInBarrierOptions.join('\n')}
+              onChange={e => set('checkInBarrierOptions', e.target.value.split('\n'))}
+              rows={9}
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none font-mono"
+            />
+          </div>
+          <Field label="Conditional explain label" fieldKey="checkInBarrierExplainLabel" />
+        </div>
+
+        {/* Focus section */}
+        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Focus for Next Week</p>
+          <Field label="Question" fieldKey="checkInFocusQuestion" rows={2} />
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={upsert.isPending}
+          className="px-6 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {upsert.isPending ? 'Saving...' : 'Save Changes'}
+        </button>
       </div>
 
-      {([
-        { key: "checkInVideoDesc" as const, label: "Video or voice note", icon: "\uD83C\uDFA5", defaultVal: CHECK_IN_DEFAULTS.videoDesc },
-        { key: "checkInPhotosDesc" as const, label: "Progress photos & form clips", icon: "\uD83D\uDCF8", defaultVal: CHECK_IN_DEFAULTS.photosDesc },
-        { key: "checkInFormDesc" as const, label: "This check-in form", icon: "\uD83D\uDCCB", defaultVal: CHECK_IN_DEFAULTS.formDesc },
-      ]).map(({ key, label, icon, defaultVal }) => (
-        <div key={key} className="bg-card border border-border rounded-xl p-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-foreground flex items-center gap-2">
-              <span>{icon}</span> {label}
-            </label>
-            <button
-              onClick={() => handleReset(key, defaultVal)}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >Reset to default</button>
-          </div>
-          <textarea
-            value={form[key]}
-            onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
-            rows={3}
-            className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-          />
-        </div>
-      ))}
-
-      <button
-        onClick={handleSave}
-        disabled={upsert.isPending}
-        className="px-6 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-      >
-        {upsert.isPending ? "Saving..." : "Save Settings"}
-      </button>
+      {/* ── Right: live preview ── */}
+      <div className="flex-shrink-0 sticky top-6">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 text-center">Live Preview</p>
+        <CheckInPagePreview f={form} />
+      </div>
     </div>
   );
 }
