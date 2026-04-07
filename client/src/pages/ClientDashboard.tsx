@@ -486,7 +486,7 @@ function HabitsSummary() {
               }`} />
               {/* Name + streak */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{h.name}</p>
+                <p className="text-sm font-medium text-foreground leading-snug">{h.name}</p>
                 {h.streak > 1 && (
                   <p className="text-[10px] text-primary/80">{h.streak}-day streak</p>
                 )}
