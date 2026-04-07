@@ -1949,6 +1949,7 @@ function CheckInsTab() {
     execPortionEstimate: '' as FreqVal,
     execUntrackedExtras: '' as FreqVal,
     execChangedFoods: '' as FreqVal,
+    execMissedMeals: '' as FreqVal,
 
     adherenceBarrier: '' as BarrierVal,
     barrierExplain: '',
@@ -1963,6 +1964,7 @@ function CheckInsTab() {
         execPortionEstimate: (existingCheckIn.execPortionEstimate ?? '') as FreqVal,
         execUntrackedExtras: (existingCheckIn.execUntrackedExtras ?? '') as FreqVal,
         execChangedFoods: (existingCheckIn.execChangedFoods ?? '') as FreqVal,
+        execMissedMeals: (existingCheckIn.execMissedMeals ?? '') as FreqVal,
 
         adherenceBarrier: (existingCheckIn.adherenceBarrier ?? '') as BarrierVal,
         barrierExplain: existingCheckIn.barrierExplain ?? '',
@@ -1981,7 +1983,7 @@ function CheckInsTab() {
   });
 
   const handleSubmit = () => {
-    const execFields = [form.execPortionEstimate, form.execUntrackedExtras, form.execChangedFoods];
+    const execFields = [form.execPortionEstimate, form.execUntrackedExtras, form.execChangedFoods, form.execMissedMeals];
     if (execFields.some(f => !f)) { toast.error('Please answer all execution accuracy questions.'); return; }
     if (!form.adherenceBarrier) { toast.error('Please select your main adherence barrier.'); return; }
     submitMutation.mutate({
@@ -1989,6 +1991,7 @@ function CheckInsTab() {
       execPortionEstimate: form.execPortionEstimate as any,
       execUntrackedExtras: form.execUntrackedExtras as any,
       execChangedFoods: form.execChangedFoods as any,
+      execMissedMeals: form.execMissedMeals as any,
 
       adherenceBarrier: form.adherenceBarrier as any,
       barrierExplain: form.barrierExplain || undefined,
@@ -2091,27 +2094,30 @@ function CheckInsTab() {
         {/* Section 1: Execution Accuracy */}
         <Card className="space-y-5 mb-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">Execution Accuracy</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Estimate as best you can — it doesn't need to be exact. Exclude fully off-plan meals.</p>
+            <p className="text-sm font-semibold text-foreground">Meal Plan Execution Accuracy</p>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">This is about how closely you followed your meal plan as written. Estimate as best you can — it doesn't need to be exact. Exclude fully off-plan meals. Seasonings and low-calorie condiments are fine and don't need to be counted.</p>
           </div>
           <FreqQuestion
-            label="How often did you estimate portions instead of weighing?"
+            label="How often did you estimate portions instead of following the exact quantities in your plan?"
             field="execPortionEstimate"
           />
           <FreqQuestion
-            label="How often did you have untracked extras? (oils, sauces, cooking fats, small bites, drinks, etc.)"
+            label="How often did you add extras not included in your plan? (exclude seasonings and low-calorie condiments)"
             field="execUntrackedExtras"
           />
           <FreqQuestion
-            label="How often did you change foods from your plan?"
+            label="How often did you change meals, foods, or ingredients from your plan?"
             field="execChangedFoods"
           />
-
+          <FreqQuestion
+            label="How often did you miss or skip parts of your planned meals?"
+            field="execMissedMeals"
+          />
         </Card>
 
         {/* Section 2: Adherence Barrier */}
         <Card className="space-y-4 mb-4">
-          <p className="text-sm font-semibold text-foreground">What was the main thing that made sticking to the plan difficult this week?</p>
+          <p className="text-sm font-semibold text-foreground">What was the main thing that made sticking to the meal plan difficult this week?</p>
           <div className="grid grid-cols-2 gap-2">
             {BARRIER_OPTIONS.map(opt => (
               <button

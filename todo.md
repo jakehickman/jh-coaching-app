@@ -221,3 +221,4 @@
 - [x] Client: redesign CheckInsTab form with Execution Accuracy, Adherence Barrier (conditional explain), and Focus for Next Week sections
 - [x] Coach: update CoachCheckInsTab to display all new structured fields
 - [x] Check-in form: remove "How often did you consume something without logging it?" question (execUnloggedItems)
+- [x] Check-in form: update question wording and helper text to focus on meal plan execution accuracy
