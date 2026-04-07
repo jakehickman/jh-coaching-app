@@ -2230,11 +2230,28 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
     return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  const adherenceColors: Record<string, string> = {
-    fully: 'bg-green-500/20 text-green-400',
-    mostly: 'bg-amber-500/20 text-amber-400',
-    partially: 'bg-orange-500/20 text-orange-400',
-    poorly: 'bg-red-500/20 text-red-400',
+  const FREQ_LABEL: Record<string, string> = {
+    never: 'Never',
+    '1_2_times': '1–2×',
+    '3_5_times': '3–5×',
+    '6_plus_times': '6+×',
+  };
+  const BARRIER_LABEL: Record<string, string> = {
+    no_issues: 'No issues',
+    hunger: 'Hunger',
+    cravings: 'Cravings',
+    social_events: 'Social events',
+    busy_time: 'Busy / time',
+    poor_planning: 'Poor planning',
+    low_motivation: 'Low motivation',
+    travel_disruption: 'Travel / disruption',
+    other: 'Other',
+  };
+  const freqColor = (v: string | null) => {
+    if (!v || v === 'never') return 'text-green-400';
+    if (v === '1_2_times') return 'text-amber-400';
+    if (v === '3_5_times') return 'text-orange-400';
+    return 'text-red-400';
   };
 
   if (checkIns.length === 0) {
@@ -2255,44 +2272,49 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
               <p className="text-sm font-semibold text-foreground">Week of {fmtDate(toLocalDateStr(ci.weekStartDate))}</p>
               <p className="text-xs text-muted-foreground mt-0.5">Submitted {new Date(ci.submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</p>
             </div>
-            <div className="flex items-center gap-2">
-              {ci.dietAdherence && (
-                <span className={`text-[10px] px-2 py-0.5 rounded font-medium capitalize ${adherenceColors[ci.dietAdherence] ?? 'bg-secondary text-muted-foreground'}`}>
-                  {ci.dietAdherence}
-                </span>
-              )}
-              {ci.overallFeeling != null && (
-                <span className="text-[10px] px-2 py-0.5 rounded bg-secondary text-muted-foreground font-medium">
-                  Feeling: {ci.overallFeeling}/5
-                </span>
-              )}
-            </div>
+            {ci.adherenceBarrier && (
+              <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                ci.adherenceBarrier === 'no_issues' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+              }`}>
+                {BARRIER_LABEL[ci.adherenceBarrier] ?? ci.adherenceBarrier}
+              </span>
+            )}
           </div>
 
-          {/* Responses */}
-          <div className="space-y-3">
-            {ci.dietAdherenceReason && (
+          {/* Execution Accuracy */}
+          {(ci.execPortionEstimate || ci.execUntrackedExtras || ci.execChangedFoods || ci.execUnloggedItems) && (
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Execution Accuracy</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                {[
+                  { label: 'Estimated portions', val: ci.execPortionEstimate },
+                  { label: 'Untracked extras', val: ci.execUntrackedExtras },
+                  { label: 'Changed foods', val: ci.execChangedFoods },
+                  { label: 'Unlogged items', val: ci.execUnloggedItems },
+                ].map(row => (
+                  <div key={row.label} className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{row.label}</span>
+                    <span className={`text-xs font-semibold ${freqColor(row.val)}`}>
+                      {row.val ? FREQ_LABEL[row.val] : '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Barrier + Explain */}
+          <div className="space-y-2">
+            {ci.barrierExplain && (
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Adherence Reason</p>
-                <p className="text-sm text-foreground">{ci.dietAdherenceReason}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Barrier Detail</p>
+                <p className="text-sm text-foreground">{ci.barrierExplain}</p>
               </div>
             )}
-            {ci.wentWell && (
+            {ci.focusNextWeek && (
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">What Went Well</p>
-                <p className="text-sm text-foreground">{ci.wentWell}</p>
-              </div>
-            )}
-            {ci.challenges && (
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Challenges</p>
-                <p className="text-sm text-foreground">{ci.challenges}</p>
-              </div>
-            )}
-            {ci.wins && (
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Wins</p>
-                <p className="text-sm text-foreground">{ci.wins}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Focus Next Week</p>
+                <p className="text-sm text-foreground">{ci.focusNextWeek}</p>
               </div>
             )}
           </div>

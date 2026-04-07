@@ -352,21 +352,36 @@ export const habitCompletions = mysqlTable("habit_completions", {
 
 export type HabitCompletion = typeof habitCompletions.$inferSelect;
 
+// Frequency enum for execution accuracy questions
+export const FREQ_OPTIONS = ["never", "1_2_times", "3_5_times", "6_plus_times"] as const;
+export type FreqOption = typeof FREQ_OPTIONS[number];
+
+// Adherence barrier options
+export const BARRIER_OPTIONS = [
+  "no_issues", "hunger", "cravings", "social_events",
+  "busy_time", "poor_planning", "low_motivation", "travel_disruption", "other"
+] as const;
+export type BarrierOption = typeof BARRIER_OPTIONS[number];
+
 // Check-in submissions — client weekly check-in form responses
 export const checkInSubmissions = mysqlTable("check_in_submissions", {
   id: int("id").autoincrement().primaryKey(),
   clientId: int("clientId").notNull(), // FK -> users.id
   coachId: int("coachId"), // FK -> users.id
   weekStartDate: date("weekStartDate").notNull(), // Monday of the check-in week
-  // Diet adherence
-  dietAdherence: mysqlEnum("dietAdherence", ["fully","mostly","partially","poorly"]),
-  dietAdherenceReason: text("dietAdherenceReason"), // if not fully adherent
-  // Guided prompts
-  wentWell: text("wentWell"),
-  challenges: text("challenges"),
-  wins: text("wins"),
-  // Overall feeling
-  overallFeeling: int("overallFeeling"), // 1-5
+  // Section 1: Execution Accuracy (4 frequency questions)
+  execPortionEstimate: mysqlEnum("execPortionEstimate", ["never","1_2_times","3_5_times","6_plus_times"]),
+  execUntrackedExtras: mysqlEnum("execUntrackedExtras", ["never","1_2_times","3_5_times","6_plus_times"]),
+  execChangedFoods: mysqlEnum("execChangedFoods", ["never","1_2_times","3_5_times","6_plus_times"]),
+  execUnloggedItems: mysqlEnum("execUnloggedItems", ["never","1_2_times","3_5_times","6_plus_times"]),
+  // Section 2: Adherence Barrier
+  adherenceBarrier: mysqlEnum("adherenceBarrier", [
+    "no_issues","hunger","cravings","social_events",
+    "busy_time","poor_planning","low_motivation","travel_disruption","other"
+  ]),
+  barrierExplain: text("barrierExplain"), // only shown if barrier != no_issues
+  // Section 3: Focus for Next Week
+  focusNextWeek: text("focusNextWeek"),
   // Coach reply
   coachReply: text("coachReply"),
   coachRepliedAt: timestamp("coachRepliedAt"),

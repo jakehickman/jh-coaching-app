@@ -839,12 +839,16 @@ export async function submitCheckIn(data: {
   clientId: number;
   coachId?: number;
   weekStartDate: string;
-  dietAdherence?: "fully" | "mostly" | "partially" | "poorly";
-  dietAdherenceReason?: string;
-  wentWell?: string;
-  challenges?: string;
-  wins?: string;
-  overallFeeling?: number;
+  // Section 1: Execution Accuracy
+  execPortionEstimate?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
+  execUntrackedExtras?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
+  execChangedFoods?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
+  execUnloggedItems?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
+  // Section 2: Adherence Barrier
+  adherenceBarrier?: "no_issues" | "hunger" | "cravings" | "social_events" | "busy_time" | "poor_planning" | "low_motivation" | "travel_disruption" | "other";
+  barrierExplain?: string;
+  // Section 3: Focus for Next Week
+  focusNextWeek?: string;
 }) {
   const db = await getDb();
   if (!db) return null;

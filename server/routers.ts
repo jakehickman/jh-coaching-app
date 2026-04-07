@@ -431,12 +431,16 @@ export const appRouter = router({
     submit: protectedProcedure
       .input(z.object({
         weekStartDate: z.string(), // yyyy-mm-dd (Monday)
-        dietAdherence: z.enum(["fully","mostly","partially","poorly"]).optional(),
-        dietAdherenceReason: z.string().optional(),
-        wentWell: z.string().optional(),
-        challenges: z.string().optional(),
-        wins: z.string().optional(),
-        overallFeeling: z.number().int().min(1).max(5).optional(),
+        // Section 1: Execution Accuracy
+        execPortionEstimate: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
+        execUntrackedExtras: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
+        execChangedFoods: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
+        execUnloggedItems: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
+        // Section 2: Adherence Barrier
+        adherenceBarrier: z.enum(["no_issues","hunger","cravings","social_events","busy_time","poor_planning","low_motivation","travel_disruption","other"]).optional(),
+        barrierExplain: z.string().max(500).optional(),
+        // Section 3: Focus for Next Week
+        focusNextWeek: z.string().max(300).optional(),
       }))
       .mutation(({ ctx, input }) =>
         db.submitCheckIn({ clientId: ctx.user.id, ...input })

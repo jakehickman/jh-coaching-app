@@ -1929,10 +1929,11 @@ function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program
 function CheckInsTab() {
   const { data: profile } = trpc.profile.get.useQuery();
   const today = localToday();
+
   // Compute Monday of the current week
   const getMondayOfWeek = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
-    const day = d.getDay(); // 0=Sun
+    const day = d.getDay();
     const diff = day === 0 ? -6 : 1 - day;
     d.setDate(d.getDate() + diff);
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1941,20 +1942,31 @@ function CheckInsTab() {
   const { data: existingCheckIn, refetch } = trpc.checkIn.myWeek.useQuery({ weekStartDate: currentWeekStart });
   const { data: allCheckIns = [] } = trpc.checkIn.myList.useQuery();
 
-  const blankForm = { dietAdherence: '' as '' | 'fully' | 'mostly' | 'partially' | 'poorly', dietAdherenceReason: '', wentWell: '', challenges: '', wins: '', overallFeeling: 3 };
+  type FreqVal = '' | 'never' | '1_2_times' | '3_5_times' | '6_plus_times';
+  type BarrierVal = '' | 'no_issues' | 'hunger' | 'cravings' | 'social_events' | 'busy_time' | 'poor_planning' | 'low_motivation' | 'travel_disruption' | 'other';
+
+  const blankForm = {
+    execPortionEstimate: '' as FreqVal,
+    execUntrackedExtras: '' as FreqVal,
+    execChangedFoods: '' as FreqVal,
+    execUnloggedItems: '' as FreqVal,
+    adherenceBarrier: '' as BarrierVal,
+    barrierExplain: '',
+    focusNextWeek: '',
+  };
   const [form, setForm] = useState(blankForm);
   const [submitted, setSubmitted] = useState(false);
 
-  // Hydrate form from existing check-in
   useEffect(() => {
     if (existingCheckIn) {
       setForm({
-        dietAdherence: (existingCheckIn.dietAdherence ?? '') as any,
-        dietAdherenceReason: existingCheckIn.dietAdherenceReason ?? '',
-        wentWell: existingCheckIn.wentWell ?? '',
-        challenges: existingCheckIn.challenges ?? '',
-        wins: existingCheckIn.wins ?? '',
-        overallFeeling: existingCheckIn.overallFeeling ?? 3,
+        execPortionEstimate: (existingCheckIn.execPortionEstimate ?? '') as FreqVal,
+        execUntrackedExtras: (existingCheckIn.execUntrackedExtras ?? '') as FreqVal,
+        execChangedFoods: (existingCheckIn.execChangedFoods ?? '') as FreqVal,
+        execUnloggedItems: (existingCheckIn.execUnloggedItems ?? '') as FreqVal,
+        adherenceBarrier: (existingCheckIn.adherenceBarrier ?? '') as BarrierVal,
+        barrierExplain: existingCheckIn.barrierExplain ?? '',
+        focusNextWeek: existingCheckIn.focusNextWeek ?? '',
       });
       setSubmitted(true);
     } else {
@@ -1969,15 +1981,18 @@ function CheckInsTab() {
   });
 
   const handleSubmit = () => {
-    if (!form.dietAdherence) { toast.error('Please select your diet adherence level.'); return; }
+    const execFields = [form.execPortionEstimate, form.execUntrackedExtras, form.execChangedFoods, form.execUnloggedItems];
+    if (execFields.some(f => !f)) { toast.error('Please answer all execution accuracy questions.'); return; }
+    if (!form.adherenceBarrier) { toast.error('Please select your main adherence barrier.'); return; }
     submitMutation.mutate({
       weekStartDate: currentWeekStart,
-      dietAdherence: form.dietAdherence as any,
-      dietAdherenceReason: form.dietAdherenceReason || undefined,
-      wentWell: form.wentWell || undefined,
-      challenges: form.challenges || undefined,
-      wins: form.wins || undefined,
-      overallFeeling: form.overallFeeling,
+      execPortionEstimate: form.execPortionEstimate as any,
+      execUntrackedExtras: form.execUntrackedExtras as any,
+      execChangedFoods: form.execChangedFoods as any,
+      execUnloggedItems: form.execUnloggedItems as any,
+      adherenceBarrier: form.adherenceBarrier as any,
+      barrierExplain: form.barrierExplain || undefined,
+      focusNextWeek: form.focusNextWeek || undefined,
     });
   };
 
@@ -1989,23 +2004,53 @@ function CheckInsTab() {
     return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  const adherenceOptions = [
-    { value: 'fully', label: '✅ Fully adherent', desc: 'Followed the plan completely' },
-    { value: 'mostly', label: '🟡 Mostly adherent', desc: 'Minor deviations, stayed on track overall' },
-    { value: 'partially', label: '🟠 Partially adherent', desc: 'Struggled to follow the plan' },
-    { value: 'poorly', label: '🔴 Poor adherence', desc: 'Significantly off plan this week' },
+  const FREQ_OPTIONS: { value: FreqVal; label: string }[] = [
+    { value: 'never', label: 'Never' },
+    { value: '1_2_times', label: '1–2 times' },
+    { value: '3_5_times', label: '3–5 times' },
+    { value: '6_plus_times', label: '6+ times' },
   ];
 
-  const feelingLabels = ['', 'Very Low', 'Low', 'Okay', 'Good', 'Great'];
+  const BARRIER_OPTIONS: { value: BarrierVal; label: string }[] = [
+    { value: 'no_issues', label: 'No issues' },
+    { value: 'hunger', label: 'Hunger' },
+    { value: 'cravings', label: 'Cravings' },
+    { value: 'social_events', label: 'Social events' },
+    { value: 'busy_time', label: 'Busy / time constraints' },
+    { value: 'poor_planning', label: 'Poor planning' },
+    { value: 'low_motivation', label: 'Low motivation' },
+    { value: 'travel_disruption', label: 'Travel / routine disruption' },
+    { value: 'other', label: 'Other' },
+  ];
+
+  const FreqQuestion = ({ label, field }: { label: string; field: keyof typeof blankForm }) => (
+    <div>
+      <p className="text-sm text-foreground mb-2">{label}</p>
+      <div className="grid grid-cols-2 gap-2">
+        {FREQ_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setForm(p => ({ ...p, [field]: opt.value }))}
+            className={`py-2.5 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
+              form[field] === opt.value
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border text-muted-foreground hover:border-muted-foreground/40'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Check-in Day Banner */}
       {dayLabel && (
         <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-            <span className="text-primary text-sm font-bold">📅</span>
-          </div>
+          <span className="text-primary text-base">📅</span>
           <div>
             <p className="text-sm font-semibold text-foreground">Check-in Day: {dayLabel}</p>
             <p className="text-xs text-muted-foreground">Your coach expects your check-in every {dayLabel}</p>
@@ -2014,155 +2059,118 @@ function CheckInsTab() {
       )}
 
       {/* What to Submit */}
-      <div>
-        <SectionLabel>What to Submit Each Week</SectionLabel>
-        <Card className="space-y-3">
-          {[
-            { icon: '🎥', title: 'Video or Voice Note', desc: 'A short review of your week — what went well, what was hard, your energy and mood.' },
-            { icon: '📸', title: 'Progress Photos & Form Clips', desc: 'Front, side, and back photos. Include form clips for any exercises you want feedback on.' },
-            { icon: '📋', title: 'Check-in Form', desc: 'Complete the form below every week. Your coach reviews all submissions and will reply with a video response.' },
-          ].map(item => (
-            <div key={item.title} className="flex gap-3">
-              <span className="text-lg flex-shrink-0 mt-0.5">{item.icon}</span>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
-              </div>
+      <Card className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Each Week, Submit:</p>
+        {[
+          { icon: '🎥', title: 'Video or voice note', desc: 'A short review of your week.' },
+          { icon: '📸', title: 'Progress photos & form clips', desc: 'Front, side, back. Include form clips for feedback.' },
+          { icon: '📋', title: 'This check-in form', desc: 'Your coach reviews all submissions and replies with a video response.' },
+        ].map(item => (
+          <div key={item.title} className="flex gap-3">
+            <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
+            <div>
+              <p className="text-sm font-medium text-foreground">{item.title}</p>
+              <p className="text-xs text-muted-foreground">{item.desc}</p>
             </div>
-          ))}
-        </Card>
-      </div>
-
-      {/* Expectation Setting */}
-      <Card className="bg-muted/40 border-border">
-        <div className="flex gap-3 items-start">
-          <span className="text-lg flex-shrink-0">💬</span>
-          <div>
-            <p className="text-sm font-semibold text-foreground">What happens after you submit?</p>
-            <p className="text-xs text-muted-foreground mt-1">Your coach will review your submission, watch your videos, and reply with a personalised video check-in response. Expect a reply within 24–48 hours.</p>
           </div>
-        </div>
+        ))}
       </Card>
 
-      {/* Check-in Form */}
-      <div>
-        <SectionLabel>Weekly Check-in Form — Week of {fmtWeekStart(currentWeekStart)}</SectionLabel>
-        {submitted && existingCheckIn?.coachReply && (
-          <div className="mb-4 bg-primary/10 border border-primary/20 rounded-xl p-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">Coach Reply</p>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{existingCheckIn.coachReply}</p>
-          </div>
-        )}
-        <Card className="space-y-5">
-          {/* Diet Adherence */}
-          <div>
-            <p className="text-sm font-semibold text-foreground mb-3">How was your diet adherence this week?</p>
-            <div className="space-y-2">
-              {adherenceOptions.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setForm(p => ({ ...p, dietAdherence: opt.value as any }))}
-                  className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
-                    form.dietAdherence === opt.value
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-muted-foreground/40'
-                  }`}
-                >
-                  <p className="text-sm font-medium text-foreground">{opt.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Coach Reply (if exists) */}
+      {submitted && existingCheckIn?.coachReply && (
+        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">Coach Reply</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{existingCheckIn.coachReply}</p>
+        </div>
+      )}
 
-          {/* Adherence reason — shown if not fully adherent */}
-          {form.dietAdherence && form.dietAdherence !== 'fully' && (
+      {/* ── Check-in Form ── */}
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Check-in Form — Week of {fmtWeekStart(currentWeekStart)}</p>
+
+        {/* Section 1: Execution Accuracy */}
+        <Card className="space-y-5 mb-4">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Execution Accuracy</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Estimate as best you can — it doesn't need to be exact. Exclude fully off-plan meals.</p>
+          </div>
+          <FreqQuestion
+            label="How often did you estimate portions instead of weighing?"
+            field="execPortionEstimate"
+          />
+          <FreqQuestion
+            label="How often did you have untracked extras? (oils, sauces, cooking fats, small bites, drinks, etc.)"
+            field="execUntrackedExtras"
+          />
+          <FreqQuestion
+            label="How often did you change foods from your plan?"
+            field="execChangedFoods"
+          />
+          <FreqQuestion
+            label="How often did you consume something without logging it?"
+            field="execUnloggedItems"
+          />
+        </Card>
+
+        {/* Section 2: Adherence Barrier */}
+        <Card className="space-y-4 mb-4">
+          <p className="text-sm font-semibold text-foreground">What was the main thing that made sticking to the plan difficult this week?</p>
+          <div className="grid grid-cols-2 gap-2">
+            {BARRIER_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setForm(p => ({ ...p, adherenceBarrier: opt.value, barrierExplain: opt.value === 'no_issues' ? '' : p.barrierExplain }))}
+                className={`py-2.5 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
+                  form.adherenceBarrier === opt.value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground hover:border-muted-foreground/40'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {/* Conditional explain field */}
+          {form.adherenceBarrier && form.adherenceBarrier !== 'no_issues' && (
             <div>
-              <p className="text-sm font-semibold text-foreground mb-2">If you struggled with adherence, why?</p>
+              <p className="text-sm text-foreground mb-2">Briefly explain <span className="text-muted-foreground">(1–2 lines)</span></p>
               <textarea
-                value={form.dietAdherenceReason}
-                onChange={e => setForm(p => ({ ...p, dietAdherenceReason: e.target.value }))}
-                rows={3}
-                placeholder="Social events, stress, travel, cravings..."
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                value={form.barrierExplain}
+                onChange={e => setForm(p => ({ ...p, barrierExplain: e.target.value }))}
+                rows={2}
+                maxLength={500}
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
               />
             </div>
           )}
-
-          {/* What went well */}
-          <div>
-            <p className="text-sm font-semibold text-foreground mb-2">What went well this week?</p>
-            <textarea
-              value={form.wentWell}
-              onChange={e => setForm(p => ({ ...p, wentWell: e.target.value }))}
-              rows={3}
-              placeholder="Training sessions, nutrition wins, habits..."
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-            />
-          </div>
-
-          {/* Challenges */}
-          <div>
-            <p className="text-sm font-semibold text-foreground mb-2">What were your challenges?</p>
-            <textarea
-              value={form.challenges}
-              onChange={e => setForm(p => ({ ...p, challenges: e.target.value }))}
-              rows={3}
-              placeholder="What made this week hard?"
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-            />
-          </div>
-
-          {/* Wins */}
-          <div>
-            <p className="text-sm font-semibold text-foreground mb-2">What were your wins?</p>
-            <textarea
-              value={form.wins}
-              onChange={e => setForm(p => ({ ...p, wins: e.target.value }))}
-              rows={2}
-              placeholder="PRs, consistency, mindset shifts..."
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-            />
-          </div>
-
-          {/* Overall feeling */}
-          <div>
-            <p className="text-sm font-semibold text-foreground mb-3">Overall feeling this week: <span className="text-primary">{feelingLabels[form.overallFeeling]}</span></p>
-            <div className="flex gap-2">
-              {[1,2,3,4,5].map(n => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setForm(p => ({ ...p, overallFeeling: n }))}
-                  className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-bold transition-all ${
-                    form.overallFeeling === n
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border text-muted-foreground hover:border-muted-foreground/40'
-                  }`}
-                >{n}</button>
-              ))}
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-muted-foreground">Very Low</span>
-              <span className="text-[10px] text-muted-foreground">Great</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={submitMutation.isPending}
-            className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            {submitMutation.isPending ? 'Submitting...' : submitted ? 'Update Check-in' : 'Submit Check-in'}
-          </button>
         </Card>
+
+        {/* Section 3: Focus for Next Week */}
+        <Card className="space-y-3 mb-4">
+          <p className="text-sm font-semibold text-foreground">What will you improve or focus on this week?</p>
+          <input
+            type="text"
+            value={form.focusNextWeek}
+            onChange={e => setForm(p => ({ ...p, focusNextWeek: e.target.value }))}
+            maxLength={300}
+            className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </Card>
+
+        <button
+          onClick={handleSubmit}
+          disabled={submitMutation.isPending}
+          className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {submitMutation.isPending ? 'Submitting...' : submitted ? 'Update Check-in' : 'Submit Check-in'}
+        </button>
       </div>
 
       {/* Past Check-ins */}
       {allCheckIns.length > 1 && (
         <div>
-          <SectionLabel>Past Check-ins</SectionLabel>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Past Check-ins</p>
           <div className="space-y-2">
             {allCheckIns.slice(1).map(ci => (
               <Card key={ci.id} className="opacity-80">
@@ -2170,7 +2178,9 @@ function CheckInsTab() {
                   <p className="text-sm font-semibold text-foreground">Week of {fmtWeekStart(toLocalDateStr(ci.weekStartDate))}</p>
                   {ci.coachReply && <span className="text-[10px] px-2 py-0.5 rounded bg-primary/20 text-primary font-medium">Replied</span>}
                 </div>
-                {ci.dietAdherence && <p className="text-xs text-muted-foreground mt-1">Diet: {ci.dietAdherence}</p>}
+                {ci.adherenceBarrier && ci.adherenceBarrier !== 'no_issues' && (
+                  <p className="text-xs text-muted-foreground mt-1">Barrier: {ci.adherenceBarrier.replace(/_/g, ' ')}</p>
+                )}
               </Card>
             ))}
           </div>

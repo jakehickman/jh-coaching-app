@@ -214,3 +214,9 @@
 - [x] Steps card: rename to "Avg Daily Steps" and show 7-day average as value
 - [x] Habits card: redesign to be non-editable, cleaner layout
 - [x] Client dashboard: remove sub-text from Training Adherence metric card
+
+## Check-in Form Redesign
+- [x] Schema: add execution accuracy fields (4 frequency questions) and adherence barrier fields to check_in_submissions
+- [x] Backend: update submit/list procedures for new check-in shape
+- [x] Client: redesign CheckInsTab form with Execution Accuracy, Adherence Barrier (conditional explain), and Focus for Next Week sections
+- [x] Coach: update CoachCheckInsTab to display all new structured fields
