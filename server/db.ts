@@ -25,6 +25,7 @@ import {
   checkInSubmissions,
   CheckInSubmission,
   InsertCheckInSubmission,
+  coachSettings,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -924,5 +925,28 @@ export async function updateClientProfileExtended(userId: number, data: {
     await db.update(clientProfiles).set(data as any).where(eq(clientProfiles.userId, userId));
   } else {
     await db.insert(clientProfiles).values({ userId, ...data } as any);
+  }
+}
+
+// ─── Coach Settings ───────────────────────────────────────────────────────────
+export async function getCoachSettings() {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(coachSettings).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function upsertCoachSettings(data: {
+  checkInVideoDesc?: string | null;
+  checkInPhotosDesc?: string | null;
+  checkInFormDesc?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select().from(coachSettings).limit(1);
+  if (existing.length > 0) {
+    await db.update(coachSettings).set(data).where(eq(coachSettings.id, existing[0].id));
+  } else {
+    await db.insert(coachSettings).values(data);
   }
 }

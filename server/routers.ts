@@ -550,5 +550,16 @@ export const appRouter = router({
       .input(z.object({ clientId: z.number() }))
       .query(({ input }) => db.listAssignedHabitsForClient(input.clientId)),
   }),
+
+  coachSettings: router({
+    get: publicProcedure.query(() => db.getCoachSettings()),
+    upsert: adminProcedure
+      .input(z.object({
+        checkInVideoDesc: z.string().nullable().optional(),
+        checkInPhotosDesc: z.string().nullable().optional(),
+        checkInFormDesc: z.string().nullable().optional(),
+      }))
+      .mutation(({ input }) => db.upsertCoachSettings(input)),
+  }),
 });
 export type AppRouter = typeof appRouter;

@@ -49,6 +49,7 @@ const coachNav: NavItem[] = [
   { href: "/coach/exercise-library", label: "Exercise Library", icon: <BookOpen size={16} /> },
   { href: "/coach/nutrition-data", label: "Nutrition Data", icon: <Salad size={16} /> },
   { href: "/coach/habits", label: "Habits", icon: <CheckSquare size={16} /> },
+  { href: "/coach/settings", label: "Settings", icon: <Settings size={16} /> },
 ];
 
 interface DashboardShellProps {

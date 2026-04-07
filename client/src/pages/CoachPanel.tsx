@@ -3252,6 +3252,89 @@ function HabitsSection() {
   );
 }
 
+// ─── Coach Settings Section ─────────────────────────────────────────────────
+const CHECK_IN_DEFAULTS = {
+  videoDesc: "Send me a 2\u20133 min video or voice note on WhatsApp. Cover: how your week went, training and nutrition highlights, anything you struggled with, and one thing you want to improve.",
+  photosDesc: "Send progress photos (front, side, back) and any form clips to me on WhatsApp. Same lighting and position each week for the best comparison.",
+  formDesc: "Covers meal plan accuracy and adherence.",
+};
+
+function CoachSettingsSection() {
+  const { data: settings, refetch } = trpc.coachSettings.get.useQuery();
+  const upsert = trpc.coachSettings.upsert.useMutation({ onSuccess: () => { refetch(); toast.success("Settings saved"); } });
+
+  const [form, setForm] = useState({
+    checkInVideoDesc: "",
+    checkInPhotosDesc: "",
+    checkInFormDesc: "",
+  });
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (settings !== undefined && !loaded) {
+      setForm({
+        checkInVideoDesc: settings?.checkInVideoDesc ?? CHECK_IN_DEFAULTS.videoDesc,
+        checkInPhotosDesc: settings?.checkInPhotosDesc ?? CHECK_IN_DEFAULTS.photosDesc,
+        checkInFormDesc: settings?.checkInFormDesc ?? CHECK_IN_DEFAULTS.formDesc,
+      });
+      setLoaded(true);
+    }
+  }, [settings, loaded]);
+
+  const handleSave = () => {
+    upsert.mutate({
+      checkInVideoDesc: form.checkInVideoDesc || null,
+      checkInPhotosDesc: form.checkInPhotosDesc || null,
+      checkInFormDesc: form.checkInFormDesc || null,
+    });
+  };
+
+  const handleReset = (field: keyof typeof form, defaultVal: string) => {
+    setForm(p => ({ ...p, [field]: defaultVal }));
+  };
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <h2 className="text-base font-semibold text-foreground">Check-in Page Instructions</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">These descriptions appear on the client\u2019s Check-ins tab under \u201cEach Week, Submit\u201d.</p>
+      </div>
+
+      {([
+        { key: "checkInVideoDesc" as const, label: "Video or voice note", icon: "\uD83C\uDFA5", defaultVal: CHECK_IN_DEFAULTS.videoDesc },
+        { key: "checkInPhotosDesc" as const, label: "Progress photos & form clips", icon: "\uD83D\uDCF8", defaultVal: CHECK_IN_DEFAULTS.photosDesc },
+        { key: "checkInFormDesc" as const, label: "This check-in form", icon: "\uD83D\uDCCB", defaultVal: CHECK_IN_DEFAULTS.formDesc },
+      ]).map(({ key, label, icon, defaultVal }) => (
+        <div key={key} className="bg-card border border-border rounded-xl p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <span>{icon}</span> {label}
+            </label>
+            <button
+              onClick={() => handleReset(key, defaultVal)}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >Reset to default</button>
+          </div>
+          <textarea
+            value={form[key]}
+            onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+            rows={3}
+            className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+          />
+        </div>
+      ))}
+
+      <button
+        onClick={handleSave}
+        disabled={upsert.isPending}
+        className="px-6 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+      >
+        {upsert.isPending ? "Saving..." : "Save Settings"}
+      </button>
+    </div>
+  );
+}
+
 // ─── Main CoachPanel ──────────────────────────────────────────────────────────
 const SECTION_MAP: Record<string, () => React.ReactNode> = {
   clients: () => <ClientsSection />,
@@ -3261,6 +3344,7 @@ const SECTION_MAP: Record<string, () => React.ReactNode> = {
   "exercise-library": () => <ExerciseLibrarySection />,
   "nutrition-data": () => <NutritionDataSection />,
   habits: () => <HabitsSection />,
+  settings: () => <CoachSettingsSection />,
 };
 const SECTION_TITLES: Record<string, string> = {
   clients: "Clients",
@@ -3270,6 +3354,7 @@ const SECTION_TITLES: Record<string, string> = {
   "exercise-library": "Exercise Library",
   "nutrition-data": "Nutrition Data",
   habits: "Habits",
+  settings: "Settings",
 };
 
 export default function CoachPanel() {
