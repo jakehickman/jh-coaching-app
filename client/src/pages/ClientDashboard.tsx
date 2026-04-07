@@ -696,7 +696,7 @@ function DailyLogTab() {
       <div>
         <SectionLabel>Body Metrics</SectionLabel>
         <Card className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3">
             <div>
               <label className="text-sm text-muted-foreground block mb-1.5">Weight (kg)</label>
               <input type="number" step="0.1" value={form.weight} onChange={f("weight")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
