@@ -31,13 +31,13 @@ interface NavItem {
 
 // ─── Client nav: all tabs in a single scrollable bottom bar ─────────────────
 const clientNav: NavItem[] = [
-  { href: "/dashboard/overview",      label: "Home",          icon: <Home size={20} /> },
-  { href: "/dashboard/daily-log",     label: "Daily Log",     icon: <ClipboardList size={20} /> },
-  { href: "/dashboard/training",      label: "Training",      icon: <Dumbbell size={20} /> },
-  { href: "/dashboard/check-ins",     label: "Check-ins",     icon: <Calendar size={20} /> },
-  { href: "/dashboard/measurements",  label: "Measurements",  icon: <Ruler size={20} /> },
-  { href: "/dashboard/meal-plan",     label: "Meal Plan",     icon: <Zap size={20} /> },
-  { href: "/dashboard/shopping",      label: "Shopping",      icon: <ShoppingCart size={20} /> },
+  { href: "/dashboard/overview",      label: "Home",          icon: <Home size={22} /> },
+  { href: "/dashboard/daily-log",     label: "Daily Log",     icon: <ClipboardList size={22} /> },
+  { href: "/dashboard/training",      label: "Training",      icon: <Dumbbell size={22} /> },
+  { href: "/dashboard/check-ins",     label: "Check-ins",     icon: <Calendar size={22} /> },
+  { href: "/dashboard/measurements",  label: "Measurements",  icon: <Ruler size={22} /> },
+  { href: "/dashboard/meal-plan",     label: "Meal Plan",     icon: <Zap size={22} /> },
+  { href: "/dashboard/shopping",      label: "Shopping",      icon: <ShoppingCart size={22} /> },
 ];
 
 const coachNav: NavItem[] = [
@@ -328,12 +328,12 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 py-2.5 transition-colors min-h-[56px] flex-shrink-0 w-[72px]",
+                    "flex flex-col items-center justify-center gap-1.5 py-3 transition-colors min-h-[68px] flex-shrink-0 w-[82px]",
                     isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {item.icon}
-                  <span className={cn("text-[10px] font-medium leading-none whitespace-nowrap", isActive ? "text-primary" : "text-muted-foreground")}>
+                  <span className={cn("text-[11px] font-medium leading-none whitespace-nowrap", isActive ? "text-primary" : "text-muted-foreground")}>
                     {item.label}
                   </span>
                 </Link>
