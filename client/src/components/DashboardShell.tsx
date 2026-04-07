@@ -328,7 +328,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 py-2.5 px-3.5 transition-colors min-h-[56px] flex-shrink-0",
+                    "flex flex-col items-center justify-center gap-1 py-2.5 transition-colors min-h-[56px] flex-shrink-0 w-[72px]",
                     isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
