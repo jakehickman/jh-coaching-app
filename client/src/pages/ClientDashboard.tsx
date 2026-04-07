@@ -1928,14 +1928,7 @@ function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program
 // ─── Check-ins Tab ─────────────────────────────────────────────────────────
 function CheckInsTab() {
   const { data: profile } = trpc.profile.get.useQuery();
-  const { data: coachSettings } = trpc.coachSettings.get.useQuery();
   const today = localToday();
-
-  const CHECK_IN_DEFAULTS = {
-    videoDesc: "Send me a 2\u20133 min video or voice note on WhatsApp. Cover: how your week went, training and nutrition highlights, anything you struggled with, and one thing you want to improve.",
-    photosDesc: "Send progress photos (front, side, back) and any form clips to me on WhatsApp. Same lighting and position each week for the best comparison.",
-    formDesc: "Covers meal plan accuracy and adherence.",
-  };
 
   // Compute Monday of the current week
   const getMondayOfWeek = (dateStr: string) => {
@@ -2072,9 +2065,9 @@ function CheckInsTab() {
       <Card className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Each Week, Submit:</p>
         {[
-          { icon: '🎥', title: 'Video or voice note', desc: coachSettings?.checkInVideoDesc ?? CHECK_IN_DEFAULTS.videoDesc },
-          { icon: '📸', title: 'Progress photos & form clips', desc: coachSettings?.checkInPhotosDesc ?? CHECK_IN_DEFAULTS.photosDesc },
-          { icon: '📋', title: 'This check-in form', desc: coachSettings?.checkInFormDesc ?? CHECK_IN_DEFAULTS.formDesc },
+          { icon: '🎥', title: 'Video or voice note', desc: 'A short review of your week.' },
+          { icon: '📸', title: 'Progress photos & form clips', desc: 'Front, side, back. Include form clips for feedback.' },
+          { icon: '📋', title: 'This check-in form', desc: 'I will review your check-in and reply with a video response within 24 hours.' },
         ].map(item => (
           <div key={item.title} className="flex gap-3">
             <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
@@ -2100,7 +2093,10 @@ function CheckInsTab() {
 
         {/* Section 1: Execution Accuracy */}
         <Card className="space-y-5 mb-4">
-
+          <div>
+            <p className="text-sm font-semibold text-foreground">Meal Plan Execution Accuracy</p>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">This is about how closely you followed your meal plan as written. Estimate as best you can — it doesn't need to be exact. Exclude fully off-plan meals. Seasonings and low-calorie condiments are fine and don't need to be counted.</p>
+          </div>
           <FreqQuestion
             label="How often did you estimate portions instead of following the exact quantities in your plan?"
             field="execPortionEstimate"
@@ -2114,7 +2110,7 @@ function CheckInsTab() {
             field="execChangedFoods"
           />
           <FreqQuestion
-            label="How often did you skip or leave out part of a planned meal? (not including fully off-plan meals)"
+            label="How often did you miss or skip parts of your planned meals?"
             field="execMissedMeals"
           />
         </Card>
@@ -2155,7 +2151,7 @@ function CheckInsTab() {
 
         {/* Section 3: Focus for Next Week */}
         <Card className="space-y-3 mb-4">
-          <p className="text-sm font-semibold text-foreground">What's one thing you want to improve or focus on this week?</p>
+          <p className="text-sm font-semibold text-foreground">What will you improve or focus on this week?</p>
           <input
             type="text"
             value={form.focusNextWeek}

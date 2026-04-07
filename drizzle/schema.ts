@@ -392,15 +392,3 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
 
 export type CheckInSubmission = typeof checkInSubmissions.$inferSelect;
 export type InsertCheckInSubmission = typeof checkInSubmissions.$inferInsert;
-
-// Coach settings — singleton row storing global customisable text
-export const coachSettings = mysqlTable("coach_settings", {
-  id: int("id").autoincrement().primaryKey(),
-  // Check-in page instruction text (falls back to hardcoded defaults if null)
-  checkInVideoDesc: text("checkInVideoDesc"),
-  checkInPhotosDesc: text("checkInPhotosDesc"),
-  checkInFormDesc: text("checkInFormDesc"),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-export type CoachSettings = typeof coachSettings.$inferSelect;
-export type InsertCoachSettings = typeof coachSettings.$inferInsert;
