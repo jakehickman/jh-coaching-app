@@ -483,11 +483,11 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                 <p className="text-sm font-semibold text-foreground">{fmtDay(iso)}</p>
                 <p className="text-[10px] text-muted-foreground">{dayLabel(iso)}</p>
               </div>
-              {/* Middle: fixed-width columns so chips always align */}
-              <div className="flex-1 flex items-center gap-2 px-3">
+              {/* Middle: chips */}
+              <div className="flex-1 flex items-center gap-2 px-3 flex-wrap">
                 {hasData ? (
                   <>
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium w-24 text-center flex-shrink-0 ${
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
                       trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>{sessionLabel}</span>
                     {(log.offPlanMeals ?? 0) > 0 ? (
