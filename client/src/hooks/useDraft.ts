@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback } from "react";
  * @param key     Unique localStorage key for this draft (e.g. "draft:dailyLog:2026-04-06")
  * @param initial Initial / default form value
  */
-export function useDraft<T>(key: string, initial: T): [T, React.Dispatch<React.SetStateAction<T>>, () => void] {
+export function useDraft<T>(key: string, initial: T): [T, React.Dispatch<React.SetStateAction<T>>, (resetTo?: T) => void] {
   const [value, setValueRaw] = useState<T>(() => {
     try {
       const stored = localStorage.getItem(key);
@@ -43,13 +43,16 @@ export function useDraft<T>(key: string, initial: T): [T, React.Dispatch<React.S
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  const clearDraft = useCallback(() => {
+  const clearDraft = useCallback((resetTo?: T) => {
     try {
       localStorage.removeItem(key);
     } catch {
       // ignore
     }
-  }, [key]);
+    // Reset in-memory state so the form reflects the cleared/reset value immediately
+    // without requiring a navigation away and back.
+    if (resetTo !== undefined) setValueRaw(resetTo);
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return [value, setValueRaw, clearDraft];
 }

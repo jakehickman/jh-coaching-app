@@ -125,7 +125,26 @@ export async function getPendingApprovalCount(): Promise<number> {
 export async function deleteUser(userId: number) {
   const db = await getDb();
   if (!db) return;
-  // Delete related data first to avoid FK constraint errors
+  // Delete all related data first to avoid FK constraint errors and orphaned rows
+  await db.delete(dailyLogs).where(eq(dailyLogs.userId, userId));
+  await db.delete(measurements).where(eq(measurements.userId, userId));
+  await db.delete(mealPlans).where(eq(mealPlans.userId, userId));
+  await db.delete(shoppingItems).where(eq(shoppingItems.userId, userId));
+  // meso sessions depend on meso cycles — delete sessions first
+  const userMesos = await db.select({ id: mesoCycles.id }).from(mesoCycles).where(eq(mesoCycles.userId, userId));
+  for (const meso of userMesos) {
+    await db.delete(mesoSessions).where(eq(mesoSessions.mesoId, meso.id));
+  }
+  await db.delete(mesoCycles).where(eq(mesoCycles.userId, userId));
+  await db.delete(trainingPrograms).where(eq(trainingPrograms.userId, userId));
+  await db.delete(workoutSessions).where(eq(workoutSessions.userId, userId));
+  await db.delete(timelineMilestones).where(eq(timelineMilestones.userId, userId));
+  await db.delete(coachingNotes).where(eq(coachingNotes.clientId, userId));
+  await db.delete(weeklyCheckIns).where(eq(weeklyCheckIns.userId, userId));
+  await db.delete(checkInSubmissions).where(eq(checkInSubmissions.clientId, userId));
+  await db.delete(onboardingSubmissions).where(eq(onboardingSubmissions.userId, userId));
+  await db.delete(habitAssignments).where(eq(habitAssignments.clientId, userId));
+  await db.delete(habitCompletions).where(eq(habitCompletions.clientId, userId));
   await db.delete(clientProfiles).where(eq(clientProfiles.userId, userId));
   await db.delete(users).where(eq(users.id, userId));
 }

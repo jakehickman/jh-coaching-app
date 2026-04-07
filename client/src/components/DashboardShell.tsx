@@ -3,7 +3,6 @@ import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import {
-  BarChart3,
   BookOpen,
   Calendar,
   Salad,
@@ -16,7 +15,6 @@ import {
   Menu,
   MoreHorizontal,
   Ruler,
-  Settings,
   ShoppingCart,
   TrendingUp,
   Users,
@@ -87,10 +85,15 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
       setHasMealDraft(keys.some(k => k.startsWith("draft:mealPlan:")));
       setHasTrainingDraft(keys.some(k => k.startsWith("draft:training:")));
     }
+    // Run once on mount and whenever localStorage changes (cross-tab or same-tab via storage event)
     checkDrafts();
     window.addEventListener("storage", checkDrafts);
-    const id = setInterval(checkDrafts, 3000);
-    return () => { window.removeEventListener("storage", checkDrafts); clearInterval(id); };
+    // Also listen for a custom event dispatched by the forms when they write a draft
+    window.addEventListener("draft-changed", checkDrafts);
+    return () => {
+      window.removeEventListener("storage", checkDrafts);
+      window.removeEventListener("draft-changed", checkDrafts);
+    };
   }, [mode]);
 
   if (loading) {

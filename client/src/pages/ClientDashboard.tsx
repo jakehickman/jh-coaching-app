@@ -609,7 +609,7 @@ function DailyLogTab() {
   const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 90 });
   const { data: workoutSessions = [] } = trpc.workoutSessions.list.useQuery();
   const upsert = trpc.dailyLog.upsert.useMutation({
-    onSuccess: () => { clearDraft(); toast.success("Log saved"); refetch(); }
+    onSuccess: () => { clearDraft(blankDailyForm); toast.success("Log saved"); refetch(); }
   });
   const del = trpc.dailyLog.delete.useMutation({
     onSuccess: () => { toast.success("Log deleted"); refetch(); }

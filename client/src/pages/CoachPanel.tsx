@@ -1266,7 +1266,7 @@ function TrainingSection() {
       JSON.stringify(days) !== JSON.stringify(snap.days) ||
       JSON.stringify(schedule) !== JSON.stringify(snap.schedule);
     if (isDirty) {
-      try { localStorage.setItem(trainingDraftKey, JSON.stringify({ programName, notes, days, schedule })); } catch {}
+      try { localStorage.setItem(trainingDraftKey, JSON.stringify({ programName, notes, days, schedule })); window.dispatchEvent(new Event("draft-changed")); } catch {}
     } else {
       try { localStorage.removeItem(trainingDraftKey); } catch {}
     }
@@ -1638,7 +1638,7 @@ function MealPlansSection() {
       planNotes !== snap.planNotes ||
       JSON.stringify(meals) !== JSON.stringify(snap.meals);
     if (isDirty) {
-      try { localStorage.setItem(mealDraftKey, JSON.stringify({ planNotes, meals })); } catch {}
+      try { localStorage.setItem(mealDraftKey, JSON.stringify({ planNotes, meals })); window.dispatchEvent(new Event("draft-changed")); } catch {}
     } else {
       try { localStorage.removeItem(mealDraftKey); } catch {}
     }
