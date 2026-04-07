@@ -326,13 +326,6 @@ function ProgressHistoryTable({
                   <p className={`text-sm font-semibold ${isFirst ? 'text-foreground' : 'text-muted-foreground'}`}>{row.label}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {pctLabel && (
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5 ${pctColor} ${pctBg}`}>
-                      {pctDown ? <ArrowDown size={10} /> : pctUp ? <ArrowUp size={10} /> : <Minus size={10} />}
-                      {pctLabel}
-                    </span>
-                  )}
-                  <span className="text-[10px] text-muted-foreground">{row.entries}/7 days</span>
                 </div>
               </div>
 
@@ -340,9 +333,17 @@ function ProgressHistoryTable({
               <div className="grid grid-cols-3 gap-px bg-border mx-4 mb-3 rounded-lg overflow-hidden">
                 <div className="bg-card px-3 py-2.5">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Avg Weight</p>
-                  <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
-                    {row.avg != null ? `${row.avg} kg` : <span className="text-muted-foreground text-sm">—</span>}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
+                      {row.avg != null ? `${row.avg} kg` : <span className="text-muted-foreground text-sm">—</span>}
+                    </p>
+                    {pctLabel && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${pctColor} ${pctBg}`}>
+                        {pctDown ? <ArrowDown size={9} /> : pctUp ? <ArrowUp size={9} /> : <Minus size={9} />}
+                        {pctLabel}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="bg-card px-3 py-2.5">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist</p>
