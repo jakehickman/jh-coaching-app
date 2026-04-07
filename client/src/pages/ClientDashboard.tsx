@@ -82,6 +82,12 @@ type DailyLogRow = {
 function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?: string | null }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [, navigate] = useLocation();
+
+  const handleEditDay = (iso: string) => {
+    sessionStorage.setItem('editLogDate', iso);
+    navigate('/dashboard/daily-log');
+  };
 
   const logMap: Record<string, DailyLogRow> = {};
   for (const log of logs) {
@@ -178,6 +184,15 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
                     <p className="text-sm text-foreground italic">{log.notes}</p>
                   </div>
                 )}
+                <div className="mt-3 pt-3 border-t border-border">
+                  <button
+                    onClick={() => handleEditDay(iso)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <Pencil size={13} />
+                    Edit this day
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -596,7 +611,14 @@ function HabitsCard({ date }: { date: string }) {
 
 function DailyLogTab() {
   const today = localToday();
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(() => {
+    const editDate = sessionStorage.getItem('editLogDate');
+    if (editDate) {
+      sessionStorage.removeItem('editLogDate');
+      return editDate;
+    }
+    return today;
+  });
   const blankDailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, offPlanMeals: 0, notes: "" };
   const [form, setForm, clearDraft] = useDraft(`draft:dailyLog:${date}`, blankDailyForm);
   // Track whether we've loaded server data for this date yet (avoid overwriting draft with blank)
