@@ -448,16 +448,16 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                 <p className="text-sm font-semibold text-foreground">{fmtDay(iso)}</p>
                 <p className="text-[10px] text-muted-foreground">{dayLabel(iso)}</p>
               </div>
-              {/* Middle: chips */}
-              <div className="flex-1 flex items-center gap-2 flex-wrap px-3">
+              {/* Middle: fixed-width columns so chips always align */}
+              <div className="flex-1 flex items-center gap-2 px-3">
                 {hasData ? (
                   <>
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium w-24 text-center flex-shrink-0 ${
                       trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>{sessionLabel}</span>
-                    {(log.offPlanMeals ?? 0) > 0 && (
+                    {(log.offPlanMeals ?? 0) > 0 ? (
                       <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">{(log.offPlanMeals ?? 0) > 1 ? `${log.offPlanMeals} Off Plan Meals` : 'Off Plan Meal'}</span>
-                    )}
+                    ) : null}
                   </>
                 ) : (
                   <span className="text-xs text-muted-foreground italic">No entry</span>
@@ -1375,7 +1375,6 @@ function TrainingSection() {
         <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
       </div>
       {selectedUserId && (
-        <div className="xl:grid xl:grid-cols-[1fr_320px] xl:gap-6 xl:items-start">
         <div className="space-y-6">
           {/* ── Training Schedule ── */}
           <div>
@@ -1455,10 +1454,6 @@ function TrainingSection() {
             <Save size={15} />
             {upsert.isPending ? "Saving..." : "Save Training Program"}
           </button>
-        </div>{/* end left column */}
-
-        {/* Right column: volume summary */}
-        <div className="space-y-6">
           {/* ── Weekly Volume Table ── */}
           {volumeTable && (
             <div>
@@ -1514,7 +1509,6 @@ function TrainingSection() {
               <p className="text-xs text-muted-foreground mt-2">Only muscle groups with &gt;0 weekly sets are shown. Match exercise names exactly to the Exercise Library for accurate tracking.</p>
             </div>
           )}
-        </div>
         </div>
       )}
     </div>
@@ -1859,8 +1853,9 @@ function MealPlansSection() {
 
         {/* Right column: macro summary sticky panel */}
         <div className="space-y-4">
-          {meals.length > 0 && (
-            <Card className="sticky top-20">
+          <Card className="sticky top-20">
+            {meals.length > 0 ? (
+              <>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Daily Totals</p>
               <div className="grid grid-cols-2 gap-2">
                 <div className="col-span-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 text-center">
@@ -1874,8 +1869,11 @@ function MealPlansSection() {
                   </div>
                 ))}
               </div>
-            </Card>
-          )}
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-2">Add meals to see daily totals</p>
+            )}
+          </Card>
         </div>
         </div>
       )}
@@ -2539,6 +2537,7 @@ function ProgressSection() {
                 <ProgCard
                   label="Avg Weight"
                   value={curAvgWeight != null ? `${curAvgWeight.toFixed(1)} kg` : "—"}
+                  sub={weightPct ? `${weightPct} vs prev 7 days` : undefined}
                 />
                 <ProgCard
                   label="Training Adherence"
@@ -2565,7 +2564,7 @@ function ProgressSection() {
                     sub={(() => {
                       const goal = (clientProfile as any)?.stepGoal as number | null;
                       const goalDays = goal ? cur7.filter(l => (l.stepsCount ?? 0) >= goal).length : null;
-                      return goal ? `Goal: ${goal.toLocaleString()} · ${goalDays ?? 0}/7 hit` : undefined;
+                      return goal ? `Goal: ${goal.toLocaleString()} steps · ${goalDays ?? 0}/7 days hit` : undefined;
                     })()}
                   />
                 )}
@@ -3055,13 +3054,13 @@ function CoachHabitsPanel({ clientId }: { clientId: number }) {
                 <p className="text-sm font-semibold text-foreground">{h.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {h.frequency === 'daily' ? 'Daily' : `${h.targetDays}x/week`}
-                  {' · '}{h.pct7}% this week{' · '}{h.pct28}% last 28 days
+                  {' · '}{h.pct28}% last 28 days
                   {h.streak > 0 ? ` · ${h.streak}-day streak` : ''}
                 </p>
               </div>
               <span className={`text-sm font-bold ${
-                h.pct7 >= 80 ? 'text-green-500' : h.pct7 >= 50 ? 'text-amber-500' : 'text-red-500'
-              }`}>{h.pct7}%</span>
+                h.pct28 >= 80 ? 'text-green-500' : h.pct28 >= 50 ? 'text-amber-500' : 'text-red-500'
+              }`}>{h.pct28}%</span>
             </div>
             {/* 4-week heatmap */}
             <div className="space-y-1.5">
@@ -3148,6 +3147,7 @@ function HabitsSection() {
     <div className="xl:grid xl:grid-cols-[1fr_360px] xl:gap-6 xl:items-start">
       {/* Left: habits list */}
       <div className="space-y-4">
+        <p className="text-xs text-muted-foreground">Click <strong>New Habit</strong> to create a habit, or <strong>Assign</strong> on any habit to manage client assignments.</p>
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{habits.length} habit{habits.length !== 1 ? "s" : ""} created</p>
           <Button size="sm" onClick={() => { setShowForm(true); setEditHabit(null); resetForm(); }}>
@@ -3244,7 +3244,7 @@ function HabitsSection() {
 
         {!showForm && !editHabit && !assignHabit && (
           <div className="bg-card border border-border rounded-xl p-4 text-center">
-            <p className="text-xs text-muted-foreground">Click <strong>New Habit</strong> to create a habit, or <strong>Assign</strong> on any habit to manage client assignments.</p>
+            <p className="text-xs text-muted-foreground">Select a habit to edit or assign it to clients.</p>
           </div>
         )}
       </div>
