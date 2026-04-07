@@ -189,3 +189,10 @@
 - [ ] Client Check-ins tab: mobile-friendly form, large submit button
 - [ ] Client Habits tab: large checkbox targets, readable text
 - [ ] Client nav: bottom tab bar or compact top nav on mobile
+
+## Client Progress Tab Fixes (Coach View)
+- [x] Replace meal adherence % card with off-plan meals count (last 7 days)
+- [x] Remove previous-7-day comparison deltas from all 7-day average metric cards
+- [x] Remove dedicated measurements card from Client Progress overview
+- [x] Fix habit completion rate calculation (shows 100% when days are missing)
+- [x] Limit body composition history to last 4 weeks with "View more" option

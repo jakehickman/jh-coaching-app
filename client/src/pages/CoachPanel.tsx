@@ -297,11 +297,15 @@ function ProgressHistoryTable({
   // Table rows: newest first
   const tableRows = [...weekRows].reverse();
 
+  const INITIAL_WEEKS = 4;
+  const [showAllWeeks, setShowAllWeeks] = useState(false);
+  const visibleRows = showAllWeeks ? tableRows : tableRows.slice(0, INITIAL_WEEKS);
+
   return (
     <div>
       <SectionLabel>Body Composition History</SectionLabel>
       <div className="space-y-3">
-        {tableRows.map((row, i) => {
+        {visibleRows.map((row, i) => {
           const isFirst = i === 0;
           const pctDown = row.pctChange != null && row.pctChange < 0;
           const pctUp = row.pctChange != null && row.pctChange > 0;
@@ -357,6 +361,14 @@ function ProgressHistoryTable({
           );
         })}
       </div>
+      {tableRows.length > INITIAL_WEEKS && (
+        <button
+          onClick={() => setShowAllWeeks(v => !v)}
+          className="mt-3 text-xs text-primary hover:underline w-full text-center"
+        >
+          {showAllWeeks ? `Show less` : `View ${tableRows.length - INITIAL_WEEKS} more week${tableRows.length - INITIAL_WEEKS !== 1 ? 's' : ''}`}
+        </button>
+      )}
     </div>
   );
 }
@@ -2468,17 +2480,14 @@ function ProgressSection() {
     : null;
 
   // ── Metric card helper ──────────────────────────────────────────────────────
-  function ProgCard({ label, value, sub, change, changeColor }: {
+  function ProgCard({ label, value, sub }: {
     label: string; value: string; sub?: string;
-    change?: string | null; changeColor?: "green" | "red" | "amber" | "neutral";
   }) {
-    const colorMap = { green: "text-green-400", red: "text-red-400", amber: "text-amber-400", neutral: "text-muted-foreground" };
     return (
       <div className="bg-secondary rounded-xl p-3">
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
         <p className="text-xl font-bold text-foreground">{value}</p>
         {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
-        {change && <p className={`text-xs font-medium mt-1 ${colorMap[changeColor ?? "neutral"]}`}>{change} vs prev 7d</p>}
       </div>
     );
   }
@@ -2503,14 +2512,11 @@ function ProgressSection() {
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-5 items-start">
             {/* Left: metric cards */}
             <div>
-              <SectionLabel>7-Day Averages (vs previous 7 days)</SectionLabel>
+              <SectionLabel>7-Day Averages</SectionLabel>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <ProgCard
                   label="Avg Weight"
                   value={curAvgWeight != null ? `${curAvgWeight.toFixed(1)} kg` : "—"}
-                  sub={prevAvgWeight != null ? `Prev: ${prevAvgWeight.toFixed(1)} kg` : undefined}
-                  change={weightPct ?? undefined}
-                  changeColor={weightPct ? (parseFloat(weightPct) < 0 ? "green" : "red") : "neutral"}
                 />
                 <ProgCard
                   label="Training Adherence"
@@ -2518,55 +2524,27 @@ function ProgressSection() {
                   sub={trainingAdherenceLabel}
                 />
                 <ProgCard
-                  label="Meal Adherence"
-                  value={`${mealAdherence}%`}
-                  sub={`${curOnPlan}/7 on-plan · ${offPlanTotal7} off-plan meals`}
-                  change={prevMealAdherence != null && mealAdherence != null
-                    ? `${mealAdherence >= prevMealAdherence ? "+" : ""}${mealAdherence - prevMealAdherence}%`
-                    : undefined}
-                  changeColor={mealAdherence != null && prevMealAdherence != null
-                    ? (mealAdherence >= prevMealAdherence ? "green" : "red")
-                    : "neutral"}
+                  label="Off-Plan Meals (7d)"
+                  value={String(offPlanTotal7)}
+                  sub={offPlanTotal7 === 0 ? "All on-plan" : `${cur7.filter(l => (l.offPlanMeals ?? 0) > 0).length} days with off-plan meals`}
                 />
                 <ProgCard
                   label="Avg Hunger"
                   value={curAvgHunger != null ? `${curAvgHunger.toFixed(1)}/5` : "—"}
-                  sub={prevAvgHunger != null ? `Prev: ${prevAvgHunger.toFixed(1)}/5` : undefined}
-                  change={curAvgHunger != null && prevAvgHunger != null
-                    ? `${(curAvgHunger - prevAvgHunger) >= 0 ? "+" : ""}${(curAvgHunger - prevAvgHunger).toFixed(1)}`
-                    : undefined}
-                  changeColor={curAvgHunger != null && prevAvgHunger != null
-                    ? (curAvgHunger <= prevAvgHunger ? "green" : "amber")
-                    : "neutral"}
                 />
                 <ProgCard
                   label="Avg Sleep Quality"
                   value={curAvgSleep != null ? `${curAvgSleep.toFixed(1)}/5` : "—"}
-                  sub={prevAvgSleep != null ? `Prev: ${prevAvgSleep.toFixed(1)}/5` : undefined}
-                  change={curAvgSleep != null && prevAvgSleep != null
-                    ? `${(curAvgSleep - prevAvgSleep) >= 0 ? "+" : ""}${(curAvgSleep - prevAvgSleep).toFixed(1)}`
-                    : undefined}
-                  changeColor={curAvgSleep != null && prevAvgSleep != null
-                    ? (curAvgSleep >= prevAvgSleep ? "green" : "red")
-                    : "neutral"}
                 />
-                {(curAvgSteps != null || prevAvgSteps != null || (clientProfile as any)?.stepGoal) && (
+                {(curAvgSteps != null || (clientProfile as any)?.stepGoal) && (
                   <ProgCard
                     label="Avg Steps"
                     value={curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—"}
                     sub={(() => {
                       const goal = (clientProfile as any)?.stepGoal as number | null;
                       const goalDays = goal ? cur7.filter(l => (l.stepsCount ?? 0) >= goal).length : null;
-                      const prevStr = prevAvgSteps != null ? `Prev: ${Math.round(prevAvgSteps).toLocaleString()}` : null;
-                      const goalStr = goal ? `Goal: ${goal.toLocaleString()} · ${goalDays ?? 0}/7 hit` : null;
-                      return [prevStr, goalStr].filter(Boolean).join(' · ') || undefined;
+                      return goal ? `Goal: ${goal.toLocaleString()} · ${goalDays ?? 0}/7 hit` : undefined;
                     })()}
-                    change={curAvgSteps != null && prevAvgSteps != null
-                      ? `${(curAvgSteps - prevAvgSteps) >= 0 ? "+" : ""}${Math.round(curAvgSteps - prevAvgSteps).toLocaleString()}`
-                      : undefined}
-                    changeColor={curAvgSteps != null && prevAvgSteps != null
-                      ? (curAvgSteps >= prevAvgSteps ? "green" : "amber")
-                      : "neutral"}
                   />
                 )}
               </div>
@@ -2590,17 +2568,7 @@ function ProgressSection() {
                   </Card>
                 </div>
               )}
-              {latestM && (
-                <MeasurementsCard
-                  latestM={latestM}
-                  prevM={prevM}
-                  latestSkinfold={latestSkinfold}
-                  prevSkinfold={prevSkinfold}
-                  skinfoldDiff={skinfoldDiff}
-                  waistDiff={waistDiff}
-                  toLocalDateStr={toLocalDateStr}
-                />
-              )}
+
             </div>
           </div>
 
@@ -3016,11 +2984,14 @@ function CoachHabitsPanel({ clientId }: { clientId: number }) {
     completions.map((c: any) => `${c.habitId}:${normCompDate(c.completedDate)}`)
   );
 
+  // Today's date string (last element of last28) — cap eligible days so future days aren't counted
+  const todayStr = last28[last28.length - 1];
+
   const habitStats = habits.map((h: any) => {
-    // Only count days on/after assignment date as eligible
+    // Only count days on/after assignment date AND on/before today as eligible
     const assignedDateStr = normCompDate(h.assignedAt);
-    const eligible28 = last28.filter(d => d >= assignedDateStr);
-    const eligible7 = last7.filter(d => d >= assignedDateStr);
+    const eligible28 = last28.filter(d => d >= assignedDateStr && d <= todayStr);
+    const eligible7 = last7.filter(d => d >= assignedDateStr && d <= todayStr);
     const done28 = eligible28.filter(d => completedSet.has(`${h.id}:${d}`)).length;
     const done7 = eligible7.filter(d => completedSet.has(`${h.id}:${d}`)).length;
     const pct28 = eligible28.length > 0 ? Math.round((done28 / eligible28.length) * 100) : 0;
