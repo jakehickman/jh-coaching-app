@@ -331,7 +331,7 @@ function OverviewTab() {
         <SectionLabel>Weekly Summary</SectionLabel>
         <div className="grid grid-cols-2 gap-3">
           <MetricCard label="7-Day Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
-          <MetricCard label="Training Adherence" value={`${adherence}%`} sub={adherenceSub} />
+          <MetricCard label="Training Adherence" value={`${adherence}%`} />
           <MetricCard label="Off-Plan Meals (7d)" value={offPlanTotal7.toString()} />
           {stepGoal ? (
             <MetricCard

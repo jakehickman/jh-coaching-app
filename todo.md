@@ -213,3 +213,4 @@
 - [x] Off-plan meals card: remove sub-text entirely
 - [x] Steps card: rename to "Avg Daily Steps" and show 7-day average as value
 - [x] Habits card: redesign to be non-editable, cleaner layout
+- [x] Client dashboard: remove sub-text from Training Adherence metric card
