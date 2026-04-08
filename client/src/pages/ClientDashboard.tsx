@@ -1468,7 +1468,7 @@ function TrainingTab() {
                 slot === "Off"
                   ? "bg-secondary text-muted-foreground"
                   : "bg-primary/10 text-primary border border-primary/20"
-              }`}>{slot}</span>
+              }`}>{slot === "Off" ? "OFF" : slot}</span>
             ))}
             <span className="flex-shrink-0 text-xs text-muted-foreground/50 ml-1">→ repeat</span>
           </div>
