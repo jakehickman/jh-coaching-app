@@ -1,5 +1,5 @@
 const GOOGLE_FORM_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSdrdy6NM8YX7zsKPb5OJLwynny0It852Nk523jYW8Whn_7N2A/viewform?embedded=true";
+  "https://docs.google.com/forms/d/e/1FAIpQLSeL6SYdRwha1US-ububaG5VWVpkAxMzhyoJxVASKWQBp0G7vw/viewform?embedded=true";
 
 export default function Onboarding() {
   return (
