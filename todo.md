@@ -223,3 +223,4 @@
 - [x] Check-in form: remove "How often did you consume something without logging it?" question (execUnloggedItems)
 - [x] Check-in form: update question wording and helper text to focus on meal plan execution accuracy
 - [x] Check-ins tab: update expectation text to first person ("I will review your check-in and reply with a video response within 24 hours")
+- [x] Fix PWA manifest start_url — currently points to /app/dashboard/overview which 404s; update to /dashboard
