@@ -759,33 +759,6 @@ function DailyLogTab() {
       </div>
 
       <div>
-        <SectionLabel>Training</SectionLabel>
-        <Card>
-          {autoTrained ? (
-            <div className="flex items-center gap-3 py-1">
-              <div className="w-6 h-6 rounded border-2 bg-primary border-primary flex items-center justify-center flex-shrink-0">
-                <Check size={14} className="text-primary-foreground" />
-              </div>
-              <div>
-                <span className="text-base text-foreground">Training logged</span>
-                {autoTrainingType && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{autoTrainingType}</p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 py-1">
-              <div className="w-6 h-6 rounded border-2 border-border flex items-center justify-center flex-shrink-0" />
-              <div>
-                <span className="text-base text-muted-foreground">No training logged</span>
-                <p className="text-xs text-muted-foreground mt-0.5">Log a workout in Training → Workout Log to mark this day</p>
-              </div>
-            </div>
-          )}
-        </Card>
-      </div>
-
-      <div>
         <SectionLabel>Biofeedback (1–5)</SectionLabel>
         <Card className="space-y-4">
           <ScoreInput label="Sleep Quality" value={form.sleepQuality} onChange={v => setForm(p => ({ ...p, sleepQuality: v }))} max={5} />
