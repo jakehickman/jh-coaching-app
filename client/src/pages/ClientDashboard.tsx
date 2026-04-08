@@ -2152,7 +2152,7 @@ function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program
               sub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {s === "program" ? "Program" : "Workout Log"}
+            {s === "program" ? "Program" : "Training Log"}
           </button>
         ))}
       </div>
