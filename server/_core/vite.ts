@@ -21,7 +21,10 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
-  app.use("/app*", async (req, res, next) => {
+  app.use("*", async (req, res, next) => {
+    // Skip API routes — let them fall through to tRPC/OAuth handlers
+    if (req.originalUrl.startsWith("/api")) return next();
+
     const url = req.originalUrl;
 
     try {
@@ -60,8 +63,9 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  // fall through to index.html for /app/* routes (SPA)
-  app.use("/app*", (_req, res) => {
+  // fall through to index.html for all non-API routes (SPA)
+  app.use("*", (req, res) => {
+    if (req.originalUrl.startsWith("/api")) return res.status(404).end();
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
