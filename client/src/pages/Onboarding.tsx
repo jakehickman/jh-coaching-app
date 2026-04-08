@@ -1,72 +1,63 @@
 const GOOGLE_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSeL6SYdRwha1US-ububaG5VWVpkAxMzhyoJxVASKWQBp0G7vw/viewform?embedded=true";
 
+const steps = [
+  { step: "1", text: "Complete the onboarding form below" },
+  { step: "2", text: "I'll review your answers and build your plan" },
+  { step: "3", text: "I'll send everything over within 48 hours" },
+];
+
 export default function Onboarding() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="border-b border-border">
-        <div className="max-w-[620px] mx-auto px-5 py-4">
-          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest text-center">
+      <header className="border-b border-border">
+        <div className="max-w-[680px] mx-auto px-6 py-4 text-center">
+          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest">
             1:1 Online Coaching with Jake Hickman
           </p>
         </div>
-      </div>
+      </header>
 
       {/* Hero */}
-      <section className="pt-10 pb-8 bg-background">
-        <div className="max-w-[620px] mx-auto px-5 text-center">
-          <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 mb-6 text-xs font-body font-medium"
-            style={{ backgroundColor: "#052E1A", color: "#22C55E" }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+      <section className="pt-14 pb-12 bg-background">
+        <div className="max-w-[680px] mx-auto px-6 text-center">
+          {/* Payment badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-8 text-xs font-body font-medium rounded-full"
+            style={{ backgroundColor: "#052E1A", color: "#22C55E" }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             Payment confirmed
           </div>
-          <h1 className="font-display text-foreground text-4xl md:text-5xl font-bold leading-[1.1] mb-4">
+
+          <h1 className="font-display text-foreground text-4xl md:text-5xl font-bold leading-[1.1] mb-5">
             You're in. Let's get started.
           </h1>
-
+          <p className="font-body text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
+            We're looking forward to working with you. Fill in the form below and we'll take it from there.
+          </p>
         </div>
       </section>
 
-      {/* Divider */}
-      <div className="border-t border-border" />
-
       {/* What happens next */}
-      <section className="py-10 bg-background">
-        <div className="max-w-[620px] mx-auto px-5">
-          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-6 text-center">
+      <section className="py-10 border-y border-border" style={{ backgroundColor: "#0d0d0d" }}>
+        <div className="max-w-[680px] mx-auto px-6">
+          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-8 text-center">
             What happens next
           </p>
-          <div className="flex flex-row items-start justify-center gap-8 flex-wrap">
-            {[
-              { step: "1", text: "Complete the onboarding form below" },
-              { step: "2", text: "I'll review your answers and create your plan" },
-              {
-                step: "3",
-                text: "I'll send your plan within 48 hours",
-              },
-            ].map(({ step, text }) => (
-              <div key={step} className="flex flex-col items-center gap-2 text-center max-w-[140px]">
+          <div className="flex flex-row items-start justify-center gap-10 flex-wrap">
+            {steps.map(({ step, text }, i) => (
+              <div key={step} className="flex flex-col items-center gap-3 text-center" style={{ maxWidth: 148 }}>
+                {/* Circle badge */}
                 <div
-                  className="shrink-0 w-7 h-7 flex items-center justify-center font-display font-bold text-sm"
-                  style={{ backgroundColor: "#052E1A", color: "#22C55E" }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-display font-bold text-sm shrink-0"
+                  style={{ backgroundColor: "#052E1A", color: "#59BE50", border: "1.5px solid #59BE50" }}
                 >
                   {step}
                 </div>
+                {/* Connector line (not after last) */}
                 <p className="font-body text-foreground text-sm leading-relaxed">{text}</p>
               </div>
             ))}
@@ -74,13 +65,10 @@ export default function Onboarding() {
         </div>
       </section>
 
-      {/* Divider */}
-      <div className="border-t border-border" />
-
       {/* Google Form */}
-      <section className="pt-8 pb-2 bg-background">
-        <div className="max-w-[620px] mx-auto px-5">
-          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-5 text-center">
+      <section className="pt-10 pb-4 bg-background flex-1">
+        <div className="max-w-[680px] mx-auto px-6">
+          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-6 text-center">
             Complete your onboarding below
           </p>
           <iframe
@@ -100,8 +88,8 @@ export default function Onboarding() {
       </section>
 
       {/* Footer */}
-      <footer className="py-6 border-t border-border" style={{ backgroundColor: "#111111" }}>
-        <div className="max-w-[620px] mx-auto px-5 flex flex-col md:flex-row items-center justify-between gap-2">
+      <footer className="py-6 border-t border-border mt-auto">
+        <div className="max-w-[680px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span className="font-body text-muted-foreground text-xs">Jake Hickman · 1:1 Online Coaching</span>
           <span className="font-body text-muted-foreground text-xs">© {new Date().getFullYear()}</span>
         </div>
