@@ -51,40 +51,15 @@ export default function Onboarding() {
       {/* Divider */}
       <div className="border-t border-border" />
 
-      {/* Google Form */}
-      <section className="py-8 bg-background">
-        <div className="max-w-[620px] mx-auto px-5">
-          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-5">
-            Complete your onboarding below
-          </p>
-          <iframe
-            src={GOOGLE_FORM_URL}
-            width="100%"
-            height="2400"
-            frameBorder={0}
-            marginHeight={0}
-            marginWidth={0}
-            title="Onboarding Form"
-            className="w-full"
-            style={{ border: "none" }}
-          >
-            Loading…
-          </iframe>
-        </div>
-      </section>
-
-      {/* Divider */}
-      <div className="border-t border-border" />
-
       {/* What happens next */}
       <section className="py-10 bg-background">
         <div className="max-w-[620px] mx-auto px-5">
-          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-6">
+          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-6 text-center">
             What happens next
           </p>
           <div className="flex flex-col gap-5">
             {[
-              { step: "1", text: "Complete the onboarding form" },
+              { step: "1", text: "Complete the onboarding form below" },
               { step: "2", text: "I'll review your answers and create your plan" },
               {
                 step: "3",
@@ -102,6 +77,31 @@ export default function Onboarding() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="border-t border-border" />
+
+      {/* Google Form */}
+      <section className="pt-8 pb-2 bg-background">
+        <div className="max-w-[620px] mx-auto px-5">
+          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-5 text-center">
+            Complete your onboarding below
+          </p>
+          <iframe
+            src={GOOGLE_FORM_URL}
+            width="100%"
+            height="2400"
+            frameBorder={0}
+            marginHeight={0}
+            marginWidth={0}
+            title="Onboarding Form"
+            className="w-full"
+            style={{ border: "none" }}
+          >
+            Loading…
+          </iframe>
         </div>
       </section>
 
