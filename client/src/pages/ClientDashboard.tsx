@@ -1462,15 +1462,15 @@ function TrainingTab() {
       {schedule.length > 0 && (
         <Card>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Training Schedule</p>
-          <div className="flex flex-wrap gap-1.5 items-center">
+          <div className="flex gap-2 items-center overflow-x-auto pb-0.5">
             {schedule.map((slot: string, i: number) => (
-              <span key={i} className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+              <span key={i} className={`flex-shrink-0 px-3.5 py-1.5 rounded-lg text-sm font-semibold ${
                 slot === "Off"
                   ? "bg-secondary text-muted-foreground"
                   : "bg-primary/10 text-primary border border-primary/20"
               }`}>{slot}</span>
             ))}
-            <span className="text-[10px] text-muted-foreground/50 ml-1">→ repeat</span>
+            <span className="flex-shrink-0 text-xs text-muted-foreground/50 ml-1">→ repeat</span>
           </div>
         </Card>
       )}
