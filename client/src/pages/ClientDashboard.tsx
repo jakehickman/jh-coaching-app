@@ -1462,9 +1462,9 @@ function TrainingTab() {
       {schedule.length > 0 && (
         <Card>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Training Schedule</p>
-          <div className="flex gap-2 items-center overflow-x-auto pb-0.5">
+          <div className="flex gap-1.5 items-center overflow-x-auto pb-0.5">
             {schedule.map((slot: string, i: number) => (
-              <span key={i} className={`flex-shrink-0 px-3.5 py-1.5 rounded-lg text-sm font-semibold ${
+              <span key={i} className={`flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold ${
                 slot === "Off"
                   ? "bg-secondary text-muted-foreground"
                   : "bg-primary/10 text-primary border border-primary/20"
@@ -2152,7 +2152,7 @@ function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program
               sub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {s === "program" ? "Program" : "Training Log"}
+            {s === "program" ? "Program" : "Log"}
           </button>
         ))}
       </div>
