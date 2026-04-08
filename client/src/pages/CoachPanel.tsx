@@ -2558,7 +2558,6 @@ function ProgressSection() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
             <TabsTrigger value="notes">Coaching Notes</TabsTrigger>
-            <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -2651,9 +2650,6 @@ function ProgressSection() {
             <CoachingNotesTab clientId={selectedUserId!} />
           </TabsContent>
 
-          <TabsContent value="check-ins">
-            <CoachCheckInsTab clientId={selectedUserId!} />
-          </TabsContent>
         </Tabs>
       )}
     </div>
