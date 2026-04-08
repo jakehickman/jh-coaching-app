@@ -7,7 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar
 } from "recharts";
-import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil, CheckSquare, Square } from "lucide-react";
+import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil, CheckSquare, Square, Shuffle } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -1616,6 +1616,45 @@ function WorkoutLogTab() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
 
+  // Substitution state: { [originalExName]: substituteName }
+  const [substitutions, setSubstitutions] = useState<Record<string, string>>({});
+  // Sub picker modal state
+  const [subPicker, setSubPicker] = useState<{ originalName: string } | null>(null);
+  const [subSearch, setSubSearch] = useState("");
+
+  // Similarity scoring: dot-product of muscle activation vectors
+  const MUSCLE_KEYS = ["chest","frontDelts","sideDelts","triceps","lats","upperBack","rearDelts","biceps","quads","hams","glutes","calves","abs"] as const;
+  function muscleScore(a: any, b: any): number {
+    return MUSCLE_KEYS.reduce((sum, k) => sum + (a[k] ?? 0) * (b[k] ?? 0), 0);
+  }
+  function getSimilarExercises(originalName: string): any[] {
+    const original = (exerciseLib as any[]).find(e => e.name === originalName);
+    if (!original) return (exerciseLib as any[]).filter(e => e.name !== originalName);
+    return (exerciseLib as any[])
+      .filter(e => e.name !== originalName)
+      .map(e => ({ ...e, _score: muscleScore(original, e) }))
+      .sort((a, b) => b._score - a._score);
+  }
+
+  // When a sub is applied, migrate exerciseData key from old name to new name
+  function applySubstitution(originalName: string, newName: string) {
+    setSubstitutions(prev => ({ ...prev, [originalName]: newName }));
+    setExerciseData(prev => {
+      const existing = prev[originalName] ?? [{ weight: "", reps: "", notes: "" }];
+      const next = { ...prev };
+      delete next[originalName];
+      next[newName] = existing;
+      return next;
+    });
+    setSubPicker(null);
+    setSubSearch("");
+  }
+
+  // Resolve effective exercise name (substituted or original)
+  function effectiveName(originalName: string): string {
+    return substitutions[originalName] ?? originalName;
+  }
+
   const dailyLogMutation = trpc.dailyLog.upsert.useMutation();
 
   const saveMutation = trpc.workoutSessions.save.useMutation({
@@ -1709,14 +1748,19 @@ function WorkoutLogTab() {
     if (!selectedDay) return;
     setSaving(true);
     const dayDef = days.find(d => d.label === selectedDay);
-    const exercises = (dayDef?.exercises ?? []).map(ex => ({
-      name: ex.name,
-      sets: (exerciseData[ex.name] ?? []).map(s => ({
-        weight: s.weight !== "" ? parseFloat(s.weight) : null,
-        reps: s.reps !== "" ? parseInt(s.reps) : null,
-        notes: s.notes || null,
-      })),
-    }));
+    const exercises = (dayDef?.exercises ?? []).map(ex => {
+      const subName = substitutions[ex.name];
+      const nameToUse = subName ?? ex.name;
+      return {
+        name: nameToUse,
+        substitutedFor: subName ? ex.name : undefined,
+        sets: (exerciseData[nameToUse] ?? []).map(s => ({
+          weight: s.weight !== "" ? parseFloat(s.weight) : null,
+          reps: s.reps !== "" ? parseInt(s.reps) : null,
+          notes: s.notes || null,
+        })),
+      };
+    });
     saveMutation.mutate({ sessionDate, dayLabel: selectedDay, exercises, notes: sessionNotes || null });
     clearWorkoutDraft();
   }
@@ -1773,27 +1817,35 @@ function WorkoutLogTab() {
         return (
           <div className="space-y-3">
             {(dayDef?.exercises ?? []).map((ex, i) => {
-              const sets = exerciseData[ex.name] ?? [{ weight: "", reps: "", notes: "" }];
-              const isExpanded = expandedSets[ex.name];
-              const prevSets = prevExMap[ex.name] ?? [];
-              const exVideoUrl = videoMap[ex.name];
+              const subName = substitutions[ex.name];
+              const displayName = subName ?? ex.name;
+              const sets = exerciseData[displayName] ?? [{ weight: "", reps: "", notes: "" }];
+              const isExpanded = expandedSets[displayName];
+              const prevSets = prevExMap[displayName] ?? prevExMap[ex.name] ?? [];
+              const exVideoUrl = videoMap[displayName] ?? videoMap[ex.name];
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
               return (
                 <Card key={i}>
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-base font-semibold text-foreground">{ex.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-base font-semibold text-foreground">{displayName}</p>
+                        {subName && (
+                          <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded">SUB</span>
+                        )}
                         {exEmbedUrl && (
                           <button
-                            onClick={() => setVideoModal({ name: ex.name, embedUrl: exEmbedUrl })}
+                            onClick={() => setVideoModal({ name: displayName, embedUrl: exEmbedUrl })}
                             className="flex items-center gap-1 text-[10px] font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-400/10 px-1.5 py-0.5 rounded"
                           >
                             <Play size={10} fill="currentColor" /> Demo
                           </button>
                         )}
                       </div>
-                      {ex.notes && <p className="text-xs text-muted-foreground mt-0.5">{ex.notes}</p>}
+                      {subName && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
+                      )}
+                      {ex.notes && !subName && <p className="text-xs text-muted-foreground mt-0.5">{ex.notes}</p>}
                       <p className="text-xs text-muted-foreground mt-0.5">{ex.sets} sets × {ex.reps}</p>
                       {prevSets.length > 0 && (
                         <p className="text-xs text-primary/80 mt-1">
@@ -1801,6 +1853,12 @@ function WorkoutLogTab() {
                         </p>
                       )}
                     </div>
+                    <button
+                      onClick={() => { setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
+                      className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors bg-secondary px-2 py-1.5 rounded-lg flex-shrink-0"
+                    >
+                      <Shuffle size={11} /> Sub
+                    </button>
                   </div>
 
                   {/* Primary set — always visible, visually prominent */}
@@ -1812,7 +1870,7 @@ function WorkoutLogTab() {
                         <input
                           type="number" inputMode="decimal"
                           value={sets[0]?.weight ?? ""}
-                          onChange={e => setSet(ex.name, 0, "weight", e.target.value)}
+                          onChange={e => setSet(displayName, 0, "weight", e.target.value)}
                           className={inputCls}
                         />
                       </div>
@@ -1821,7 +1879,7 @@ function WorkoutLogTab() {
                         <input
                           type="number" inputMode="numeric"
                           value={sets[0]?.reps ?? ""}
-                          onChange={e => setSet(ex.name, 0, "reps", e.target.value)}
+                          onChange={e => setSet(displayName, 0, "reps", e.target.value)}
                           className={inputCls}
                         />
                       </div>
@@ -1835,14 +1893,14 @@ function WorkoutLogTab() {
                         <div key={idx + 1} className="border-t border-border pt-2">
                           <div className="flex items-center justify-between mb-1.5">
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Set {idx + 2}</p>
-                            <button onClick={() => removeSet(ex.name, idx + 1)} className="text-muted-foreground hover:text-destructive transition-colors"><Minus size={14} /></button>
+                            <button onClick={() => removeSet(displayName, idx + 1)} className="text-muted-foreground hover:text-destructive transition-colors"><Minus size={14} /></button>
                           </div>
                           <div className="flex gap-2">
                             <div className="flex-1">
                               <input
                                 type="number" inputMode="decimal"
                                 value={s.weight ?? ""}
-                                onChange={e => setSet(ex.name, idx + 1, "weight", e.target.value)}
+                                onChange={e => setSet(displayName, idx + 1, "weight", e.target.value)}
                                 className={inputCls}
                               />
                             </div>
@@ -1850,7 +1908,7 @@ function WorkoutLogTab() {
                               <input
                                 type="number" inputMode="numeric"
                                 value={s.reps ?? ""}
-                                onChange={e => setSet(ex.name, idx + 1, "reps", e.target.value)}
+                                onChange={e => setSet(displayName, idx + 1, "reps", e.target.value)}
                                 className={inputCls}
                               />
                             </div>
@@ -1861,7 +1919,7 @@ function WorkoutLogTab() {
                   )}
 
                   <button
-                    onClick={() => addSet(ex.name)}
+                    onClick={() => addSet(displayName)}
                     className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
                   >
                     <Plus size={13} /> Add Set
@@ -1889,6 +1947,102 @@ function WorkoutLogTab() {
             >
               {saving ? "Saving..." : "Save Session"}
             </button>
+          </div>
+        );
+      })()}
+
+      {/* Substitution picker modal */}
+      {subPicker && (() => {
+        const similar = getSimilarExercises(subPicker.originalName);
+        const filtered = subSearch.trim()
+          ? similar.filter(e => e.name.toLowerCase().includes(subSearch.toLowerCase()))
+          : similar;
+        return (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70" onClick={() => setSubPicker(null)}>
+            <div className="bg-card rounded-t-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Substitute Exercise</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Replacing: {subPicker.originalName}</p>
+                </div>
+                <button onClick={() => setSubPicker(null)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+              </div>
+              <div className="px-4 pb-2">
+                <input
+                  type="text"
+                  value={subSearch}
+                  onChange={e => setSubSearch(e.target.value)}
+                  placeholder="Search exercises..."
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  autoFocus
+                />
+              </div>
+              <div className="overflow-y-auto flex-1 px-4 pb-4 space-y-1">
+                {filtered.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">No exercises found</p>
+                )}
+                {filtered.map((e: any) => {
+                  const primaryMuscle = ([
+                    ["chest","Chest"],["frontDelts","Front Delts"],["sideDelts","Side Delts"],["triceps","Triceps"],
+                    ["lats","Lats"],["upperBack","Upper Back"],["rearDelts","Rear Delts"],["biceps","Biceps"],
+                    ["quads","Quads"],["hams","Hamstrings"],["glutes","Glutes"],["calves","Calves"],["abs","Abs"]
+                  ] as [string, string][]).reduce<[number, string]>((best, [k, label]) =>
+                    (e[k] ?? 0) > best[0] ? [(e[k] ?? 0) as number, label] : best, [0, ""]
+                  )[1];
+                  const isCurrentSub = substitutions[subPicker.originalName] === e.name;
+                  return (
+                    <button
+                      key={e.id}
+                      onClick={() => applySubstitution(subPicker.originalName, e.name)}
+                      className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-left transition-colors ${
+                        isCurrentSub ? "bg-primary/15 border border-primary/30" : "bg-secondary hover:bg-secondary/70"
+                      }`}
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{e.name}</p>
+                        {primaryMuscle && <p className="text-xs text-muted-foreground mt-0.5">{primaryMuscle}</p>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {e._score > 0 && (
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                            e._score >= 0.8 ? "bg-green-500/15 text-green-400" :
+                            e._score >= 0.4 ? "bg-amber-500/15 text-amber-400" :
+                            "bg-secondary text-muted-foreground"
+                          }`}>
+                            {e._score >= 0.8 ? "Best match" : e._score >= 0.4 ? "Good match" : "Similar"}
+                          </span>
+                        )}
+                        {isCurrentSub && <Check size={14} className="text-primary" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {substitutions[subPicker.originalName] && (
+                <div className="px-4 pb-4 border-t border-border pt-3">
+                  <button
+                    onClick={() => {
+                      const origName = subPicker.originalName;
+                      const subName = substitutions[origName];
+                      if (subName) {
+                        setSubstitutions(prev => { const n = { ...prev }; delete n[origName]; return n; });
+                        setExerciseData(prev => {
+                          const existing = prev[subName] ?? [{ weight: "", reps: "", notes: "" }];
+                          const next = { ...prev };
+                          delete next[subName];
+                          next[origName] = existing;
+                          return next;
+                        });
+                      }
+                      setSubPicker(null);
+                    }}
+                    className="w-full py-2.5 text-sm text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    Remove substitution (use original)
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         );
       })()}
