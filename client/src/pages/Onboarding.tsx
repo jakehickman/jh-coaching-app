@@ -4,7 +4,7 @@ const GOOGLE_FORM_URL =
 const steps = [
   { step: "1", text: "Complete the onboarding form below" },
   { step: "2", text: "I'll review your answers and build your plan" },
-  { step: "3", text: "I'll email everything over to you within 48 hours" },
+  { step: "3", text: "I'll be in touch within 48 hours" },
 ];
 
 export default function Onboarding() {
