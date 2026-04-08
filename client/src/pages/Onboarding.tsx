@@ -51,7 +51,7 @@ export default function Onboarding() {
           <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-6 text-center">
             What happens next
           </p>
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5 max-w-xs mx-auto">
             {[
               { step: "1", text: "Complete the onboarding form below" },
               { step: "2", text: "I'll review your answers and create your plan" },
