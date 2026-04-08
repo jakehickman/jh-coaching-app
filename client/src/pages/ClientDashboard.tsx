@@ -1713,10 +1713,11 @@ function WorkoutLogTab() {
           return;
         }
       } catch {}
-      // No draft — init blank sets from program definition
+      // No draft — init blank sets from program definition (pre-populate all sets)
       const blank: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
       for (const ex of (dayDef?.exercises ?? [])) {
-        blank[ex.name] = [{ weight: "", reps: "", notes: "", completed: false }];
+        const setCount = typeof ex.sets === 'number' && ex.sets > 0 ? ex.sets : 1;
+        blank[ex.name] = Array.from({ length: setCount }, () => ({ weight: "", reps: "", notes: "", completed: false }));
       }
       setExerciseData(blank);
       setSessionNotes("");
@@ -1881,70 +1882,36 @@ function WorkoutLogTab() {
                     </button>
                   </div>
 
-                  {/* Primary set — always visible, visually prominent */}
-                  <div className="mb-2">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">Set 1</p>
-                      <button
-                        onClick={() => toggleSetCompleted(displayName, 0)}
-                        className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded transition-colors ${
-                          sets[0]?.completed
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-secondary text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        <Check size={11} />{sets[0]?.completed ? "Done" : "Mark done"}
-                      </button>
-                    </div>
-                    <div className="flex gap-2 items-center">
-                      <div className="flex-1">
-                        <p className="text-[10px] text-muted-foreground mb-1">Weight (kg)</p>
-                        <input
-                          type="number" inputMode="decimal"
-                          value={sets[0]?.weight ?? ""}
-                          onChange={e => setSet(displayName, 0, "weight", e.target.value)}
-                          className={inputCls}
-                        />
+                  {/* All sets — unified layout with checkbox */}
+                  {sets.length > 0 && (
+                    <div className="mb-2">
+                      {/* Column headers */}
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="w-6 flex-shrink-0" />
+                        <p className="text-[10px] text-muted-foreground flex-1 text-center">Weight (kg)</p>
+                        <p className="text-[10px] text-muted-foreground flex-1 text-center">Reps</p>
+                        <div className="w-5 flex-shrink-0" />
                       </div>
-                      <div className="flex-1">
-                        <p className="text-[10px] text-muted-foreground mb-1">Reps</p>
-                        <input
-                          type="number" inputMode="numeric"
-                          value={sets[0]?.reps ?? ""}
-                          onChange={e => setSet(displayName, 0, "reps", e.target.value)}
-                          className={inputCls}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Additional sets — collapsible */}
-                  {sets.length > 1 && (
-                    <div className="space-y-2 mb-2">
-                      {sets.slice(1).map((s, idx) => (
-                        <div key={idx + 1} className="border-t border-border pt-2">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Set {idx + 2}</p>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => toggleSetCompleted(displayName, idx + 1)}
-                                className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded transition-colors ${
-                                  s.completed
-                                    ? "bg-green-500/20 text-green-400"
-                                    : "bg-secondary text-muted-foreground hover:text-foreground"
-                                }`}
-                              >
-                                <Check size={11} />{s.completed ? "Done" : "Mark done"}
-                              </button>
-                              <button onClick={() => removeSet(displayName, idx + 1)} className="text-muted-foreground hover:text-destructive transition-colors"><Minus size={14} /></button>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
+                      <div className="space-y-1.5">
+                        {sets.map((s, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            {/* Checkbox */}
+                            <button
+                              onClick={() => toggleSetCompleted(displayName, idx)}
+                              className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded border-2 transition-colors ${
+                                s.completed
+                                  ? "border-green-500 bg-green-500/20 text-green-400"
+                                  : "border-border text-transparent hover:border-primary"
+                              }`}
+                            >
+                              <Check size={12} />
+                            </button>
                             <div className="flex-1">
                               <input
                                 type="number" inputMode="decimal"
+                                placeholder={idx === 0 ? "" : ""}
                                 value={s.weight ?? ""}
-                                onChange={e => setSet(displayName, idx + 1, "weight", e.target.value)}
+                                onChange={e => setSet(displayName, idx, "weight", e.target.value)}
                                 className={inputCls}
                               />
                             </div>
@@ -1952,13 +1919,21 @@ function WorkoutLogTab() {
                               <input
                                 type="number" inputMode="numeric"
                                 value={s.reps ?? ""}
-                                onChange={e => setSet(displayName, idx + 1, "reps", e.target.value)}
+                                onChange={e => setSet(displayName, idx, "reps", e.target.value)}
                                 className={inputCls}
                               />
                             </div>
+                            {/* Remove button — only show if more than 1 set */}
+                            {sets.length > 1 ? (
+                              <button onClick={() => removeSet(displayName, idx)} className="w-5 flex-shrink-0 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
+                                <Minus size={14} />
+                              </button>
+                            ) : (
+                              <div className="w-5 flex-shrink-0" />
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
 
