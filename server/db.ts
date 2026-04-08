@@ -178,7 +178,10 @@ export async function upsertClientProfile(data: {
       .set({ ...data, updatedAt: new Date() } as any)
       .where(eq(clientProfiles.userId, data.userId));
   } else {
-    await db.insert(clientProfiles).values(data as any);
+    // Auto-set startDate to today (UTC date) if not explicitly provided
+    const today = new Date();
+    const todayIso = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, "0")}-${String(today.getUTCDate()).padStart(2, "0")}`;
+    await db.insert(clientProfiles).values({ startDate: todayIso, ...data } as any);
   }
 }
 
