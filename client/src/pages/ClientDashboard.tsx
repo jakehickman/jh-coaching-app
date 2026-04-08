@@ -1256,10 +1256,34 @@ function MealPlanTab() {
 }
 
 // ─── Tab: Shopping List ───────────────────────────────────────────────────────
+const SHOPPING_CHECKED_KEY = "jh_shopping_checked";
+
 function ShoppingListTab() {
   const [trainingDays, setTrainingDays] = useState(4);
   const [restDays, setRestDays] = useState(3);
-  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem(SHOPPING_CHECKED_KEY);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Persist checked state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(SHOPPING_CHECKED_KEY, JSON.stringify(checked));
+    } catch {}
+  }, [checked]);
+
+  function toggleItem(name: string) {
+    setChecked(prev => ({ ...prev, [name]: !prev[name] }));
+  }
+
+  function uncheckAll() {
+    setChecked({});
+  }
 
   const { data: trainingPlan } = trpc.mealPlan.get.useQuery({ dayType: "training" });
   const { data: restPlan } = trpc.mealPlan.get.useQuery({ dayType: "rest" });
@@ -1339,13 +1363,23 @@ function ShoppingListTab() {
         <p className="text-xs text-muted-foreground mt-3">{trainingDays + restDays} day total · quantities calculated from your meal plan</p>
       </Card>
 
-      {/* Progress bar */}
+      {/* Progress bar + Uncheck All */}
       {items.length > 0 && (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">{checkedCount}/{items.length} items checked</p>
-          <div className="w-32 h-1.5 bg-secondary rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all" style={{ width: items.length > 0 ? `${(checkedCount / items.length) * 100}%` : "0%" }} />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <p className="text-xs text-muted-foreground whitespace-nowrap">{checkedCount}/{items.length} items</p>
+            <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+              <div className="h-full bg-primary rounded-full transition-all" style={{ width: items.length > 0 ? `${(checkedCount / items.length) * 100}%` : "0%" }} />
+            </div>
           </div>
+          {checkedCount > 0 && (
+            <button
+              onClick={uncheckAll}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap underline underline-offset-2"
+            >
+              Uncheck all
+            </button>
+          )}
         </div>
       )}
 
@@ -1365,7 +1399,7 @@ function ShoppingListTab() {
             return (
               <button
                 key={name}
-                onClick={() => setChecked(prev => ({ ...prev, [name]: !prev[name] }))}
+                onClick={() => toggleItem(name)}
                 className="flex items-center gap-3 py-2.5 w-full text-left group"
               >
                 <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
