@@ -14,7 +14,6 @@ import {
   LogOut,
   Menu,
   Ruler,
-  ShoppingCart,
   TrendingUp,
   Users,
   X,
@@ -33,11 +32,10 @@ interface NavItem {
 const clientNav: NavItem[] = [
   { href: "/dashboard/overview",      label: "Home",          icon: <Home size={22} /> },
   { href: "/dashboard/daily-log",     label: "Daily Log",     icon: <ClipboardList size={22} /> },
+  { href: "/dashboard/meal-plan",     label: "Meal Plan",     icon: <Zap size={22} /> },
   { href: "/dashboard/training",      label: "Training",      icon: <Dumbbell size={22} /> },
   { href: "/dashboard/check-ins",     label: "Check-ins",     icon: <Calendar size={22} /> },
   { href: "/dashboard/measurements",  label: "Measurements",  icon: <Ruler size={22} /> },
-  { href: "/dashboard/meal-plan",     label: "Meal Plan",     icon: <Zap size={22} /> },
-  { href: "/dashboard/shopping",      label: "Shopping",      icon: <ShoppingCart size={22} /> },
 ];
 
 const coachNav: NavItem[] = [
