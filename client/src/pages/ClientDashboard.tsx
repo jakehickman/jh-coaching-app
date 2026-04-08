@@ -2435,17 +2435,6 @@ function CheckInsTab() {
 }
 
 // ─── Main ClientDashboard ─────────────────────────────────────────────────────
-const TAB_MAP: Record<string, React.ReactNode> = {
-  overview: <OverviewTab />,
-  "daily-log": <DailyLogTab />,
-  "check-ins": <CheckInsTab />,
-  measurements: <MeasurementsTab />,
-  "meal-plan": <CombinedMealPlanTab defaultSub="plan" />,
-  shopping: <CombinedMealPlanTab defaultSub="shopping" />,
-  training: <CombinedTrainingTab defaultSub="program" />,
-  "workout-log": <CombinedTrainingTab defaultSub="log" />,
-};
-
 const TAB_TITLES: Record<string, string> = {
   overview: "Dashboard",
   "daily-log": "Daily Log",
@@ -2466,9 +2455,23 @@ export default function ClientDashboard() {
     if (!params.tab) navigate("/dashboard/overview");
   }, [params.tab]);
 
+  const renderTab = () => {
+    switch (tab) {
+      case "overview":     return <OverviewTab key="overview" />;
+      case "daily-log":    return <DailyLogTab key="daily-log" />;
+      case "check-ins":    return <CheckInsTab key="check-ins" />;
+      case "measurements": return <MeasurementsTab key="measurements" />;
+      case "meal-plan":    return <CombinedMealPlanTab key="meal-plan" defaultSub="plan" />;
+      case "shopping":     return <CombinedMealPlanTab key="shopping" defaultSub="shopping" />;
+      case "training":     return <CombinedTrainingTab key="training" defaultSub="program" />;
+      case "workout-log":  return <CombinedTrainingTab key="workout-log" defaultSub="log" />;
+      default:             return <OverviewTab key="overview" />;
+    }
+  };
+
   return (
     <DashboardShell mode="client">
-      {TAB_MAP[tab] ?? <OverviewTab />}
+      {renderTab()}
     </DashboardShell>
   );
 }
