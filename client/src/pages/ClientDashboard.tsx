@@ -502,24 +502,25 @@ function HabitsSummary() {
                   <p className="text-[10px] text-primary/80">{h.streak}-day streak</p>
                 )}
               </div>
-              {/* 7-day cells */}
-              <div className="flex gap-1 shrink-0">
+              {/* 7-day dots */}
+              <div className="flex gap-1.5 shrink-0">
                 {last7.map(d => {
                   const assignedDateStr = normDate(h.assignedAt);
                   const beforeAssignment = d < assignedDateStr;
                   const done = !beforeAssignment && completedSet.has(`${h.id}:${d}`);
                   const isToday = d === today;
+                  if (beforeAssignment) {
+                    return <div key={d} className="w-5 h-5" />;
+                  }
                   return (
                     <div
                       key={d}
-                      className={`w-6 h-6 rounded ${
-                        beforeAssignment
-                          ? 'bg-muted/30'
-                          : done
+                      className={`w-5 h-5 rounded-full ${
+                        done
                           ? 'bg-primary'
                           : isToday
-                          ? 'bg-muted ring-1 ring-primary/30'
-                          : 'bg-muted'
+                          ? 'border-2 border-primary/50'
+                          : 'border-2 border-muted-foreground/25'
                       }`}
                     />
                   );
