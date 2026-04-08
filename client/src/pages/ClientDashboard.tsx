@@ -2003,13 +2003,9 @@ function WorkoutLogTab() {
                         {primaryMuscle && <p className="text-xs text-muted-foreground mt-0.5">{primaryMuscle}</p>}
                       </div>
                       <div className="flex items-center gap-2">
-                        {e._score > 0 && (
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                            e._score >= 0.8 ? "bg-green-500/15 text-green-400" :
-                            e._score >= 0.4 ? "bg-amber-500/15 text-amber-400" :
-                            "bg-secondary text-muted-foreground"
-                          }`}>
-                            {e._score >= 0.8 ? "Best match" : e._score >= 0.4 ? "Good match" : "Similar"}
+                        {e._score >= 1 && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">
+                            Recommended
                           </span>
                         )}
                         {isCurrentSub && <Check size={14} className="text-primary" />}
