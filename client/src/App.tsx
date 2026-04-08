@@ -10,40 +10,43 @@ import CoachPanel from "./pages/CoachPanel";
 import CoachingLanding from "./pages/CoachingLanding";
 import Onboarding from "./pages/Onboarding";
 
-function AppRoutes() {
-  // make sure to consider if you need authentication for certain routes
+// Public routes — accessible at root level (e.g. /onboarding, /coaching)
+function PublicRoutes() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/dashboard" component={ClientDashboard} />
-      <Route path="/dashboard/:tab" component={ClientDashboard} />
-      <Route path="/coach" component={CoachPanel} />
-      <Route path="/coach/:section" component={CoachPanel} />
-      <Route path="/coaching" component={CoachingLanding} />
-      <Route path="/onboarding" component={Onboarding} />
-      <Route path="/404" component={NotFound} />
-      <Route component={NotFound} />
-    </Switch>
+    <Router base="/">
+      <Switch>
+        <Route path="/coaching" component={CoachingLanding} />
+        <Route path="/onboarding" component={Onboarding} />
+      </Switch>
+    </Router>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
+// Authenticated app routes — all under /app
+function AppRoutes() {
+  return (
+    <Router base="/app">
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/dashboard" component={ClientDashboard} />
+        <Route path="/dashboard/:tab" component={ClientDashboard} />
+        <Route path="/coach" component={CoachPanel} />
+        <Route path="/coach/:section" component={CoachPanel} />
+        <Route path="/404" component={NotFound} />
+        <Route component={NotFound} />
+      </Switch>
+    </Router>
+  );
+}
 
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="dark"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
-          <Router base="/app">
-            <AppRoutes />
-          </Router>
+          <PublicRoutes />
+          <AppRoutes />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
