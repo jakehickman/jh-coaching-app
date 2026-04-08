@@ -368,11 +368,13 @@ export const appRouter = router({
           exercises: z.array(
             z.object({
               name: z.string(),
+              substitutedFor: z.string().nullable().optional(),
               sets: z.array(
                 z.object({
                   weight: z.number().nullable().optional(),
                   reps: z.number().nullable().optional(),
                   notes: z.string().nullable().optional(),
+                  completed: z.boolean().optional(),
                 })
               ),
             })
