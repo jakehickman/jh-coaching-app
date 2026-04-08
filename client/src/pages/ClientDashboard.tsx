@@ -1716,7 +1716,7 @@ function WorkoutLogTab() {
       // No draft — init blank sets from program definition (pre-populate all sets)
       const blank: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
       for (const ex of (dayDef?.exercises ?? [])) {
-        const setCount = typeof ex.sets === 'number' && ex.sets > 0 ? ex.sets : 1;
+        const setCount = Math.max(1, parseInt(String(ex.sets ?? 1), 10) || 1);
         blank[ex.name] = Array.from({ length: setCount }, () => ({ weight: "", reps: "", notes: "", completed: false }));
       }
       setExerciseData(blank);
