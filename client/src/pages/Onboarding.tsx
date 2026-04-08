@@ -36,7 +36,7 @@ export default function Onboarding() {
             You're in. Let's get started.
           </h1>
           <p className="font-body text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
-            I'm looking forward to working with you. Fill in the form below and we'll take it from there.
+            I'm looking forward to working with you. Fill in the form below and I'll take it from there.
           </p>
         </div>
       </section>

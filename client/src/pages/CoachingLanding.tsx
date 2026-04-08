@@ -416,11 +416,11 @@ export default function CoachingLanding() {
             },
             {
               q: "Do I need to track calories?",
-              a: "Not necessarily. For some people it helps, for others we keep things simpler. It depends on what works best for you.",
+              a: "Not necessarily. For some people it helps, for others I keep things simpler. It depends on what works best for you.",
             },
             {
               q: "How does accountability work?",
-              a: "We check in regularly, review your progress, and adjust your plan as needed. If things slip, I step in early and get you back on track.",
+              a: "I check in regularly, review your progress, and adjust your plan as needed. If things slip, I step in early and get you back on track.",
             },
             {
               q: "Will I be in contact with you?",
@@ -436,7 +436,7 @@ export default function CoachingLanding() {
             },
             {
               q: "Why is it a 3-month commitment?",
-              a: "Real progress takes time. The first phase is about setting everything up, then we build momentum and start seeing results.",
+              a: "Real progress takes time. The first phase is about setting everything up, then I help you build momentum and start seeing results.",
             },
             {
               q: "What if I'm not happy or don't see results?",
