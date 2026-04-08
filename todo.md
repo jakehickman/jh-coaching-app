@@ -225,3 +225,4 @@
 - [x] Check-ins tab: update expectation text to first person ("I will review your check-in and reply with a video response within 24 hours")
 - [x] Fix PWA manifest start_url — currently points to /app/dashboard/overview which 404s; update to /dashboard
 - [x] Fix OAuth callback redirect from /app to /dashboard (was causing 404 on PWA shortcut open and after login)
+- [x] Remove default value of 3 for sleep quality and hunger level in daily log form — now start blank (null)

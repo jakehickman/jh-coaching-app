@@ -221,7 +221,7 @@ function MetricCard({ label, value, sub }: { label: string; value: string | numb
     </Card>
   );
 }
-function ScoreInput({ label, value, onChange, max = 10 }: { label: string; value: number; onChange: (v: number) => void; max?: number }) {
+function ScoreInput({ label, value, onChange, max = 10 }: { label: string; value: number | null | undefined; onChange: (v: number) => void; max?: number }) {
   return (
     <div>
       <p className="text-sm text-muted-foreground mb-2">{label}</p>
@@ -636,7 +636,7 @@ function DailyLogTab() {
     }
     return today;
   });
-  const blankDailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: 3, hungerLevel: 3, offPlanMeals: 0, notes: "" };
+  const blankDailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: null as number | null, hungerLevel: null as number | null, offPlanMeals: 0, notes: "" };
   const [form, setForm, clearDraft] = useDraft(`draft:dailyLog:${date}`, blankDailyForm);
   // Track whether we've loaded server data for this date yet (avoid overwriting draft with blank)
   const serverLoadedRef = useRef<string | null>(null);
@@ -676,8 +676,8 @@ function DailyLogTab() {
         trainingCompleted: existing.trainingCompleted ?? false,
         trainingType: existing.trainingType ?? "",
         stepsCount: existing.stepsCount?.toString() ?? "",
-        sleepQuality: existing.sleepQuality ?? 3,
-        hungerLevel: existing.hungerLevel ?? 3,
+        sleepQuality: existing.sleepQuality ?? null,
+        hungerLevel: existing.hungerLevel ?? null,
         offPlanMeals: existing.offPlanMeals ?? 0,
         notes: existing.notes ?? "",
       });
@@ -705,8 +705,8 @@ function DailyLogTab() {
       trainingCompleted: form.trainingCompleted,
       trainingType: form.trainingType || undefined,
       stepsCount: form.stepsCount ? parseInt(form.stepsCount) : undefined,
-      sleepQuality: form.sleepQuality,
-      hungerLevel: form.hungerLevel,
+      sleepQuality: form.sleepQuality ?? undefined,
+      hungerLevel: form.hungerLevel ?? undefined,
       offPlanMeals: form.offPlanMeals ?? 0,
       notes: form.notes || undefined,
     });
