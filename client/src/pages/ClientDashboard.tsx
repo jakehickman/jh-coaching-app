@@ -1730,8 +1730,13 @@ function WorkoutLogTab() {
 
   function setSet(exName: string, idx: number, field: "weight" | "reps" | "notes", val: string) {
     setExerciseData(prev => {
-      const sets = [...(prev[exName] ?? [{ weight: "", reps: "", notes: "" }])];
-      sets[idx] = { ...sets[idx], [field]: val };
+      const sets = [...(prev[exName] ?? [{ weight: "", reps: "", notes: "", completed: false }])];
+      const updated = { ...sets[idx], [field]: val };
+      // Auto-mark as done when weight or reps are entered
+      if ((field === "weight" || field === "reps") && val !== "") {
+        updated.completed = true;
+      }
+      sets[idx] = updated;
       return { ...prev, [exName]: sets };
     });
   }
