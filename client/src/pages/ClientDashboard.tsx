@@ -1607,7 +1607,7 @@ function WorkoutLogTab() {
   const workoutDraftKey = selectedDay ? `draft:workout:${sessionDate}:${selectedDay}` : null;
   useEffect(() => {
     if (!workoutDraftKey) return;
-    try { localStorage.setItem(workoutDraftKey, JSON.stringify({ exerciseData, sessionNotes })); } catch {}
+    try { localStorage.setItem(workoutDraftKey, JSON.stringify({ v: 2, exerciseData, sessionNotes })); } catch {}
   }, [workoutDraftKey, exerciseData, sessionNotes]);
   function clearWorkoutDraft() {
     if (workoutDraftKey) { try { localStorage.removeItem(workoutDraftKey); } catch {} }
@@ -1703,14 +1703,19 @@ function WorkoutLogTab() {
         const stored = localStorage.getItem(draftKey);
         if (stored) {
           const parsed = JSON.parse(stored);
-          // Migrate old drafts that may lack the completed field
-          const migratedData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
-          for (const [k, sets] of Object.entries(parsed.exerciseData ?? {})) {
-            migratedData[k] = (sets as any[]).map(s => ({ ...s, completed: s.completed ?? (s.weight !== "" || s.reps !== "") }));
+          // Discard stale drafts saved before the sets-count fix (v2+)
+          if ((parsed.v ?? 1) < 2) {
+            localStorage.removeItem(draftKey);
+          } else {
+            // Migrate old drafts that may lack the completed field
+            const migratedData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
+            for (const [k, sets] of Object.entries(parsed.exerciseData ?? {})) {
+              migratedData[k] = (sets as any[]).map(s => ({ ...s, completed: s.completed ?? (s.weight !== "" || s.reps !== "") }));
+            }
+            setExerciseData(migratedData);
+            setSessionNotes(parsed.sessionNotes ?? "");
+            return;
           }
-          setExerciseData(migratedData);
-          setSessionNotes(parsed.sessionNotes ?? "");
-          return;
         }
       } catch {}
       // No draft — init blank sets from program definition (pre-populate all sets)
