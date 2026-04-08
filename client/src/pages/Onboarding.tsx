@@ -86,7 +86,7 @@ export default function Onboarding() {
           <iframe
             src={GOOGLE_FORM_URL}
             width="100%"
-            height="2400"
+            height="1600"
             frameBorder={0}
             marginHeight={0}
             marginWidth={0}
