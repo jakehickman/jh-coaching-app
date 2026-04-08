@@ -505,13 +505,17 @@ function HabitsSummary() {
               {/* 7-day cells */}
               <div className="flex gap-1 shrink-0">
                 {last7.map(d => {
-                  const done = completedSet.has(`${h.id}:${d}`);
+                  const assignedDateStr = normDate(h.assignedAt);
+                  const beforeAssignment = d < assignedDateStr;
+                  const done = !beforeAssignment && completedSet.has(`${h.id}:${d}`);
                   const isToday = d === today;
                   return (
                     <div
                       key={d}
                       className={`w-6 h-6 rounded ${
-                        done
+                        beforeAssignment
+                          ? 'bg-muted/30'
+                          : done
                           ? 'bg-primary'
                           : isToday
                           ? 'bg-muted ring-1 ring-primary/30'
