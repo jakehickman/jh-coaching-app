@@ -38,13 +38,7 @@ export default function Onboarding() {
           <h1 className="font-display text-foreground text-4xl md:text-5xl font-bold leading-[1.1] mb-4">
             You're in. Let's get started.
           </h1>
-          <p className="font-body text-muted-foreground text-base leading-relaxed mb-3 max-w-md mx-auto">
-            The next step is to complete the onboarding form. Once submitted, you'll receive your plan within 24–48 hours.
-          </p>
-          <p className="font-body text-muted-foreground text-base leading-relaxed max-w-md mx-auto">
-            This will take around 5–10 minutes. Answer as best you can. There are no perfect answers. The more honest
-            and accurate you are, the better I can tailor everything to you.
-          </p>
+
         </div>
       </section>
 
@@ -63,7 +57,7 @@ export default function Onboarding() {
               { step: "2", text: "I'll review your answers and create your plan" },
               {
                 step: "3",
-                text: "I'll send your plan with a video explaining everything within 24–48 hours",
+                text: "I'll send your plan within 48 hours",
               },
             ].map(({ step, text }) => (
               <div key={step} className="flex items-start gap-4">
