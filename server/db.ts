@@ -165,8 +165,6 @@ export async function upsertClientProfile(data: {
   coachId?: number;
   displayName?: string;
   startDate?: string;
-  goalWeight?: number;
-  startWeight?: number;
   notes?: string | null;
 }) {
   const db = await getDb();

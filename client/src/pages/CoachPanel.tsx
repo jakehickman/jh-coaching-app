@@ -980,7 +980,7 @@ function ClientsSection() {
   });
 
   const [form, setForm] = useState({
-    startDate: "", goalWeight: "", startWeight: "", notes: "",
+    startDate: "", notes: "",
     checkInDay: "" as "" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
     stepGoal: "",
   });
@@ -989,14 +989,12 @@ function ClientsSection() {
     if (profile) {
       setForm({
         startDate: profile.startDate ? toLocalDateStr(profile.startDate) : "",
-        goalWeight: profile.goalWeight?.toString() ?? "",
-        startWeight: profile.startWeight?.toString() ?? "",
         notes: profile.notes ?? "",
         checkInDay: ((profile as any).checkInDay ?? "") as any,
         stepGoal: (profile as any).stepGoal?.toString() ?? "",
       });
     } else {
-      setForm({ startDate: "", goalWeight: "", startWeight: "", notes: "", checkInDay: "", stepGoal: "" });
+      setForm({ startDate: "", notes: "", checkInDay: "", stepGoal: "" });
     }
   }, [profile, selectedId]);
 
@@ -1085,20 +1083,7 @@ function ClientsSection() {
                   <label className="text-xs text-muted-foreground block mb-1">Start Date</label>
                   <DateInput value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} />
                 </div>
-                {([
-                  { key: "startWeight", label: "Start Weight (kg)", type: "number" },
-                  { key: "goalWeight", label: "Goal Weight (kg)", type: "number" },
-                ] as const).map(({ key, label, type }) => (
-                  <div key={key}>
-                    <label className="text-xs text-muted-foreground block mb-1">{label}</label>
-                    <input
-                      type={type}
-                      value={(form as any)[key]}
-                      onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
-                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                ))}
+
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Check-in Day</label>
                   <select
@@ -1137,8 +1122,6 @@ function ClientsSection() {
                   upsertProfile.mutate({
                     userId: selectedId,
                     startDate: form.startDate || undefined,
-                    goalWeight: form.goalWeight ? parseFloat(form.goalWeight) : undefined,
-                    startWeight: form.startWeight ? parseFloat(form.startWeight) : undefined,
                     notes: form.notes || null,
                   });
                   updateClientConfig.mutate({

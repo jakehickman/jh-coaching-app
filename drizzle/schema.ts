@@ -34,8 +34,6 @@ export const clientProfiles = mysqlTable("client_profiles", {
   coachId: int("coachId"), // FK -> users.id (coach)
   displayName: varchar("displayName", { length: 128 }),
   startDate: date("startDate"),
-  goalWeight: float("goalWeight"),
-  startWeight: float("startWeight"),
   notes: text("notes"),
   checkInDay: mysqlEnum("checkInDay", ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]),
   stepGoal: int("stepGoal"), // daily step goal

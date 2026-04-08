@@ -35,8 +35,6 @@ export const appRouter = router({
         z.object({
           displayName: z.string().optional(),
           startDate: z.string().optional(),
-          goalWeight: z.number().optional(),
-          startWeight: z.number().optional(),
           notes: z.string().optional(),
         })
       )
@@ -50,8 +48,6 @@ export const appRouter = router({
           coachId: z.number().optional(),
           displayName: z.string().optional(),
           startDate: z.string().optional(),
-          goalWeight: z.number().optional(),
-          startWeight: z.number().optional(),
           notes: z.string().nullable().optional(),
         })
       )

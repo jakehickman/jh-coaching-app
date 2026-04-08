@@ -21,16 +21,12 @@ function SettingsPage() {
 
   const [form, setForm] = useState({
     displayName: "",
-    goalWeight: "",
-    startWeight: "",
   });
 
   useEffect(() => {
     if (profile) {
       setForm({
         displayName: profile.displayName ?? "",
-        goalWeight: profile.goalWeight != null ? String(profile.goalWeight) : "",
-        startWeight: profile.startWeight != null ? String(profile.startWeight) : "",
       });
     }
   }, [profile]);
@@ -38,8 +34,6 @@ function SettingsPage() {
   function handleSave() {
     upsert.mutate({
       displayName: form.displayName || undefined,
-      goalWeight: form.goalWeight ? parseFloat(form.goalWeight) : undefined,
-      startWeight: form.startWeight ? parseFloat(form.startWeight) : undefined,
     });
   }
 
@@ -64,26 +58,6 @@ function SettingsPage() {
               type="text"
               value={form.displayName}
               onChange={e => setForm(p => ({ ...p, displayName: e.target.value }))}
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="text-sm text-muted-foreground block mb-1.5">Start Weight (kg)</label>
-            <input
-              type="number"
-              step="0.1"
-              value={form.startWeight}
-              onChange={e => setForm(p => ({ ...p, startWeight: e.target.value }))}
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="text-sm text-muted-foreground block mb-1.5">Goal Weight (kg)</label>
-            <input
-              type="number"
-              step="0.1"
-              value={form.goalWeight}
-              onChange={e => setForm(p => ({ ...p, goalWeight: e.target.value }))}
               className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>

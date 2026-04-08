@@ -348,14 +348,12 @@ function OverviewTab() {
           <MetricCard label="Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={schedule.length > 0 ? `${trainedInRotation}/${prescribedDays} sessions completed` : `${trainedInRotation} sessions completed`} />
           <MetricCard label="Off-Plan Meals" value={offPlanTotal7.toString()} />
-          {stepGoal ? (
+          {stepGoal && (
             <MetricCard
               label="Avg Daily Steps"
               value={avgSteps7 != null ? avgSteps7.toLocaleString() : "—"}
               sub={`Goal: ${stepGoal.toLocaleString()}`}
             />
-          ) : (
-            <MetricCard label="Goal Weight" value={profile?.goalWeight ? `${profile.goalWeight} kg` : "—"} sub={profile?.startWeight ? `Started: ${profile.startWeight} kg` : undefined} />
           )}
         </div>
       </div>
