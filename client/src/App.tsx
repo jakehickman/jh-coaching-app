@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Router, Switch, Redirect } from "wouter";
+import { Route, Router, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
@@ -10,6 +10,22 @@ import CoachPanel from "./pages/CoachPanel";
 import CoachingLanding from "./pages/CoachingLanding";
 import Onboarding from "./pages/Onboarding";
 
+function AppRoutes() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/dashboard" component={ClientDashboard} />
+      <Route path="/dashboard/:tab" component={ClientDashboard} />
+      <Route path="/coach" component={CoachPanel} />
+      <Route path="/coach/:section" component={CoachPanel} />
+      <Route path="/coaching" component={CoachingLanding} />
+      <Route path="/onboarding" component={Onboarding} />
+      <Route path="/404" component={NotFound} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -17,25 +33,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router>
-            <Switch>
-              {/* Root redirect */}
-              <Route path="/">
-                <Redirect to="/app/" />
-              </Route>
-
-              {/* Public routes */}
-              <Route path="/coaching" component={CoachingLanding} />
-              <Route path="/onboarding" component={Onboarding} />
-
-              {/* App routes under /app */}
-              <Route path="/app/" component={Home} />
-              <Route path="/app/dashboard" component={ClientDashboard} />
-              <Route path="/app/dashboard/:tab" component={ClientDashboard} />
-              <Route path="/app/coach" component={CoachPanel} />
-              <Route path="/app/coach/:section" component={CoachPanel} />
-
-              <Route component={NotFound} />
-            </Switch>
+            <AppRoutes />
           </Router>
         </TooltipProvider>
       </ThemeProvider>
