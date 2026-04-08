@@ -299,18 +299,32 @@ function OverviewTab() {
 
   const latestLog = logs?.[0];
 
-  // Training adherence — one full rotation window
+  // Training adherence — one full rotation window, clamped to startDate
   // The schedule is e.g. ["A","B","Off","C","D","Off"] — rotation length = schedule.length
   const schedule: string[] = Array.isArray((program as any)?.schedule) ? (program as any).schedule : [];
   const rotationLength = schedule.length > 0 ? schedule.length : 7;
+  // Clamp window start to the later of (today - rotationLength + 1) and startDate
+  const clientStartDate = profile?.startDate ? toLocalDateStr(profile.startDate) : null;
+  const rotationWindowStart = localDateStr(rotationLength - 1);
+  const effectiveWindowStart = clientStartDate && clientStartDate > rotationWindowStart
+    ? clientStartDate
+    : rotationWindowStart;
+  // Count elapsed training days in the clamped window (days where training was prescribed)
+  // Build list of calendar days from effectiveWindowStart to today
+  const windowDays: string[] = [];
+  const cursor = new Date(effectiveWindowStart + 'T00:00:00');
+  const endDay = new Date(today + 'T00:00:00');
+  while (cursor <= endDay) {
+    windowDays.push(`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  // Count prescribed (non-Off) days within the window using rotation cycle
   const prescribedDays = schedule.length > 0
-    ? schedule.filter((s: string) => s !== 'Off').length
-    : rotationLength;
-  // Look back exactly one rotation length in calendar days
-  const rotationStartDate = localDateStr(rotationLength - 1);
+    ? windowDays.filter((_, i) => schedule[i % rotationLength] !== 'Off').length
+    : windowDays.length;
   const trainedInRotation = allLogs.filter(l => {
     const d = toLocalDateStr(l.logDate);
-    return d >= rotationStartDate && d <= today && l.trainingCompleted;
+    return d >= effectiveWindowStart && d <= today && l.trainingCompleted;
   }).length;
   const adherence = prescribedDays > 0 ? Math.min(100, Math.round((trainedInRotation / prescribedDays) * 100)) : 0;
   const adherenceSub = schedule.length > 0

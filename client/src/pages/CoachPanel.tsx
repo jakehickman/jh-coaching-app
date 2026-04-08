@@ -2459,22 +2459,35 @@ function ProgressSection() {
   const prevMealAdherence = Math.round((prevOnPlan / 7) * 100);
   const offPlanTotal7 = cur7.reduce((sum, l) => sum + (l.offPlanMeals ?? 0), 0);
 
-  // ── Training adherence: calendar-day window vs rotation length ──────────────
+  // ── Training adherence: calendar-day window vs rotation length, clamped to startDate ──
   const schedule = (trainingProgram?.schedule as string[] | null) ?? null;
   const programDays = (trainingProgram?.days as any[] | null) ?? null;
   const rotationLen = schedule?.length ?? programDays?.length ?? 7;
+  // Clamp window start to the later of (today - rotationLen + 1) and clientStartDate
+  const rotationWindowStart = localDateStr(rotationLen - 1);
+  const effectiveRotationStart = clientStartDate && clientStartDate > rotationWindowStart
+    ? clientStartDate
+    : rotationWindowStart;
+  // Build list of calendar days in the clamped window
+  const rotWindowDays: string[] = [];
+  const rotCursor = new Date(effectiveRotationStart + 'T00:00:00');
+  const rotEnd = new Date(today + 'T00:00:00');
+  while (rotCursor <= rotEnd) {
+    rotWindowDays.push(`${rotCursor.getFullYear()}-${String(rotCursor.getMonth()+1).padStart(2,'0')}-${String(rotCursor.getDate()).padStart(2,'0')}`);
+    rotCursor.setDate(rotCursor.getDate() + 1);
+  }
+  // Count prescribed days in the clamped window using rotation cycle
   const prescribedPerRotation = schedule
-    ? schedule.filter((s: string) => s && s.toLowerCase() !== "off").length
+    ? rotWindowDays.filter((_, i) => schedule[i % rotationLen] && schedule[i % rotationLen].toLowerCase() !== 'off').length
     : programDays
-      ? programDays.filter((d: any) => !String(d.name ?? d.label ?? "").toLowerCase().includes("off")).length
-      : null;
-  const rotationStart = localDateStr(rotationLen - 1);
-  const rotationLogs = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= rotationStart && d <= today; });
+      ? rotWindowDays.filter((_, i) => !String((programDays[i % programDays.length]?.name ?? programDays[i % programDays.length]?.label ?? '')).toLowerCase().includes('off')).length
+      : rotWindowDays.length;
+  const rotationLogs = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= effectiveRotationStart && d <= today; });
   const trainedInRotation = rotationLogs.filter(l => l.trainingCompleted).length;
-  const trainingAdherence = prescribedPerRotation != null && prescribedPerRotation > 0
+  const trainingAdherence = prescribedPerRotation > 0
     ? Math.min(100, Math.round((trainedInRotation / prescribedPerRotation) * 100))
     : null;
-  const trainingAdherenceLabel = prescribedPerRotation != null
+  const trainingAdherenceLabel = schedule || programDays
     ? `${trainedInRotation}/${prescribedPerRotation} prescribed (${rotationLen}-day rotation)`
     : `${trainedInRotation} trained days`;
 
