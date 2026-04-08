@@ -51,7 +51,7 @@ export default function Onboarding() {
           <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-6 text-center">
             What happens next
           </p>
-          <div className="flex flex-col gap-5 max-w-xs mx-auto">
+          <div className="flex flex-row items-start justify-center gap-8 flex-wrap">
             {[
               { step: "1", text: "Complete the onboarding form below" },
               { step: "2", text: "I'll review your answers and create your plan" },
@@ -60,14 +60,14 @@ export default function Onboarding() {
                 text: "I'll send your plan within 48 hours",
               },
             ].map(({ step, text }) => (
-              <div key={step} className="flex items-start gap-4">
+              <div key={step} className="flex flex-col items-center gap-2 text-center max-w-[140px]">
                 <div
                   className="shrink-0 w-7 h-7 flex items-center justify-center font-display font-bold text-sm"
                   style={{ backgroundColor: "#052E1A", color: "#22C55E" }}
                 >
                   {step}
                 </div>
-                <p className="font-body text-foreground text-base leading-relaxed pt-0.5">{text}</p>
+                <p className="font-body text-foreground text-sm leading-relaxed">{text}</p>
               </div>
             ))}
           </div>
