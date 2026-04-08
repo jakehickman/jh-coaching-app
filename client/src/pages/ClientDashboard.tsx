@@ -1599,8 +1599,8 @@ function WorkoutLogTab() {
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [sessionDate, setSessionDate] = useState(today);
-  // exerciseData: { [exerciseName]: Array<{weight: string, reps: string, notes: string}> }
-  const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string }>>>({});
+  // exerciseData: { [exerciseName]: Array<{weight: string, reps: string, notes: string, completed: boolean}> }
+  const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({});
   const [sessionNotes, setSessionNotes] = useState("");
 
   // Persist in-progress workout to localStorage so tab switches don't lose data
@@ -1685,12 +1685,13 @@ function WorkoutLogTab() {
     const dayDef = days.find(d => d.label === label);
     const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === sessionDate && s.dayLabel === label);
     if (existing) {
-      const exData: Record<string, Array<{ weight: string; reps: string; notes: string }>> = {};
+      const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
       for (const ex of (existing.exercises as any[])) {
         exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
           weight: s.weight != null ? String(s.weight) : "",
           reps: s.reps != null ? String(s.reps) : "",
           notes: s.notes ?? "",
+          completed: s.completed ?? (s.weight != null || s.reps != null),
         }));
       }
       setExerciseData(exData);
@@ -1702,15 +1703,20 @@ function WorkoutLogTab() {
         const stored = localStorage.getItem(draftKey);
         if (stored) {
           const parsed = JSON.parse(stored);
-          setExerciseData(parsed.exerciseData ?? {});
+          // Migrate old drafts that may lack the completed field
+          const migratedData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
+          for (const [k, sets] of Object.entries(parsed.exerciseData ?? {})) {
+            migratedData[k] = (sets as any[]).map(s => ({ ...s, completed: s.completed ?? (s.weight !== "" || s.reps !== "") }));
+          }
+          setExerciseData(migratedData);
           setSessionNotes(parsed.sessionNotes ?? "");
           return;
         }
       } catch {}
       // No draft — init blank sets from program definition
-      const blank: Record<string, Array<{ weight: string; reps: string; notes: string }>> = {};
+      const blank: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
       for (const ex of (dayDef?.exercises ?? [])) {
-        blank[ex.name] = [{ weight: "", reps: "", notes: "" }];
+        blank[ex.name] = [{ weight: "", reps: "", notes: "", completed: false }];
       }
       setExerciseData(blank);
       setSessionNotes("");
@@ -1733,14 +1739,22 @@ function WorkoutLogTab() {
   function addSet(exName: string) {
     setExerciseData(prev => ({
       ...prev,
-      [exName]: [...(prev[exName] ?? []), { weight: "", reps: "", notes: "" }],
+      [exName]: [...(prev[exName] ?? []), { weight: "", reps: "", notes: "", completed: false }],
     }));
+  }
+
+  function toggleSetCompleted(exName: string, idx: number) {
+    setExerciseData(prev => {
+      const sets = [...(prev[exName] ?? [])];
+      sets[idx] = { ...sets[idx], completed: !sets[idx].completed };
+      return { ...prev, [exName]: sets };
+    });
   }
 
   function removeSet(exName: string, idx: number) {
     setExerciseData(prev => {
       const sets = (prev[exName] ?? []).filter((_, i) => i !== idx);
-      return { ...prev, [exName]: sets.length ? sets : [{ weight: "", reps: "", notes: "" }] };
+      return { ...prev, [exName]: sets.length ? sets : [{ weight: "", reps: "", notes: "", completed: false }] };
     });
   }
 
@@ -1758,6 +1772,7 @@ function WorkoutLogTab() {
           weight: s.weight !== "" ? parseFloat(s.weight) : null,
           reps: s.reps !== "" ? parseInt(s.reps) : null,
           notes: s.notes || null,
+          completed: s.completed || s.weight !== "" || s.reps !== "",
         })),
       };
     });
@@ -1863,7 +1878,19 @@ function WorkoutLogTab() {
 
                   {/* Primary set — always visible, visually prominent */}
                   <div className="mb-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-primary mb-1.5">Set 1</p>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">Set 1</p>
+                      <button
+                        onClick={() => toggleSetCompleted(displayName, 0)}
+                        className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded transition-colors ${
+                          sets[0]?.completed
+                            ? "bg-green-500/20 text-green-400"
+                            : "bg-secondary text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Check size={11} />{sets[0]?.completed ? "Done" : "Mark done"}
+                      </button>
+                    </div>
                     <div className="flex gap-2 items-center">
                       <div className="flex-1">
                         <p className="text-[10px] text-muted-foreground mb-1">Weight (kg)</p>
@@ -1893,7 +1920,19 @@ function WorkoutLogTab() {
                         <div key={idx + 1} className="border-t border-border pt-2">
                           <div className="flex items-center justify-between mb-1.5">
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Set {idx + 2}</p>
-                            <button onClick={() => removeSet(displayName, idx + 1)} className="text-muted-foreground hover:text-destructive transition-colors"><Minus size={14} /></button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleSetCompleted(displayName, idx + 1)}
+                                className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded transition-colors ${
+                                  s.completed
+                                    ? "bg-green-500/20 text-green-400"
+                                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                                }`}
+                              >
+                                <Check size={11} />{s.completed ? "Done" : "Mark done"}
+                              </button>
+                              <button onClick={() => removeSet(displayName, idx + 1)} className="text-muted-foreground hover:text-destructive transition-colors"><Minus size={14} /></button>
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <div className="flex-1">
@@ -2023,7 +2062,7 @@ function WorkoutLogTab() {
                       if (subName) {
                         setSubstitutions(prev => { const n = { ...prev }; delete n[origName]; return n; });
                         setExerciseData(prev => {
-                          const existing = prev[subName] ?? [{ weight: "", reps: "", notes: "" }];
+                          const existing = prev[subName] ?? [{ weight: "", reps: "", notes: "", completed: false }];
                           const next = { ...prev };
                           delete next[subName];
                           next[origName] = existing;
@@ -2094,10 +2133,12 @@ function WorkoutLogTab() {
               {/* Summary of sets */}
               <div className="mt-2 space-y-1">
                 {(s.exercises as any[]).map((ex: any, i: number) => {
-                  const validSets = (ex.sets ?? []).filter((st: any) => st.weight != null || st.reps != null);
-                  if (!validSets.length) return null;
-                  const firstSet = validSets[0];
-                  const setCount = validSets.length;
+                  // Count sets that are marked completed OR have weight/reps data
+                  const completedSets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
+                  if (!completedSets.length) return null;
+                  // Show top set = first set with actual data, fallback to first completed
+                  const firstSet = completedSets.find((st: any) => st.weight != null || st.reps != null) ?? completedSets[0];
+                  const setCount = completedSets.length;
                   return (
                     <p key={i} className="text-xs text-muted-foreground">
                       <span className="text-foreground font-medium">{ex.name}</span>: 
