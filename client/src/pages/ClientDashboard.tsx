@@ -2196,9 +2196,7 @@ function WorkoutLogTab() {
                         {firstSet.reps != null ? `${firstSet.reps}` : '—'}
                         <span className="text-muted-foreground/60 ml-1">({setCount} {setCount === 1 ? 'set' : 'sets'})</span>
                       </p>
-                      {(ex.equipmentDetails) && (
-                        <p className="text-[10px] text-muted-foreground/70 mt-0.5 pl-1">{ex.equipmentDetails}</p>
-                      )}
+
                     </div>
                   );
                 })}
