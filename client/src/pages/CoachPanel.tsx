@@ -1990,7 +1990,11 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                 <div>
                   <p className="text-sm font-semibold text-foreground">{dateLabel}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {session.dayLabel} &middot; {exercises.length} exercise{exercises.length !== 1 ? 's' : ''}
+                    {(() => {
+                      const totalSets = exercises.reduce((acc: number, ex: any) =>
+                        acc + (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null).length, 0);
+                      return <>{session.dayLabel} &middot; {exercises.length} exercise{exercises.length !== 1 ? 's' : ''} &middot; {totalSets} set{totalSets !== 1 ? 's' : ''}</>;
+                    })()}
                     {hasNotes && <span className="ml-1.5 text-primary/70">· notes</span>}
                   </p>
                 </div>
@@ -2020,9 +2024,10 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                         <div className="flex flex-wrap gap-1.5 mb-1.5">
                           {completedSets.map((s: any, si: number) => (
                             <span key={si} className="text-[11px] bg-secondary text-muted-foreground px-2 py-0.5 rounded">
-                              {s.weight != null ? `${s.weight}kg` : '—'} × {s.reps != null ? s.reps : '—'}
+                              {si + 1}. {s.weight != null ? `${s.weight}kg` : '—'} × {s.reps != null ? s.reps : '—'}
                             </span>
                           ))}
+                          <span className="text-[11px] text-muted-foreground/50 px-1 py-0.5">{completedSets.length} set{completedSets.length !== 1 ? 's' : ''}</span>
                         </div>
                       )}
                       {ex.exerciseNotes && (
@@ -2652,8 +2657,8 @@ function ProgressSection() {
           <Tabs defaultValue="overview" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="sessions">Training</TabsTrigger>
             <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
             <TabsTrigger value="notes">Coaching Notes</TabsTrigger>
           </TabsList>
 
