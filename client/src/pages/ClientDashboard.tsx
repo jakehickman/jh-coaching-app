@@ -2344,7 +2344,6 @@ function CheckInsTab() {
       refetch();
       setSubmitted(true);
       toast.success('Your check-in has been submitted', { duration: 3000 });
-      setTimeout(() => navigate('/dashboard/overview'), 1500);
     },
     onError: () => toast.error('Failed to submit. Please try again.'),
   });
