@@ -3385,44 +3385,44 @@ function HabitsSection() {
 function CheckInsSection() {
   const { data: allUsers } = trpc.users.list.useQuery();
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
-  const clients = allUsers ?? [];
+  // Filter out admin accounts — only show actual clients
+  const clients = (allUsers ?? []).filter((u: any) => u.role !== 'admin');
 
-  // Sort clients: unreviewed first, then by latest submission date desc
+  // Fetch client profiles to get checkInDay for overdue calculation and pill display
+  const { data: clientProfiles = [] } = trpc.users.clients.useQuery();
+
+  // Sort priority: 0=unreviewed this week, 1=overdue, 2=no check-ins, 3=reviewed
+  const monday = (() => { const d = new Date(); const day = d.getDay(); d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day)); d.setHours(0,0,0,0); return d; })();
+  const dayMap: Record<string,number> = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 };
+  const toMonScale = (d: number) => (d === 0 ? 6 : d - 1);
+  const getOverdue = (id: number, ci: any): boolean => {
+    if (ci && new Date((ci as any).submittedAt) >= monday) return false;
+    const p = (clientProfiles as any[]).find((x: any) => x.userId === id);
+    const checkInDay = p?.checkInDay as string | undefined;
+    if (!checkInDay) return false;
+    return toMonScale(new Date().getDay()) > toMonScale(dayMap[checkInDay] ?? -1);
+  };
+  const sortBucket = (ci: any, reviewed: boolean, id: number): number => {
+    if (!reviewed && ci && new Date((ci as any).submittedAt) >= monday) return 0;
+    if (getOverdue(id, ci)) return 1;
+    if (!ci) return 2;
+    return 3;
+  };
   const sortedClients = [...clients].sort((a, b) => {
     const ciA = latestCheckIns.find((x: any) => x.clientId === a.id);
     const ciB = latestCheckIns.find((x: any) => x.clientId === b.id);
-    const reviewedA = !!(ciA as any)?.reviewedAt;
-    const reviewedB = !!(ciB as any)?.reviewedAt;
-    if (reviewedA !== reviewedB) return reviewedA ? 1 : -1;
+    const bA = sortBucket(ciA, !!(ciA as any)?.reviewedAt, a.id);
+    const bB = sortBucket(ciB, !!(ciB as any)?.reviewedAt, b.id);
+    if (bA !== bB) return bA - bB;
     const tA = ciA ? new Date((ciA as any).submittedAt).getTime() : 0;
     const tB = ciB ? new Date((ciB as any).submittedAt).getTime() : 0;
     return tB - tA;
   });
 
-  // Fetch client profiles to get checkInDay for overdue calculation
-  const { data: clientProfiles = [] } = trpc.users.clients.useQuery();
-
-  // Helper: is a client's check-in overdue?
-  // Overdue = their check-in day has passed this week and they haven't submitted yet
+  // Helper: is a client's check-in overdue? Delegates to shared getOverdue.
   const isOverdue = (clientId: number): boolean => {
     const ci = latestCheckIns.find((x: any) => x.clientId === clientId);
-    if (ci) {
-      // Already submitted this week — check if it's for the current week
-      const monday = (() => { const d = new Date(); const day = d.getDay(); d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day)); d.setHours(0,0,0,0); return d; })();
-      const submittedDate = new Date((ci as any).submittedAt);
-      if (submittedDate >= monday) return false; // submitted this week
-    }
-    // No submission this week — check if their check-in day has passed
-    // users.clients returns profile rows where userId = the user's ID
-    const profile = (clientProfiles as any[]).find((p: any) => p.userId === clientId);
-    const checkInDay = (profile as any)?.checkInDay as string | undefined;
-    if (!checkInDay) return false;
-    const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
-    const assignedDay = dayMap[checkInDay] ?? -1;
-    const todayDay = new Date().getDay();
-    // Week starts Monday (1). Convert to Mon=0 scale for comparison
-    const toMonScale = (d: number) => (d === 0 ? 6 : d - 1);
-    return toMonScale(todayDay) > toMonScale(assignedDay);
+    return getOverdue(clientId, ci);
   };
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -3483,7 +3483,21 @@ function CheckInsSection() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{client.name ?? `User ${client.id}`}</p>
-                  {(() => { const p = (clientProfiles as any[]).find((x: any) => x.userId === client.id); const day = p?.checkInDay as string | undefined; if (!day) return null; const abbr: Record<string,string> = { monday:'Mon', tuesday:'Tue', wednesday:'Wed', thursday:'Thu', friday:'Fri', saturday:'Sat', sunday:'Sun' }; return <span className="flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border">{abbr[day] ?? day}</span>; })()}
+                  {(() => {
+                    const p = (clientProfiles as any[]).find((x: any) => x.userId === client.id);
+                    const day = p?.checkInDay as string | undefined;
+                    if (!day) return null;
+                    const abbr: Record<string,string> = { monday:'Mon', tuesday:'Tue', wednesday:'Wed', thursday:'Thu', friday:'Fri', saturday:'Sat', sunday:'Sun' };
+                    const todayDayName = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()];
+                    const isToday = day === todayDayName;
+                    const overdue = isOverdue(client.id);
+                    const pillClass = overdue
+                      ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                      : isToday
+                        ? 'bg-primary/15 text-primary border-primary/30'
+                        : 'bg-secondary text-muted-foreground border-border';
+                    return <span className={`flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${pillClass}`}>{abbr[day] ?? day}</span>;
+                  })()}
                 </div>
                 {isOverdue(client.id) ? (
                   <p className="text-xs text-amber-400 font-medium">Overdue</p>

@@ -277,3 +277,6 @@
 - [x] Fix: Geoff Hickman not showing as Overdue in Check-ins section despite Monday check-in day having passed
 - [x] Fix: Geoff Hickman still not showing as Overdue on deployed site - trace full data flow
 - [x] Check-ins tab: add small check-in day pill/label to each client card
+- [x] Check-ins tab: filter out admin account from client list
+- [x] Check-ins tab: sort overdue clients above "no check-ins yet" clients
+- [x] Check-ins tab: highlight today's check-in day pill in colour (green/amber)
