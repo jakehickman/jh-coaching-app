@@ -3400,6 +3400,13 @@ function CheckInsSection() {
     const p = (clientProfiles as any[]).find((x: any) => x.userId === id);
     const checkInDay = p?.checkInDay as string | undefined;
     if (!checkInDay) return false;
+    // Don't flag as overdue if the client's start date is after this week's Monday
+    // (i.e. they haven't had their first full check-in week yet)
+    if (p?.startDate) {
+      const start = new Date(p.startDate);
+      start.setHours(0, 0, 0, 0);
+      if (start > monday) return false;
+    }
     return toMonScale(new Date().getDay()) > toMonScale(dayMap[checkInDay] ?? -1);
   };
   const sortBucket = (ci: any, reviewed: boolean, id: number): number => {

@@ -109,6 +109,12 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
         const submittedDate = new Date(ci.submittedAt);
         if (submittedDate >= monday) continue;
       }
+      // Skip if client started after this week's Monday (not yet in their first check-in week)
+      if (profile.startDate) {
+        const start = new Date(profile.startDate);
+        start.setHours(0, 0, 0, 0);
+        if (start > monday) continue;
+      }
       // Check if their check-in day has passed
       const checkInDay = profile.checkInDay as string | undefined;
       if (!checkInDay) continue;
