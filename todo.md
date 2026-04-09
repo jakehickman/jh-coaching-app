@@ -257,3 +257,4 @@
 - [x] Coach Clients section: show expandable check-in history in right panel when client is selected
 - [x] Coach Clients section: add delete button per check-in
 - [x] Coach Client Progress: remove Check-ins tab (moved to Clients section)
+- [x] Client check-in tab: show submitted state card with Edit option after submission

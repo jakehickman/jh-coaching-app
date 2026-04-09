@@ -2411,6 +2411,22 @@ function CheckInsTab() {
   );
 
   const [subTab, setSubTab] = useState<'form' | 'measurements'>('form');
+  const [isEditing, setIsEditing] = useState(false);
+
+  // When a new submission lands, exit edit mode
+  useEffect(() => {
+    if (submitted) setIsEditing(false);
+  }, [submitted]);
+
+  const freqLabel = (v: string) => FREQ_OPTIONS.find(o => o.value === v)?.label ?? v;
+  const barrierLabel = (v: string) => BARRIER_OPTIONS.find(o => o.value === v)?.label ?? v;
+  const assessLabel = (v: string) => ASSESS_OPTIONS.find(o => o.value === v)?.label ?? v;
+  const freqColor = (v: string) => {
+    if (v === 'never') return 'text-green-400';
+    if (v === 'once_twice') return 'text-amber-400';
+    if (v === 'few_days') return 'text-orange-400';
+    return 'text-red-400';
+  };
 
   return (
     <div className="space-y-5">
@@ -2469,8 +2485,55 @@ function CheckInsTab() {
         ))}
       </Card>
 
+      {/* ── Submitted summary card (shown when submitted and not editing) ── */}
+      {submitted && !isEditing && (
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-primary text-lg">✓</span>
+              <p className="text-sm font-semibold text-foreground">You've submitted this week's check-in</p>
+            </div>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="text-xs text-primary hover:opacity-80 font-medium"
+            >
+              Edit
+            </button>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Diet Execution</p>
+              <div className="space-y-1">
+                {[
+                  { label: 'Missed meals', val: form.execMissedMeals },
+                  { label: 'Extras outside plan', val: form.execUntrackedExtras },
+                  { label: 'Eyeballed portions', val: form.execPortionEstimate },
+                ].map(row => row.val ? (
+                  <div key={row.label} className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{row.label}</span>
+                    <span className={`text-xs font-semibold ${freqColor(row.val)}`}>{freqLabel(row.val)}</span>
+                  </div>
+                ) : null)}
+              </div>
+            </div>
+            {form.adherenceBarrier && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Main deviation cause</span>
+                <span className="text-xs font-medium text-foreground">{barrierLabel(form.adherenceBarrier)}</span>
+              </div>
+            )}
+            {form.weeklyAssessment && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Self-assessment</span>
+                <span className="text-xs font-medium text-foreground">{assessLabel(form.weeklyAssessment)}</span>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* Unread reply banner */}
-      {submitted && hasUnreadReply && (
+      {submitted && !isEditing && hasUnreadReply && (
         <div
           className="bg-primary/20 border border-primary/40 rounded-xl p-4 flex items-start gap-3 cursor-pointer"
           onClick={markReplySeen}
@@ -2483,23 +2546,16 @@ function CheckInsTab() {
         </div>
       )}
 
-      {/* Coach Reply (if exists) */}
-      {submitted && existingCheckIn?.coachReply && (
+      {/* Coach Reply */}
+      {submitted && !isEditing && existingCheckIn?.coachReply && (
         <div className="bg-primary/10 border border-primary/20 rounded-xl p-4" ref={el => { if (el && hasUnreadReply) { markReplySeen(); } }}>
           <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">Coach Reply</p>
           <p className="text-sm text-foreground whitespace-pre-wrap">{existingCheckIn.coachReply}</p>
         </div>
       )}
 
-      {/* Submission confirmation */}
-      {submitted && !existingCheckIn?.coachReply && (
-        <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
-          <p className="text-sm font-medium text-primary">✓ Check-in submitted</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Don't forget to send your photos, form clips, and anything else relevant on WhatsApp.</p>
-        </div>
-      )}
-
-      {/* ── Check-in Form ── */}
+      {/* ── Check-in Form (shown when not submitted, or when editing) ── */}
+      {(!submitted || isEditing) && (
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Check-in Form — Week of {fmtWeekStart(currentWeekStart)}</p>
 
@@ -2541,7 +2597,6 @@ function CheckInsTab() {
               </button>
             ))}
           </div>
-
         </Card>
 
         {/* Section 3: Weekly self-assessment */}
@@ -2565,14 +2620,25 @@ function CheckInsTab() {
           </div>
         </Card>
 
-        <button
-          onClick={handleSubmit}
-          disabled={submitMutation.isPending}
-          className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {submitMutation.isPending ? 'Submitting...' : submitted ? 'Update Check-in' : 'Submit Check-in'}
-        </button>
+        <div className="flex gap-3">
+          {isEditing && (
+            <button
+              onClick={() => setIsEditing(false)}
+              className="flex-1 py-4 border border-border text-muted-foreground font-semibold text-base rounded-xl hover:opacity-80 transition-opacity"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            onClick={handleSubmit}
+            disabled={submitMutation.isPending}
+            className="flex-1 py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {submitMutation.isPending ? 'Saving...' : isEditing ? 'Save Changes' : 'Submit Check-in'}
+          </button>
+        </div>
       </div>
+      )}
 
       {/* WhatsApp reminder */}
       <Card className="space-y-3.5 border-border/60">
