@@ -265,3 +265,6 @@
 - [ ] Coach check-in history: redesign card to question/answer per line layout
 - [x] Client Overview: show check-in day reminder banner on assigned day
 - [x] Coach Clients nav: show unreviewed check-in count badge
+- [ ] Coach sidebar: add dedicated Check-ins nav item with unreviewed badge
+- [ ] Coach: build CheckInsSection with client list + full check-in history panel
+- [ ] Coach Clients section: remove Check-ins sub-tab, restore profile-only view

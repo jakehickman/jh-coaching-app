@@ -1063,35 +1063,6 @@ function ClientsSection() {
 
   const clients = allUsers ?? [];
 
-  // Check-ins for selected client
-  const { data: clientCheckIns = [], refetch: refetchCheckIns } = trpc.checkIn.clientList.useQuery(
-    { clientId: selectedId! },
-    { enabled: !!selectedId }
-  );
-  const deleteCheckIn = trpc.checkIn.delete.useMutation({
-    onSuccess: () => { toast.success('Check-in deleted'); refetchCheckIns(); utils.checkIn.latestPerClient.invalidate(); },
-    onError: () => toast.error('Failed to delete check-in'),
-  });
-  const markReviewed = trpc.checkIn.markReviewed.useMutation({
-    onSuccess: () => { refetchCheckIns(); },
-    onError: () => toast.error('Failed to update status'),
-  });
-  const [expandedCheckIns, setExpandedCheckIns] = useState<Set<number>>(new Set());
-  const [clientTab, setClientTab] = useState<'profile' | 'checkins'>('profile');
-
-  // Mark check-ins as seen when client is selected and check-ins load
-  useEffect(() => {
-    if (!selectedId || clientCheckIns.length === 0) return;
-    const latest = clientCheckIns.reduce((a, b) => {
-      const aTime = new Date((a as any).submittedAt ?? 0).getTime();
-      const bTime = new Date((b as any).submittedAt ?? 0).getTime();
-      return bTime > aTime ? b : a;
-    });
-    const seenAt = new Date((latest as any).submittedAt ?? Date.now()).getTime();
-    localStorage.setItem(`coach:seen:checkin:${selectedId}`, String(seenAt));
-    window.dispatchEvent(new StorageEvent('storage', { key: `coach:seen:checkin:${selectedId}` }));
-  }, [selectedId, clientCheckIns]);
-
   return (
     <div className="space-y-4">
       {/* Stats row */}
@@ -1176,29 +1147,10 @@ function ClientsSection() {
           </div>
         </div>
 
-        {/* Right: profile form + check-ins */}
+        {/* Right: profile form */}
         {selectedId ? (
           <div className="space-y-4">
-            {/* Tab switcher */}
-            <div className="flex gap-1 bg-secondary rounded-lg p-1 w-fit">
-              {(['profile', 'checkins'] as const).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setClientTab(tab)}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    clientTab === tab ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {tab === 'profile' ? 'Profile' : 'Check-ins'}
-                  {tab === 'checkins' && clientCheckIns.length > 0 && (
-                    <span className="ml-1.5 text-[10px] bg-primary/20 text-primary rounded-full px-1.5 py-0.5">{clientCheckIns.length}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Profile tab */}
-            {clientTab === 'profile' && (
+            {(
               <Card className="space-y-4">
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Client Name</label>
@@ -1267,126 +1219,6 @@ function ClientsSection() {
                   {(upsertProfile.isPending || updateClientConfig.isPending) ? 'Saving...' : 'Save Profile'}
                 </button>
               </Card>
-            )}
-
-            {/* Check-ins tab */}
-            {clientTab === 'checkins' && (
-              <div className="space-y-2">
-                {clientCheckIns.length === 0 ? (
-                  <div className="flex items-center justify-center h-20 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
-                    No check-ins submitted yet
-                  </div>
-                ) : (
-                  clientCheckIns.map(ci => {
-                    const isExpanded = expandedCheckIns.has(ci.id);
-                    const isReviewed = !!(ci as any).reviewedAt;
-                    return (
-                      <div key={ci.id} className={`border rounded-xl overflow-hidden bg-card transition-colors ${isReviewed ? 'border-border/50 opacity-80' : 'border-border'}`}>
-                        {/* Header */}
-                        <button
-                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
-                          onClick={() => setExpandedCheckIns(prev => {
-                            const next = new Set(prev);
-                            if (next.has(ci.id)) next.delete(ci.id); else next.add(ci.id);
-                            return next;
-                          })}
-                        >
-                          <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="text-sm font-semibold text-foreground">Week of {fmtCheckInDate(toLocalDateStr(ci.weekStartDate))}</span>
-                            {(ci as any).weeklyAssessment && (
-                              <span className={`text-[10px] px-2 py-0.5 rounded font-medium bg-secondary ${assessColorFn((ci as any).weeklyAssessment)}`}>
-                                {ASSESS_LABEL_MAP[(ci as any).weeklyAssessment] ?? (ci as any).weeklyAssessment}
-                              </span>
-                            )}
-                            {isReviewed && (
-                              <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-green-500/15 text-green-400">Reviewed</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">{new Date(ci.submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
-                            <ChevronDown size={14} className={`text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                          </div>
-                        </button>
-
-                        {/* Expanded detail */}
-                        {isExpanded && (
-                          <div className="border-t border-border">
-                            {/* Diet Execution questions */}
-                            {(ci.execMissedMeals || ci.execUntrackedExtras || ci.execPortionEstimate) && (
-                              <div className="px-4 pt-3 pb-2">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Diet Execution</p>
-                                <div className="space-y-2">
-                                  {[
-                                    { q: 'How often did you miss a planned meal entirely?', val: ci.execMissedMeals },
-                                    { q: 'How often did you eat extra foods outside your plan?', val: ci.execUntrackedExtras },
-                                    { q: 'How often did you estimate or eyeball portion sizes instead of weighing/measuring?', val: ci.execPortionEstimate },
-                                  ].filter(r => r.val).map(row => (
-                                    <div key={row.q} className="flex flex-col gap-0.5">
-                                      <span className="text-xs text-muted-foreground">{row.q}</span>
-                                      <span className={`text-sm font-semibold ${freqColorFn(row.val)}`}>{FREQ_LABEL_MAP[row.val!] ?? row.val}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Deviation cause */}
-                            {ci.adherenceBarrier && ci.adherenceBarrier !== 'no_issues' && (
-                              <div className="px-4 py-2 border-t border-border/50">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Main Deviation Cause</p>
-                                <p className="text-sm text-foreground">{BARRIER_LABEL_MAP[ci.adherenceBarrier] ?? ci.adherenceBarrier}</p>
-                                {ci.barrierExplain && <p className="text-xs text-muted-foreground mt-0.5">{ci.barrierExplain}</p>}
-                              </div>
-                            )}
-
-                            {/* Self-assessment */}
-                            {(ci as any).weeklyAssessment && (
-                              <div className="px-4 py-2 border-t border-border/50">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Self-Assessment</p>
-                                <p className={`text-sm font-semibold ${assessColorFn((ci as any).weeklyAssessment)}`}>{ASSESS_LABEL_MAP[(ci as any).weeklyAssessment] ?? (ci as any).weeklyAssessment}</p>
-                              </div>
-                            )}
-
-                            {/* Focus next week */}
-                            {ci.focusNextWeek && (
-                              <div className="px-4 py-2 border-t border-border/50">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Focus Next Week</p>
-                                <p className="text-sm text-foreground">{ci.focusNextWeek}</p>
-                              </div>
-                            )}
-
-                            {/* Actions */}
-                            <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between gap-2">
-                              <button
-                                onClick={() => markReviewed.mutate({ id: ci.id, reviewed: !isReviewed })}
-                                disabled={markReviewed.isPending}
-                                className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
-                                  isReviewed
-                                    ? 'border-border text-muted-foreground hover:text-foreground'
-                                    : 'border-green-500/40 text-green-400 hover:bg-green-500/10'
-                                }`}
-                              >
-                                {isReviewed ? 'Mark as Unreviewed' : 'Mark as Reviewed'}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (confirm('Delete this check-in? This cannot be undone.')) {
-                                    deleteCheckIn.mutate({ id: ci.id });
-                                  }
-                                }}
-                                disabled={deleteCheckIn.isPending}
-                                className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
             )}
           </div>
         ) : (
@@ -3558,8 +3390,231 @@ function HabitsSection() {
 }
 
 // ─── Main CoachPanel ──────────────────────────────────────────────────────────
+// ─── Section: Check-ins ─────────────────────────────────────────────────────
+function CheckInsSection() {
+  const { data: allUsers } = trpc.users.list.useQuery();
+  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
+  const clients = allUsers ?? [];
+
+  // Sort clients: unreviewed first, then by latest submission date desc
+  const sortedClients = [...clients].sort((a, b) => {
+    const ciA = latestCheckIns.find((x: any) => x.clientId === a.id);
+    const ciB = latestCheckIns.find((x: any) => x.clientId === b.id);
+    const reviewedA = !!(ciA as any)?.reviewedAt;
+    const reviewedB = !!(ciB as any)?.reviewedAt;
+    if (reviewedA !== reviewedB) return reviewedA ? 1 : -1;
+    const tA = ciA ? new Date((ciA as any).submittedAt).getTime() : 0;
+    const tB = ciB ? new Date((ciB as any).submittedAt).getTime() : 0;
+    return tB - tA;
+  });
+
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const utils = trpc.useUtils();
+
+  const { data: clientCheckIns = [], refetch: refetchCheckIns } = trpc.checkIn.clientList.useQuery(
+    { clientId: selectedId! },
+    { enabled: !!selectedId }
+  );
+  const deleteCheckIn = trpc.checkIn.delete.useMutation({
+    onSuccess: () => { toast.success('Check-in deleted'); refetchCheckIns(); utils.checkIn.latestPerClient.invalidate(); },
+    onError: () => toast.error('Failed to delete check-in'),
+  });
+  const markReviewed = trpc.checkIn.markReviewed.useMutation({
+    onSuccess: () => { refetchCheckIns(); utils.checkIn.latestPerClient.invalidate(); },
+    onError: () => toast.error('Failed to update status'),
+  });
+  const [expandedCheckIns, setExpandedCheckIns] = useState<Set<number>>(new Set());
+
+  // Mark as seen in localStorage when client's check-ins load
+  useEffect(() => {
+    if (!selectedId || clientCheckIns.length === 0) return;
+    const latest = clientCheckIns.reduce((a: any, b: any) => {
+      return new Date(b.submittedAt).getTime() > new Date(a.submittedAt).getTime() ? b : a;
+    });
+    const seenAt = new Date((latest as any).submittedAt ?? Date.now()).getTime();
+    localStorage.setItem(`coach:seen:checkin:${selectedId}`, String(seenAt));
+    window.dispatchEvent(new StorageEvent('storage', { key: `coach:seen:checkin:${selectedId}` }));
+  }, [selectedId, clientCheckIns]);
+
+  const selectedClient = clients.find(c => c.id === selectedId);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4">
+      {/* Left: client list */}
+      <div className="space-y-1">
+        {sortedClients.filter(c => c.id !== undefined).map(client => {
+          const ci = latestCheckIns.find((x: any) => x.clientId === client.id);
+          const isReviewed = !!(ci as any)?.reviewedAt;
+          const hasCheckIn = !!ci;
+          const isSelected = selectedId === client.id;
+          return (
+            <button
+              key={client.id}
+              onClick={() => setSelectedId(client.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
+                isSelected ? 'bg-primary/15 border border-primary/30' : 'hover:bg-secondary border border-transparent'
+              }`}
+            >
+              <div className="relative flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold text-foreground">
+                  {(client.name ?? 'U').charAt(0).toUpperCase()}
+                </div>
+                {hasCheckIn && !isReviewed && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{client.name ?? `User ${client.id}`}</p>
+                {ci ? (
+                  <p className={`text-xs truncate ${isReviewed ? 'text-muted-foreground' : 'text-primary'}`}>
+                    {isReviewed ? 'Reviewed' : 'Awaiting review'} · {new Date((ci as any).submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No check-ins yet</p>
+                )}
+              </div>
+            </button>
+          );
+        })}
+        {sortedClients.length === 0 && (
+          <p className="text-sm text-muted-foreground px-3 py-4">No clients yet.</p>
+        )}
+      </div>
+
+      {/* Right: check-in history */}
+      {selectedId ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-semibold text-foreground">{selectedClient?.name ?? `User ${selectedId}`}</h2>
+            <span className="text-xs text-muted-foreground">{clientCheckIns.length} check-in{clientCheckIns.length !== 1 ? 's' : ''}</span>
+          </div>
+          {clientCheckIns.length === 0 ? (
+            <div className="flex items-center justify-center h-24 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
+              No check-ins submitted yet
+            </div>
+          ) : (
+            clientCheckIns.map((ci: any) => {
+              const isExpanded = expandedCheckIns.has(ci.id);
+              const isReviewed = !!ci.reviewedAt;
+              return (
+                <div key={ci.id} className={`border rounded-xl overflow-hidden bg-card transition-colors ${isReviewed ? 'border-border/50 opacity-80' : 'border-border'}`}>
+                  {/* Header */}
+                  <button
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
+                    onClick={() => setExpandedCheckIns(prev => {
+                      const next = new Set(prev);
+                      if (next.has(ci.id)) next.delete(ci.id); else next.add(ci.id);
+                      return next;
+                    })}
+                  >
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="text-sm font-semibold text-foreground">Week of {fmtCheckInDate(toLocalDateStr(ci.weekStartDate))}</span>
+                      {ci.weeklyAssessment && (
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-medium bg-secondary ${assessColorFn(ci.weeklyAssessment)}`}>
+                          {ASSESS_LABEL_MAP[ci.weeklyAssessment] ?? ci.weeklyAssessment}
+                        </span>
+                      )}
+                      {isReviewed && (
+                        <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-green-500/15 text-green-400">Reviewed</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{new Date(ci.submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+                      <ChevronDown size={14} className={`text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+
+                  {/* Expanded detail */}
+                  {isExpanded && (
+                    <div className="border-t border-border">
+                      {/* Diet Execution */}
+                      {(ci.execMissedMeals || ci.execUntrackedExtras || ci.execPortionEstimate) && (
+                        <div className="px-4 pt-3 pb-2">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Diet Execution</p>
+                          <div className="space-y-2">
+                            {[
+                              { q: 'How often did you miss a planned meal entirely?', val: ci.execMissedMeals },
+                              { q: 'How often did you eat extra foods outside your plan?', val: ci.execUntrackedExtras },
+                              { q: 'How often did you estimate or eyeball portion sizes instead of weighing/measuring?', val: ci.execPortionEstimate },
+                            ].filter(r => r.val).map(row => (
+                              <div key={row.q} className="flex flex-col gap-0.5">
+                                <span className="text-xs text-muted-foreground">{row.q}</span>
+                                <span className={`text-sm font-semibold ${freqColorFn(row.val)}`}>{FREQ_LABEL_MAP[row.val!] ?? row.val}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Deviation cause */}
+                      {ci.adherenceBarrier && ci.adherenceBarrier !== 'no_issues' && (
+                        <div className="px-4 py-2 border-t border-border/50">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Main Deviation Cause</p>
+                          <p className="text-sm text-foreground">{BARRIER_LABEL_MAP[ci.adherenceBarrier] ?? ci.adherenceBarrier}</p>
+                          {ci.barrierExplain && <p className="text-xs text-muted-foreground mt-0.5">{ci.barrierExplain}</p>}
+                        </div>
+                      )}
+
+                      {/* Self-assessment */}
+                      {ci.weeklyAssessment && (
+                        <div className="px-4 py-2 border-t border-border/50">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Self-Assessment</p>
+                          <p className={`text-sm font-semibold ${assessColorFn(ci.weeklyAssessment)}`}>{ASSESS_LABEL_MAP[ci.weeklyAssessment] ?? ci.weeklyAssessment}</p>
+                        </div>
+                      )}
+
+                      {/* Focus next week */}
+                      {ci.focusNextWeek && (
+                        <div className="px-4 py-2 border-t border-border/50">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Focus Next Week</p>
+                          <p className="text-sm text-foreground">{ci.focusNextWeek}</p>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between gap-2">
+                        <button
+                          onClick={() => markReviewed.mutate({ id: ci.id, reviewed: !isReviewed })}
+                          disabled={markReviewed.isPending}
+                          className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+                            isReviewed
+                              ? 'border-border text-muted-foreground hover:text-foreground'
+                              : 'border-green-500/40 text-green-400 hover:bg-green-500/10'
+                          }`}
+                        >
+                          {isReviewed ? 'Mark as Unreviewed' : 'Mark as Reviewed'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('Delete this check-in? This cannot be undone.')) {
+                              deleteCheckIn.mutate({ id: ci.id });
+                            }
+                          }}
+                          disabled={deleteCheckIn.isPending}
+                          className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-center h-40 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
+          Select a client to view their check-ins
+        </div>
+      )}
+    </div>
+  );
+}
+
 const SECTION_MAP: Record<string, () => React.ReactNode> = {
   clients: () => <ClientsSection />,
+  "check-ins": () => <CheckInsSection />,
   training: () => <TrainingSection />,
   "meal-plans": () => <MealPlansSection />,
   progress: () => <ProgressSection />,
@@ -3569,6 +3624,7 @@ const SECTION_MAP: Record<string, () => React.ReactNode> = {
 };
 const SECTION_TITLES: Record<string, string> = {
   clients: "Clients",
+  "check-ins": "Check-ins",
   training: "Training Programs",
   "meal-plans": "Meal Plans",
   progress: "Client Progress",
