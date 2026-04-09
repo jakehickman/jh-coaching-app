@@ -2467,10 +2467,10 @@ function CheckInsTab() {
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Check-in Form — Week of {fmtWeekStart(currentWeekStart)}</p>
 
-        {/* Section 1: Nutrition / Diet Execution */}
+        {/* Section 1: Diet Adherence */}
         <Card className="space-y-5 mb-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">Nutrition / Diet Execution</p>
+            <p className="text-sm font-semibold text-foreground">Diet Adherence</p>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">This is about how closely you followed your plan as written. Estimate as best you can. Exclude fully off-plan meals.</p>
           </div>
           <FreqQuestion
