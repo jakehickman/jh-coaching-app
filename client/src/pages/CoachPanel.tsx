@@ -1959,6 +1959,7 @@ const MUSCLE_KEYS = Object.keys(MUSCLE_LABELS);
 // ─── Section: Workout Sessions Tab ──────────────────────────────────────────
 function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   if (!workoutSessions.length) {
     return <p className="text-sm text-muted-foreground">No workout sessions logged yet.</p>;
@@ -1968,9 +1969,19 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
     toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate))
   );
 
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoStr = `${sevenDaysAgo.getFullYear()}-${String(sevenDaysAgo.getMonth()+1).padStart(2,'0')}-${String(sevenDaysAgo.getDate()).padStart(2,'0')}`;
+  const recent = sorted.filter(s => toLocalDateStr(s.sessionDate) >= sevenDaysAgoStr);
+  const older = sorted.filter(s => toLocalDateStr(s.sessionDate) < sevenDaysAgoStr);
+  const visible = showAll ? sorted : recent;
+
   return (
     <div className="space-y-2">
-      {sorted.map((session) => {
+      {visible.length === 0 && (
+        <p className="text-sm text-muted-foreground">No sessions in the last 7 days.</p>
+      )}
+      {visible.map((session) => {
         const dateStr = toLocalDateStr(session.sessionDate);
         const [y, m, d] = dateStr.split('-');
         const dateLabel = `${d}/${m}/${y}`;
@@ -2046,6 +2057,14 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
           </div>
         );
       })}
+      {older.length > 0 && (
+        <button
+          onClick={() => setShowAll(v => !v)}
+          className="w-full text-xs text-muted-foreground hover:text-foreground py-2 transition-colors"
+        >
+          {showAll ? 'Show less' : `View ${older.length} older session${older.length !== 1 ? 's' : ''}`}
+        </button>
+      )}
     </div>
   );
 }
