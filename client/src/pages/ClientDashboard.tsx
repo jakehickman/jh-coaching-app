@@ -7,7 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar
 } from "recharts";
-import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil, CheckSquare, Square, Shuffle } from "lucide-react";
+import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil, CheckSquare, Square, Shuffle, Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -1615,6 +1615,7 @@ function WorkoutLogTab() {
     if (workoutDraftKey) { try { localStorage.removeItem(workoutDraftKey); } catch {} }
   }
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
+  const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
 
@@ -1858,6 +1859,8 @@ function WorkoutLogTab() {
               const prevSets = prevExMap[displayName] ?? prevExMap[ex.name] ?? [];
               const exVideoUrl = videoMap[displayName] ?? videoMap[ex.name];
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
+              const hasEquipment = !!(equipmentDetails[displayName]?.trim());
+              const isEquipmentOpen = equipmentOpen[displayName] || hasEquipment;
               return (
                 <Card key={i}>
                   <div className="flex items-start justify-between gap-2 mb-3">
@@ -1887,13 +1890,41 @@ function WorkoutLogTab() {
                         </p>
                       )}
                     </div>
-                    <button
-                      onClick={() => { setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
-                      className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors bg-secondary px-2 py-1.5 rounded-lg flex-shrink-0"
-                    >
-                      <Shuffle size={11} /> Sub
-                    </button>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {/* Equipment details toggle */}
+                      <button
+                        onClick={() => setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] }))}
+                        title="Equipment details"
+                        className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                          hasEquipment
+                            ? "bg-primary/15 text-primary"
+                            : "bg-secondary text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Wrench size={13} />
+                      </button>
+                      <button
+                        onClick={() => { setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
+                        className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors bg-secondary px-2 py-1.5 rounded-lg"
+                      >
+                        <Shuffle size={11} /> Sub
+                      </button>
+                    </div>
                   </div>
+                  {/* Equipment details inline input */}
+                  {isEquipmentOpen && (
+                    <div className="mb-3 -mt-1">
+                      <input
+                        type="text"
+                        value={equipmentDetails[displayName] ?? ""}
+                        onChange={e => setEquipmentDetails(prev => ({ ...prev, [displayName]: e.target.value }))}
+                        placeholder=""
+                        autoFocus={!hasEquipment}
+                        className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-1">Equipment details</p>
+                    </div>
+                  )}
 
                   {/* All sets — unified layout with checkbox */}
                   {sets.length > 0 && (
