@@ -228,3 +228,4 @@
 - [x] Remove default value of 3 for sleep quality and hunger level in daily log form — now start blank (null)
 - [x] Fix client recent log edit — DailyLogTab date state not updating when navigating from RecentLogsPanel edit button
 - [x] Add Equipment details field to workout log exercises (DB schema, server, UI)
+- [x] Add measurements nudge/prompt inside Check-in form with button to switch to Measurements sub-tab

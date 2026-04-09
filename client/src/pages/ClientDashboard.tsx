@@ -2571,6 +2571,21 @@ function CheckInsTab() {
         </div>
       </Card>
 
+      {/* Measurements nudge */}
+      <div className="bg-secondary/60 border border-border rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="text-base">📏</span>
+          <p className="text-sm text-foreground">Don't forget to log your measurements</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setSubTab('measurements')}
+          className="text-xs font-semibold text-primary shrink-0 hover:opacity-80 transition-opacity"
+        >
+          Log now →
+        </button>
+      </div>
+
       {/* Past Check-ins */}
       {allCheckIns.length > 1 && (
         <div>
