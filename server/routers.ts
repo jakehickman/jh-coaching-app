@@ -470,6 +470,10 @@ export const appRouter = router({
       .mutation(({ input }) => db.replyToCheckIn(input.id, input.coachReply)),
     // Coach: get the latest check-in submission per client (for indicator badges)
     latestPerClient: adminProcedure.query(() => db.getLatestCheckInPerClient()),
+    // Coach: delete a check-in submission
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteCheckIn(input.id)),
   }),
 
   // Client profile extended (check-in day + step goal) — coach sets these

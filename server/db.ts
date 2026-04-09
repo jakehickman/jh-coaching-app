@@ -982,6 +982,13 @@ export async function getLatestCheckInPerClient(): Promise<{ clientId: number; w
   }).map(r => ({ clientId: r.clientId, weekStartDate: String(r.weekStartDate), submittedAt: r.submittedAt as unknown as Date }));
 }
 
+// Coach: delete a check-in submission
+export async function deleteCheckIn(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(checkInSubmissions).where(eq(checkInSubmissions.id, id));
+}
+
 // ─── Client Profile: step goal + check-in day ────────────────────────────────
 
 export async function updateClientProfileExtended(userId: number, data: {

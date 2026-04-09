@@ -254,3 +254,6 @@
 - [x] Check-in: change "A quick summary of how your week went." to "A summary of how your week went."
 - [x] Check-in: remove "In your voice note, cover: what went well..." helper text
 - [x] Coach view: clear green dot badge once coach opens a client's Check-ins tab
+- [x] Coach Clients section: show expandable check-in history in right panel when client is selected
+- [x] Coach Clients section: add delete button per check-in
+- [x] Coach Client Progress: remove Check-ins tab (moved to Clients section)

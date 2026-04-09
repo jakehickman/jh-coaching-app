@@ -1063,6 +1063,36 @@ function ClientsSection() {
 
   const clients = allUsers ?? [];
 
+  // Check-ins for selected client
+  const { data: clientCheckIns = [], refetch: refetchCheckIns } = trpc.checkIn.clientList.useQuery(
+    { clientId: selectedId! },
+    { enabled: !!selectedId }
+  );
+  const deleteCheckIn = trpc.checkIn.delete.useMutation({
+    onSuccess: () => { toast.success('Check-in deleted'); refetchCheckIns(); utils.checkIn.latestPerClient.invalidate(); },
+    onError: () => toast.error('Failed to delete check-in'),
+  });
+  const replyCheckIn = trpc.checkIn.reply.useMutation({
+    onSuccess: () => { toast.success('Reply saved'); refetchCheckIns(); setReplyId(null); setReplyText(''); },
+    onError: () => toast.error('Failed to save reply'),
+  });
+  const [expandedCheckIns, setExpandedCheckIns] = useState<Set<number>>(new Set());
+  const [replyId, setReplyId] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState('');
+
+  // Mark check-ins as seen when client is selected and check-ins load
+  useEffect(() => {
+    if (!selectedId || clientCheckIns.length === 0) return;
+    const latest = clientCheckIns.reduce((a, b) => {
+      const aTime = new Date((a as any).submittedAt ?? 0).getTime();
+      const bTime = new Date((b as any).submittedAt ?? 0).getTime();
+      return bTime > aTime ? b : a;
+    });
+    const seenAt = new Date((latest as any).submittedAt ?? Date.now()).getTime();
+    localStorage.setItem(`coach:seen:checkin:${selectedId}`, String(seenAt));
+    window.dispatchEvent(new StorageEvent('storage', { key: `coach:seen:checkin:${selectedId}` }));
+  }, [selectedId, clientCheckIns]);
+
   return (
     <div className="space-y-4">
       {/* Stats row */}
@@ -1147,9 +1177,9 @@ function ClientsSection() {
           </div>
         </div>
 
-        {/* Right: profile form */}
+        {/* Right: profile form + check-ins */}
         {selectedId ? (
-          <div>
+          <div className="space-y-5">
             <SectionLabel>Client Profile</SectionLabel>
             <Card className="space-y-4">
               <div>
@@ -1221,6 +1251,155 @@ function ClientsSection() {
                 {(upsertProfile.isPending || updateClientConfig.isPending) ? "Saving..." : "Save Profile"}
               </button>
             </Card>
+
+            {/* Check-in History */}
+            <div>
+              <SectionLabel>Check-in History</SectionLabel>
+              {clientCheckIns.length === 0 ? (
+                <div className="flex items-center justify-center h-20 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
+                  No check-ins submitted yet
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {clientCheckIns.map(ci => {
+                    const isExpanded = expandedCheckIns.has(ci.id);
+                    return (
+                      <div key={ci.id} className="border border-border rounded-xl overflow-hidden bg-card">
+                        {/* Collapsed header row */}
+                        <button
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
+                          onClick={() => setExpandedCheckIns(prev => {
+                            const next = new Set(prev);
+                            if (next.has(ci.id)) next.delete(ci.id); else next.add(ci.id);
+                            return next;
+                          })}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-medium text-foreground">Week of {fmtCheckInDate(toLocalDateStr(ci.weekStartDate))}</span>
+                            {(ci as any).weeklyAssessment && (
+                              <span className={`text-[10px] px-2 py-0.5 rounded font-medium bg-secondary ${assessColorFn((ci as any).weeklyAssessment)}`}>
+                                {ASSESS_LABEL_MAP[(ci as any).weeklyAssessment] ?? (ci as any).weeklyAssessment}
+                              </span>
+                            )}
+                            {ci.coachReply && (
+                              <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-primary/15 text-primary">Replied</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{new Date(ci.submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+                            <ChevronDown size={14} className={`text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </div>
+                        </button>
+
+                        {/* Expanded detail */}
+                        {isExpanded && (
+                          <div className="px-4 pb-4 space-y-4 border-t border-border">
+                            {/* Diet Execution */}
+                            {(ci.execPortionEstimate || ci.execUntrackedExtras || ci.execMissedMeals) && (
+                              <div className="pt-3">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Diet Execution</p>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                                  {[
+                                    { label: 'Missed meals', val: ci.execMissedMeals },
+                                    { label: 'Extras outside plan', val: ci.execUntrackedExtras },
+                                    { label: 'Eyeballed portions', val: ci.execPortionEstimate },
+                                  ].map(row => (
+                                    <div key={row.label} className="flex items-center justify-between">
+                                      <span className="text-xs text-muted-foreground">{row.label}</span>
+                                      <span className={`text-xs font-semibold ${freqColorFn(row.val)}`}>
+                                        {row.val ? FREQ_LABEL_MAP[row.val] : '—'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Barrier + Explain */}
+                            <div className="space-y-2">
+                              {ci.adherenceBarrier && ci.adherenceBarrier !== 'no_issues' && (
+                                <div>
+                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Main Deviation Cause</p>
+                                  <p className="text-sm text-foreground">{BARRIER_LABEL_MAP[ci.adherenceBarrier] ?? ci.adherenceBarrier}</p>
+                                </div>
+                              )}
+                              {ci.barrierExplain && (
+                                <div>
+                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Barrier Detail</p>
+                                  <p className="text-sm text-foreground">{ci.barrierExplain}</p>
+                                </div>
+                              )}
+                              {ci.focusNextWeek && (
+                                <div>
+                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Focus Next Week</p>
+                                  <p className="text-sm text-foreground">{ci.focusNextWeek}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Coach Reply */}
+                            {ci.coachReply && replyId !== ci.id && (
+                              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+                                <p className="text-[10px] text-primary uppercase tracking-wider mb-1">Your Reply</p>
+                                <p className="text-sm text-foreground">{ci.coachReply}</p>
+                              </div>
+                            )}
+
+                            {/* Reply form */}
+                            {replyId === ci.id ? (
+                              <div className="space-y-2">
+                                <textarea
+                                  value={replyText}
+                                  onChange={e => setReplyText(e.target.value)}
+                                  rows={3}
+                                  placeholder="Write your reply to the client..."
+                                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => replyCheckIn.mutate({ id: ci.id, coachReply: replyText })}
+                                    disabled={replyCheckIn.isPending || !replyText.trim()}
+                                    className="flex-1 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 disabled:opacity-50"
+                                  >
+                                    {replyCheckIn.isPending ? 'Saving...' : 'Save Reply'}
+                                  </button>
+                                  <button
+                                    onClick={() => { setReplyId(null); setReplyText(''); }}
+                                    className="px-4 py-2 border border-border text-sm text-muted-foreground rounded-lg hover:text-foreground"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <button
+                                  onClick={() => { setReplyId(ci.id); setReplyText(ci.coachReply ?? ''); }}
+                                  className="text-xs text-primary hover:opacity-80 font-medium"
+                                >
+                                  {ci.coachReply ? 'Edit Reply' : '+ Add Reply'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm('Delete this check-in? This cannot be undone.')) {
+                                      deleteCheckIn.mutate({ id: ci.id });
+                                    }
+                                  }}
+                                  disabled={deleteCheckIn.isPending}
+                                  className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex items-center justify-center h-40 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
@@ -2441,7 +2620,49 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
   );
 }
 
-// ─── Coach Check-ins Tab ─────────────────────────────────────────────────────
+// ─── Shared check-in helpers (used in both Clients section and standalone tab) ─────────
+
+const FREQ_LABEL_MAP: Record<string, string> = {
+  never: 'Never',
+  once_twice: 'Once or twice',
+  few_days: 'A few times',
+  most_days: 'Many times',
+};
+const BARRIER_LABEL_MAP: Record<string, string> = {
+  no_issues: 'No issues',
+  hunger: 'Hunger / cravings',
+  cravings: 'Hunger / cravings',
+  social_events: 'Social events',
+  busy_time: 'Time / schedule',
+  poor_planning: 'Poor planning / prep',
+  low_motivation: 'Low motivation',
+  travel_disruption: 'Travel',
+  other: 'Other',
+};
+const ASSESS_LABEL_MAP: Record<string, string> = {
+  executed_exactly: 'Executed the plan exactly',
+  mostly_followed: 'Mostly followed the plan',
+  inconsistent: 'Was inconsistent',
+  didnt_follow: "Didn't follow the plan",
+};
+const assessColorFn = (v: string | null) => {
+  if (!v || v === 'executed_exactly') return 'text-green-400';
+  if (v === 'mostly_followed') return 'text-amber-400';
+  if (v === 'inconsistent') return 'text-orange-400';
+  return 'text-red-400';
+};
+const freqColorFn = (v: string | null) => {
+  if (!v || v === 'never') return 'text-green-400';
+  if (v === 'once_twice') return 'text-amber-400';
+  if (v === 'few_days') return 'text-orange-400';
+  return 'text-red-400';
+};
+const fmtCheckInDate = (iso: string) => {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+// ─── Coach Check-ins Tab ─────────────────────────────────────────────
 function CoachCheckInsTab({ clientId }: { clientId: number }) {
   const { data: checkIns = [], refetch } = trpc.checkIn.clientList.useQuery({ clientId });
 
@@ -2796,7 +3017,6 @@ function ProgressSection() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="sessions">Training</TabsTrigger>
             <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
-            <TabsTrigger value="checkins">Check-ins</TabsTrigger>
             <TabsTrigger value="notes">Coaching Notes</TabsTrigger>
           </TabsList>
 
@@ -2892,10 +3112,6 @@ function ProgressSection() {
 
           <TabsContent value="notes">
             <CoachingNotesTab clientId={selectedUserId!} />
-          </TabsContent>
-
-          <TabsContent value="checkins">
-            <CoachCheckInsTab clientId={selectedUserId!} />
           </TabsContent>
 
         </Tabs>
