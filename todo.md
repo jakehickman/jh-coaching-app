@@ -238,3 +238,9 @@
 - [x] Check-in: add free-text context field below "What caused the most deviation" question
 - [x] Coach Client Progress: add Check-ins tab showing submitted check-in answers
 - [x] Investigate why geoffjhickman has no proper display name; fix new client name capture on signup
+- [x] Check-in: remove "If sending a voice note" footer text
+- [x] Check-in: remove context textarea from deviation section; add voice note hint text instead
+- [x] Check-in: remove "How often did you eat something outside your meal plan" question (covered by off-plan meals)
+- [x] Check-in: fix validation error — change "execution accuracy questions" to "diet adherence questions"; fix false positive blocking submission
+- [x] Coach Client Profile: remove placeholder text from Client Name input
+- [x] Client Check-ins tab: show "New reply from your coach" banner when coachRepliedAt is set and unread

@@ -1091,7 +1091,7 @@ function ClientsSection() {
                   type="text"
                   value={form.displayName}
                   onChange={e => setForm(p => ({ ...p, displayName: e.target.value }))}
-                  placeholder="e.g. Geoff Hickman"
+                  placeholder=""
                   className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>

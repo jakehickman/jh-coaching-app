@@ -2264,6 +2264,11 @@ function CheckInsTab() {
   const { data: profile } = trpc.profile.get.useQuery();
   const today = localToday();
 
+  // Track whether the client has seen the current coach reply
+  const [seenReplyKey, setSeenReplyKey] = useState<string | null>(() =>
+    localStorage.getItem('checkin_seen_reply_key')
+  );
+
   const getMondayOfWeek = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
     const day = d.getDay();
@@ -2274,6 +2279,18 @@ function CheckInsTab() {
   const currentWeekStart = getMondayOfWeek(today);
   const { data: existingCheckIn, refetch } = trpc.checkIn.myWeek.useQuery({ weekStartDate: currentWeekStart });
   const { data: allCheckIns = [] } = trpc.checkIn.myList.useQuery();
+
+  // Derive whether there's an unread coach reply
+  const replyKey = existingCheckIn?.coachReply
+    ? `${existingCheckIn.id}:${existingCheckIn.coachReply.length}`
+    : null;
+  const hasUnreadReply = !!replyKey && replyKey !== seenReplyKey;
+  const markReplySeen = () => {
+    if (replyKey) {
+      localStorage.setItem('checkin_seen_reply_key', replyKey);
+      setSeenReplyKey(replyKey);
+    }
+  };
 
   type FreqVal = '' | 'never' | 'once_twice' | 'few_days' | 'most_days';
   type BarrierVal = '' | 'hunger' | 'cravings' | 'social_events' | 'busy_time' | 'poor_planning' | 'low_motivation' | 'travel_disruption' | 'other';
@@ -2317,15 +2334,13 @@ function CheckInsTab() {
   });
 
   const handleSubmit = () => {
-    const execFields = [form.execPortionEstimate, form.execUntrackedExtras, form.execChangedFoods, form.execMissedMeals];
-    if (execFields.some(f => !f)) { toast.error('Please answer all execution accuracy questions.'); return; }
+    const execFields = [form.execPortionEstimate, form.execMissedMeals];
+    if (execFields.some(f => !f)) { toast.error('Please answer all diet adherence questions.'); return; }
     if (!form.adherenceBarrier) { toast.error('Please select what caused the most deviation this week.'); return; }
     if (!form.weeklyAssessment) { toast.error('Please select which best describes your week.'); return; }
     submitMutation.mutate({
       weekStartDate: currentWeekStart,
       execPortionEstimate: form.execPortionEstimate as any,
-      execUntrackedExtras: form.execUntrackedExtras as any,
-      execChangedFoods: form.execChangedFoods as any,
       execMissedMeals: form.execMissedMeals as any,
       adherenceBarrier: form.adherenceBarrier as any,
       barrierExplain: form.barrierExplain || undefined,
@@ -2447,9 +2462,23 @@ function CheckInsTab() {
         ))}
       </Card>
 
+      {/* Unread reply banner */}
+      {submitted && hasUnreadReply && (
+        <div
+          className="bg-primary/20 border border-primary/40 rounded-xl p-4 flex items-start gap-3 cursor-pointer"
+          onClick={markReplySeen}
+        >
+          <span className="text-lg">💬</span>
+          <div>
+            <p className="text-sm font-semibold text-primary">New reply from your coach</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Tap to view</p>
+          </div>
+        </div>
+      )}
+
       {/* Coach Reply (if exists) */}
       {submitted && existingCheckIn?.coachReply && (
-        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
+        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4" ref={el => { if (el && hasUnreadReply) { markReplySeen(); } }}>
           <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">Coach Reply</p>
           <p className="text-sm text-foreground whitespace-pre-wrap">{existingCheckIn.coachReply}</p>
         </div>
@@ -2478,10 +2507,6 @@ function CheckInsTab() {
             field="execPortionEstimate"
           />
           <FreqQuestion
-            label="How often did you eat something outside your meal plan (extras, snacks, or unplanned foods)?"
-            field="execUntrackedExtras"
-          />
-          <FreqQuestion
             label="How often did you miss a planned meal entirely?"
             field="execMissedMeals"
           />
@@ -2506,17 +2531,7 @@ function CheckInsTab() {
               </button>
             ))}
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1.5">Add any context (optional)</label>
-            <textarea
-              value={form.barrierExplain}
-              onChange={e => setForm(p => ({ ...p, barrierExplain: e.target.value }))}
-              rows={2}
-              maxLength={500}
-              placeholder="Briefly describe what happened..."
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-            />
-          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">Cover any additional context in your voice note on WhatsApp.</p>
         </Card>
 
         {/* Section 3: Weekly self-assessment */}
@@ -2563,7 +2578,7 @@ function CheckInsTab() {
           </div>
         ))}
         <div className="border-t border-border pt-3">
-          <p className="text-xs text-muted-foreground leading-relaxed">If sending a voice note, cover: what went well, what you struggled with, and anything else I should know.</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">In your voice note, cover: what went well, what you struggled with, and anything else I should know.</p>
         </div>
       </Card>
 
