@@ -1956,6 +1956,96 @@ const MUSCLE_LABELS: Record<string, string> = {
 };
 const MUSCLE_KEYS = Object.keys(MUSCLE_LABELS);
 
+// ─── Section: Workout Sessions Tab ──────────────────────────────────────────
+function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  if (!workoutSessions.length) {
+    return <p className="text-sm text-muted-foreground">No workout sessions logged yet.</p>;
+  }
+
+  const sorted = [...workoutSessions].sort((a, b) =>
+    toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate))
+  );
+
+  return (
+    <div className="space-y-2">
+      {sorted.map((session) => {
+        const dateStr = toLocalDateStr(session.sessionDate);
+        const [y, m, d] = dateStr.split('-');
+        const dateLabel = `${d}/${m}/${y}`;
+        const isOpen = expandedId === session.id;
+        const exercises = (session.exercises as any[]) ?? [];
+        const hasNotes = exercises.some((ex: any) => ex.exerciseNotes);
+        const sessionNotes = session.notes as string | null;
+
+        return (
+          <div key={session.id} className="bg-card border border-border rounded-xl overflow-hidden">
+            {/* Header row */}
+            <button
+              onClick={() => setExpandedId(isOpen ? null : session.id)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{dateLabel}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {session.dayLabel} &middot; {exercises.length} exercise{exercises.length !== 1 ? 's' : ''}
+                    {hasNotes && <span className="ml-1.5 text-primary/70">· notes</span>}
+                  </p>
+                </div>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Expanded detail */}
+            {isOpen && (
+              <div className="px-4 pb-4 border-t border-border/50 space-y-4 pt-3">
+                {exercises.map((ex: any, i: number) => {
+                  const completedSets = (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null);
+                  return (
+                    <div key={i}>
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{ex.name}</p>
+                          {ex.equipmentDetails && (
+                            <p className="text-[11px] text-muted-foreground/70 mt-0.5">{ex.equipmentDetails}</p>
+                          )}
+                        </div>
+                        {ex.substitutedFor && (
+                          <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">SUB</span>
+                        )}
+                      </div>
+                      {completedSets.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-1.5">
+                          {completedSets.map((s: any, si: number) => (
+                            <span key={si} className="text-[11px] bg-secondary text-muted-foreground px-2 py-0.5 rounded">
+                              {s.weight != null ? `${s.weight}kg` : '—'} × {s.reps != null ? s.reps : '—'}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {ex.exerciseNotes && (
+                        <p className="text-xs text-muted-foreground/80 italic mt-1">&ldquo;{ex.exerciseNotes}&rdquo;</p>
+                      )}
+                    </div>
+                  );
+                })}
+                {sessionNotes && (
+                  <div className="pt-3 border-t border-border/50">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Session notes</p>
+                    <p className="text-xs text-muted-foreground/80 italic">&ldquo;{sessionNotes}&rdquo;</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ExerciseProgressTab({
   workoutSessions, exerciseLib
 }: {
@@ -2563,6 +2653,7 @@ function ProgressSection() {
           <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
+            <TabsTrigger value="sessions">Sessions</TabsTrigger>
             <TabsTrigger value="notes">Coaching Notes</TabsTrigger>
           </TabsList>
 
@@ -2650,6 +2741,10 @@ function ProgressSection() {
 
           <TabsContent value="exercise">
             <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
+          </TabsContent>
+
+          <TabsContent value="sessions">
+            <WorkoutSessionsTab workoutSessions={workoutSessions} />
           </TabsContent>
 
           <TabsContent value="notes">
