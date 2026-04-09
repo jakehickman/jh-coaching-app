@@ -230,3 +230,4 @@
 - [x] Add Equipment details field to workout log exercises (DB schema, server, UI)
 - [x] Add measurements nudge/prompt inside Check-in form with button to switch to Measurements sub-tab
 - [x] Update diet adherence answer scale to: Never / Once or twice / A few times / Many times
+- [x] Update diet adherence question phrasing to: eyeball portions / untracked extras / swap a planned meal / miss a planned meal

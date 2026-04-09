@@ -2474,19 +2474,19 @@ function CheckInsTab() {
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">This is about how closely you followed your plan as written. Estimate as best you can. Exclude fully off-plan meals.</p>
           </div>
           <FreqQuestion
-            label="How often did you estimate portions instead of following exact amounts?"
+            label="How often did you estimate or eyeball portion sizes instead of weighing/measuring?"
             field="execPortionEstimate"
           />
           <FreqQuestion
-            label="How often did you add extra foods not in your plan?"
+            label="How often did you eat untracked extras (snacks, bites, drinks not in your plan)?"
             field="execUntrackedExtras"
           />
           <FreqQuestion
-            label="How often did you change meals or ingredients?"
+            label="How often did you swap a planned meal for something different?"
             field="execChangedFoods"
           />
           <FreqQuestion
-            label="How often did you miss meals?"
+            label="How often did you miss a planned meal entirely?"
             field="execMissedMeals"
           />
         </Card>

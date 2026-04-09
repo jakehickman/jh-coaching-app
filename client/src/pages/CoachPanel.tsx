@@ -2441,10 +2441,10 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Execution Accuracy</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                 {[
-                  { label: 'Estimated portions', val: ci.execPortionEstimate },
+                  { label: 'Eyeballed portions', val: ci.execPortionEstimate },
                   { label: 'Untracked extras', val: ci.execUntrackedExtras },
-                  { label: 'Changed foods', val: ci.execChangedFoods },
-                  { label: 'Missed/skipped meals', val: ci.execMissedMeals },
+                  { label: 'Swapped meals', val: ci.execChangedFoods },
+                  { label: 'Missed meals', val: ci.execMissedMeals },
                 ].map(row => (
                   <div key={row.label} className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">{row.label}</span>
