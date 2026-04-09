@@ -3597,7 +3597,7 @@ function CheckInsSection() {
                             ].filter(r => r.val).map(row => (
                               <div key={row.q} className="flex flex-col gap-0.5">
                                 <span className="text-xs text-muted-foreground">{row.q}</span>
-                                <span className={`text-sm font-semibold ${freqColorFn(row.val)}`}>{FREQ_LABEL_MAP[row.val!] ?? row.val}</span>
+                                <span className="text-sm font-medium text-foreground">{FREQ_LABEL_MAP[row.val!] ?? row.val}</span>
                               </div>
                             ))}
                           </div>
@@ -3617,7 +3617,7 @@ function CheckInsSection() {
                       {ci.weeklyAssessment && (
                         <div className="px-4 py-2 border-t border-border/50">
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Self-Assessment</p>
-                          <p className={`text-sm font-semibold ${assessColorFn(ci.weeklyAssessment)}`}>{ASSESS_LABEL_MAP[ci.weeklyAssessment] ?? ci.weeklyAssessment}</p>
+                          <p className="text-sm font-medium text-foreground">{ASSESS_LABEL_MAP[ci.weeklyAssessment] ?? ci.weeklyAssessment}</p>
                         </div>
                       )}
 

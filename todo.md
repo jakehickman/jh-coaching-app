@@ -284,3 +284,4 @@
 - [x] Check-ins card: hide weekly assessment (mostly followed etc.) from collapsed card preview
 - [x] Check-ins tab: sort overdue above unreviewed (overdue = highest priority)
 - [x] Check-ins tab: show due date on overdue client cards (e.g. "Overdue · Mon 7 Apr")
+- [x] Check-ins expanded card: remove colour coding from response values, use plain white text
