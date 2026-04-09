@@ -119,8 +119,15 @@ export async function getAllUsers() {
     .from(users)
     .leftJoin(clientProfiles, eq(clientProfiles.userId, users.id))
     .orderBy(desc(users.createdAt));
+  // Deduplicate by userId (leftJoin can produce multiple rows if a user has duplicate profile rows)
+  const seen = new Set<number>();
+  const deduped = rows.filter(r => {
+    if (seen.has(r.id)) return false;
+    seen.add(r.id);
+    return true;
+  });
   // Expose a resolved `name` that prefers clientProfile.displayName over OAuth name
-  return rows.map(r => ({
+  return deduped.map(r => ({
     ...r,
     name: r.displayName || r.name || null,
   }));
@@ -951,6 +958,28 @@ export async function replyToCheckIn(id: number, coachReply: string) {
     .update(checkInSubmissions)
     .set({ coachReply, coachRepliedAt: new Date(), updatedAt: new Date() } as any)
     .where(eq(checkInSubmissions.id, id));
+}
+
+// Coach: get the most recent check-in week for each client (for indicator badges)
+export async function getLatestCheckInPerClient(): Promise<{ clientId: number; weekStartDate: string; submittedAt: Date }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  // Get the most recent check-in row per clientId
+  const rows = await db
+    .select({
+      clientId: checkInSubmissions.clientId,
+      weekStartDate: checkInSubmissions.weekStartDate,
+      submittedAt: checkInSubmissions.submittedAt,
+    })
+    .from(checkInSubmissions)
+    .orderBy(desc(checkInSubmissions.submittedAt));
+  // Keep only the latest per clientId
+  const seen = new Set<number>();
+  return rows.filter(r => {
+    if (seen.has(r.clientId)) return false;
+    seen.add(r.clientId);
+    return true;
+  }).map(r => ({ clientId: r.clientId, weekStartDate: String(r.weekStartDate), submittedAt: r.submittedAt as unknown as Date }));
 }
 
 // ─── Client Profile: step goal + check-in day ────────────────────────────────

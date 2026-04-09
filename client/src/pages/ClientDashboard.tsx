@@ -2334,13 +2334,14 @@ function CheckInsTab() {
   });
 
   const handleSubmit = () => {
-    const execFields = [form.execPortionEstimate, form.execMissedMeals];
-    if (execFields.some(f => !f)) { toast.error('Please answer all diet adherence questions.'); return; }
+    const execFields = [form.execMissedMeals, form.execUntrackedExtras, form.execPortionEstimate];
+    if (execFields.some(f => !f)) { toast.error('Please answer all diet execution questions.'); return; }
     if (!form.adherenceBarrier) { toast.error('Please select what caused the most deviation this week.'); return; }
     if (!form.weeklyAssessment) { toast.error('Please select which best describes your week.'); return; }
     submitMutation.mutate({
       weekStartDate: currentWeekStart,
       execPortionEstimate: form.execPortionEstimate as any,
+      execUntrackedExtras: form.execUntrackedExtras as any,
       execMissedMeals: form.execMissedMeals as any,
       adherenceBarrier: form.adherenceBarrier as any,
       barrierExplain: form.barrierExplain || undefined,
@@ -2496,19 +2497,23 @@ function CheckInsTab() {
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Check-in Form — Week of {fmtWeekStart(currentWeekStart)}</p>
 
-        {/* Section 1: Diet Adherence */}
+        {/* Section 1: Diet Execution */}
         <Card className="space-y-5 mb-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">Diet Adherence</p>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">This is about how closely you followed your plan as written. Estimate as best you can. Exclude fully off-plan meals.</p>
+            <p className="text-sm font-semibold text-foreground">Diet Execution</p>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">This helps me understand how your week actually went so I can adjust things if needed. It doesn’t need to be perfect, just answer honestly.</p>
           </div>
-          <FreqQuestion
-            label="How often did you estimate or eyeball portion sizes instead of weighing/measuring?"
-            field="execPortionEstimate"
-          />
           <FreqQuestion
             label="How often did you miss a planned meal entirely?"
             field="execMissedMeals"
+          />
+          <FreqQuestion
+            label="How often did you eat extra foods outside your plan?"
+            field="execUntrackedExtras"
+          />
+          <FreqQuestion
+            label="How often did you estimate or eyeball portion sizes instead of weighing/measuring?"
+            field="execPortionEstimate"
           />
         </Card>
 
@@ -2531,7 +2536,7 @@ function CheckInsTab() {
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">Cover any additional context in your voice note on WhatsApp.</p>
+
         </Card>
 
         {/* Section 3: Weekly self-assessment */}

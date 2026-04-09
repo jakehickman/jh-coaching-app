@@ -468,6 +468,8 @@ export const appRouter = router({
     reply: adminProcedure
       .input(z.object({ id: z.number(), coachReply: z.string() }))
       .mutation(({ input }) => db.replyToCheckIn(input.id, input.coachReply)),
+    // Coach: get the latest check-in submission per client (for indicator badges)
+    latestPerClient: adminProcedure.query(() => db.getLatestCheckInPerClient()),
   }),
 
   // Client profile extended (check-in day + step goal) — coach sets these

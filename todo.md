@@ -244,3 +244,9 @@
 - [x] Check-in: fix validation error — change "execution accuracy questions" to "diet adherence questions"; fix false positive blocking submission
 - [x] Coach Client Profile: remove placeholder text from Client Name input
 - [x] Client Check-ins tab: show "New reply from your coach" banner when coachRepliedAt is set and unread
+- [x] Check-in: remove "Cover any additional context in your voice note on WhatsApp." hint text
+- [x] Check-in: rename "Diet Adherence" section to "Diet Execution"
+- [x] Check-in: update helper text under Diet Execution heading
+- [x] Check-in: reorder questions and add 2 new ones (miss meal / eat extra / eyeball portions)
+- [x] Fix: changing a client name in coach profile causes client to be duplicated in client list
+- [x] Coach view: add check-in submission indicator (badge/dot) on client cards and/or in Client Progress

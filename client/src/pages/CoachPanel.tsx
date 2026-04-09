@@ -895,17 +895,18 @@ function useClientSelector() {
   return { clients, selectedUserId, setSelectedUserId };
 }
 
-// ─── Searchable Client Combobox ───────────────────────────────────────────────
+// ─── Searchable Client Combobox ────────────────────────────────────────────────
 function ClientCombobox({
   clients,
   selectedUserId,
   onSelect,
+  latestCheckIns = [],
 }: {
   clients: { id: number; name?: string | null }[];
   selectedUserId: number | null;
   onSelect: (id: number) => void;
-}) {
-  const [open, setOpen] = useState(false);
+  latestCheckIns?: { clientId: number; submittedAt: Date | string }[];
+}) {  const [open, setOpen] = useState(false);
   const selected = clients.find(c => c.id === selectedUserId);
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -926,19 +927,26 @@ function ClientCombobox({
           <CommandList>
             <CommandEmpty>No clients found.</CommandEmpty>
             <CommandGroup>
-              {clients.map(c => (
-                <CommandItem
-                  key={c.id}
-                  value={c.name ?? `User ${c.id}`}
-                  onSelect={() => {
-                    onSelect(c.id);
-                    setOpen(false);
-                  }}
-                >
-                  <Check className={`mr-2 h-4 w-4 ${selectedUserId === c.id ? "opacity-100" : "opacity-0"}`} />
-                  {c.name ?? `User ${c.id}`}
-                </CommandItem>
-              ))}
+              {clients.map(c => {
+                const ci = latestCheckIns.find(x => x.clientId === c.id);
+                const hasRecentCheckIn = ci && Math.floor((Date.now() - new Date(ci.submittedAt).getTime()) / 86400000) <= 7;
+                return (
+                  <CommandItem
+                    key={c.id}
+                    value={c.name ?? `User ${c.id}`}
+                    onSelect={() => {
+                      onSelect(c.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={`mr-2 h-4 w-4 ${selectedUserId === c.id ? "opacity-100" : "opacity-0"}`} />
+                    <span className="flex items-center gap-1.5">
+                      {c.name ?? `User ${c.id}`}
+                      {hasRecentCheckIn && <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" title="Recent check-in submitted" />}
+                    </span>
+                  </CommandItem>
+                );
+              })}
             </CommandGroup>
           </CommandList>
         </Command>
@@ -950,6 +958,7 @@ function ClientCombobox({
 // ─── Section: Clients ─────────────────────────────────────────────────────────
 function ClientsSection() {
   const { data: allUsers, refetch } = trpc.users.list.useQuery();
+  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const utils = trpc.useUtils();
   const setApproved = trpc.users.setApproved.useMutation({
     onSuccess: () => {
@@ -1034,8 +1043,17 @@ function ClientsSection() {
                   selectedId === user.id ? "border-primary bg-primary/5" : "border-border bg-card hover:border-border/80"
                 }`}
               >
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
-                  {user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                <div className="relative flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+                    {user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                  </div>
+                  {(() => {
+                    const ci = latestCheckIns.find(c => c.clientId === user.id);
+                    if (!ci) return null;
+                    const daysAgo = Math.floor((Date.now() - new Date(ci.submittedAt).getTime()) / 86400000);
+                    if (daysAgo > 7) return null;
+                    return <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background" title={`Check-in submitted ${daysAgo === 0 ? 'today' : daysAgo + 'd ago'}`} />;
+                  })()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{user.name ?? "Unnamed"}</p>
@@ -1234,6 +1252,7 @@ function SortableDayCard({
 
 function TrainingSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
+  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const { data: program, refetch } = trpc.training.getForClient.useQuery(
     { userId: selectedUserId! },
     { enabled: !!selectedUserId }
@@ -1408,7 +1427,7 @@ function TrainingSection() {
   return (
     <div className="space-y-6">
       <div>
-        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
+        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} />
       </div>
       {selectedUserId && (
         <div className="space-y-6">
@@ -1585,6 +1604,7 @@ function MacroChip({ label, value, unit = "g", highlight = false }: { label: str
 
 function MealPlansSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
+  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const [dayType, setDayType] = useState<"training" | "rest">("training");
   const { data: plan, refetch } = trpc.mealPlan.getForClient.useQuery(
     { userId: selectedUserId!, dayType },
@@ -1693,7 +1713,7 @@ function MealPlansSection() {
   return (
     <div className="space-y-6">
       <div>
-        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
+        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} />
       </div>
 
       {selectedUserId && (
@@ -2448,16 +2468,15 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
             )}
           </div>
 
-          {/* Execution Accuracy */}
+          {/* Diet Execution */}
           {(ci.execPortionEstimate || ci.execUntrackedExtras || ci.execChangedFoods || ci.execMissedMeals) && (
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Execution Accuracy</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Diet Execution</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                 {[
-                  { label: 'Eyeballed portions', val: ci.execPortionEstimate },
-                  { label: 'Untracked extras', val: ci.execUntrackedExtras },
-                  { label: 'Swapped meals', val: ci.execChangedFoods },
                   { label: 'Missed meals', val: ci.execMissedMeals },
+                  { label: 'Extras outside plan', val: ci.execUntrackedExtras },
+                  { label: 'Eyeballed portions', val: ci.execPortionEstimate },
                 ].map(row => (
                   <div key={row.label} className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">{row.label}</span>
@@ -2542,6 +2561,7 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
 
 function ProgressSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
+  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const { data: logs } = trpc.dailyLog.listForClient.useQuery(
     { userId: selectedUserId!, limit: 60 },
     { enabled: !!selectedUserId }
@@ -2704,7 +2724,7 @@ function ProgressSection() {
   return (
     <div className="space-y-5">
       <div>
-        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
+        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} />
       </div>
 
       {selectedUserId && (
