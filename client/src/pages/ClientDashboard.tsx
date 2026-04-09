@@ -2418,7 +2418,7 @@ function CheckInsTab() {
             {dayLabel ? (
               <>
                 <p className="text-sm font-semibold text-foreground">Your check-in day: {dayLabel}</p>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Complete your weekly check-in on your assigned day. Submit the form below, then send your progress photos, form clips, and optional voice note to me on WhatsApp.</p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Complete your weekly check-in on your assigned day. Start by logging your measurements, then fill in the form below and send your progress photos, form clips, and optional voice note to me on WhatsApp.</p>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">Your coach hasn't assigned a check-in day yet.</p>
