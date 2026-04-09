@@ -3481,12 +3481,12 @@ function CheckInsSection() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{client.name ?? `User ${client.id}`}</p>
-                {ci ? (
+                {isOverdue(client.id) ? (
+                  <p className="text-xs text-amber-400 font-medium">Overdue</p>
+                ) : ci ? (
                   <p className={`text-xs truncate ${isReviewed ? 'text-muted-foreground' : 'text-primary'}`}>
                     {isReviewed ? 'Complete' : 'Awaiting review'} · {new Date((ci as any).submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                   </p>
-                ) : isOverdue(client.id) ? (
-                  <p className="text-xs text-amber-400 font-medium">Overdue</p>
                 ) : (
                   <p className="text-xs text-muted-foreground">No check-ins yet</p>
                 )}
