@@ -951,12 +951,13 @@ export async function getCheckInForWeek(clientId: number, weekStartDate: string)
   return rows[0] ?? null;
 }
 
-export async function replyToCheckIn(id: number, coachReply: string) {
+// Coach: mark a check-in as reviewed or unreviewed
+export async function markCheckInReviewed(id: number, reviewed: boolean) {
   const db = await getDb();
   if (!db) return;
   await db
     .update(checkInSubmissions)
-    .set({ coachReply, coachRepliedAt: new Date(), updatedAt: new Date() } as any)
+    .set({ reviewedAt: reviewed ? new Date() : null, updatedAt: new Date() })
     .where(eq(checkInSubmissions.id, id));
 }
 

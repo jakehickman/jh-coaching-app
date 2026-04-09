@@ -2265,11 +2265,6 @@ function CheckInsTab() {
   const { data: profile } = trpc.profile.get.useQuery();
   const today = localToday();
 
-  // Track whether the client has seen the current coach reply
-  const [seenReplyKey, setSeenReplyKey] = useState<string | null>(() =>
-    localStorage.getItem('checkin_seen_reply_key')
-  );
-
   const getMondayOfWeek = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
     const day = d.getDay();
@@ -2280,18 +2275,6 @@ function CheckInsTab() {
   const currentWeekStart = getMondayOfWeek(today);
   const { data: existingCheckIn, refetch } = trpc.checkIn.myWeek.useQuery({ weekStartDate: currentWeekStart });
   const { data: allCheckIns = [] } = trpc.checkIn.myList.useQuery();
-
-  // Derive whether there's an unread coach reply
-  const replyKey = existingCheckIn?.coachReply
-    ? `${existingCheckIn.id}:${existingCheckIn.coachReply.length}`
-    : null;
-  const hasUnreadReply = !!replyKey && replyKey !== seenReplyKey;
-  const markReplySeen = () => {
-    if (replyKey) {
-      localStorage.setItem('checkin_seen_reply_key', replyKey);
-      setSeenReplyKey(replyKey);
-    }
-  };
 
   type FreqVal = '' | 'never' | 'once_twice' | 'few_days' | 'most_days';
   type BarrierVal = '' | 'hunger' | 'cravings' | 'social_events' | 'busy_time' | 'poor_planning' | 'low_motivation' | 'travel_disruption' | 'other';
@@ -2532,28 +2515,6 @@ function CheckInsTab() {
         </Card>
       )}
 
-      {/* Unread reply banner */}
-      {submitted && !isEditing && hasUnreadReply && (
-        <div
-          className="bg-primary/20 border border-primary/40 rounded-xl p-4 flex items-start gap-3 cursor-pointer"
-          onClick={markReplySeen}
-        >
-          <span className="text-lg">💬</span>
-          <div>
-            <p className="text-sm font-semibold text-primary">New reply from your coach</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Tap to view</p>
-          </div>
-        </div>
-      )}
-
-      {/* Coach Reply */}
-      {submitted && !isEditing && existingCheckIn?.coachReply && (
-        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4" ref={el => { if (el && hasUnreadReply) { markReplySeen(); } }}>
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">Coach Reply</p>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{existingCheckIn.coachReply}</p>
-        </div>
-      )}
-
       {/* ── Check-in Form (shown when not submitted, or when editing) ── */}
       {(!submitted || isEditing) && (
       <div>
@@ -2597,6 +2558,15 @@ function CheckInsTab() {
               </button>
             ))}
           </div>
+          {form.adherenceBarrier === 'other' && (
+            <textarea
+              value={form.barrierExplain}
+              onChange={e => setForm(p => ({ ...p, barrierExplain: e.target.value }))}
+              placeholder="Please describe..."
+              rows={3}
+              className="w-full rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          )}
         </Card>
 
         {/* Section 3: Weekly self-assessment */}
@@ -2664,7 +2634,7 @@ function CheckInsTab() {
               <Card key={ci.id} className="opacity-80">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-foreground">Week of {fmtWeekStart(toLocalDateStr(ci.weekStartDate))}</p>
-                  {ci.coachReply && <span className="text-[10px] px-2 py-0.5 rounded bg-primary/20 text-primary font-medium">Replied</span>}
+
                 </div>
                 {(ci as any).weeklyAssessment && (
                   <p className="text-xs text-muted-foreground mt-1">{ASSESS_OPTIONS.find(a => a.value === (ci as any).weeklyAssessment)?.label}</p>

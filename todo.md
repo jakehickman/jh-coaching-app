@@ -258,3 +258,8 @@
 - [x] Coach Clients section: add delete button per check-in
 - [x] Coach Client Progress: remove Check-ins tab (moved to Clients section)
 - [x] Client check-in tab: show submitted state card with Edit option after submission
+- [ ] Coach check-in: add "Mark as Complete" status field to check_in_submissions (DB + router)
+- [ ] Client check-in: show free-text field when "Other" is selected as deviation cause
+- [ ] Coach check-in: remove coach reply feature (field, UI, router procedure)
+- [ ] Coach Clients section: split into Profile tab and Check-ins tab
+- [ ] Coach check-in history: redesign card to question/answer per line layout

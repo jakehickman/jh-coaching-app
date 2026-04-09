@@ -383,9 +383,8 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
   weeklyAssessment: mysqlEnum("weeklyAssessment", ["executed_exactly","mostly_followed","inconsistent","didnt_follow"]),
   // Section 4: Focus for Next Week
   focusNextWeek: text("focusNextWeek"),
-  // Coach reply
-  coachReply: text("coachReply"),
-  coachRepliedAt: timestamp("coachRepliedAt"),
+  // Coach review status
+  reviewedAt: timestamp("reviewedAt"),
   submittedAt: timestamp("submittedAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

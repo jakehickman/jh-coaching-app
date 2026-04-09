@@ -464,10 +464,10 @@ export const appRouter = router({
     clientList: adminProcedure
       .input(z.object({ clientId: z.number() }))
       .query(({ input }) => db.listCheckInsForClient(input.clientId)),
-    // Coach: reply to a check-in
-    reply: adminProcedure
-      .input(z.object({ id: z.number(), coachReply: z.string() }))
-      .mutation(({ input }) => db.replyToCheckIn(input.id, input.coachReply)),
+    // Coach: mark a check-in as reviewed / unreviewed
+    markReviewed: adminProcedure
+      .input(z.object({ id: z.number(), reviewed: z.boolean() }))
+      .mutation(({ input }) => db.markCheckInReviewed(input.id, input.reviewed)),
     // Coach: get the latest check-in submission per client (for indicator badges)
     latestPerClient: adminProcedure.query(() => db.getLatestCheckInPerClient()),
     // Coach: delete a check-in submission
