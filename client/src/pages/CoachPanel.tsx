@@ -3383,10 +3383,11 @@ function HabitsSection() {
 // ─── Main CoachPanel ──────────────────────────────────────────────────────────
 // ─── Section: Check-ins ─────────────────────────────────────────────────────
 function CheckInsSection() {
+  const { user: currentUser } = useAuth();
   const { data: allUsers } = trpc.users.list.useQuery();
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
-  // Filter out admin accounts — only show actual clients
-  const clients = (allUsers ?? []).filter((u: any) => u.role !== 'admin');
+  // Show regular clients + the current admin (for testing their own check-in flow)
+  const clients = (allUsers ?? []).filter((u: any) => u.role !== 'admin' || u.id === currentUser?.id);
 
   // Fetch client profiles to get checkInDay for overdue calculation and pill display
   const { data: clientProfiles = [] } = trpc.users.clients.useQuery();
