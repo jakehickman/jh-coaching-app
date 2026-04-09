@@ -2431,10 +2431,11 @@ function CheckInsTab() {
       <Card className="space-y-3.5">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">What to send each check-in</p>
         {[
-          { num: '1', title: 'Complete the check-in form below', sub: null },
-          { num: '2', title: 'Send progress photos on WhatsApp', sub: 'Front, side, and back.' },
-          { num: '3', title: 'Send form clips on WhatsApp', sub: 'For any exercises you want feedback on.' },
-          { num: '4', title: 'Optional: voice note on WhatsApp', sub: 'A quick summary of how your week went.' },
+          { num: '1', title: 'Log your measurements', sub: 'Use the Measurements tab above.' },
+          { num: '2', title: 'Complete the check-in form below', sub: null },
+          { num: '3', title: 'Send progress photos on WhatsApp', sub: 'Front, side, and back.' },
+          { num: '4', title: 'Send form clips on WhatsApp', sub: 'For any exercises you want feedback on.' },
+          { num: '5', title: 'Optional: voice note on WhatsApp', sub: 'A quick summary of how your week went.' },
         ].map(item => (
           <div key={item.num} className="flex gap-3 items-start">
             <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{item.num}</span>
