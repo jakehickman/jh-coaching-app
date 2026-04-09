@@ -2198,13 +2198,19 @@ function WorkoutLogTab() {
                   return (
                     <div key={i}>
                       <p className="text-xs text-muted-foreground">
-                        <span className="text-foreground font-medium">{ex.name}</span>: 
+                        <span className="text-foreground font-medium">{ex.name}</span>
+                        {ex.substitutedFor && (
+                          <span className="ml-1.5 text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded align-middle">SUB</span>
+                        )}
+                        {': '}
                         {firstSet.weight != null ? `${firstSet.weight}kg` : '—'}
                         {' × '}
                         {firstSet.reps != null ? `${firstSet.reps}` : '—'}
                         <span className="text-muted-foreground/60 ml-1">({setCount} {setCount === 1 ? 'set' : 'sets'})</span>
                       </p>
-
+                      {ex.substitutedFor && (
+                        <p className="text-[11px] text-muted-foreground/50 mt-0.5 pl-0.5">↳ for {ex.substitutedFor}</p>
+                      )}
                     </div>
                   );
                 })}
