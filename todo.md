@@ -268,3 +268,4 @@
 - [ ] Coach sidebar: add dedicated Check-ins nav item with unreviewed badge
 - [ ] Coach: build CheckInsSection with client list + full check-in history panel
 - [ ] Coach Clients section: remove Check-ins sub-tab, restore profile-only view
+- [x] Client nav: add dot badge on Check-in tab icon on assigned check-in day when not yet submitted this week

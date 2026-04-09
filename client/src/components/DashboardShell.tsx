@@ -76,6 +76,30 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
   });
   const unreviewedCheckIns = latestCheckIns.filter((ci: any) => ci.submittedAt && !ci.reviewedAt).length;
 
+  // Client: check-in day badge — show dot on Check-in tab on assigned day when not yet submitted
+  const weekStartDate = (() => {
+    const d = new Date();
+    const day = d.getDay(); // 0=Sun
+    const diff = (day === 0 ? -6 : 1 - day); // shift to Monday
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().split("T")[0];
+  })();
+  const { data: checkInStatus } = trpc.checkIn.myWeek.useQuery(
+    { weekStartDate },
+    { enabled: mode === "client", refetchInterval: 300_000 }
+  );
+  const { data: clientProfile } = trpc.profile.get.useQuery(undefined, {
+    enabled: mode === "client",
+  });
+  const showCheckInBadge = (() => {
+    if (mode !== "client") return false;
+    if (checkInStatus) return false; // already submitted this week
+    const checkInDay = (clientProfile as any)?.checkInDay as string | undefined;
+    if (!checkInDay) return false;
+    const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+    return new Date().getDay() === (dayMap[checkInDay] ?? -1);
+  })();
+
   // Track whether any localStorage draft exists for coach meal plans or training programs
   const [hasMealDraft, setHasMealDraft] = useState(false);
   const [hasTrainingDraft, setHasTrainingDraft] = useState(false);
@@ -344,7 +368,12 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                     isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {item.icon}
+                  <span className="relative inline-flex">
+                    {item.icon}
+                    {item.href === "/dashboard/check-ins" && showCheckInBadge && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary border-2 border-sidebar" />
+                    )}
+                  </span>
                   <span className={cn("text-[11px] font-medium leading-none whitespace-nowrap", isActive ? "text-primary" : "text-muted-foreground")}>
                     {item.label}
                   </span>
