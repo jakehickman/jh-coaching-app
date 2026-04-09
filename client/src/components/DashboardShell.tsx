@@ -7,6 +7,7 @@ import {
   Salad,
   ChevronLeft,
   CheckSquare,
+  ClipboardCheck,
   ClipboardList,
   Dumbbell,
   Home,
@@ -34,6 +35,7 @@ const clientNav: NavItem[] = [
   { href: "/dashboard/meal-plan",     label: "Meal Plan",     icon: <Zap size={22} /> },
   { href: "/dashboard/training",      label: "Training",      icon: <Dumbbell size={22} /> },
   { href: "/dashboard/measurements",  label: "Measurements",  icon: <Ruler size={22} /> },
+  { href: "/dashboard/check-ins",      label: "Check-in",      icon: <ClipboardCheck size={22} /> },
 ];
 
 const coachNav: NavItem[] = [
