@@ -442,7 +442,9 @@ export const appRouter = router({
         // Section 2: Adherence Barrier
         adherenceBarrier: z.enum(["no_issues","hunger","cravings","social_events","busy_time","poor_planning","low_motivation","travel_disruption","other"]).optional(),
         barrierExplain: z.string().max(500).optional(),
-        // Section 3: Focus for Next Week
+        // Section 3: Weekly Self-Assessment
+        weeklyAssessment: z.enum(["executed_exactly","mostly_followed","inconsistent","didnt_follow"]).optional(),
+        // Section 4: Focus for Next Week
         focusNextWeek: z.string().max(300).optional(),
       }))
       .mutation(({ ctx, input }) =>

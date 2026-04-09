@@ -868,7 +868,9 @@ export async function submitCheckIn(data: {
   // Section 2: Adherence Barrier
   adherenceBarrier?: "no_issues" | "hunger" | "cravings" | "social_events" | "busy_time" | "poor_planning" | "low_motivation" | "travel_disruption" | "other";
   barrierExplain?: string;
-  // Section 3: Focus for Next Week
+  // Section 3: Weekly Self-Assessment
+  weeklyAssessment?: "executed_exactly" | "mostly_followed" | "inconsistent" | "didnt_follow";
+  // Section 4: Focus for Next Week
   focusNextWeek?: string;
 }) {
   const db = await getDb();

@@ -2382,14 +2382,26 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
   };
   const BARRIER_LABEL: Record<string, string> = {
     no_issues: 'No issues',
-    hunger: 'Hunger',
-    cravings: 'Cravings',
+    hunger: 'Hunger / cravings',
+    cravings: 'Hunger / cravings',
     social_events: 'Social events',
-    busy_time: 'Busy / time',
-    poor_planning: 'Poor planning',
+    busy_time: 'Time / schedule',
+    poor_planning: 'Poor planning / prep',
     low_motivation: 'Low motivation',
-    travel_disruption: 'Travel / disruption',
+    travel_disruption: 'Travel',
     other: 'Other',
+  };
+  const ASSESS_LABEL: Record<string, string> = {
+    executed_exactly: 'Executed the plan exactly',
+    mostly_followed: 'Mostly followed the plan',
+    inconsistent: 'Was inconsistent',
+    didnt_follow: "Didn't follow the plan",
+  };
+  const assessColor = (v: string | null) => {
+    if (!v || v === 'executed_exactly') return 'text-green-400';
+    if (v === 'mostly_followed') return 'text-amber-400';
+    if (v === 'inconsistent') return 'text-orange-400';
+    return 'text-red-400';
   };
   const freqColor = (v: string | null) => {
     if (!v || v === 'never') return 'text-green-400';
@@ -2416,11 +2428,9 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
               <p className="text-sm font-semibold text-foreground">Week of {fmtDate(toLocalDateStr(ci.weekStartDate))}</p>
               <p className="text-xs text-muted-foreground mt-0.5">Submitted {new Date(ci.submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</p>
             </div>
-            {ci.adherenceBarrier && (
-              <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
-                ci.adherenceBarrier === 'no_issues' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
-              }`}>
-                {BARRIER_LABEL[ci.adherenceBarrier] ?? ci.adherenceBarrier}
+            {(ci as any).weeklyAssessment && (
+              <span className={`text-[10px] px-2 py-0.5 rounded font-medium bg-secondary ${assessColor((ci as any).weeklyAssessment)}`}>
+                {ASSESS_LABEL[(ci as any).weeklyAssessment] ?? (ci as any).weeklyAssessment}
               </span>
             )}
           </div>
@@ -2449,6 +2459,12 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
 
           {/* Barrier + Explain */}
           <div className="space-y-2">
+            {ci.adherenceBarrier && ci.adherenceBarrier !== 'no_issues' && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Main Deviation Cause</p>
+                <p className="text-sm text-foreground">{BARRIER_LABEL[ci.adherenceBarrier] ?? ci.adherenceBarrier}</p>
+              </div>
+            )}
             {ci.barrierExplain && (
               <div>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Barrier Detail</p>

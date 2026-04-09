@@ -2264,7 +2264,6 @@ function CheckInsTab() {
   const { data: profile } = trpc.profile.get.useQuery();
   const today = localToday();
 
-  // Compute Monday of the current week
   const getMondayOfWeek = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
     const day = d.getDay();
@@ -2277,16 +2276,17 @@ function CheckInsTab() {
   const { data: allCheckIns = [] } = trpc.checkIn.myList.useQuery();
 
   type FreqVal = '' | 'never' | '1_2_times' | '3_5_times' | '6_plus_times';
-  type BarrierVal = '' | 'no_issues' | 'hunger' | 'cravings' | 'social_events' | 'busy_time' | 'poor_planning' | 'low_motivation' | 'travel_disruption' | 'other';
+  type BarrierVal = '' | 'hunger' | 'cravings' | 'social_events' | 'busy_time' | 'poor_planning' | 'low_motivation' | 'travel_disruption' | 'other';
+  type AssessVal = '' | 'executed_exactly' | 'mostly_followed' | 'inconsistent' | 'didnt_follow';
 
   const blankForm = {
     execPortionEstimate: '' as FreqVal,
     execUntrackedExtras: '' as FreqVal,
     execChangedFoods: '' as FreqVal,
     execMissedMeals: '' as FreqVal,
-
     adherenceBarrier: '' as BarrierVal,
     barrierExplain: '',
+    weeklyAssessment: '' as AssessVal,
     focusNextWeek: '',
   };
   const [form, setForm] = useState(blankForm);
@@ -2299,9 +2299,9 @@ function CheckInsTab() {
         execUntrackedExtras: (existingCheckIn.execUntrackedExtras ?? '') as FreqVal,
         execChangedFoods: (existingCheckIn.execChangedFoods ?? '') as FreqVal,
         execMissedMeals: (existingCheckIn.execMissedMeals ?? '') as FreqVal,
-
-        adherenceBarrier: (existingCheckIn.adherenceBarrier ?? '') as BarrierVal,
+        adherenceBarrier: ((existingCheckIn.adherenceBarrier === 'no_issues' ? '' : existingCheckIn.adherenceBarrier) ?? '') as BarrierVal,
         barrierExplain: existingCheckIn.barrierExplain ?? '',
+        weeklyAssessment: ((existingCheckIn as any).weeklyAssessment ?? '') as AssessVal,
         focusNextWeek: existingCheckIn.focusNextWeek ?? '',
       });
       setSubmitted(true);
@@ -2312,23 +2312,24 @@ function CheckInsTab() {
   }, [existingCheckIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submitMutation = trpc.checkIn.submit.useMutation({
-    onSuccess: () => { toast.success('Check-in submitted!'); refetch(); setSubmitted(true); },
+    onSuccess: () => { refetch(); setSubmitted(true); },
     onError: () => toast.error('Failed to submit. Please try again.'),
   });
 
   const handleSubmit = () => {
     const execFields = [form.execPortionEstimate, form.execUntrackedExtras, form.execChangedFoods, form.execMissedMeals];
     if (execFields.some(f => !f)) { toast.error('Please answer all execution accuracy questions.'); return; }
-    if (!form.adherenceBarrier) { toast.error('Please select your main adherence barrier.'); return; }
+    if (!form.adherenceBarrier) { toast.error('Please select what caused the most deviation this week.'); return; }
+    if (!form.weeklyAssessment) { toast.error('Please select which best describes your week.'); return; }
     submitMutation.mutate({
       weekStartDate: currentWeekStart,
       execPortionEstimate: form.execPortionEstimate as any,
       execUntrackedExtras: form.execUntrackedExtras as any,
       execChangedFoods: form.execChangedFoods as any,
       execMissedMeals: form.execMissedMeals as any,
-
       adherenceBarrier: form.adherenceBarrier as any,
       barrierExplain: form.barrierExplain || undefined,
+      weeklyAssessment: form.weeklyAssessment as any,
       focusNextWeek: form.focusNextWeek || undefined,
     });
   };
@@ -2349,27 +2350,32 @@ function CheckInsTab() {
   ];
 
   const BARRIER_OPTIONS: { value: BarrierVal; label: string }[] = [
-    { value: 'no_issues', label: 'No issues' },
-    { value: 'hunger', label: 'Hunger' },
-    { value: 'cravings', label: 'Cravings' },
+    { value: 'hunger', label: 'Hunger / cravings' },
     { value: 'social_events', label: 'Social events' },
-    { value: 'busy_time', label: 'Busy / time constraints' },
-    { value: 'poor_planning', label: 'Poor planning' },
+    { value: 'busy_time', label: 'Time / schedule' },
+    { value: 'travel_disruption', label: 'Travel' },
     { value: 'low_motivation', label: 'Low motivation' },
-    { value: 'travel_disruption', label: 'Travel / routine disruption' },
+    { value: 'poor_planning', label: 'Poor planning / prep' },
     { value: 'other', label: 'Other' },
+  ];
+
+  const ASSESS_OPTIONS: { value: AssessVal; label: string }[] = [
+    { value: 'executed_exactly', label: 'I executed the plan exactly' },
+    { value: 'mostly_followed', label: 'I mostly followed it' },
+    { value: 'inconsistent', label: 'I was inconsistent' },
+    { value: 'didnt_follow', label: "I didn't follow the plan" },
   ];
 
   const FreqQuestion = ({ label, field }: { label: string; field: keyof typeof blankForm }) => (
     <div>
-      <p className="text-sm text-foreground mb-2">{label}</p>
+      <p className="text-sm text-foreground mb-2.5">{label}</p>
       <div className="grid grid-cols-2 gap-2">
         {FREQ_OPTIONS.map(opt => (
           <button
             key={opt.value}
             type="button"
             onClick={() => setForm(p => ({ ...p, [field]: opt.value }))}
-            className={`py-2.5 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
+            className={`py-3 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
               form[field] === opt.value
                 ? 'border-primary bg-primary/10 text-primary'
                 : 'border-border text-muted-foreground hover:border-muted-foreground/40'
@@ -2385,29 +2391,36 @@ function CheckInsTab() {
   return (
     <div className="space-y-5">
       {/* Check-in Day Banner */}
-      {dayLabel && (
-        <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 flex items-center gap-3">
-          <span className="text-primary text-base">📅</span>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Check-in Day: {dayLabel}</p>
-            <p className="text-xs text-muted-foreground">Your coach expects your check-in every {dayLabel}</p>
+      <div className="bg-card border border-border rounded-xl px-4 py-4">
+        <div className="flex items-start gap-3">
+          <span className="text-primary text-lg mt-0.5">📅</span>
+          <div className="flex-1">
+            {dayLabel ? (
+              <>
+                <p className="text-sm font-semibold text-foreground">Your check-in day: {dayLabel}</p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Complete your weekly check-in on your assigned day. Submit the form below, then send your progress photos, form clips, and optional voice note to me on WhatsApp.</p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Your coach hasn't assigned a check-in day yet.</p>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* What to Submit */}
-      <Card className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Each Week, Submit:</p>
+      {/* What to send each check-in */}
+      <Card className="space-y-3.5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">What to send each check-in</p>
         {[
-          { icon: '🎥', title: 'Video or voice note', desc: 'A short review of your week.' },
-          { icon: '📸', title: 'Progress photos & form clips', desc: 'Front, side, back. Include form clips for feedback.' },
-          { icon: '📋', title: 'This check-in form', desc: 'I will review your check-in and reply with a video response within 24 hours.' },
+          { num: '1', title: 'Complete the check-in form below', sub: null },
+          { num: '2', title: 'Send progress photos on WhatsApp', sub: 'Front, side, and back.' },
+          { num: '3', title: 'Send form clips on WhatsApp', sub: 'For any exercises you want feedback on.' },
+          { num: '4', title: 'Optional: voice note on WhatsApp', sub: 'A quick summary of how your week went.' },
         ].map(item => (
-          <div key={item.title} className="flex gap-3">
-            <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
+          <div key={item.num} className="flex gap-3 items-start">
+            <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{item.num}</span>
             <div>
               <p className="text-sm font-medium text-foreground">{item.title}</p>
-              <p className="text-xs text-muted-foreground">{item.desc}</p>
+              {item.sub && <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>}
             </div>
           </div>
         ))}
@@ -2421,44 +2434,52 @@ function CheckInsTab() {
         </div>
       )}
 
+      {/* Submission confirmation */}
+      {submitted && !existingCheckIn?.coachReply && (
+        <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+          <p className="text-sm font-medium text-primary">✓ Check-in submitted</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Don't forget to send your photos, form clips, and anything else relevant on WhatsApp.</p>
+        </div>
+      )}
+
       {/* ── Check-in Form ── */}
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Check-in Form — Week of {fmtWeekStart(currentWeekStart)}</p>
 
-        {/* Section 1: Execution Accuracy */}
+        {/* Section 1: Nutrition / Diet Execution */}
         <Card className="space-y-5 mb-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">Meal Plan Execution Accuracy</p>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">This is about how closely you followed your meal plan as written. Estimate as best you can — it doesn't need to be exact. Exclude fully off-plan meals. Seasonings and low-calorie condiments are fine and don't need to be counted.</p>
+            <p className="text-sm font-semibold text-foreground">Nutrition / Diet Execution</p>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">This is about how closely you followed your plan as written. Estimate as best you can. Exclude fully off-plan meals.</p>
           </div>
           <FreqQuestion
-            label="How often did you estimate portions instead of following the exact quantities in your plan?"
+            label="How often did you estimate portions instead of following exact amounts?"
             field="execPortionEstimate"
           />
           <FreqQuestion
-            label="How often did you add extras not included in your plan? (exclude seasonings and low-calorie condiments)"
+            label="How often did you add extra foods not in your plan?"
             field="execUntrackedExtras"
           />
           <FreqQuestion
-            label="How often did you change meals, foods, or ingredients from your plan?"
+            label="How often did you change meals or ingredients?"
             field="execChangedFoods"
           />
           <FreqQuestion
-            label="How often did you miss or skip parts of your planned meals?"
+            label="How often did you miss meals?"
             field="execMissedMeals"
           />
         </Card>
 
-        {/* Section 2: Adherence Barrier */}
+        {/* Section 2: Main deviation cause */}
         <Card className="space-y-4 mb-4">
-          <p className="text-sm font-semibold text-foreground">What was the main thing that made sticking to the meal plan difficult this week?</p>
+          <p className="text-sm font-semibold text-foreground">What caused the MOST deviation this week?</p>
           <div className="grid grid-cols-2 gap-2">
             {BARRIER_OPTIONS.map(opt => (
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setForm(p => ({ ...p, adherenceBarrier: opt.value, barrierExplain: opt.value === 'no_issues' ? '' : p.barrierExplain }))}
-                className={`py-2.5 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
+                onClick={() => setForm(p => ({ ...p, adherenceBarrier: opt.value, barrierExplain: p.barrierExplain }))}
+                className={`py-3 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
                   form.adherenceBarrier === opt.value
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border text-muted-foreground hover:border-muted-foreground/40'
@@ -2468,31 +2489,39 @@ function CheckInsTab() {
               </button>
             ))}
           </div>
-          {/* Conditional explain field */}
-          {form.adherenceBarrier && form.adherenceBarrier !== 'no_issues' && (
+          {form.adherenceBarrier === 'other' && (
             <div>
-              <p className="text-sm text-foreground mb-2">Briefly explain <span className="text-muted-foreground">(1–2 lines)</span></p>
               <textarea
                 value={form.barrierExplain}
                 onChange={e => setForm(p => ({ ...p, barrierExplain: e.target.value }))}
                 rows={2}
                 maxLength={500}
+                placeholder="Briefly describe..."
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
               />
             </div>
           )}
         </Card>
 
-        {/* Section 3: Focus for Next Week */}
-        <Card className="space-y-3 mb-4">
-          <p className="text-sm font-semibold text-foreground">What will you improve or focus on this week?</p>
-          <input
-            type="text"
-            value={form.focusNextWeek}
-            onChange={e => setForm(p => ({ ...p, focusNextWeek: e.target.value }))}
-            maxLength={300}
-            className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          />
+        {/* Section 3: Weekly self-assessment */}
+        <Card className="space-y-4 mb-4">
+          <p className="text-sm font-semibold text-foreground">Which best describes your week?</p>
+          <div className="space-y-2">
+            {ASSESS_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setForm(p => ({ ...p, weeklyAssessment: opt.value }))}
+                className={`w-full py-3 px-4 rounded-lg border text-sm font-medium transition-all text-left ${
+                  form.weeklyAssessment === opt.value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground hover:border-muted-foreground/40'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </Card>
 
         <button
@@ -2503,6 +2532,24 @@ function CheckInsTab() {
           {submitMutation.isPending ? 'Submitting...' : submitted ? 'Update Check-in' : 'Submit Check-in'}
         </button>
       </div>
+
+      {/* WhatsApp reminder */}
+      <Card className="space-y-3.5 border-border/60">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">After submitting, send on WhatsApp:</p>
+        {[
+          { icon: '📸', text: 'Progress photos' },
+          { icon: '🎥', text: 'Form clips' },
+          { icon: '🎙️', text: 'Optional voice note' },
+        ].map(item => (
+          <div key={item.text} className="flex gap-3 items-center">
+            <span className="text-base">{item.icon}</span>
+            <p className="text-sm text-foreground">{item.text}</p>
+          </div>
+        ))}
+        <div className="border-t border-border pt-3">
+          <p className="text-xs text-muted-foreground leading-relaxed">If sending a voice note, cover: what went well, what you struggled with, and anything else I should know.</p>
+        </div>
+      </Card>
 
       {/* Past Check-ins */}
       {allCheckIns.length > 1 && (
@@ -2515,8 +2562,8 @@ function CheckInsTab() {
                   <p className="text-sm font-semibold text-foreground">Week of {fmtWeekStart(toLocalDateStr(ci.weekStartDate))}</p>
                   {ci.coachReply && <span className="text-[10px] px-2 py-0.5 rounded bg-primary/20 text-primary font-medium">Replied</span>}
                 </div>
-                {ci.adherenceBarrier && ci.adherenceBarrier !== 'no_issues' && (
-                  <p className="text-xs text-muted-foreground mt-1">Barrier: {ci.adherenceBarrier.replace(/_/g, ' ')}</p>
+                {(ci as any).weeklyAssessment && (
+                  <p className="text-xs text-muted-foreground mt-1">{ASSESS_OPTIONS.find(a => a.value === (ci as any).weeklyAssessment)?.label}</p>
                 )}
               </Card>
             ))}

@@ -379,7 +379,9 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
     "busy_time","poor_planning","low_motivation","travel_disruption","other"
   ]),
   barrierExplain: text("barrierExplain"), // only shown if barrier != no_issues
-  // Section 3: Focus for Next Week
+  // Section 3: Weekly Self-Assessment
+  weeklyAssessment: mysqlEnum("weeklyAssessment", ["executed_exactly","mostly_followed","inconsistent","didnt_follow"]),
+  // Section 4: Focus for Next Week
   focusNextWeek: text("focusNextWeek"),
   // Coach reply
   coachReply: text("coachReply"),
