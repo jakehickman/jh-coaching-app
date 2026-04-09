@@ -2261,6 +2261,7 @@ function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program
 
 // ─── Check-ins Tab ─────────────────────────────────────────────────────────
 function CheckInsTab() {
+  const [, navigate] = useLocation();
   const { data: profile } = trpc.profile.get.useQuery();
   const today = localToday();
 
@@ -2329,7 +2330,12 @@ function CheckInsTab() {
   }, [existingCheckIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submitMutation = trpc.checkIn.submit.useMutation({
-    onSuccess: () => { refetch(); setSubmitted(true); },
+    onSuccess: () => {
+      refetch();
+      setSubmitted(true);
+      toast.success('Your check-in has been submitted', { duration: 3000 });
+      setTimeout(() => navigate('/dashboard/overview'), 1500);
+    },
     onError: () => toast.error('Failed to submit. Please try again.'),
   });
 
