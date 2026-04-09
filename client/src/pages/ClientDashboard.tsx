@@ -2418,7 +2418,7 @@ function CheckInsTab() {
             {dayLabel ? (
               <>
                 <p className="text-sm font-semibold text-foreground">Your check-in day: {dayLabel}</p>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Complete your weekly check-in on your assigned day. Start by logging your measurements, then fill in the form below and send your progress photos, form clips, and optional voice note to me on WhatsApp.</p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Complete your weekly check-in on your assigned day. Start by logging your measurements, then fill in the form below and send your progress photos, form clips, and a voice note to me on WhatsApp.</p>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">Your coach hasn't assigned a check-in day yet.</p>
@@ -2435,7 +2435,7 @@ function CheckInsTab() {
           { num: '2', title: 'Complete the check-in form below', sub: null },
           { num: '3', title: 'Send progress photos on WhatsApp', sub: 'Front, side, and back.' },
           { num: '4', title: 'Send form clips on WhatsApp', sub: 'For any exercises you want feedback on.' },
-          { num: '5', title: 'Optional: voice note on WhatsApp', sub: 'A quick summary of how your week went.' },
+          { num: '5', title: 'Voice note on WhatsApp', sub: 'A quick summary of how your week went.' },
         ].map(item => (
           <div key={item.num} className="flex gap-3 items-start">
             <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{item.num}</span>
@@ -2560,7 +2560,7 @@ function CheckInsTab() {
         {[
           { icon: '📸', text: 'Progress photos' },
           { icon: '🎥', text: 'Form clips' },
-          { icon: '🎙️', text: 'Optional voice note' },
+          { icon: '🎙️', text: 'Voice note' },
         ].map(item => (
           <div key={item.text} className="flex gap-3 items-center">
             <span className="text-base">{item.icon}</span>
