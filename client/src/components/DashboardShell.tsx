@@ -74,7 +74,54 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     enabled: mode === "coach" && user?.role === "admin",
     refetchInterval: 300_000,
   });
-  const unreviewedCheckIns = latestCheckIns.filter((ci: any) => ci.submittedAt && !ci.reviewedAt).length;
+  // Client profiles (for checkInDay overdue calculation)
+  const { data: clientProfiles = [] } = trpc.users.clients.useQuery(undefined, {
+    enabled: mode === "coach" && user?.role === "admin",
+    refetchInterval: 300_000,
+  });
+
+  // Compute badge count: unreviewed submissions + overdue clients (not double-counted)
+  const checkInsAttentionCount = (() => {
+    const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+    const toMonScale = (d: number) => (d === 0 ? 6 : d - 1);
+    const todayDay = new Date().getDay();
+    const monday = (() => { const d = new Date(); const day = d.getDay(); d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day)); d.setHours(0,0,0,0); return d; })();
+
+    const unreviewedIds = new Set<number>();
+    const overdueIds = new Set<number>();
+
+    // Unreviewed: has a submission this week that hasn't been reviewed
+    for (const ci of latestCheckIns as any[]) {
+      if (ci.submittedAt && !ci.reviewedAt) {
+        const submittedDate = new Date(ci.submittedAt);
+        if (submittedDate >= monday) {
+          unreviewedIds.add(ci.clientId);
+        }
+      }
+    }
+
+    // Overdue: check-in day has passed this week and no submission yet this week
+    for (const profile of clientProfiles as any[]) {
+      const clientId = profile.userId;
+      const ci = (latestCheckIns as any[]).find((x: any) => x.clientId === clientId);
+      // Skip if already submitted this week
+      if (ci) {
+        const submittedDate = new Date(ci.submittedAt);
+        if (submittedDate >= monday) continue;
+      }
+      // Check if their check-in day has passed
+      const checkInDay = profile.checkInDay as string | undefined;
+      if (!checkInDay) continue;
+      const assignedDay = dayMap[checkInDay] ?? -1;
+      if (toMonScale(todayDay) > toMonScale(assignedDay)) {
+        overdueIds.add(clientId);
+      }
+    }
+
+    // Combine: count clients that need attention (unreviewed OR overdue, not double-counted)
+    const allIds = new Set([...unreviewedIds, ...overdueIds]);
+    return allIds.size;
+  })();
 
   // Client: check-in day badge — show dot on Check-in tab on assigned day when not yet submitted
   const weekStartDate = (() => {
@@ -242,9 +289,9 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                       {pendingCount}
                     </span>
                   )}
-                  {item.href === "/coach/check-ins" && unreviewedCheckIns > 0 && (
+                  {item.href === "/coach/check-ins" && checkInsAttentionCount > 0 && (
                     <span className="ml-auto flex-shrink-0 min-w-[18px] h-4 px-1 rounded-full bg-primary text-black text-[10px] font-bold flex items-center justify-center">
-                      {unreviewedCheckIns}
+                      {checkInsAttentionCount}
                     </span>
                   )}
                   {item.href === "/coach/meal-plans" && hasMealDraft && (

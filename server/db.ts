@@ -962,7 +962,7 @@ export async function markCheckInReviewed(id: number, reviewed: boolean) {
 }
 
 // Coach: get the most recent check-in week for each client (for indicator badges)
-export async function getLatestCheckInPerClient(): Promise<{ clientId: number; weekStartDate: string; submittedAt: Date }[]> {
+export async function getLatestCheckInPerClient(): Promise<{ clientId: number; weekStartDate: string; submittedAt: Date; reviewedAt: Date | null }[]> {
   const db = await getDb();
   if (!db) return [];
   // Get the most recent check-in row per clientId
@@ -971,6 +971,7 @@ export async function getLatestCheckInPerClient(): Promise<{ clientId: number; w
       clientId: checkInSubmissions.clientId,
       weekStartDate: checkInSubmissions.weekStartDate,
       submittedAt: checkInSubmissions.submittedAt,
+      reviewedAt: checkInSubmissions.reviewedAt,
     })
     .from(checkInSubmissions)
     .orderBy(desc(checkInSubmissions.submittedAt));
@@ -980,7 +981,7 @@ export async function getLatestCheckInPerClient(): Promise<{ clientId: number; w
     if (seen.has(r.clientId)) return false;
     seen.add(r.clientId);
     return true;
-  }).map(r => ({ clientId: r.clientId, weekStartDate: String(r.weekStartDate), submittedAt: r.submittedAt as unknown as Date }));
+  }).map(r => ({ clientId: r.clientId, weekStartDate: String(r.weekStartDate), submittedAt: r.submittedAt as unknown as Date, reviewedAt: (r.reviewedAt as unknown as Date | null) ?? null }));
 }
 
 // Coach: delete a check-in submission

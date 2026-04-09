@@ -272,3 +272,4 @@
 - [x] Coach Clients tab: remove green dot badge from client cards (now redundant with Check-ins tab)
 - [x] Coach Check-ins tab: show overdue indicator for clients whose check-in day has passed without submission
 - [x] Coach check-in card: rename "Mark as Reviewed" to "Mark as Complete"
+- [x] Coach Check-ins nav badge: count overdue clients in addition to unreviewed submissions
