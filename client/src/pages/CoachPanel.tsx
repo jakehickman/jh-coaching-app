@@ -3481,7 +3481,10 @@ function CheckInsSection() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{client.name ?? `User ${client.id}`}</p>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{client.name ?? `User ${client.id}`}</p>
+                  {(() => { const p = (clientProfiles as any[]).find((x: any) => x.userId === client.id); const day = p?.checkInDay as string | undefined; if (!day) return null; const abbr: Record<string,string> = { monday:'Mon', tuesday:'Tue', wednesday:'Wed', thursday:'Thu', friday:'Fri', saturday:'Sat', sunday:'Sun' }; return <span className="flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border">{abbr[day] ?? day}</span>; })()}
+                </div>
                 {isOverdue(client.id) ? (
                   <p className="text-xs text-amber-400 font-medium">Overdue</p>
                 ) : ci ? (
