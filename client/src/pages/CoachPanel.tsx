@@ -1992,7 +1992,7 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {(() => {
                       const totalSets = exercises.reduce((acc: number, ex: any) =>
-                        acc + (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null).length, 0);
+                        acc + (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null).length, 0);
                       return <>{session.dayLabel} &middot; {exercises.length} exercise{exercises.length !== 1 ? 's' : ''} &middot; {totalSets} set{totalSets !== 1 ? 's' : ''}</>;
                     })()}
                     {hasNotes && <span className="ml-1.5 text-primary/70">· notes</span>}
@@ -2006,30 +2006,29 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
             {isOpen && (
               <div className="px-4 pb-4 border-t border-border/50 space-y-4 pt-3">
                 {exercises.map((ex: any, i: number) => {
-                  const completedSets = (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null);
+                  const completedSets = (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null);
+                  const firstSet = completedSets.find((s: any) => s.weight != null || s.reps != null) ?? completedSets[0];
                   return (
                     <div key={i}>
-                      <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{ex.name}</p>
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-medium text-foreground">{ex.name}</p>
+                            {ex.substitutedFor && (
+                              <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded">SUB</span>
+                            )}
+                            {completedSets.length > 0 && firstSet && (
+                              <span className="text-xs text-muted-foreground">
+                                {firstSet.weight != null ? `${firstSet.weight}kg` : '—'} × {firstSet.reps != null ? firstSet.reps : '—'}
+                                <span className="text-muted-foreground/50 ml-1">· {completedSets.length} set{completedSets.length !== 1 ? 's' : ''}</span>
+                              </span>
+                            )}
+                          </div>
                           {ex.equipmentDetails && (
-                            <p className="text-[11px] text-muted-foreground/70 mt-0.5">{ex.equipmentDetails}</p>
+                            <p className="text-[11px] text-muted-foreground/60 mt-0.5">{ex.equipmentDetails}</p>
                           )}
                         </div>
-                        {ex.substitutedFor && (
-                          <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">SUB</span>
-                        )}
                       </div>
-                      {completedSets.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-1.5">
-                          {completedSets.map((s: any, si: number) => (
-                            <span key={si} className="text-[11px] bg-secondary text-muted-foreground px-2 py-0.5 rounded">
-                              {si + 1}. {s.weight != null ? `${s.weight}kg` : '—'} × {s.reps != null ? s.reps : '—'}
-                            </span>
-                          ))}
-                          <span className="text-[11px] text-muted-foreground/50 px-1 py-0.5">{completedSets.length} set{completedSets.length !== 1 ? 's' : ''}</span>
-                        </div>
-                      )}
                       {ex.exerciseNotes && (
                         <p className="text-xs text-muted-foreground/80 italic mt-1">&ldquo;{ex.exerciseNotes}&rdquo;</p>
                       )}
