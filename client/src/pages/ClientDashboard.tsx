@@ -2451,7 +2451,7 @@ function CheckInsTab() {
           { num: '2', title: 'Complete the check-in form below', sub: null },
           { num: '3', title: 'Send progress photos on WhatsApp', sub: 'Front, side, and back.' },
           { num: '4', title: 'Send form clips on WhatsApp', sub: 'All exercises from one full session during the week.' },
-          { num: '5', title: 'Voice note on WhatsApp', sub: 'A quick summary of how your week went.' },
+          { num: '5', title: 'Voice note on WhatsApp', sub: 'A summary of how your week went.' },
         ].map(item => (
           <div key={item.num} className="flex gap-3 items-start">
             <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{item.num}</span>
@@ -2501,7 +2501,6 @@ function CheckInsTab() {
         <Card className="space-y-5 mb-4">
           <div>
             <p className="text-sm font-semibold text-foreground">Diet Execution</p>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">This helps me understand how your week actually went so I can adjust things if needed. It doesn’t need to be perfect, just answer honestly.</p>
           </div>
           <FreqQuestion
             label="How often did you miss a planned meal entirely?"
@@ -2582,10 +2581,7 @@ function CheckInsTab() {
             <p className="text-sm text-foreground">{item.text}</p>
           </div>
         ))}
-        <div className="border-t border-border pt-3">
-          <p className="text-xs text-muted-foreground leading-relaxed">In your voice note, cover: what went well, what you struggled with, and anything else I should know.</p>
-        </div>
-      </Card>
+       </Card>
 
       {/* Past Check-ins */}
       {allCheckIns.length > 1 && (

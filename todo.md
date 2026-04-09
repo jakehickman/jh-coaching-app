@@ -250,3 +250,7 @@
 - [x] Check-in: reorder questions and add 2 new ones (miss meal / eat extra / eyeball portions)
 - [x] Fix: changing a client name in coach profile causes client to be duplicated in client list
 - [x] Coach view: add check-in submission indicator (badge/dot) on client cards and/or in Client Progress
+- [x] Check-in: remove helper text under Diet Execution heading
+- [x] Check-in: change "A quick summary of how your week went." to "A summary of how your week went."
+- [x] Check-in: remove "In your voice note, cover: what went well..." helper text
+- [x] Coach view: clear green dot badge once coach opens a client's Check-ins tab

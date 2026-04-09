@@ -906,7 +906,31 @@ function ClientCombobox({
   selectedUserId: number | null;
   onSelect: (id: number) => void;
   latestCheckIns?: { clientId: number; submittedAt: Date | string }[];
-}) {  const [open, setOpen] = useState(false);
+}) {
+  const [open, setOpen] = useState(false);
+  const [seenKeys, setSeenKeys] = useState<Record<number, number>>(() => {
+    const out: Record<number, number> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith('coach:seen:checkin:')) {
+        const id = parseInt(k.replace('coach:seen:checkin:', ''), 10);
+        out[id] = parseInt(localStorage.getItem(k) ?? '0', 10);
+      }
+    }
+    return out;
+  });
+
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key?.startsWith('coach:seen:checkin:')) {
+        const id = parseInt(e.key.replace('coach:seen:checkin:', ''), 10);
+        setSeenKeys(prev => ({ ...prev, [id]: parseInt(e.newValue ?? '0', 10) }));
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, []);
+
   const selected = clients.find(c => c.id === selectedUserId);
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -929,7 +953,9 @@ function ClientCombobox({
             <CommandGroup>
               {clients.map(c => {
                 const ci = latestCheckIns.find(x => x.clientId === c.id);
-                const hasRecentCheckIn = ci && Math.floor((Date.now() - new Date(ci.submittedAt).getTime()) / 86400000) <= 7;
+                const ciTime = ci ? new Date(ci.submittedAt).getTime() : 0;
+                const seenTime = seenKeys[c.id] ?? 0;
+                const hasRecentCheckIn = ci && Math.floor((Date.now() - ciTime) / 86400000) <= 7 && ciTime > seenTime;
                 return (
                   <CommandItem
                     key={c.id}
@@ -959,6 +985,27 @@ function ClientCombobox({
 function ClientsSection() {
   const { data: allUsers, refetch } = trpc.users.list.useQuery();
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
+  const [seenKeys, setSeenKeys] = useState<Record<number, number>>(() => {
+    const out: Record<number, number> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith('coach:seen:checkin:')) {
+        const id = parseInt(k.replace('coach:seen:checkin:', ''), 10);
+        out[id] = parseInt(localStorage.getItem(k) ?? '0', 10);
+      }
+    }
+    return out;
+  });
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key?.startsWith('coach:seen:checkin:')) {
+        const id = parseInt(e.key.replace('coach:seen:checkin:', ''), 10);
+        setSeenKeys(prev => ({ ...prev, [id]: parseInt(e.newValue ?? '0', 10) }));
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, []);
   const utils = trpc.useUtils();
   const setApproved = trpc.users.setApproved.useMutation({
     onSuccess: () => {
@@ -1050,8 +1097,10 @@ function ClientsSection() {
                   {(() => {
                     const ci = latestCheckIns.find(c => c.clientId === user.id);
                     if (!ci) return null;
-                    const daysAgo = Math.floor((Date.now() - new Date(ci.submittedAt).getTime()) / 86400000);
-                    if (daysAgo > 7) return null;
+                    const ciTime = new Date(ci.submittedAt).getTime();
+                    const seenTime = seenKeys[user.id] ?? 0;
+                    const daysAgo = Math.floor((Date.now() - ciTime) / 86400000);
+                    if (daysAgo > 7 || ciTime <= seenTime) return null;
                     return <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background" title={`Check-in submitted ${daysAgo === 0 ? 'today' : daysAgo + 'd ago'}`} />;
                   })()}
                 </div>
@@ -2395,6 +2444,20 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
 // ─── Coach Check-ins Tab ─────────────────────────────────────────────────────
 function CoachCheckInsTab({ clientId }: { clientId: number }) {
   const { data: checkIns = [], refetch } = trpc.checkIn.clientList.useQuery({ clientId });
+
+  // Mark this client's check-ins as seen (clears the green dot badge)
+  useEffect(() => {
+    if (checkIns.length === 0) return;
+    const latest = checkIns.reduce((a, b) => {
+      const aTime = new Date(a.submittedAt ?? 0).getTime();
+      const bTime = new Date((b as any).submittedAt ?? 0).getTime();
+      return bTime > aTime ? b : a;
+    });
+    const seenAt = new Date((latest as any).submittedAt ?? Date.now()).getTime();
+    localStorage.setItem(`coach:seen:checkin:${clientId}`, String(seenAt));
+    // Trigger a re-render in components watching this key by dispatching a storage event
+    window.dispatchEvent(new StorageEvent('storage', { key: `coach:seen:checkin:${clientId}` }));
+  }, [clientId, checkIns]);
   const replyMutation = trpc.checkIn.reply.useMutation({
     onSuccess: () => { toast.success('Reply saved'); refetch(); setReplyId(null); setReplyText(''); },
     onError: () => toast.error('Failed to save reply'),
