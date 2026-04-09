@@ -7,7 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar
 } from "recharts";
-import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil, CheckSquare, Square, Shuffle, Wrench } from "lucide-react";
+import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil, CheckSquare, Square, Shuffle, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -1908,7 +1908,7 @@ function WorkoutLogTab() {
                             : "bg-secondary text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <Wrench size={13} />
+                        <Dumbbell size={13} />
                       </button>
                       <button
                         onClick={() => { setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
