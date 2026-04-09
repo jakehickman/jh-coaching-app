@@ -2376,9 +2376,9 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
 
   const FREQ_LABEL: Record<string, string> = {
     never: 'Never',
-    '1_2_times': '1–2×',
-    '3_5_times': '3–5×',
-    '6_plus_times': '6+×',
+    once_twice: 'Once or twice',
+    few_days: 'A few days',
+    most_days: 'Most days',
   };
   const BARRIER_LABEL: Record<string, string> = {
     no_issues: 'No issues',
@@ -2405,8 +2405,8 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
   };
   const freqColor = (v: string | null) => {
     if (!v || v === 'never') return 'text-green-400';
-    if (v === '1_2_times') return 'text-amber-400';
-    if (v === '3_5_times') return 'text-orange-400';
+    if (v === 'once_twice') return 'text-amber-400';
+    if (v === 'few_days') return 'text-orange-400';
     return 'text-red-400';
   };
 

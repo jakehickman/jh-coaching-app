@@ -434,10 +434,10 @@ export const appRouter = router({
       .input(z.object({
         weekStartDate: z.string(), // yyyy-mm-dd (Monday)
         // Section 1: Execution Accuracy
-        execPortionEstimate: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
-        execUntrackedExtras: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
-        execChangedFoods: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
-        execMissedMeals: z.enum(["never","1_2_times","3_5_times","6_plus_times"]).optional(),
+        execPortionEstimate: z.enum(["never","once_twice","few_days","most_days"]).optional(),
+        execUntrackedExtras: z.enum(["never","once_twice","few_days","most_days"]).optional(),
+        execChangedFoods: z.enum(["never","once_twice","few_days","most_days"]).optional(),
+        execMissedMeals: z.enum(["never","once_twice","few_days","most_days"]).optional(),
 
         // Section 2: Adherence Barrier
         adherenceBarrier: z.enum(["no_issues","hunger","cravings","social_events","busy_time","poor_planning","low_motivation","travel_disruption","other"]).optional(),

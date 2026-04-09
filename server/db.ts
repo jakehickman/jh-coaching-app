@@ -860,10 +860,10 @@ export async function submitCheckIn(data: {
   coachId?: number;
   weekStartDate: string;
   // Section 1: Execution Accuracy
-  execPortionEstimate?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
-  execUntrackedExtras?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
-  execChangedFoods?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
-  execMissedMeals?: "never" | "1_2_times" | "3_5_times" | "6_plus_times";
+  execPortionEstimate?: "never" | "once_twice" | "few_days" | "most_days";
+  execUntrackedExtras?: "never" | "once_twice" | "few_days" | "most_days";
+  execChangedFoods?: "never" | "once_twice" | "few_days" | "most_days";
+  execMissedMeals?: "never" | "once_twice" | "few_days" | "most_days";
 
   // Section 2: Adherence Barrier
   adherenceBarrier?: "no_issues" | "hunger" | "cravings" | "social_events" | "busy_time" | "poor_planning" | "low_motivation" | "travel_disruption" | "other";

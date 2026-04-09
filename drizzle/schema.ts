@@ -351,7 +351,7 @@ export const habitCompletions = mysqlTable("habit_completions", {
 export type HabitCompletion = typeof habitCompletions.$inferSelect;
 
 // Frequency enum for execution accuracy questions
-export const FREQ_OPTIONS = ["never", "1_2_times", "3_5_times", "6_plus_times"] as const;
+export const FREQ_OPTIONS = ["never", "once_twice", "few_days", "most_days"] as const;
 export type FreqOption = typeof FREQ_OPTIONS[number];
 
 // Adherence barrier options
@@ -368,10 +368,10 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
   coachId: int("coachId"), // FK -> users.id
   weekStartDate: date("weekStartDate").notNull(), // Monday of the check-in week
   // Section 1: Execution Accuracy (4 frequency questions)
-  execPortionEstimate: mysqlEnum("execPortionEstimate", ["never","1_2_times","3_5_times","6_plus_times"]),
-  execUntrackedExtras: mysqlEnum("execUntrackedExtras", ["never","1_2_times","3_5_times","6_plus_times"]),
-  execChangedFoods: mysqlEnum("execChangedFoods", ["never","1_2_times","3_5_times","6_plus_times"]),
-  execMissedMeals: mysqlEnum("execMissedMeals", ["never","1_2_times","3_5_times","6_plus_times"]),
+  execPortionEstimate: mysqlEnum("execPortionEstimate", ["never","once_twice","few_days","most_days"]),
+  execUntrackedExtras: mysqlEnum("execUntrackedExtras", ["never","once_twice","few_days","most_days"]),
+  execChangedFoods: mysqlEnum("execChangedFoods", ["never","once_twice","few_days","most_days"]),
+  execMissedMeals: mysqlEnum("execMissedMeals", ["never","once_twice","few_days","most_days"]),
 
   // Section 2: Adherence Barrier
   adherenceBarrier: mysqlEnum("adherenceBarrier", [

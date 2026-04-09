@@ -2275,7 +2275,7 @@ function CheckInsTab() {
   const { data: existingCheckIn, refetch } = trpc.checkIn.myWeek.useQuery({ weekStartDate: currentWeekStart });
   const { data: allCheckIns = [] } = trpc.checkIn.myList.useQuery();
 
-  type FreqVal = '' | 'never' | '1_2_times' | '3_5_times' | '6_plus_times';
+  type FreqVal = '' | 'never' | 'once_twice' | 'few_days' | 'most_days';
   type BarrierVal = '' | 'hunger' | 'cravings' | 'social_events' | 'busy_time' | 'poor_planning' | 'low_motivation' | 'travel_disruption' | 'other';
   type AssessVal = '' | 'executed_exactly' | 'mostly_followed' | 'inconsistent' | 'didnt_follow';
 
@@ -2344,9 +2344,9 @@ function CheckInsTab() {
 
   const FREQ_OPTIONS: { value: FreqVal; label: string }[] = [
     { value: 'never', label: 'Never' },
-    { value: '1_2_times', label: '1–2 times' },
-    { value: '3_5_times', label: '3–5 times' },
-    { value: '6_plus_times', label: '6+ times' },
+    { value: 'once_twice', label: 'Once or twice' },
+    { value: 'few_days', label: 'A few days' },
+    { value: 'most_days', label: 'Most days' },
   ];
 
   const BARRIER_OPTIONS: { value: BarrierVal; label: string }[] = [
