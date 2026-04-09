@@ -229,3 +229,4 @@
 - [x] Fix client recent log edit — DailyLogTab date state not updating when navigating from RecentLogsPanel edit button
 - [x] Add Equipment details field to workout log exercises (DB schema, server, UI)
 - [x] Add measurements nudge/prompt inside Check-in form with button to switch to Measurements sub-tab
+- [x] Update diet adherence answer scale to: Never / Once or twice / A few times / Many times

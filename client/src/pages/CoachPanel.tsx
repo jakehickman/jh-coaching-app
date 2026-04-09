@@ -2377,8 +2377,8 @@ function CoachCheckInsTab({ clientId }: { clientId: number }) {
   const FREQ_LABEL: Record<string, string> = {
     never: 'Never',
     once_twice: 'Once or twice',
-    few_days: 'A few days',
-    most_days: 'Most days',
+    few_days: 'A few times',
+    most_days: 'Many times',
   };
   const BARRIER_LABEL: Record<string, string> = {
     no_issues: 'No issues',

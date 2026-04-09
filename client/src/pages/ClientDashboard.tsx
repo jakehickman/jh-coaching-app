@@ -2345,8 +2345,8 @@ function CheckInsTab() {
   const FREQ_OPTIONS: { value: FreqVal; label: string }[] = [
     { value: 'never', label: 'Never' },
     { value: 'once_twice', label: 'Once or twice' },
-    { value: 'few_days', label: 'A few days' },
-    { value: 'most_days', label: 'Most days' },
+    { value: 'few_days', label: 'A few times' },
+    { value: 'most_days', label: 'Many times' },
   ];
 
   const BARRIER_OPTIONS: { value: BarrierVal; label: string }[] = [
