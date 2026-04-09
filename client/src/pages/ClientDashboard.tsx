@@ -2496,7 +2496,7 @@ function CheckInsTab() {
 
       {/* ── Submitted summary card (shown when submitted and not editing) ── */}
       {submitted && !isEditing && (
-        <Card className="space-y-4">
+        <Card>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-primary text-lg">✓</span>
@@ -2508,35 +2508,6 @@ function CheckInsTab() {
             >
               Edit
             </button>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Diet Execution</p>
-              <div className="space-y-1">
-                {[
-                  { label: 'Missed meals', val: form.execMissedMeals },
-                  { label: 'Extras outside plan', val: form.execUntrackedExtras },
-                  { label: 'Eyeballed portions', val: form.execPortionEstimate },
-                ].map(row => row.val ? (
-                  <div key={row.label} className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{row.label}</span>
-                    <span className={`text-xs font-semibold ${freqColor(row.val)}`}>{freqLabel(row.val)}</span>
-                  </div>
-                ) : null)}
-              </div>
-            </div>
-            {form.adherenceBarrier && (
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Main deviation cause</span>
-                <span className="text-xs font-medium text-foreground">{barrierLabel(form.adherenceBarrier)}</span>
-              </div>
-            )}
-            {form.weeklyAssessment && (
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Self-assessment</span>
-                <span className="text-xs font-medium text-foreground">{assessLabel(form.weeklyAssessment)}</span>
-              </div>
-            )}
           </div>
         </Card>
       )}
