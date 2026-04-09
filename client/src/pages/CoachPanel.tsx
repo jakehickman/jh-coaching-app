@@ -3400,7 +3400,7 @@ function CheckInsSection() {
   });
 
   // Fetch client profiles to get checkInDay for overdue calculation
-  const { data: allProfiles = [] } = trpc.users.list.useQuery();
+  const { data: clientProfiles = [] } = trpc.users.clients.useQuery();
 
   // Helper: is a client's check-in overdue?
   // Overdue = their check-in day has passed this week and they haven't submitted yet
@@ -3413,7 +3413,8 @@ function CheckInsSection() {
       if (submittedDate >= monday) return false; // submitted this week
     }
     // No submission this week — check if their check-in day has passed
-    const profile = (allProfiles as any[]).find((p: any) => p.id === clientId);
+    // users.clients returns profile rows where userId = the user's ID
+    const profile = (clientProfiles as any[]).find((p: any) => p.userId === clientId);
     const checkInDay = (profile as any)?.checkInDay as string | undefined;
     if (!checkInDay) return false;
     const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };

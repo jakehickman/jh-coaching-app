@@ -275,3 +275,4 @@
 - [x] Coach Check-ins nav badge: count overdue clients in addition to unreviewed submissions
 - [x] Seed sample check-in submissions for demo clients (Geoff Hickman, Julie Nguyen) to show Check-ins badge and section with realistic data
 - [x] Fix: Geoff Hickman not showing as Overdue in Check-ins section despite Monday check-in day having passed
+- [x] Fix: Geoff Hickman still not showing as Overdue on deployed site - trace full data flow
