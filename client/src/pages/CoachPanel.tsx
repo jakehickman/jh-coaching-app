@@ -1975,7 +1975,7 @@ function ExerciseProgressTab({
   }
 
   // Build per-exercise history (chronological)
-  const exerciseHistory: Record<string, Array<{ date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }>; substitutedFor?: string }>> = {};
+  const exerciseHistory: Record<string, Array<{ date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }>; substitutedFor?: string; equipmentDetails?: string }>> = {};
   for (const session of [...workoutSessions].reverse()) {
     const dateStr = toLocalDateStr(session.sessionDate);
     for (const ex of (session.exercises as any[])) {
@@ -1989,7 +1989,7 @@ function ExerciseProgressTab({
         if (sw === bw && (s.reps ?? 0) > (best.reps ?? 0)) return s;
         return best;
       }, null);
-      exerciseHistory[ex.name].push({ date: dateStr, topSet, allSets: sets, substitutedFor: ex.substitutedFor ?? undefined });
+      exerciseHistory[ex.name].push({ date: dateStr, topSet, allSets: sets, substitutedFor: ex.substitutedFor ?? undefined, equipmentDetails: ex.equipmentDetails ?? undefined });
     }
   }
 
@@ -2091,12 +2091,17 @@ function ExerciseProgressTab({
                               <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded">SUB</span>
                             )}
                           </div>
-                          <p className={`text-xs font-medium flex-1 text-right ${
-                            isLatest ? 'text-foreground' : 'text-muted-foreground'
-                          }`}>
-                            {w != null ? `${w} kg` : '—'}
-                            {r != null ? ` × ${r}` : ''}
-                          </p>
+                          <div className="flex-1 text-right">
+                            <p className={`text-xs font-medium ${
+                              isLatest ? 'text-foreground' : 'text-muted-foreground'
+                            }`}>
+                              {w != null ? `${w} kg` : '—'}
+                              {r != null ? ` × ${r}` : ''}
+                            </p>
+                            {entry.equipmentDetails && (
+                              <p className="text-[10px] text-muted-foreground/60 mt-0.5">{entry.equipmentDetails}</p>
+                            )}
+                          </div>
                           <div className="w-5 flex justify-end flex-shrink-0">
                             {wUp && <ArrowUp className="w-3 h-3 text-green-400" />}
                             {wDown && <ArrowDown className="w-3 h-3 text-red-400" />}
