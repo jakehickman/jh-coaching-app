@@ -369,6 +369,7 @@ export const appRouter = router({
             z.object({
               name: z.string(),
               substitutedFor: z.string().nullable().optional(),
+              equipmentDetails: z.string().nullable().optional(),
               sets: z.array(
                 z.object({
                   weight: z.number().nullable().optional(),

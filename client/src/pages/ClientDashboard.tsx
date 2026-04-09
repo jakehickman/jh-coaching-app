@@ -1599,15 +1599,17 @@ function WorkoutLogTab() {
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [sessionDate, setSessionDate] = useState(today);
-  // exerciseData: { [exerciseName]: Array<{weight: string, reps: string, notes: string, completed: boolean}> }
-  const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({});
+  // exerciseData: { [exerciseName]: { equipmentDetails: string; sets: Array<{weight, reps, notes, completed}> } }
+  // For backward compat we keep a flat sets array keyed by exercise name, plus a separate equipmentDetails map
+  const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({})
+  const [equipmentDetails, setEquipmentDetails] = useState<Record<string, string>>({});
   const [sessionNotes, setSessionNotes] = useState("");
 
   // Persist in-progress workout to localStorage so tab switches don't lose data
   const workoutDraftKey = selectedDay ? `draft:workout:${sessionDate}:${selectedDay}` : null;
   useEffect(() => {
     if (!workoutDraftKey) return;
-    try { localStorage.setItem(workoutDraftKey, JSON.stringify({ v: 2, exerciseData, sessionNotes })); } catch {}
+    try { localStorage.setItem(workoutDraftKey, JSON.stringify({ v: 2, exerciseData, sessionNotes, equipmentDetails })); } catch {}
   }, [workoutDraftKey, exerciseData, sessionNotes]);
   function clearWorkoutDraft() {
     if (workoutDraftKey) { try { localStorage.removeItem(workoutDraftKey); } catch {} }
@@ -1686,6 +1688,7 @@ function WorkoutLogTab() {
     const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === sessionDate && s.dayLabel === label);
     if (existing) {
       const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
+      const eqData: Record<string, string> = {};
       for (const ex of (existing.exercises as any[])) {
         exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
           weight: s.weight != null ? String(s.weight) : "",
@@ -1693,8 +1696,10 @@ function WorkoutLogTab() {
           notes: s.notes ?? "",
           completed: s.completed ?? (s.weight != null || s.reps != null),
         }));
+        if (ex.equipmentDetails) eqData[ex.name] = ex.equipmentDetails;
       }
       setExerciseData(exData);
+      setEquipmentDetails(eqData);
       setSessionNotes((existing.notes as string) ?? "");
     } else {
       // Try to restore an in-progress draft first
@@ -1714,6 +1719,7 @@ function WorkoutLogTab() {
             }
             setExerciseData(migratedData);
             setSessionNotes(parsed.sessionNotes ?? "");
+            setEquipmentDetails(parsed.equipmentDetails ?? {});
             return;
           }
         }
@@ -1726,6 +1732,7 @@ function WorkoutLogTab() {
       }
       setExerciseData(blank);
       setSessionNotes("");
+      setEquipmentDetails({});
     }
   }
 
@@ -1779,6 +1786,7 @@ function WorkoutLogTab() {
       return {
         name: nameToUse,
         substitutedFor: subName ? ex.name : undefined,
+        equipmentDetails: equipmentDetails[nameToUse] || null,
         sets: (exerciseData[nameToUse] ?? []).map(s => ({
           weight: s.weight !== "" ? parseFloat(s.weight) : null,
           reps: s.reps !== "" ? parseInt(s.reps) : null,
@@ -1948,6 +1956,18 @@ function WorkoutLogTab() {
                   >
                     <Plus size={13} /> Add Set
                   </button>
+
+                  {/* Equipment details */}
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">Equipment details</p>
+                    <input
+                      type="text"
+                      value={equipmentDetails[displayName] ?? ""}
+                      onChange={e => setEquipmentDetails(prev => ({ ...prev, [displayName]: e.target.value }))}
+                      placeholder="e.g. Cable machine #3, seat at 4, pin at 40 kg"
+                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
                 </Card>
               );
             })}
@@ -2125,13 +2145,18 @@ function WorkoutLogTab() {
                   const firstSet = completedSets.find((st: any) => st.weight != null || st.reps != null) ?? completedSets[0];
                   const setCount = completedSets.length;
                   return (
-                    <p key={i} className="text-xs text-muted-foreground">
-                      <span className="text-foreground font-medium">{ex.name}</span>: 
-                      {firstSet.weight != null ? `${firstSet.weight}kg` : '—'}
-                      {' × '}
-                      {firstSet.reps != null ? `${firstSet.reps}` : '—'}
-                      <span className="text-muted-foreground/60 ml-1">({setCount} {setCount === 1 ? 'set' : 'sets'})</span>
-                    </p>
+                    <div key={i}>
+                      <p className="text-xs text-muted-foreground">
+                        <span className="text-foreground font-medium">{ex.name}</span>: 
+                        {firstSet.weight != null ? `${firstSet.weight}kg` : '—'}
+                        {' × '}
+                        {firstSet.reps != null ? `${firstSet.reps}` : '—'}
+                        <span className="text-muted-foreground/60 ml-1">({setCount} {setCount === 1 ? 'set' : 'sets'})</span>
+                      </p>
+                      {ex.equipmentDetails && (
+                        <p className="text-[10px] text-muted-foreground/70 mt-0.5 pl-1">{ex.equipmentDetails}</p>
+                      )}
+                    </div>
                   );
                 })}
               </div>
