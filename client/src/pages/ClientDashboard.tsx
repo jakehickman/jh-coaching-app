@@ -2434,7 +2434,7 @@ function CheckInsTab() {
           { num: '1', title: 'Log your measurements', sub: 'Use the Measurements tab above.' },
           { num: '2', title: 'Complete the check-in form below', sub: null },
           { num: '3', title: 'Send progress photos on WhatsApp', sub: 'Front, side, and back.' },
-          { num: '4', title: 'Send form clips on WhatsApp', sub: 'For any exercises you want feedback on.' },
+          { num: '4', title: 'Send form clips on WhatsApp', sub: 'All exercises from one full session during the week.' },
           { num: '5', title: 'Voice note on WhatsApp', sub: 'A quick summary of how your week went.' },
         ].map(item => (
           <div key={item.num} className="flex gap-3 items-start">
@@ -2478,12 +2478,8 @@ function CheckInsTab() {
             field="execPortionEstimate"
           />
           <FreqQuestion
-            label="How often did you eat untracked extras (snacks, bites, drinks not in your plan)?"
+            label="How often did you eat something outside your meal plan (extras, snacks, or unplanned foods)?"
             field="execUntrackedExtras"
-          />
-          <FreqQuestion
-            label="How often did you swap a planned meal for something different?"
-            field="execChangedFoods"
           />
           <FreqQuestion
             label="How often did you miss a planned meal entirely?"
@@ -2510,18 +2506,17 @@ function CheckInsTab() {
               </button>
             ))}
           </div>
-          {form.adherenceBarrier === 'other' && (
-            <div>
-              <textarea
-                value={form.barrierExplain}
-                onChange={e => setForm(p => ({ ...p, barrierExplain: e.target.value }))}
-                rows={2}
-                maxLength={500}
-                placeholder="Briefly describe..."
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              />
-            </div>
-          )}
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1.5">Add any context (optional)</label>
+            <textarea
+              value={form.barrierExplain}
+              onChange={e => setForm(p => ({ ...p, barrierExplain: e.target.value }))}
+              rows={2}
+              maxLength={500}
+              placeholder="Briefly describe what happened..."
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+            />
+          </div>
         </Card>
 
         {/* Section 3: Weekly self-assessment */}

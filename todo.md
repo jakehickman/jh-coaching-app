@@ -231,3 +231,10 @@
 - [x] Add measurements nudge/prompt inside Check-in form with button to switch to Measurements sub-tab
 - [x] Update diet adherence answer scale to: Never / Once or twice / A few times / Many times
 - [x] Update diet adherence question phrasing to: eyeball portions / untracked extras / swap a planned meal / miss a planned meal
+- [x] Check-in: update form clips step to say "all exercises from a single session during the week"
+- [x] Client nav: change Meal Plan tab icon from UtensilsCrossed to Utensils
+- [x] Check-in: reword extras question to remove "untracked" — rephrase around eating outside the meal plan
+- [x] Check-in: remove "How often did you swap a planned meal" question (covered by off-plan meals count)
+- [x] Check-in: add free-text context field below "What caused the most deviation" question
+- [x] Coach Client Progress: add Check-ins tab showing submitted check-in answers
+- [x] Investigate why geoffjhickman has no proper display name; fix new client name capture on signup

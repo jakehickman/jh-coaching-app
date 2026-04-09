@@ -985,6 +985,7 @@ function ClientsSection() {
   });
 
   const [form, setForm] = useState({
+    displayName: "",
     startDate: "", notes: "",
     checkInDay: "" as "" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
     stepGoal: "",
@@ -993,13 +994,14 @@ function ClientsSection() {
   useEffect(() => {
     if (profile) {
       setForm({
+        displayName: (profile as any).displayName ?? "",
         startDate: profile.startDate ? toLocalDateStr(profile.startDate) : "",
         notes: profile.notes ?? "",
         checkInDay: ((profile as any).checkInDay ?? "") as any,
         stepGoal: (profile as any).stepGoal?.toString() ?? "",
       });
     } else {
-      setForm({ startDate: "", notes: "", checkInDay: "", stepGoal: "" });
+      setForm({ displayName: "", startDate: "", notes: "", checkInDay: "", stepGoal: "" });
     }
   }, [profile, selectedId]);
 
@@ -1083,6 +1085,16 @@ function ClientsSection() {
           <div>
             <SectionLabel>Client Profile</SectionLabel>
             <Card className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Client Name</label>
+                <input
+                  type="text"
+                  value={form.displayName}
+                  onChange={e => setForm(p => ({ ...p, displayName: e.target.value }))}
+                  placeholder="e.g. Geoff Hickman"
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2 sm:col-span-1">
                   <label className="text-xs text-muted-foreground block mb-1">Start Date</label>
@@ -1126,6 +1138,7 @@ function ClientsSection() {
                 onClick={() => {
                   upsertProfile.mutate({
                     userId: selectedId,
+                    displayName: form.displayName || undefined,
                     startDate: form.startDate || undefined,
                     notes: form.notes || null,
                   });
@@ -2700,6 +2713,7 @@ function ProgressSection() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="sessions">Training</TabsTrigger>
             <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
+            <TabsTrigger value="checkins">Check-ins</TabsTrigger>
             <TabsTrigger value="notes">Coaching Notes</TabsTrigger>
           </TabsList>
 
@@ -2795,6 +2809,10 @@ function ProgressSection() {
 
           <TabsContent value="notes">
             <CoachingNotesTab clientId={selectedUserId!} />
+          </TabsContent>
+
+          <TabsContent value="checkins">
+            <CoachCheckInsTab clientId={selectedUserId!} />
           </TabsContent>
 
         </Tabs>

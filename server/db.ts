@@ -103,7 +103,27 @@ export async function getAllClients(coachId: number) {
 export async function getAllUsers() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(users).orderBy(desc(users.createdAt));
+  const rows = await db
+    .select({
+      id: users.id,
+      openId: users.openId,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      approved: users.approved,
+      loginMethod: users.loginMethod,
+      lastSignedIn: users.lastSignedIn,
+      createdAt: users.createdAt,
+      displayName: clientProfiles.displayName,
+    })
+    .from(users)
+    .leftJoin(clientProfiles, eq(clientProfiles.userId, users.id))
+    .orderBy(desc(users.createdAt));
+  // Expose a resolved `name` that prefers clientProfile.displayName over OAuth name
+  return rows.map(r => ({
+    ...r,
+    name: r.displayName || r.name || null,
+  }));
 }
 
 export async function setUserApproved(userId: number, approved: boolean) {
