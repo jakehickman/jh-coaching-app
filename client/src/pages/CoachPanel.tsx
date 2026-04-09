@@ -968,7 +968,6 @@ function ClientCombobox({
                     <Check className={`mr-2 h-4 w-4 ${selectedUserId === c.id ? "opacity-100" : "opacity-0"}`} />
                     <span className="flex items-center gap-1.5">
                       {c.name ?? `User ${c.id}`}
-                      {hasRecentCheckIn && <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" title="Recent check-in submitted" />}
                     </span>
                   </CommandItem>
                 );
@@ -1094,15 +1093,7 @@ function ClientsSection() {
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
                     {user.name?.charAt(0)?.toUpperCase() ?? "?"}
                   </div>
-                  {(() => {
-                    const ci = latestCheckIns.find(c => c.clientId === user.id);
-                    if (!ci) return null;
-                    const ciTime = new Date(ci.submittedAt).getTime();
-                    const seenTime = seenKeys[user.id] ?? 0;
-                    const daysAgo = Math.floor((Date.now() - ciTime) / 86400000);
-                    if (daysAgo > 7 || ciTime <= seenTime) return null;
-                    return <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background" title={`Check-in submitted ${daysAgo === 0 ? 'today' : daysAgo + 'd ago'}`} />;
-                  })()}
+                  {null}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{user.name ?? "Unnamed"}</p>
@@ -3408,6 +3399,31 @@ function CheckInsSection() {
     return tB - tA;
   });
 
+  // Fetch client profiles to get checkInDay for overdue calculation
+  const { data: allProfiles = [] } = trpc.users.list.useQuery();
+
+  // Helper: is a client's check-in overdue?
+  // Overdue = their check-in day has passed this week and they haven't submitted yet
+  const isOverdue = (clientId: number): boolean => {
+    const ci = latestCheckIns.find((x: any) => x.clientId === clientId);
+    if (ci) {
+      // Already submitted this week — check if it's for the current week
+      const monday = (() => { const d = new Date(); const day = d.getDay(); d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day)); d.setHours(0,0,0,0); return d; })();
+      const submittedDate = new Date((ci as any).submittedAt);
+      if (submittedDate >= monday) return false; // submitted this week
+    }
+    // No submission this week — check if their check-in day has passed
+    const profile = (allProfiles as any[]).find((p: any) => p.id === clientId);
+    const checkInDay = (profile as any)?.checkInDay as string | undefined;
+    if (!checkInDay) return false;
+    const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+    const assignedDay = dayMap[checkInDay] ?? -1;
+    const todayDay = new Date().getDay();
+    // Week starts Monday (1). Convert to Mon=0 scale for comparison
+    const toMonScale = (d: number) => (d === 0 ? 6 : d - 1);
+    return toMonScale(todayDay) > toMonScale(assignedDay);
+  };
+
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const utils = trpc.useUtils();
 
@@ -3467,8 +3483,10 @@ function CheckInsSection() {
                 <p className="text-sm font-medium text-foreground truncate">{client.name ?? `User ${client.id}`}</p>
                 {ci ? (
                   <p className={`text-xs truncate ${isReviewed ? 'text-muted-foreground' : 'text-primary'}`}>
-                    {isReviewed ? 'Reviewed' : 'Awaiting review'} · {new Date((ci as any).submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                    {isReviewed ? 'Complete' : 'Awaiting review'} · {new Date((ci as any).submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                   </p>
+                ) : isOverdue(client.id) ? (
+                  <p className="text-xs text-amber-400 font-medium">Overdue</p>
                 ) : (
                   <p className="text-xs text-muted-foreground">No check-ins yet</p>
                 )}
@@ -3515,7 +3533,7 @@ function CheckInsSection() {
                         </span>
                       )}
                       {isReviewed && (
-                        <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-green-500/15 text-green-400">Reviewed</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-green-500/15 text-green-400">Complete</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -3582,7 +3600,7 @@ function CheckInsSection() {
                               : 'border-green-500/40 text-green-400 hover:bg-green-500/10'
                           }`}
                         >
-                          {isReviewed ? 'Mark as Unreviewed' : 'Mark as Reviewed'}
+                          {isReviewed ? 'Mark as Incomplete' : 'Mark as Complete'}
                         </button>
                         <button
                           onClick={() => {

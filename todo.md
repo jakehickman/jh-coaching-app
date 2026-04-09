@@ -269,3 +269,6 @@
 - [ ] Coach: build CheckInsSection with client list + full check-in history panel
 - [ ] Coach Clients section: remove Check-ins sub-tab, restore profile-only view
 - [x] Client nav: add dot badge on Check-in tab icon on assigned check-in day when not yet submitted this week
+- [x] Coach Clients tab: remove green dot badge from client cards (now redundant with Check-ins tab)
+- [x] Coach Check-ins tab: show overdue indicator for clients whose check-in day has passed without submission
+- [x] Coach check-in card: rename "Mark as Reviewed" to "Mark as Complete"
