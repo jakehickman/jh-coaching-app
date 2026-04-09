@@ -281,3 +281,5 @@
 - [x] Check-ins tab: sort overdue clients above "no check-ins yet" clients
 - [x] Check-ins tab: highlight today's check-in day pill in colour (green/amber)
 - [x] Overdue logic: skip clients whose start date is after this week's Monday (don't flag new clients as overdue before their first check-in week)
+- [x] Check-ins card: hide weekly assessment (mostly followed etc.) from collapsed card preview
+- [x] Check-ins tab: sort overdue above unreviewed (overdue = highest priority)

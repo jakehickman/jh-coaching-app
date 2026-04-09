@@ -3410,10 +3410,10 @@ function CheckInsSection() {
     return toMonScale(new Date().getDay()) > toMonScale(dayMap[checkInDay] ?? -1);
   };
   const sortBucket = (ci: any, reviewed: boolean, id: number): number => {
-    if (!reviewed && ci && new Date((ci as any).submittedAt) >= monday) return 0;
-    if (getOverdue(id, ci)) return 1;
-    if (!ci) return 2;
-    return 3;
+    if (getOverdue(id, ci)) return 0;                                          // overdue = highest priority
+    if (!reviewed && ci && new Date((ci as any).submittedAt) >= monday) return 1; // unreviewed this week
+    if (!ci) return 2;                                                          // no check-ins yet
+    return 3;                                                                   // reviewed / complete
   };
   const sortedClients = [...clients].sort((a, b) => {
     const ciA = latestCheckIns.find((x: any) => x.clientId === a.id);
@@ -3552,11 +3552,7 @@ function CheckInsSection() {
                   >
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <span className="text-sm font-semibold text-foreground">Week of {fmtCheckInDate(toLocalDateStr(ci.weekStartDate))}</span>
-                      {ci.weeklyAssessment && (
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-medium bg-secondary ${assessColorFn(ci.weeklyAssessment)}`}>
-                          {ASSESS_LABEL_MAP[ci.weeklyAssessment] ?? ci.weeklyAssessment}
-                        </span>
-                      )}
+
                       {isReviewed && (
                         <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-green-500/15 text-green-400">Complete</span>
                       )}
