@@ -1610,7 +1610,7 @@ function WorkoutLogTab() {
   const workoutDraftKey = selectedDay ? `draft:workout:${sessionDate}:${selectedDay}` : null;
   useEffect(() => {
     if (!workoutDraftKey) return;
-    try { localStorage.setItem(workoutDraftKey, JSON.stringify({ v: 2, exerciseData, sessionNotes, equipmentDetails, exerciseNotes })); } catch {}
+    try { localStorage.setItem(workoutDraftKey, JSON.stringify({ v: 2, exerciseData, sessionNotes, equipmentDetails, exerciseNotes, substitutions })); } catch {}
   }, [workoutDraftKey, exerciseData, sessionNotes]);
   function clearWorkoutDraft() {
     if (workoutDraftKey) { try { localStorage.removeItem(workoutDraftKey); } catch {} }
@@ -1692,7 +1692,12 @@ function WorkoutLogTab() {
       const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
       const eqData: Record<string, string> = {};
       const enData: Record<string, string> = {};
+      const subData: Record<string, string> = {};
       for (const ex of (existing.exercises as any[])) {
+        // If this exercise was a substitution, record it and key data by the substituted name
+        if (ex.substitutedFor) {
+          subData[ex.substitutedFor] = ex.name;
+        }
         exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
           weight: s.weight != null ? String(s.weight) : "",
           reps: s.reps != null ? String(s.reps) : "",
@@ -1705,6 +1710,7 @@ function WorkoutLogTab() {
       setExerciseData(exData);
       setEquipmentDetails(eqData);
       setExerciseNotes(enData);
+      setSubstitutions(subData);
       setSessionNotes((existing.notes as string) ?? "");
     } else {
       // Try to restore an in-progress draft first
@@ -1726,6 +1732,7 @@ function WorkoutLogTab() {
             setSessionNotes(parsed.sessionNotes ?? "");
             setEquipmentDetails(parsed.equipmentDetails ?? {});
             setExerciseNotes(parsed.exerciseNotes ?? {});
+            setSubstitutions(parsed.substitutions ?? {});
             return;
           }
         }
@@ -1740,6 +1747,7 @@ function WorkoutLogTab() {
       setSessionNotes("");
       setEquipmentDetails({});
       setExerciseNotes({});
+      setSubstitutions({});
     }
   }
 
