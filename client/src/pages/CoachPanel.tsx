@@ -3507,7 +3507,26 @@ function CheckInsSection() {
                   })()}
                 </div>
                 {isOverdue(client.id) ? (
-                  <p className="text-xs text-amber-400 font-medium">Overdue</p>
+                  <p className="text-xs text-amber-400 font-medium">
+                    {(() => {
+                      const p = (clientProfiles as any[]).find((x: any) => x.userId === client.id);
+                      const checkInDay = p?.checkInDay as string | undefined;
+                      if (!checkInDay) return 'Overdue';
+                      const dayMap: Record<string,number> = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 };
+                      const assignedDayNum = dayMap[checkInDay] ?? -1;
+                      // Find the most recent occurrence of that day this week (Mon-based)
+                      const today = new Date();
+                      const todayDay = today.getDay(); // 0=Sun
+                      const toMonScale = (d: number) => (d === 0 ? 6 : d - 1);
+                      const diff = toMonScale(todayDay) - toMonScale(assignedDayNum);
+                      const dueDate = new Date(today);
+                      dueDate.setDate(today.getDate() - diff);
+                      dueDate.setHours(0, 0, 0, 0);
+                      const dayAbbr = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dueDate.getDay()];
+                      const dateStr = dueDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+                      return `Overdue · ${dayAbbr} ${dateStr}`;
+                    })()}
+                  </p>
                 ) : ci ? (
                   <p className={`text-xs truncate ${isReviewed ? 'text-muted-foreground' : 'text-primary'}`}>
                     {isReviewed ? 'Complete' : 'Awaiting review'} · {new Date((ci as any).submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
