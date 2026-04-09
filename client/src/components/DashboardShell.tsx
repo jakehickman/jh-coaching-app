@@ -115,11 +115,17 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
         start.setHours(0, 0, 0, 0);
         if (start > monday) continue;
       }
-      // Check if their check-in day has passed
+      // Check if their check-in day has passed this week by comparing actual dates
       const checkInDay = profile.checkInDay as string | undefined;
       if (!checkInDay) continue;
-      const assignedDay = dayMap[checkInDay] ?? -1;
-      if (toMonScale(todayDay) > toMonScale(assignedDay)) {
+      const assignedJsDay = dayMap[checkInDay] ?? -1;
+      if (assignedJsDay === -1) continue;
+      const assignedMonScale = toMonScale(assignedJsDay);
+      const dueDateInWeek = new Date(monday);
+      dueDateInWeek.setDate(monday.getDate() + assignedMonScale);
+      const todayMidnight = new Date();
+      todayMidnight.setHours(0, 0, 0, 0);
+      if (todayMidnight > dueDateInWeek) {
         overdueIds.add(clientId);
       }
     }

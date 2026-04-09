@@ -3408,7 +3408,17 @@ function CheckInsSection() {
       start.setHours(0, 0, 0, 0);
       if (start > monday) return false;
     }
-    return toMonScale(new Date().getDay()) > toMonScale(dayMap[checkInDay] ?? -1);
+    // Compute the actual date of the assigned check-in day within the current Mon–Sun week,
+    // then compare it to today. This correctly handles Sunday (which sits at the end of the
+    // week on Mon-scale=6 but may have already passed earlier in the same calendar week).
+    const assignedJsDay = dayMap[checkInDay] ?? -1; // JS day: 0=Sun, 1=Mon, ..., 6=Sat
+    if (assignedJsDay === -1) return false;
+    const assignedMonScale = toMonScale(assignedJsDay); // Mon=0 ... Sun=6
+    const dueDateInWeek = new Date(monday);
+    dueDateInWeek.setDate(monday.getDate() + assignedMonScale); // e.g. Mon+6 = Sunday
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
+    return todayMidnight > dueDateInWeek; // overdue only if today is strictly after the due date
   };
   const sortBucket = (ci: any, reviewed: boolean, id: number): number => {
     if (getOverdue(id, ci)) return 0;                                          // overdue = highest priority
