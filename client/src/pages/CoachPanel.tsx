@@ -3523,9 +3523,8 @@ function CheckInsSection() {
                       const dueDate = new Date(today);
                       dueDate.setDate(today.getDate() - diff);
                       dueDate.setHours(0, 0, 0, 0);
-                      const dayAbbr = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dueDate.getDay()];
                       const dateStr = dueDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-                      return `Overdue · ${dayAbbr} ${dateStr}`;
+                      return `Overdue · ${dateStr}`;
                     })()}
                   </p>
                 ) : ci ? (
