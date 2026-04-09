@@ -133,6 +133,8 @@ export const appRouter = router({
           waist: z.number().nullable().optional(),
           umbilical1: z.number().nullable().optional(), umbilical2: z.number().nullable().optional(), umbilical3: z.number().nullable().optional(), umbilical4: z.number().nullable().optional(), umbilical5: z.number().nullable().optional(),
           suprailiac1: z.number().nullable().optional(), suprailiac2: z.number().nullable().optional(), suprailiac3: z.number().nullable().optional(), suprailiac4: z.number().nullable().optional(), suprailiac5: z.number().nullable().optional(),
+          calf1: z.number().nullable().optional(), calf2: z.number().nullable().optional(), calf3: z.number().nullable().optional(), calf4: z.number().nullable().optional(), calf5: z.number().nullable().optional(),
+          thigh1: z.number().nullable().optional(), thigh2: z.number().nullable().optional(), thigh3: z.number().nullable().optional(), thigh4: z.number().nullable().optional(), thigh5: z.number().nullable().optional(),
           notes: z.string().nullable().optional(),
         })
       )

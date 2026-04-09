@@ -817,7 +817,8 @@ function DailyLogTab() {
 const SKINFOLD_SITES = [
   { key: "umbilical", label: "Umbilical" },
   { key: "suprailiac", label: "Suprailiac" },
-
+  { key: "calf", label: "Calf" },
+  { key: "thigh", label: "Thigh" },
 ] as const;
 
 function avgReadings(vals: (number | null | undefined)[]): number | null {
@@ -835,6 +836,8 @@ function MeasurementsTab() {
     waist: "",
     umbilical: { ...emptySkinfold },
     suprailiac: { ...emptySkinfold },
+    calf: { ...emptySkinfold },
+    thigh: { ...emptySkinfold },
     notes: "",
   });
   const [form, setForm] = useState(blankForm);
@@ -865,6 +868,8 @@ function MeasurementsTab() {
       waist: toStr(m.waist),
       umbilical: { r1: toStr(m.umbilical1), r2: toStr(m.umbilical2), r3: toStr(m.umbilical3), r4: toStr(m.umbilical4), r5: toStr(m.umbilical5) },
       suprailiac: { r1: toStr(m.suprailiac1), r2: toStr(m.suprailiac2), r3: toStr(m.suprailiac3), r4: toStr(m.suprailiac4), r5: toStr(m.suprailiac5) },
+      calf: { r1: toStr(m.calf1), r2: toStr(m.calf2), r3: toStr(m.calf3), r4: toStr(m.calf4), r5: toStr(m.calf5) },
+      thigh: { r1: toStr(m.thigh1), r2: toStr(m.thigh2), r3: toStr(m.thigh3), r4: toStr(m.thigh4), r5: toStr(m.thigh5) },
       notes: m.notes ?? "",
     });
     setEditingId(m.id);
@@ -930,7 +935,8 @@ function MeasurementsTab() {
             waist: parseR(form.waist),
             umbilical1: parseR(form.umbilical.r1), umbilical2: parseR(form.umbilical.r2), umbilical3: parseR(form.umbilical.r3), umbilical4: parseR(form.umbilical.r4), umbilical5: parseR(form.umbilical.r5),
             suprailiac1: parseR(form.suprailiac.r1), suprailiac2: parseR(form.suprailiac.r2), suprailiac3: parseR(form.suprailiac.r3), suprailiac4: parseR(form.suprailiac.r4), suprailiac5: parseR(form.suprailiac.r5),
-
+            calf1: parseR(form.calf.r1), calf2: parseR(form.calf.r2), calf3: parseR(form.calf.r3), calf4: parseR(form.calf.r4), calf5: parseR(form.calf.r5),
+            thigh1: parseR(form.thigh.r1), thigh2: parseR(form.thigh.r2), thigh3: parseR(form.thigh.r3), thigh4: parseR(form.thigh.r4), thigh5: parseR(form.thigh.r5),
             notes: form.notes || undefined,
           })} disabled={add.isPending}
             className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-lg hover:opacity-90 disabled:opacity-50">
@@ -970,8 +976,11 @@ function MeasurementsTab() {
             {measurements!.map(m => {
               const umbAvg = avgReadings([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]);
               const supAvg = avgReadings([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]);
-              const siteAvgs = [umbAvg, supAvg];
-              const total = siteAvgs.every(v => v !== null) ? parseFloat(siteAvgs.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
+              const calfAvg = avgReadings([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]);
+              const thighAvg = avgReadings([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]);
+              const siteAvgs = [umbAvg, supAvg, calfAvg, thighAvg];
+              const presentAvgs = siteAvgs.filter(v => v !== null);
+              const total = presentAvgs.length > 0 ? parseFloat(presentAvgs.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
               const isEditing = editingId === m.id;
               return (
                 <Card key={m.id}>
@@ -1031,6 +1040,8 @@ function MeasurementsTab() {
                         waist: parseRNull(editForm.waist),
                         umbilical1: parseRNull(editForm.umbilical.r1), umbilical2: parseRNull(editForm.umbilical.r2), umbilical3: parseRNull(editForm.umbilical.r3), umbilical4: parseRNull(editForm.umbilical.r4), umbilical5: parseRNull(editForm.umbilical.r5),
                         suprailiac1: parseRNull(editForm.suprailiac.r1), suprailiac2: parseRNull(editForm.suprailiac.r2), suprailiac3: parseRNull(editForm.suprailiac.r3), suprailiac4: parseRNull(editForm.suprailiac.r4), suprailiac5: parseRNull(editForm.suprailiac.r5),
+                        calf1: parseRNull(editForm.calf.r1), calf2: parseRNull(editForm.calf.r2), calf3: parseRNull(editForm.calf.r3), calf4: parseRNull(editForm.calf.r4), calf5: parseRNull(editForm.calf.r5),
+                        thigh1: parseRNull(editForm.thigh.r1), thigh2: parseRNull(editForm.thigh.r2), thigh3: parseRNull(editForm.thigh.r3), thigh4: parseRNull(editForm.thigh.r4), thigh5: parseRNull(editForm.thigh.r5),
                         notes: editForm.notes || null,
                       })} disabled={update.isPending}
                         className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
@@ -1052,6 +1063,8 @@ function MeasurementsTab() {
                             {[
                               { label: "Umbilical", avg: umbAvg },
                               { label: "Suprailiac", avg: supAvg },
+                              { label: "Calf", avg: calfAvg },
+                              { label: "Thigh", avg: thighAvg },
                             ].map(({ label, avg }) => (
                               <div key={label} className="text-center">
                                 <p className="text-xs text-muted-foreground">{label}</p>
