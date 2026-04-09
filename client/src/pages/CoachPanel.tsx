@@ -84,6 +84,8 @@ function MeasurementsCard({ latestM, prevM, latestSkinfold, prevSkinfold, skinfo
   }
   const umbAvg = siteAvg([latestM.umbilical1 as number, latestM.umbilical2 as number, latestM.umbilical3 as number, latestM.umbilical4 as number, latestM.umbilical5 as number]);
   const supAvg = siteAvg([latestM.suprailiac1 as number, latestM.suprailiac2 as number, latestM.suprailiac3 as number, latestM.suprailiac4 as number, latestM.suprailiac5 as number]);
+  const calfAvg = siteAvg([latestM.calf1 as number, latestM.calf2 as number, latestM.calf3 as number, latestM.calf4 as number, latestM.calf5 as number]);
+  const thighAvg = siteAvg([latestM.thigh1 as number, latestM.thigh2 as number, latestM.thigh3 as number, latestM.thigh4 as number, latestM.thigh5 as number]);
   const prevUmbAvg = prevM ? siteAvg([prevM.umbilical1 as number, prevM.umbilical2 as number, prevM.umbilical3 as number, prevM.umbilical4 as number, prevM.umbilical5 as number]) : null;
   const prevSupAvg = prevM ? siteAvg([prevM.suprailiac1 as number, prevM.suprailiac2 as number, prevM.suprailiac3 as number, prevM.suprailiac4 as number, prevM.suprailiac5 as number]) : null;
 
@@ -131,7 +133,7 @@ function MeasurementsCard({ latestM, prevM, latestSkinfold, prevSkinfold, skinfo
         {showMeasureDetail && (
           <div className="border-t border-border bg-muted/10 p-4">
             <div className="grid grid-cols-2 gap-3">
-              {([{ label: "Umbilical avg", value: umbAvg }, { label: "Suprailiac avg", value: supAvg }] as { label: string; value: number | null }[]).map(({ label, value }) => (
+              {([{ label: "Umbilical avg", value: umbAvg }, { label: "Suprailiac avg", value: supAvg }, { label: "Calf avg", value: calfAvg }, { label: "Thigh avg", value: thighAvg }] as { label: string; value: number | null }[]).map(({ label, value }) => (
                 <div key={label} className="bg-card rounded-lg p-3 border border-border">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
                   <p className="text-lg font-bold text-foreground">
@@ -274,7 +276,10 @@ function ProgressHistoryTable({
     const m = weekMeas(wkDays);
     const umbAvg = m ? siteAvg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]) : null;
     const supAvg = m ? siteAvg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]) : null;
-    const skinfold = umbAvg != null && supAvg != null ? parseFloat((umbAvg + supAvg).toFixed(1)) : (umbAvg ?? supAvg);
+    const calfAvg = m ? siteAvg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]) : null;
+    const thighAvg = m ? siteAvg([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]) : null;
+    const skinfoldSites = [umbAvg, supAvg, calfAvg, thighAvg].filter(v => v != null) as number[];
+    const skinfold = skinfoldSites.length > 0 ? parseFloat(skinfoldSites.reduce((a, b) => a + b, 0).toFixed(1)) : null;
     return {
       label: fmtWeekLabel(wkDays),
       avg,
@@ -2640,6 +2645,8 @@ function ProgressSection() {
     const sites = [
       avg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]),
       avg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]),
+      avg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]),
+      avg([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]),
     ];
     const withData = sites.filter(v => v != null);
     return withData.length > 0 ? parseFloat(withData.reduce((a, b) => a! + b!, 0)!.toFixed(1)) : null;
