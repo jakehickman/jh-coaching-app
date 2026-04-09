@@ -1850,9 +1850,11 @@ function WorkoutLogTab() {
           .filter(s => s.dayLabel === selectedDay && toLocalDateStr(s.sessionDate) < sessionDate)
           .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)))[0];
         const prevExMap: Record<string, Array<{ weight: number | null; reps: number | null }>> = {};
+        const prevEquipmentMap: Record<string, string> = {};
         if (prevSession) {
           for (const ex of (prevSession.exercises as any[])) {
             prevExMap[ex.name] = (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null);
+            if (ex.equipmentDetails) prevEquipmentMap[ex.name] = ex.equipmentDetails;
           }
         }
 
@@ -1894,6 +1896,9 @@ function WorkoutLogTab() {
                       {prevSets.length > 0 && (
                         <p className="text-xs text-primary/80 mt-1">
                           Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
+                          {(prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]) && (
+                            <span className="text-muted-foreground/60 ml-1">· {prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]}</span>
+                          )}
                         </p>
                       )}
                     </div>
