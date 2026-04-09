@@ -2388,8 +2388,28 @@ function CheckInsTab() {
     </div>
   );
 
+  const [subTab, setSubTab] = useState<'form' | 'measurements'>('form');
+
   return (
     <div className="space-y-5">
+      {/* Sub-tab switcher */}
+      <div className="flex gap-1 bg-secondary rounded-lg p-1">
+        {(['form', 'measurements'] as const).map(t => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setSubTab(t)}
+            className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
+              subTab === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t === 'form' ? 'Check-in' : 'Measurements'}
+          </button>
+        ))}
+      </div>
+
+      {subTab === 'measurements' ? <MeasurementsTab /> : (
+      <>
       {/* Check-in Day Banner */}
       <div className="bg-card border border-border rounded-xl px-4 py-4">
         <div className="flex items-start gap-3">
@@ -2569,6 +2589,8 @@ function CheckInsTab() {
             ))}
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );
