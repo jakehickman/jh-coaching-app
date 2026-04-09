@@ -67,6 +67,13 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     refetchInterval: 60_000,
   });
 
+  // Unreviewed check-in count — poll every 5 minutes
+  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery(undefined, {
+    enabled: mode === "coach" && user?.role === "admin",
+    refetchInterval: 300_000,
+  });
+  const unreviewedCheckIns = latestCheckIns.filter((ci: any) => ci.submittedAt && !ci.reviewedAt).length;
+
   // Track whether any localStorage draft exists for coach meal plans or training programs
   const [hasMealDraft, setHasMealDraft] = useState(false);
   const [hasTrainingDraft, setHasTrainingDraft] = useState(false);
@@ -207,6 +214,11 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                   {item.href === "/coach/clients" && pendingCount > 0 && (
                     <span className="ml-auto flex-shrink-0 min-w-[18px] h-4 px-1 rounded-full bg-amber-500 text-black text-[10px] font-bold flex items-center justify-center">
                       {pendingCount}
+                    </span>
+                  )}
+                  {item.href === "/coach/clients" && pendingCount === 0 && unreviewedCheckIns > 0 && (
+                    <span className="ml-auto flex-shrink-0 min-w-[18px] h-4 px-1 rounded-full bg-primary text-black text-[10px] font-bold flex items-center justify-center">
+                      {unreviewedCheckIns}
                     </span>
                   )}
                   {item.href === "/coach/meal-plans" && hasMealDraft && (

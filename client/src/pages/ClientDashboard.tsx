@@ -354,8 +354,35 @@ function OverviewTab() {
   const avgSteps7 = cur7Steps.length > 0 ? Math.round(cur7Steps.reduce((a, b) => a + b, 0) / cur7Steps.length) : null;
   const stepsGoalDays = stepGoal ? cur7Logs.filter(l => (l.stepsCount ?? 0) >= stepGoal).length : null;
 
+  // Check-in day reminder
+  const checkInDay = (profile as any)?.checkInDay as string | null | undefined;
+  const todayDayName = new Date().toLocaleDateString('en-AU', { weekday: 'long' }).toLowerCase();
+  const isCheckInDay = !!checkInDay && todayDayName === checkInDay;
+  // Check if they've already submitted this week
+  const getMondayStr = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  };
+  const { data: thisWeekCheckIn } = trpc.checkIn.myWeek.useQuery(
+    { weekStartDate: getMondayStr() },
+    { enabled: isCheckInDay }
+  );
+  const alreadySubmittedThisWeek = !!thisWeekCheckIn;
+
   return (
     <div className="space-y-6">
+      {isCheckInDay && !alreadySubmittedThisWeek && (
+        <div className="bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 flex items-center gap-3">
+          <span className="text-xl">📋</span>
+          <div>
+            <p className="text-sm font-semibold text-primary">Today is your check-in day</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Head to the Check-in tab to submit your weekly check-in.</p>
+          </div>
+        </div>
+      )}
       <div>
         <SectionLabel>Weekly Summary (last 7 days)</SectionLabel>
         <div className="grid grid-cols-2 gap-3">

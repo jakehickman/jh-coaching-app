@@ -263,3 +263,5 @@
 - [ ] Coach check-in: remove coach reply feature (field, UI, router procedure)
 - [ ] Coach Clients section: split into Profile tab and Check-ins tab
 - [ ] Coach check-in history: redesign card to question/answer per line layout
+- [x] Client Overview: show check-in day reminder banner on assigned day
+- [x] Coach Clients nav: show unreviewed check-in count badge
