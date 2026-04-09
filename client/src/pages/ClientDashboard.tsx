@@ -1964,7 +1964,7 @@ function WorkoutLogTab() {
                       type="text"
                       value={equipmentDetails[displayName] ?? ""}
                       onChange={e => setEquipmentDetails(prev => ({ ...prev, [displayName]: e.target.value }))}
-                      placeholder="e.g. Cable machine #3, seat at 4, pin at 40 kg"
+                      placeholder=""
                       className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
