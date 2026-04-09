@@ -1959,7 +1959,7 @@ function WorkoutLogTab() {
 
                   {/* Equipment details */}
                   <div className="mt-3 pt-3 border-t border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">Equipment details</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">Exercise notes</p>
                     <input
                       type="text"
                       value={equipmentDetails[displayName] ?? ""}
