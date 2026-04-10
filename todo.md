@@ -292,3 +292,4 @@
 - [x] Fix: Jake Hickman's check-in day pill not showing — set coachId to his own userId so getAllClients includes his profile
 - [x] Redesign overdue logic: move to server-side tRPC procedure, return list of overdue clientIds with dueDate; remove fragile client-side date arithmetic
 - [x] Fix overdue condition: today > scheduledDate + 7 days (7-day grace period after scheduled check-in date)
+- [x] Fix overdue logic: scan all scheduled check-in dates (not just most recent); overdue if any missed scheduled date is more than 7 days old

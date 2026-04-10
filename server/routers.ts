@@ -473,7 +473,7 @@ export const appRouter = router({
     // Coach: get list of clients whose check-in is overdue this week
     overdueClients: adminProcedure.query(async ({ ctx }) => {
       const profiles = await db.getAllClients(ctx.user.id);
-      const latestCheckIns = await db.getLatestCheckInPerClient();
+      const allCheckIns = await db.getAllCheckInsPerClient();
 
       const dayMap: Record<string, number> = {
         monday: 1, tuesday: 2, wednesday: 3, thursday: 4,
@@ -505,32 +505,45 @@ export const appRouter = router({
         const firstCheckInUtc = new Date(startUtc);
         firstCheckInUtc.setUTCDate(startUtc.getUTCDate() + daysUntilFirst);
 
-        // Most recent scheduled check-in: firstCheckIn + N*7 days, largest N where date <= today
-        const daysSinceFirst = Math.floor(
-          (todayUtc.getTime() - firstCheckInUtc.getTime()) / (7 * 24 * 60 * 60 * 1000)
-        );
-        if (daysSinceFirst < 0) continue; // first check-in is in the future
-        const mostRecentScheduledUtc = new Date(firstCheckInUtc);
-        mostRecentScheduledUtc.setUTCDate(firstCheckInUtc.getUTCDate() + daysSinceFirst * 7);
+        // If first scheduled check-in is in the future, skip
+        if (firstCheckInUtc > todayUtc) continue;
 
-        // Overdue threshold: scheduled date + 7 days
-        // Client has a full 7-day window to submit before being flagged
-        const overdueThresholdUtc = new Date(mostRecentScheduledUtc);
-        overdueThresholdUtc.setUTCDate(mostRecentScheduledUtc.getUTCDate() + 7);
-        if (todayUtc <= overdueThresholdUtc) continue; // still within grace period
+        // Build set of all submission dates for this client (UTC midnight timestamps)
+        const clientSubmissions = allCheckIns
+          .filter((c: any) => c.clientId === profile.userId)
+          .map((c: any) => new Date(Date.UTC(
+            new Date(c.submittedAt).getUTCFullYear(),
+            new Date(c.submittedAt).getUTCMonth(),
+            new Date(c.submittedAt).getUTCDate()
+          )).getTime());
 
-        // Check if client has submitted on or after the most recent scheduled date
-        const ci = latestCheckIns.find((c: any) => c.clientId === profile.userId);
-        if (ci) {
-          const submittedUtc = new Date(Date.UTC(
-            new Date(ci.submittedAt).getUTCFullYear(),
-            new Date(ci.submittedAt).getUTCMonth(),
-            new Date(ci.submittedAt).getUTCDate()
-          ));
-          if (submittedUtc >= mostRecentScheduledUtc) continue; // submitted on time
+        // Iterate all scheduled dates from first to today
+        let overdueDate: Date | null = null;
+        const scheduled = new Date(firstCheckInUtc);
+        while (scheduled <= todayUtc) {
+          const scheduledTime = scheduled.getTime();
+          const overdueThreshold = scheduledTime + 7 * 24 * 60 * 60 * 1000;
+
+          // Only flag if today is strictly after scheduledDate + 7 days
+          if (todayUtc.getTime() > overdueThreshold) {
+            // Check if there is any submission on or after this scheduled date
+            // (within the 7-day window: from scheduledDate to scheduledDate + 6 days)
+            const nextScheduled = scheduledTime + 7 * 24 * 60 * 60 * 1000;
+            const hasSubmission = clientSubmissions.some(
+              (t: number) => t >= scheduledTime && t < nextScheduled
+            );
+            if (!hasSubmission) {
+              overdueDate = new Date(scheduled);
+              break; // found the earliest missed check-in — client is overdue
+            }
+          }
+          // Advance to next scheduled date
+          scheduled.setUTCDate(scheduled.getUTCDate() + 7);
         }
 
-        result.push({ clientId: profile.userId, dueDate: mostRecentScheduledUtc });
+        if (overdueDate) {
+          result.push({ clientId: profile.userId, dueDate: overdueDate });
+        }
       }
 
       return result;

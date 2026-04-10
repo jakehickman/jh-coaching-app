@@ -985,6 +985,20 @@ export async function getLatestCheckInPerClient(): Promise<{ clientId: number; w
   }).map(r => ({ clientId: r.clientId, weekStartDate: String(r.weekStartDate), submittedAt: r.submittedAt as unknown as Date, reviewedAt: (r.reviewedAt as unknown as Date | null) ?? null }));
 }
 
+// Coach: get ALL check-in submissions per client (for overdue evaluation across all scheduled dates)
+export async function getAllCheckInsPerClient(): Promise<{ clientId: number; submittedAt: Date }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      clientId: checkInSubmissions.clientId,
+      submittedAt: checkInSubmissions.submittedAt,
+    })
+    .from(checkInSubmissions)
+    .orderBy(desc(checkInSubmissions.submittedAt));
+  return rows.map(r => ({ clientId: r.clientId, submittedAt: r.submittedAt as unknown as Date }));
+}
+
 // Coach: delete a check-in submission
 export async function deleteCheckIn(id: number): Promise<void> {
   const db = await getDb();
