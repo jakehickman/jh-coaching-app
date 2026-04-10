@@ -304,3 +304,4 @@
 - [x] Check-in form: highlight unanswered questions in red when client tries to submit without answering all questions
 - [x] Onboarding page: fix three steps layout on mobile (upside-down triangle wrapping issue — should be a single vertical column)
 - [x] Build /getting-started client onboarding guide page with exact content, sticky TOC, matching design language
+- [x] Client dashboard Overview tab: add Getting Started Guide link/card

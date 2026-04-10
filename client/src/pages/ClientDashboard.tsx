@@ -429,6 +429,35 @@ function OverviewTab() {
 
       <HabitsSummary />
 
+      {/* Getting Started Guide */}
+      <a
+        href="/getting-started"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3.5 hover:border-primary/40 hover:bg-primary/5 transition-colors group"
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+            style={{ backgroundColor: "#052E1A", color: "#59BE50" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Getting Started Guide</p>
+            <p className="text-xs text-muted-foreground mt-0.5">How the coaching works, what's expected, and how to get results</p>
+          </div>
+        </div>
+        <svg className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+          <polyline points="15 3 21 3 21 9" />
+          <line x1="10" y1="14" x2="21" y2="3" />
+        </svg>
+      </a>
+
     </div>
   );
 }
