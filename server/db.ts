@@ -887,11 +887,13 @@ export async function submitCheckIn(data: {
   clientId: number;
   coachId?: number;
   weekStartDate: string;
-  // Section 1: Execution Accuracy
-  execPortionEstimate?: "never" | "once_twice" | "few_days" | "most_days";
-  execUntrackedExtras?: "never" | "once_twice" | "few_days" | "most_days";
-  execChangedFoods?: "never" | "once_twice" | "few_days" | "most_days";
-  execMissedMeals?: "never" | "once_twice" | "few_days" | "most_days";
+  // Section 1: Diet Execution (6 questions)
+  dietWeighedFoods?: "every_meal" | "most_meals" | "some_meals" | "rarely" | "never";
+  dietMealPrepAccuracy?: "every_meal" | "most_meals" | "some_meals" | "rarely" | "never";
+  dietExtrasFrequency?: "never" | "one_two_days" | "few_days" | "most_days" | "every_day";
+  dietAddedFats?: "light_spray" | "small_amount" | "one_tsp_or_more" | "no_added_fats";
+  dietMealTiming?: "never" | "one_two_days" | "few_days" | "most_days" | "every_day";
+  dietOffPlanQuality?: "very_close" | "somewhat_close" | "not_very_close" | "very_different" | "no_off_plan_meals";
 
   // Section 2: Adherence Barrier
   adherenceBarrier?: "no_issues" | "hunger" | "cravings" | "social_events" | "busy_time" | "poor_planning" | "low_motivation" | "travel_disruption" | "other";

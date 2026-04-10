@@ -367,11 +367,19 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
   clientId: int("clientId").notNull(), // FK -> users.id
   coachId: int("coachId"), // FK -> users.id
   weekStartDate: date("weekStartDate").notNull(), // Monday of the check-in week
-  // Section 1: Execution Accuracy (4 frequency questions)
-  execPortionEstimate: mysqlEnum("execPortionEstimate", ["never","once_twice","few_days","most_days"]),
-  execUntrackedExtras: mysqlEnum("execUntrackedExtras", ["never","once_twice","few_days","most_days"]),
-  execChangedFoods: mysqlEnum("execChangedFoods", ["never","once_twice","few_days","most_days"]),
-  execMissedMeals: mysqlEnum("execMissedMeals", ["never","once_twice","few_days","most_days"]),
+  // Section 1: Diet Execution (6 questions)
+  // Q1: How often did you weigh all foods raw/uncooked with a digital scale?
+  dietWeighedFoods: mysqlEnum("dietWeighedFoods", ["every_meal","most_meals","some_meals","rarely","never"]),
+  // Q2: How often did you prepare meals exactly as written in your plan?
+  dietMealPrepAccuracy: mysqlEnum("dietMealPrepAccuracy", ["every_meal","most_meals","some_meals","rarely","never"]),
+  // Q3: Excluding off-plan meals, how often did you eat/drink anything not in your plan?
+  dietExtrasFrequency: mysqlEnum("dietExtrasFrequency", ["never","one_two_days","few_days","most_days","every_day"]),
+  // Q4: How do you use added fats when cooking?
+  dietAddedFats: mysqlEnum("dietAddedFats", ["light_spray","small_amount","one_tsp_or_more","no_added_fats"]),
+  // Q5: How often did you eat meals more than 2 hours off schedule?
+  dietMealTiming: mysqlEnum("dietMealTiming", ["never","one_two_days","few_days","most_days","every_day"]),
+  // Q6: When you had an off-plan meal, how close was it to your plan in calories/macros?
+  dietOffPlanQuality: mysqlEnum("dietOffPlanQuality", ["very_close","somewhat_close","not_very_close","very_different","no_off_plan_meals"]),
 
   // Section 2: Adherence Barrier
   adherenceBarrier: mysqlEnum("adherenceBarrier", [

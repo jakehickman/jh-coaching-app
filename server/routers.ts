@@ -433,11 +433,13 @@ export const appRouter = router({
     submit: protectedProcedure
       .input(z.object({
         weekStartDate: z.string(), // yyyy-mm-dd (Monday)
-        // Section 1: Execution Accuracy
-        execPortionEstimate: z.enum(["never","once_twice","few_days","most_days"]).optional(),
-        execUntrackedExtras: z.enum(["never","once_twice","few_days","most_days"]).optional(),
-        execChangedFoods: z.enum(["never","once_twice","few_days","most_days"]).optional(),
-        execMissedMeals: z.enum(["never","once_twice","few_days","most_days"]).optional(),
+        // Section 1: Diet Execution (6 questions)
+        dietWeighedFoods: z.enum(["every_meal","most_meals","some_meals","rarely","never"]).optional(),
+        dietMealPrepAccuracy: z.enum(["every_meal","most_meals","some_meals","rarely","never"]).optional(),
+        dietExtrasFrequency: z.enum(["never","one_two_days","few_days","most_days","every_day"]).optional(),
+        dietAddedFats: z.enum(["light_spray","small_amount","one_tsp_or_more","no_added_fats"]).optional(),
+        dietMealTiming: z.enum(["never","one_two_days","few_days","most_days","every_day"]).optional(),
+        dietOffPlanQuality: z.enum(["very_close","somewhat_close","not_very_close","very_different","no_off_plan_meals"]).optional(),
 
         // Section 2: Adherence Barrier
         adherenceBarrier: z.enum(["no_issues","hunger","cravings","social_events","busy_time","poor_planning","low_motivation","travel_disruption","other"]).optional(),

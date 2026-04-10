@@ -2433,11 +2433,30 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
 
 // ─── Shared check-in helpers (used in both Clients section and standalone tab) ─────────
 
-const FREQ_LABEL_MAP: Record<string, string> = {
+// Label maps for new diet execution fields
+const DIET_LABEL_MAP: Record<string, string> = {
+  // Q1 & Q2 (weigh foods / meal prep accuracy)
+  every_meal: 'Every meal or nearly every meal',
+  most_meals: 'Most meals',
+  some_meals: 'Some meals',
+  rarely: 'Rarely',
   never: 'Never',
-  once_twice: 'Once or twice',
-  few_days: 'A few times',
-  most_days: 'Many times',
+  // Q3 & Q5 (extras frequency / meal timing)
+  one_two_days: 'On 1–2 days',
+  few_days: 'On a few days',
+  most_days: 'On most days',
+  every_day: 'Every day',
+  // Q4 (added fats)
+  light_spray: 'Light spray (e.g. cooking spray)',
+  small_amount: 'Small amount (less than 1 tsp)',
+  one_tsp_or_more: '1 tsp or more',
+  no_added_fats: 'No added fats when cooking',
+  // Q6 (off-plan quality)
+  very_close: 'Very close',
+  somewhat_close: 'Somewhat close',
+  not_very_close: 'Not very close',
+  very_different: 'Very different',
+  no_off_plan_meals: 'No off-plan meals',
 };
 const BARRIER_LABEL_MAP: Record<string, string> = {
   no_issues: 'No issues',
@@ -2462,12 +2481,7 @@ const assessColorFn = (v: string | null) => {
   if (v === 'inconsistent') return 'text-orange-400';
   return 'text-red-400';
 };
-const freqColorFn = (v: string | null) => {
-  if (!v || v === 'never') return 'text-green-400';
-  if (v === 'once_twice') return 'text-amber-400';
-  if (v === 'few_days') return 'text-orange-400';
-  return 'text-red-400';
-};
+
 const fmtCheckInDate = (iso: string) => {
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -3573,19 +3587,22 @@ function CheckInsSection() {
                   {/* Expanded detail */}
                   {isExpanded && (
                     <div className="border-t border-border">
-                      {/* Diet Execution */}
-                      {(ci.execMissedMeals || ci.execUntrackedExtras || ci.execPortionEstimate) && (
+                      {/* Diet Execution — 6 questions */}
+                      {(ci.dietWeighedFoods || ci.dietMealPrepAccuracy || ci.dietExtrasFrequency || ci.dietAddedFats || ci.dietMealTiming || ci.dietOffPlanQuality) && (
                         <div className="px-4 pt-3 pb-2">
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Diet Execution</p>
                           <div className="space-y-2">
                             {[
-                              { q: 'How often did you miss a planned meal entirely?', val: ci.execMissedMeals },
-                              { q: 'How often did you eat extra foods outside your plan?', val: ci.execUntrackedExtras },
-                              { q: 'How often did you estimate or eyeball portion sizes instead of weighing/measuring?', val: ci.execPortionEstimate },
+                              { q: 'How often did you weigh all foods raw/uncooked with a digital scale?', val: ci.dietWeighedFoods },
+                              { q: 'How often did you prepare meals exactly as written in your plan?', val: ci.dietMealPrepAccuracy },
+                              { q: 'Excluding off-plan meals, how often did you eat/drink anything not in your plan?', val: ci.dietExtrasFrequency },
+                              { q: 'When cooking, how do you use added fats (oil, butter)?', val: ci.dietAddedFats },
+                              { q: 'How often did you eat meals more than 2 hours off schedule?', val: ci.dietMealTiming },
+                              { q: 'When you had an off-plan meal, how close was it to your plan?', val: ci.dietOffPlanQuality },
                             ].filter(r => r.val).map(row => (
                               <div key={row.q} className="flex flex-col gap-0.5">
                                 <span className="text-xs text-muted-foreground">{row.q}</span>
-                                <span className="text-sm font-medium text-foreground">{FREQ_LABEL_MAP[row.val!] ?? row.val}</span>
+                                <span className="text-sm font-medium text-foreground">{DIET_LABEL_MAP[row.val!] ?? row.val}</span>
                               </div>
                             ))}
                           </div>

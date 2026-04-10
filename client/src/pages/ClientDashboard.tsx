@@ -2303,15 +2303,22 @@ function CheckInsTab() {
   const { data: existingCheckIn, refetch } = trpc.checkIn.myWeek.useQuery({ weekStartDate: currentWeekStart });
   const { data: allCheckIns = [] } = trpc.checkIn.myList.useQuery();
 
-  type FreqVal = '' | 'never' | 'once_twice' | 'few_days' | 'most_days';
+  type WeighFoodsVal = '' | 'every_meal' | 'most_meals' | 'some_meals' | 'rarely' | 'never';
+  type MealPrepVal = '' | 'every_meal' | 'most_meals' | 'some_meals' | 'rarely' | 'never';
+  type ExtrasFreqVal = '' | 'never' | 'one_two_days' | 'few_days' | 'most_days' | 'every_day';
+  type AddedFatsVal = '' | 'light_spray' | 'small_amount' | 'one_tsp_or_more' | 'no_added_fats';
+  type MealTimingVal = '' | 'never' | 'one_two_days' | 'few_days' | 'most_days' | 'every_day';
+  type OffPlanQualityVal = '' | 'very_close' | 'somewhat_close' | 'not_very_close' | 'very_different' | 'no_off_plan_meals';
   type BarrierVal = '' | 'hunger' | 'cravings' | 'social_events' | 'busy_time' | 'poor_planning' | 'low_motivation' | 'travel_disruption' | 'other';
   type AssessVal = '' | 'executed_exactly' | 'mostly_followed' | 'inconsistent' | 'didnt_follow';
 
   const blankForm = {
-    execPortionEstimate: '' as FreqVal,
-    execUntrackedExtras: '' as FreqVal,
-    execChangedFoods: '' as FreqVal,
-    execMissedMeals: '' as FreqVal,
+    dietWeighedFoods: '' as WeighFoodsVal,
+    dietMealPrepAccuracy: '' as MealPrepVal,
+    dietExtrasFrequency: '' as ExtrasFreqVal,
+    dietAddedFats: '' as AddedFatsVal,
+    dietMealTiming: '' as MealTimingVal,
+    dietOffPlanQuality: '' as OffPlanQualityVal,
     adherenceBarrier: '' as BarrierVal,
     barrierExplain: '',
     weeklyAssessment: '' as AssessVal,
@@ -2323,10 +2330,12 @@ function CheckInsTab() {
   useEffect(() => {
     if (existingCheckIn) {
       setForm({
-        execPortionEstimate: (existingCheckIn.execPortionEstimate ?? '') as FreqVal,
-        execUntrackedExtras: (existingCheckIn.execUntrackedExtras ?? '') as FreqVal,
-        execChangedFoods: (existingCheckIn.execChangedFoods ?? '') as FreqVal,
-        execMissedMeals: (existingCheckIn.execMissedMeals ?? '') as FreqVal,
+        dietWeighedFoods: (existingCheckIn.dietWeighedFoods ?? '') as WeighFoodsVal,
+        dietMealPrepAccuracy: (existingCheckIn.dietMealPrepAccuracy ?? '') as MealPrepVal,
+        dietExtrasFrequency: (existingCheckIn.dietExtrasFrequency ?? '') as ExtrasFreqVal,
+        dietAddedFats: (existingCheckIn.dietAddedFats ?? '') as AddedFatsVal,
+        dietMealTiming: (existingCheckIn.dietMealTiming ?? '') as MealTimingVal,
+        dietOffPlanQuality: (existingCheckIn.dietOffPlanQuality ?? '') as OffPlanQualityVal,
         adherenceBarrier: ((existingCheckIn.adherenceBarrier === 'no_issues' ? '' : existingCheckIn.adherenceBarrier) ?? '') as BarrierVal,
         barrierExplain: existingCheckIn.barrierExplain ?? '',
         weeklyAssessment: ((existingCheckIn as any).weeklyAssessment ?? '') as AssessVal,
@@ -2349,15 +2358,18 @@ function CheckInsTab() {
   });
 
   const handleSubmit = () => {
-    const execFields = [form.execMissedMeals, form.execUntrackedExtras, form.execPortionEstimate];
-    if (execFields.some(f => !f)) { toast.error('Please answer all diet execution questions.'); return; }
+    const dietFields = [form.dietWeighedFoods, form.dietMealPrepAccuracy, form.dietExtrasFrequency, form.dietAddedFats, form.dietMealTiming, form.dietOffPlanQuality];
+    if (dietFields.some(f => !f)) { toast.error('Please answer all diet execution questions.'); return; }
     if (!form.adherenceBarrier) { toast.error('Please select what caused the most deviation this week.'); return; }
     if (!form.weeklyAssessment) { toast.error('Please select which best describes your week.'); return; }
     submitMutation.mutate({
       weekStartDate: currentWeekStart,
-      execPortionEstimate: form.execPortionEstimate as any,
-      execUntrackedExtras: form.execUntrackedExtras as any,
-      execMissedMeals: form.execMissedMeals as any,
+      dietWeighedFoods: form.dietWeighedFoods as any,
+      dietMealPrepAccuracy: form.dietMealPrepAccuracy as any,
+      dietExtrasFrequency: form.dietExtrasFrequency as any,
+      dietAddedFats: form.dietAddedFats as any,
+      dietMealTiming: form.dietMealTiming as any,
+      dietOffPlanQuality: form.dietOffPlanQuality as any,
       adherenceBarrier: form.adherenceBarrier as any,
       barrierExplain: form.barrierExplain || undefined,
       weeklyAssessment: form.weeklyAssessment as any,
@@ -2372,13 +2384,6 @@ function CheckInsTab() {
     const d = new Date(iso + 'T00:00:00');
     return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
   };
-
-  const FREQ_OPTIONS: { value: FreqVal; label: string }[] = [
-    { value: 'never', label: 'Never' },
-    { value: 'once_twice', label: 'Once or twice' },
-    { value: 'few_days', label: 'A few times' },
-    { value: 'most_days', label: 'Many times' },
-  ];
 
   const BARRIER_OPTIONS: { value: BarrierVal; label: string }[] = [
     { value: 'hunger', label: 'Hunger / cravings' },
@@ -2397,16 +2402,21 @@ function CheckInsTab() {
     { value: 'didnt_follow', label: "I didn't follow the plan" },
   ];
 
-  const FreqQuestion = ({ label, field }: { label: string; field: keyof typeof blankForm }) => (
+  // Generic single-choice question component for the check-in form
+  const ChoiceQuestion = ({ label, field, options }: {
+    label: string;
+    field: keyof typeof blankForm;
+    options: { value: string; label: string }[];
+  }) => (
     <div>
       <p className="text-sm text-foreground mb-2.5">{label}</p>
-      <div className="grid grid-cols-2 gap-2">
-        {FREQ_OPTIONS.map(opt => (
+      <div className="space-y-2">
+        {options.map(opt => (
           <button
             key={opt.value}
             type="button"
             onClick={() => setForm(p => ({ ...p, [field]: opt.value }))}
-            className={`py-3 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
+            className={`w-full py-3 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
               form[field] === opt.value
                 ? 'border-primary bg-primary/10 text-primary'
                 : 'border-border text-muted-foreground hover:border-muted-foreground/40'
@@ -2427,15 +2437,8 @@ function CheckInsTab() {
     if (submitted) setIsEditing(false);
   }, [submitted]);
 
-  const freqLabel = (v: string) => FREQ_OPTIONS.find(o => o.value === v)?.label ?? v;
   const barrierLabel = (v: string) => BARRIER_OPTIONS.find(o => o.value === v)?.label ?? v;
   const assessLabel = (v: string) => ASSESS_OPTIONS.find(o => o.value === v)?.label ?? v;
-  const freqColor = (v: string) => {
-    if (v === 'never') return 'text-green-400';
-    if (v === 'once_twice') return 'text-amber-400';
-    if (v === 'few_days') return 'text-orange-400';
-    return 'text-red-400';
-  };
 
   return (
     <div className="space-y-5">
@@ -2517,22 +2520,79 @@ function CheckInsTab() {
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Check-in Form — Week of {fmtWeekStart(currentWeekStart)}</p>
 
-        {/* Section 1: Diet Execution */}
-        <Card className="space-y-5 mb-4">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Diet Execution</p>
-          </div>
-          <FreqQuestion
-            label="How often did you miss a planned meal entirely?"
-            field="execMissedMeals"
+        {/* Section 1: Diet Execution — 6 questions */}
+        <Card className="space-y-6 mb-4">
+          <p className="text-sm font-semibold text-foreground">Diet Execution</p>
+
+          <ChoiceQuestion
+            label="How often did you weigh all of your foods raw/uncooked with a digital scale this week?"
+            field="dietWeighedFoods"
+            options={[
+              { value: 'every_meal', label: 'Every meal or nearly every meal' },
+              { value: 'most_meals', label: 'Most meals' },
+              { value: 'some_meals', label: 'Some meals' },
+              { value: 'rarely', label: 'Rarely' },
+              { value: 'never', label: 'Never' },
+            ]}
           />
-          <FreqQuestion
-            label="How often did you eat extra foods outside your plan?"
-            field="execUntrackedExtras"
+
+          <ChoiceQuestion
+            label="How often did you prepare your meals exactly as written in your plan?"
+            field="dietMealPrepAccuracy"
+            options={[
+              { value: 'every_meal', label: 'Every meal or nearly every meal' },
+              { value: 'most_meals', label: 'Most meals' },
+              { value: 'some_meals', label: 'Some meals' },
+              { value: 'rarely', label: 'Rarely' },
+              { value: 'never', label: 'Never' },
+            ]}
           />
-          <FreqQuestion
-            label="How often did you estimate or eyeball portion sizes instead of weighing/measuring?"
-            field="execPortionEstimate"
+
+          <ChoiceQuestion
+            label="Excluding any off-plan meals, how often did you eat or drink anything that was not in your meal plan this week? (e.g. snacks, bites while cooking...)"
+            field="dietExtrasFrequency"
+            options={[
+              { value: 'never', label: 'Never' },
+              { value: 'one_two_days', label: 'On 1–2 days' },
+              { value: 'few_days', label: 'On a few days' },
+              { value: 'most_days', label: 'On most days' },
+              { value: 'every_day', label: 'Every day' },
+            ]}
+          />
+
+          <ChoiceQuestion
+            label="When cooking, which best describes how you use added fats such as oil or butter?"
+            field="dietAddedFats"
+            options={[
+              { value: 'light_spray', label: 'I use a light spray (e.g. cooking spray / Pam)' },
+              { value: 'small_amount', label: 'I add a small amount (less than 1 tsp)' },
+              { value: 'one_tsp_or_more', label: 'I add 1 tsp or more' },
+              { value: 'no_added_fats', label: 'I do not use added fats when cooking' },
+            ]}
+          />
+
+          <ChoiceQuestion
+            label="How often did you eat meals more than 2 hours earlier or later than planned this week?"
+            field="dietMealTiming"
+            options={[
+              { value: 'never', label: 'Never' },
+              { value: 'one_two_days', label: 'On 1–2 days' },
+              { value: 'few_days', label: 'On a few days' },
+              { value: 'most_days', label: 'On most days' },
+              { value: 'every_day', label: 'Every day or almost every day' },
+            ]}
+          />
+
+          <ChoiceQuestion
+            label="When you ate an off-plan meal, how close was it usually, in your estimation, to your planned meal in calories and macros?"
+            field="dietOffPlanQuality"
+            options={[
+              { value: 'very_close', label: 'Very close' },
+              { value: 'somewhat_close', label: 'Somewhat close' },
+              { value: 'not_very_close', label: 'Not very close' },
+              { value: 'very_different', label: 'Very different' },
+              { value: 'no_off_plan_meals', label: 'I did not have any off-plan meals' },
+            ]}
           />
         </Card>
 

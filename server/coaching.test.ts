@@ -175,6 +175,40 @@ describe("checkIn", () => {
     const result = await caller.checkIn.myList();
     expect(Array.isArray(result)).toBe(true);
   });
+
+  it("submit accepts new diet execution fields", async () => {
+    const caller = appRouter.createCaller(createUserContext("user"));
+    const result = await caller.checkIn.submit({
+      weekStartDate: "2026-04-07",
+      dietWeighedFoods: "every_meal",
+      dietMealPrepAccuracy: "most_meals",
+      dietExtrasFrequency: "never",
+      dietAddedFats: "light_spray",
+      dietMealTiming: "never",
+      dietOffPlanQuality: "no_off_plan_meals",
+      adherenceBarrier: "no_issues",
+      weeklyAssessment: "executed_exactly",
+    });
+    // submitCheckIn mock returns { id: 1 }
+    expect(result).toBeTruthy();
+  });
+
+  it("submit rejects invalid diet execution enum values", async () => {
+    const caller = appRouter.createCaller(createUserContext("user"));
+    await expect(
+      caller.checkIn.submit({
+        weekStartDate: "2026-04-07",
+        dietWeighedFoods: "invalid_value" as any,
+      })
+    ).rejects.toThrow();
+  });
+
+  it("submit requires authentication", async () => {
+    const caller = appRouter.createCaller(createGuestContext());
+    await expect(
+      caller.checkIn.submit({ weekStartDate: "2026-04-07" })
+    ).rejects.toThrow();
+  });
 });
 
 describe("notes (coach)", () => {
