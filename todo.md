@@ -305,3 +305,7 @@
 - [x] Onboarding page: fix three steps layout on mobile (upside-down triangle wrapping issue — should be a single vertical column)
 - [x] Build /getting-started client onboarding guide page with exact content, sticky TOC, matching design language
 - [x] Client dashboard Overview tab: add Getting Started Guide link/card
+- [x] Getting Started page: rename "Client Onboarding Guide" to "Getting Started Guide"
+- [x] Getting Started page: add back-to-dashboard button so clients can return easily
+- [x] Getting Started page: close mobile TOC dropdown when tapping anywhere outside it
+- [x] Getting Started page: optimise layout for mobile viewing
