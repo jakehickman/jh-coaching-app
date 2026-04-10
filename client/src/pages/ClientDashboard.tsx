@@ -2502,9 +2502,9 @@ function CheckInsTab() {
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">What to send each check-in</p>
         {[
           { num: '1', title: 'Log your measurements', sub: 'Use the Measurements tab above.' },
-          { num: '2', title: 'Complete the check-in form below', sub: null },
+          { num: '2', title: 'Complete the check-in form below', sub: 'Questions about your week.' },
           { num: '3', title: 'Send progress photos on WhatsApp', sub: 'Front, side, and back.' },
-          { num: '4', title: 'Send form clips on WhatsApp', sub: 'All exercises from one full session during the week.' },
+          { num: '4', title: 'Send form clips on WhatsApp', sub: 'One full session from the week.' },
           { num: '5', title: 'Voice note on WhatsApp', sub: 'A summary of how your week went.' },
         ].map(item => (
           <div key={item.num} className="flex gap-3 items-start">

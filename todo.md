@@ -327,3 +327,4 @@
 - [x] Restrict /getting-started to logged-in clients only (redirect unauthenticated visitors to login)
 - [x] Client training tab: collapse all session cards by default
 - [x] Client check-in tab: fix "What to send each check-in" — even vertical spacing between points + increase subtext font size
+- [x] Check-in tab: add subtext 'Questions about your week.' to the check-in form list item
