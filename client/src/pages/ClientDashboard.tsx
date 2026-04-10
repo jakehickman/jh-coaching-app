@@ -2333,7 +2333,7 @@ type CheckInFormState = {
   dietOffPlanQuality: string;
 };
 
-function ChoiceQuestion({ label, subtext, field, options, form, setForm, hasError }: {
+function ChoiceQuestion({ label, subtext, field, options, form, setForm, hasError, scrollRef }: {
   label: string;
   subtext?: string;
   field: keyof CheckInFormState;
@@ -2341,9 +2341,10 @@ function ChoiceQuestion({ label, subtext, field, options, form, setForm, hasErro
   form: CheckInFormState;
   setForm: React.Dispatch<React.SetStateAction<CheckInFormState>>;
   hasError?: boolean;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div>
+    <div ref={scrollRef}>
       <p className={`text-sm mb-1 ${hasError && !form[field] ? 'text-destructive font-semibold' : 'text-foreground'}`}>{label}</p>
       {subtext && <p className="text-sm text-muted-foreground mb-2.5 leading-relaxed">{subtext}</p>}
       {!subtext && <div className="mb-2.5" />}
@@ -2400,6 +2401,22 @@ function CheckInsTab() {
   const [submitted, setSubmitted] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
 
+  // Refs for auto-scrolling to first unanswered question
+  const q1Ref = useRef<HTMLDivElement>(null);
+  const q2Ref = useRef<HTMLDivElement>(null);
+  const q3Ref = useRef<HTMLDivElement>(null);
+  const q4Ref = useRef<HTMLDivElement>(null);
+  const q5Ref = useRef<HTMLDivElement>(null);
+  const q6Ref = useRef<HTMLDivElement>(null);
+  const questionRefs: [keyof CheckInFormState, React.RefObject<HTMLDivElement | null>][] = [
+    ['dietWeighedFoods', q1Ref],
+    ['dietMealPrepAccuracy', q2Ref],
+    ['dietExtrasFrequency', q3Ref],
+    ['dietAddedFats', q4Ref],
+    ['dietMealTiming', q5Ref],
+    ['dietOffPlanQuality', q6Ref],
+  ];
+
   useEffect(() => {
     if (existingCheckIn) {
       setForm({
@@ -2428,7 +2445,15 @@ function CheckInsTab() {
 
   const handleSubmit = () => {
     const dietFields = [form.dietWeighedFoods, form.dietMealPrepAccuracy, form.dietExtrasFrequency, form.dietAddedFats, form.dietMealTiming, form.dietOffPlanQuality];
-    if (dietFields.some(f => !f)) { setShowErrors(true); return; }
+    if (dietFields.some(f => !f)) {
+      setShowErrors(true);
+      // Scroll to first unanswered question
+      const firstUnanswered = questionRefs.find(([field]) => !form[field]);
+      if (firstUnanswered) {
+        firstUnanswered[1].current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
     submitMutation.mutate({
       weekStartDate: currentWeekStart,
       dietWeighedFoods: form.dietWeighedFoods as any,
@@ -2552,6 +2577,7 @@ function CheckInsTab() {
             form={form}
             setForm={setForm}
             hasError={showErrors}
+            scrollRef={q1Ref}
             options={[
               { value: 'every_meal', label: 'Every meal or nearly every meal' },
               { value: 'most_meals', label: 'Most meals' },
@@ -2567,6 +2593,7 @@ function CheckInsTab() {
             form={form}
             setForm={setForm}
             hasError={showErrors}
+            scrollRef={q2Ref}
             options={[
               { value: 'every_meal', label: 'Every meal or nearly every meal' },
               { value: 'most_meals', label: 'Most meals' },
@@ -2583,6 +2610,7 @@ function CheckInsTab() {
             form={form}
             setForm={setForm}
             hasError={showErrors}
+            scrollRef={q3Ref}
             options={[
               { value: 'never', label: 'Never' },
               { value: 'one_two_days', label: 'On 1–2 days' },
@@ -2598,6 +2626,7 @@ function CheckInsTab() {
             form={form}
             setForm={setForm}
             hasError={showErrors}
+            scrollRef={q4Ref}
             options={[
               { value: 'light_spray', label: 'I use a light spray (e.g. cooking spray / Pam)' },
               { value: 'small_amount', label: 'I add a small amount (less than 1 tsp)' },
@@ -2612,6 +2641,7 @@ function CheckInsTab() {
             form={form}
             setForm={setForm}
             hasError={showErrors}
+            scrollRef={q5Ref}
             options={[
               { value: 'never', label: 'Never' },
               { value: 'one_two_days', label: 'On 1–2 days' },
@@ -2627,6 +2657,7 @@ function CheckInsTab() {
             form={form}
             setForm={setForm}
             hasError={showErrors}
+            scrollRef={q6Ref}
             options={[
               { value: 'very_close', label: 'Very close' },
               { value: 'somewhat_close', label: 'Somewhat close' },
