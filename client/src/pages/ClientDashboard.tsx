@@ -2298,6 +2298,49 @@ function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program
 }
 
 // ─── Check-ins Tab ─────────────────────────────────────────────────────────
+type CheckInFormState = {
+  dietWeighedFoods: string;
+  dietMealPrepAccuracy: string;
+  dietExtrasFrequency: string;
+  dietAddedFats: string;
+  dietMealTiming: string;
+  dietOffPlanQuality: string;
+  focusNextWeek: string;
+};
+
+function ChoiceQuestion({ label, subtext, field, options, form, setForm }: {
+  label: string;
+  subtext?: string;
+  field: keyof CheckInFormState;
+  options: { value: string; label: string }[];
+  form: CheckInFormState;
+  setForm: React.Dispatch<React.SetStateAction<CheckInFormState>>;
+}) {
+  return (
+    <div>
+      <p className="text-sm text-foreground mb-1">{label}</p>
+      {subtext && <p className="text-xs text-muted-foreground mb-2.5">{subtext}</p>}
+      {!subtext && <div className="mb-2.5" />}
+      <div className="space-y-2">
+        {options.map(opt => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setForm(p => ({ ...p, [field]: opt.value }))}
+            className={`w-full py-3 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
+              form[field] === opt.value
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border text-muted-foreground hover:border-muted-foreground/40'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CheckInsTab() {
   const [, navigate] = useLocation();
   const { data: profile } = trpc.profile.get.useQuery();
@@ -2314,19 +2357,13 @@ function CheckInsTab() {
   const { data: existingCheckIn, refetch } = trpc.checkIn.myWeek.useQuery({ weekStartDate: currentWeekStart });
   const { data: allCheckIns = [] } = trpc.checkIn.myList.useQuery();
 
-  type WeighFoodsVal = '' | 'every_meal' | 'most_meals' | 'some_meals' | 'rarely' | 'never';
-  type MealPrepVal = '' | 'every_meal' | 'most_meals' | 'some_meals' | 'rarely' | 'never';
-  type ExtrasFreqVal = '' | 'never' | 'one_two_days' | 'few_days' | 'most_days' | 'every_day';
-  type AddedFatsVal = '' | 'light_spray' | 'small_amount' | 'one_tsp_or_more' | 'no_added_fats';
-  type MealTimingVal = '' | 'never' | 'one_two_days' | 'few_days' | 'most_days' | 'every_day';
-  type OffPlanQualityVal = '' | 'very_close' | 'somewhat_close' | 'not_very_close' | 'very_different' | 'no_off_plan_meals';
-  const blankForm = {
-    dietWeighedFoods: '' as WeighFoodsVal,
-    dietMealPrepAccuracy: '' as MealPrepVal,
-    dietExtrasFrequency: '' as ExtrasFreqVal,
-    dietAddedFats: '' as AddedFatsVal,
-    dietMealTiming: '' as MealTimingVal,
-    dietOffPlanQuality: '' as OffPlanQualityVal,
+  const blankForm: CheckInFormState = {
+    dietWeighedFoods: '',
+    dietMealPrepAccuracy: '',
+    dietExtrasFrequency: '',
+    dietAddedFats: '',
+    dietMealTiming: '',
+    dietOffPlanQuality: '',
     focusNextWeek: '',
   };
   const [form, setForm] = useState(blankForm);
@@ -2335,12 +2372,12 @@ function CheckInsTab() {
   useEffect(() => {
     if (existingCheckIn) {
       setForm({
-        dietWeighedFoods: (existingCheckIn.dietWeighedFoods ?? '') as WeighFoodsVal,
-        dietMealPrepAccuracy: (existingCheckIn.dietMealPrepAccuracy ?? '') as MealPrepVal,
-        dietExtrasFrequency: (existingCheckIn.dietExtrasFrequency ?? '') as ExtrasFreqVal,
-        dietAddedFats: (existingCheckIn.dietAddedFats ?? '') as AddedFatsVal,
-        dietMealTiming: (existingCheckIn.dietMealTiming ?? '') as MealTimingVal,
-        dietOffPlanQuality: (existingCheckIn.dietOffPlanQuality ?? '') as OffPlanQualityVal,
+        dietWeighedFoods: existingCheckIn.dietWeighedFoods ?? '',
+        dietMealPrepAccuracy: existingCheckIn.dietMealPrepAccuracy ?? '',
+        dietExtrasFrequency: existingCheckIn.dietExtrasFrequency ?? '',
+        dietAddedFats: existingCheckIn.dietAddedFats ?? '',
+        dietMealTiming: existingCheckIn.dietMealTiming ?? '',
+        dietOffPlanQuality: existingCheckIn.dietOffPlanQuality ?? '',
         focusNextWeek: existingCheckIn.focusNextWeek ?? '',
       });
       setSubmitted(true);
@@ -2383,36 +2420,6 @@ function CheckInsTab() {
   };
 
 
-
-  // Generic single-choice question component for the check-in form
-  const ChoiceQuestion = ({ label, subtext, field, options }: {
-    label: string;
-    subtext?: string;
-    field: keyof typeof blankForm;
-    options: { value: string; label: string }[];
-  }) => (
-    <div>
-      <p className="text-sm text-foreground mb-1">{label}</p>
-      {subtext && <p className="text-xs text-muted-foreground mb-2.5">{subtext}</p>}
-      {!subtext && <div className="mb-2.5" />}
-      <div className="space-y-2">
-        {options.map(opt => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => setForm(p => ({ ...p, [field]: opt.value }))}
-            className={`w-full py-3 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
-              form[field] === opt.value
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border text-muted-foreground hover:border-muted-foreground/40'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
 
   const [subTab, setSubTab] = useState<'form' | 'measurements'>('form');
   const [isEditing, setIsEditing] = useState(false);
@@ -2510,6 +2517,8 @@ function CheckInsTab() {
           <ChoiceQuestion
             label="How often did you weigh all of your foods raw/uncooked with a digital scale this week?"
             field="dietWeighedFoods"
+            form={form}
+            setForm={setForm}
             options={[
               { value: 'every_meal', label: 'Every meal or nearly every meal' },
               { value: 'most_meals', label: 'Most meals' },
@@ -2522,6 +2531,8 @@ function CheckInsTab() {
           <ChoiceQuestion
             label="How often did you prepare your meals exactly as written in your plan?"
             field="dietMealPrepAccuracy"
+            form={form}
+            setForm={setForm}
             options={[
               { value: 'every_meal', label: 'Every meal or nearly every meal' },
               { value: 'most_meals', label: 'Most meals' },
@@ -2535,6 +2546,8 @@ function CheckInsTab() {
             label="Excluding any off-plan meals, how often did you eat or drink anything that was not in your meal plan this week?"
             subtext="e.g. snacks, bites while cooking, handfuls of food, drinks with calories, finishing someone else's food, sauces, dressings, spreads, toppings"
             field="dietExtrasFrequency"
+            form={form}
+            setForm={setForm}
             options={[
               { value: 'never', label: 'Never' },
               { value: 'one_two_days', label: 'On 1–2 days' },
@@ -2547,6 +2560,8 @@ function CheckInsTab() {
           <ChoiceQuestion
             label="When cooking, which best describes how you use added fats such as oil or butter?"
             field="dietAddedFats"
+            form={form}
+            setForm={setForm}
             options={[
               { value: 'light_spray', label: 'I use a light spray (e.g. cooking spray / Pam)' },
               { value: 'small_amount', label: 'I add a small amount (less than 1 tsp)' },
@@ -2558,6 +2573,8 @@ function CheckInsTab() {
           <ChoiceQuestion
             label="How often did you eat meals more than 2 hours earlier or later than planned this week?"
             field="dietMealTiming"
+            form={form}
+            setForm={setForm}
             options={[
               { value: 'never', label: 'Never' },
               { value: 'one_two_days', label: 'On 1–2 days' },
@@ -2570,6 +2587,8 @@ function CheckInsTab() {
           <ChoiceQuestion
             label="When you ate an off-plan meal, how close was it usually, in your estimation, to your planned meal in calories and macros?"
             field="dietOffPlanQuality"
+            form={form}
+            setForm={setForm}
             options={[
               { value: 'very_close', label: 'Very close' },
               { value: 'somewhat_close', label: 'Somewhat close' },
