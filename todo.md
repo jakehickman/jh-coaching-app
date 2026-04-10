@@ -318,3 +318,6 @@
 - [x] Getting Started page: fix browser back button requiring multiple taps — replace href anchors with router Link so no extra history entries are pushed
 - [x] Getting Started page: move Contents out of header, add sticky "On this page" in-page TOC bar below intro section
 - [x] Getting Started page: move Contents out of header, add sticky "On this page" in-page TOC bar below intro section
+- [x] Getting Started page: remove "1:1 Online Coaching with Jake Hickman" subtitle from header
+- [x] Getting Started page: fix back-to-dashboard button in top left
+- [x] Getting Started page: use history.replaceState so browser back gesture doesn't return to the guide

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 
 const sections = [
   { id: "welcome", label: "1. Welcome" },
@@ -110,6 +111,7 @@ export default function GettingStarted() {
   const [tocOpen, setTocOpen] = useState(false);
   const inPageTocRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const [, navigate] = useLocation();
 
   // Active section tracking
   useEffect(() => {
@@ -161,7 +163,7 @@ export default function GettingStarted() {
         <div className="max-w-[900px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           {/* Back to dashboard */}
           <button
-            onClick={() => window.history.back()}
+            onClick={() => navigate("/dashboard")}
             className="flex items-center gap-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors shrink-0 py-1"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -170,13 +172,8 @@ export default function GettingStarted() {
             Dashboard
           </button>
 
-          {/* Centre label */}
-          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest truncate">
-            1:1 Online Coaching with Jake Hickman
-          </p>
-
           {/* Spacer */}
-          <div className="w-20" />
+          <div className="flex-1" />
         </div>
       </header>
 
@@ -598,7 +595,7 @@ export default function GettingStarted() {
               {/* Back to dashboard CTA */}
               <div className="mt-10 pt-8 border-t border-border/50">
                 <button
-                  onClick={() => window.history.back()}
+                  onClick={() => navigate("/dashboard")}
                   className="inline-flex items-center gap-2.5 px-6 py-3 rounded-lg text-base font-body font-medium transition-colors cursor-pointer"
                   style={{ backgroundColor: "#052E1A", color: "#59BE50", border: "1.5px solid #59BE50" }}
                 >
