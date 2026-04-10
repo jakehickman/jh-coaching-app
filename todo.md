@@ -288,3 +288,6 @@
 - [x] Client check-in card: hide response details after submission, show only confirmation
 - [x] Check-ins tab: show admin's own check-in entry in the list (for testing), filter out other admins only
 - [x] Fix: overdue logic fails for Sunday check-in day — Mon-scale comparison (2 > 6) is false even though Sunday already passed; fix by comparing actual dates within the week
+- [x] Fix: clientProfilesRef is not defined crash in CheckInsSection sort function (resolved by overdue logic redesign)
+- [x] Fix: Jake Hickman's check-in day pill not showing — set coachId to his own userId so getAllClients includes his profile
+- [x] Redesign overdue logic: move to server-side tRPC procedure, return list of overdue clientIds with dueDate; remove fragile client-side date arithmetic

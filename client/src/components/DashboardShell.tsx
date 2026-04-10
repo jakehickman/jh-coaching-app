@@ -74,18 +74,20 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     enabled: mode === "coach" && user?.role === "admin",
     refetchInterval: 300_000,
   });
-  // Client profiles (for checkInDay overdue calculation)
-  const { data: clientProfiles = [] } = trpc.users.clients.useQuery(undefined, {
+  // Server-side overdue clients list
+  const { data: overdueList = [] } = trpc.checkIn.overdueClients.useQuery(undefined, {
     enabled: mode === "coach" && user?.role === "admin",
     refetchInterval: 300_000,
   });
 
   // Compute badge count: unreviewed submissions + overdue clients (not double-counted)
   const checkInsAttentionCount = (() => {
-    const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
-    const toMonScale = (d: number) => (d === 0 ? 6 : d - 1);
-    const todayDay = new Date().getDay();
-    const monday = (() => { const d = new Date(); const day = d.getDay(); d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day)); d.setHours(0,0,0,0); return d; })();
+    const now = new Date();
+    const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const todayJsDay = now.getUTCDay();
+    const daysFromMonday = todayJsDay === 0 ? 6 : todayJsDay - 1;
+    const mondayUtc = new Date(todayUtc);
+    mondayUtc.setUTCDate(todayUtc.getUTCDate() - daysFromMonday);
 
     const unreviewedIds = new Set<number>();
     const overdueIds = new Set<number>();
@@ -93,41 +95,20 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     // Unreviewed: has a submission this week that hasn't been reviewed
     for (const ci of latestCheckIns as any[]) {
       if (ci.submittedAt && !ci.reviewedAt) {
-        const submittedDate = new Date(ci.submittedAt);
-        if (submittedDate >= monday) {
+        const submittedUtc = new Date(Date.UTC(
+          new Date(ci.submittedAt).getUTCFullYear(),
+          new Date(ci.submittedAt).getUTCMonth(),
+          new Date(ci.submittedAt).getUTCDate()
+        ));
+        if (submittedUtc >= mondayUtc) {
           unreviewedIds.add(ci.clientId);
         }
       }
     }
 
-    // Overdue: check-in day has passed this week and no submission yet this week
-    for (const profile of clientProfiles as any[]) {
-      const clientId = profile.userId;
-      const ci = (latestCheckIns as any[]).find((x: any) => x.clientId === clientId);
-      // Skip if already submitted this week
-      if (ci) {
-        const submittedDate = new Date(ci.submittedAt);
-        if (submittedDate >= monday) continue;
-      }
-      // Skip if client started after this week's Monday (not yet in their first check-in week)
-      if (profile.startDate) {
-        const start = new Date(profile.startDate);
-        start.setHours(0, 0, 0, 0);
-        if (start > monday) continue;
-      }
-      // Check if their check-in day has passed this week by comparing actual dates
-      const checkInDay = profile.checkInDay as string | undefined;
-      if (!checkInDay) continue;
-      const assignedJsDay = dayMap[checkInDay] ?? -1;
-      if (assignedJsDay === -1) continue;
-      const assignedMonScale = toMonScale(assignedJsDay);
-      const dueDateInWeek = new Date(monday);
-      dueDateInWeek.setDate(monday.getDate() + assignedMonScale);
-      const todayMidnight = new Date();
-      todayMidnight.setHours(0, 0, 0, 0);
-      if (todayMidnight > dueDateInWeek) {
-        overdueIds.add(clientId);
-      }
+    // Overdue: from server-side calculation
+    for (const o of overdueList as any[]) {
+      overdueIds.add(o.clientId);
     }
 
     // Combine: count clients that need attention (unreviewed OR overdue, not double-counted)

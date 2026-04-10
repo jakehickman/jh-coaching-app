@@ -470,6 +470,69 @@ export const appRouter = router({
       .mutation(({ input }) => db.markCheckInReviewed(input.id, input.reviewed)),
     // Coach: get the latest check-in submission per client (for indicator badges)
     latestPerClient: adminProcedure.query(() => db.getLatestCheckInPerClient()),
+    // Coach: get list of clients whose check-in is overdue this week
+    overdueClients: adminProcedure.query(async ({ ctx }) => {
+      const profiles = await db.getAllClients(ctx.user.id);
+      const latestCheckIns = await db.getLatestCheckInPerClient();
+
+      const dayMap: Record<string, number> = {
+        monday: 1, tuesday: 2, wednesday: 3, thursday: 4,
+        friday: 5, saturday: 6, sunday: 0,
+      };
+
+      // Get current UTC date components
+      const now = new Date();
+      const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      const todayJsDay = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+
+      // Monday of current week in UTC
+      const daysFromMonday = todayJsDay === 0 ? 6 : todayJsDay - 1;
+      const mondayUtc = new Date(todayUtc);
+      mondayUtc.setUTCDate(todayUtc.getUTCDate() - daysFromMonday);
+
+      const result: { clientId: number; dueDate: Date }[] = [];
+
+      for (const profile of profiles) {
+        if (!profile.checkInDay) continue;
+
+        const assignedJsDay = dayMap[profile.checkInDay];
+        if (assignedJsDay === undefined) continue;
+
+        // Calculate the due date for this week in UTC
+        // Mon-scale offset: Mon=0, Tue=1, ..., Sun=6
+        const assignedMonOffset = assignedJsDay === 0 ? 6 : assignedJsDay - 1;
+        const dueDateUtc = new Date(mondayUtc);
+        dueDateUtc.setUTCDate(mondayUtc.getUTCDate() + assignedMonOffset);
+
+        // Start date guard: client must have started on or before their due date
+        if (profile.startDate) {
+          const startUtc = new Date(Date.UTC(
+            new Date(profile.startDate).getUTCFullYear(),
+            new Date(profile.startDate).getUTCMonth(),
+            new Date(profile.startDate).getUTCDate()
+          ));
+          if (startUtc > dueDateUtc) continue;
+        }
+
+        // Check if already submitted this week
+        const ci = latestCheckIns.find((c: any) => c.clientId === profile.userId);
+        if (ci) {
+          const submittedUtc = new Date(Date.UTC(
+            new Date(ci.submittedAt).getUTCFullYear(),
+            new Date(ci.submittedAt).getUTCMonth(),
+            new Date(ci.submittedAt).getUTCDate()
+          ));
+          if (submittedUtc >= mondayUtc) continue; // submitted this week
+        }
+
+        // Overdue: today is strictly after the due date
+        if (todayUtc > dueDateUtc) {
+          result.push({ clientId: profile.userId, dueDate: dueDateUtc });
+        }
+      }
+
+      return result;
+    }),
     // Coach: delete a check-in submission
     delete: adminProcedure
       .input(z.object({ id: z.number() }))

@@ -3389,40 +3389,35 @@ function CheckInsSection() {
   // Show regular clients + the current admin (for testing their own check-in flow)
   const clients = (allUsers ?? []).filter((u: any) => u.role !== 'admin' || u.id === currentUser?.id);
 
-  // Fetch client profiles to get checkInDay for overdue calculation and pill display
+  // Fetch client profiles to get checkInDay for pill display
   const { data: clientProfiles = [] } = trpc.users.clients.useQuery();
+  // Server-side overdue clients list
+  const { data: overdueList = [] } = trpc.checkIn.overdueClients.useQuery();
 
-  // Sort priority: 0=unreviewed this week, 1=overdue, 2=no check-ins, 3=reviewed
-  const monday = (() => { const d = new Date(); const day = d.getDay(); d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day)); d.setHours(0,0,0,0); return d; })();
-  const dayMap: Record<string,number> = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 };
-  const toMonScale = (d: number) => (d === 0 ? 6 : d - 1);
-  const getOverdue = (id: number, ci: any): boolean => {
-    if (ci && new Date((ci as any).submittedAt) >= monday) return false;
-    const p = (clientProfiles as any[]).find((x: any) => x.userId === id);
-    const checkInDay = p?.checkInDay as string | undefined;
-    if (!checkInDay) return false;
-    // Don't flag as overdue if the client's start date is after this week's Monday
-    // (i.e. they haven't had their first full check-in week yet)
-    if (p?.startDate) {
-      const start = new Date(p.startDate);
-      start.setHours(0, 0, 0, 0);
-      if (start > monday) return false;
-    }
-    // Compute the actual date of the assigned check-in day within the current Mon–Sun week,
-    // then compare it to today. This correctly handles Sunday (which sits at the end of the
-    // week on Mon-scale=6 but may have already passed earlier in the same calendar week).
-    const assignedJsDay = dayMap[checkInDay] ?? -1; // JS day: 0=Sun, 1=Mon, ..., 6=Sat
-    if (assignedJsDay === -1) return false;
-    const assignedMonScale = toMonScale(assignedJsDay); // Mon=0 ... Sun=6
-    const dueDateInWeek = new Date(monday);
-    dueDateInWeek.setDate(monday.getDate() + assignedMonScale); // e.g. Mon+6 = Sunday
-    const todayMidnight = new Date();
-    todayMidnight.setHours(0, 0, 0, 0);
-    return todayMidnight > dueDateInWeek; // overdue only if today is strictly after the due date
-  };
+  // UTC-based Monday for this week (used for unreviewed check)
+  const mondayUtc = (() => {
+    const now = new Date();
+    const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const daysFromMonday = now.getUTCDay() === 0 ? 6 : now.getUTCDay() - 1;
+    const m = new Date(todayUtc);
+    m.setUTCDate(todayUtc.getUTCDate() - daysFromMonday);
+    return m;
+  })();
+
+  // Helper: is a client overdue? Uses server-side list.
+  const isOverdue = (clientId: number): boolean =>
+    (overdueList as any[]).some((o: any) => o.clientId === clientId);
+
   const sortBucket = (ci: any, reviewed: boolean, id: number): number => {
-    if (getOverdue(id, ci)) return 0;                                          // overdue = highest priority
-    if (!reviewed && ci && new Date((ci as any).submittedAt) >= monday) return 1; // unreviewed this week
+    if (isOverdue(id)) return 0;                                                // overdue = highest priority
+    if (!reviewed && ci) {
+      const submittedUtc = new Date(Date.UTC(
+        new Date(ci.submittedAt).getUTCFullYear(),
+        new Date(ci.submittedAt).getUTCMonth(),
+        new Date(ci.submittedAt).getUTCDate()
+      ));
+      if (submittedUtc >= mondayUtc) return 1;                                  // unreviewed this week
+    }
     if (!ci) return 2;                                                          // no check-ins yet
     return 3;                                                                   // reviewed / complete
   };
@@ -3436,12 +3431,6 @@ function CheckInsSection() {
     const tB = ciB ? new Date((ciB as any).submittedAt).getTime() : 0;
     return tB - tA;
   });
-
-  // Helper: is a client's check-in overdue? Delegates to shared getOverdue.
-  const isOverdue = (clientId: number): boolean => {
-    const ci = latestCheckIns.find((x: any) => x.clientId === clientId);
-    return getOverdue(clientId, ci);
-  };
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const utils = trpc.useUtils();
@@ -3520,20 +3509,9 @@ function CheckInsSection() {
                 {isOverdue(client.id) ? (
                   <p className="text-xs text-amber-400 font-medium">
                     {(() => {
-                      const p = (clientProfiles as any[]).find((x: any) => x.userId === client.id);
-                      const checkInDay = p?.checkInDay as string | undefined;
-                      if (!checkInDay) return 'Overdue';
-                      const dayMap: Record<string,number> = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 };
-                      const assignedDayNum = dayMap[checkInDay] ?? -1;
-                      // Find the most recent occurrence of that day this week (Mon-based)
-                      const today = new Date();
-                      const todayDay = today.getDay(); // 0=Sun
-                      const toMonScale = (d: number) => (d === 0 ? 6 : d - 1);
-                      const diff = toMonScale(todayDay) - toMonScale(assignedDayNum);
-                      const dueDate = new Date(today);
-                      dueDate.setDate(today.getDate() - diff);
-                      dueDate.setHours(0, 0, 0, 0);
-                      const dateStr = dueDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+                      const o = (overdueList as any[]).find((x: any) => x.clientId === client.id);
+                      if (!o?.dueDate) return 'Overdue';
+                      const dateStr = new Date(o.dueDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
                       return `Overdue · ${dateStr}`;
                     })()}
                   </p>
