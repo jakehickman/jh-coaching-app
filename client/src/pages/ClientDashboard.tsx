@@ -448,7 +448,6 @@ function OverviewTab() {
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">Getting Started Guide</p>
-            <p className="text-xs text-muted-foreground mt-0.5">How the coaching works, what's expected, and how to get results</p>
           </div>
         </div>
         <svg className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
