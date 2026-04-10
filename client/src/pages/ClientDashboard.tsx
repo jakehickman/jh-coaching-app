@@ -2492,7 +2492,6 @@ function CheckInsTab() {
 
         {/* Section 1: Diet Execution — 6 questions */}
         <Card className="space-y-6 mb-4">
-          <p className="text-sm font-semibold text-foreground">Diet Execution</p>
 
           <ChoiceQuestion
             label="How often did you weigh all of your foods raw/uncooked with a digital scale this week?"
