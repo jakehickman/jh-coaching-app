@@ -297,3 +297,4 @@
 - [ ] Check-in form: remove last two diet execution questions (meal timing, off-plan meal quality)
 - [ ] Check-in form: remove "added fats" (dietAddedFats) and "off-plan meal quality" (dietOffPlanQuality) questions from diet execution section
 - [x] Check-in form: remove "What caused the MOST deviation this week?" (adherenceBarrier) and "Which best describes your week?" (weeklyAssessment) sections
+- [x] Meal plan: sort ingredients by protein content (highest first), secondary sort by quantity (descending)

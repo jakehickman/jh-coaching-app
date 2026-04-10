@@ -1208,7 +1208,18 @@ function MealPlanTab() {
                         </span>
                       )}
                     </div>
-                    {(meal.items ?? []).map((item: any, j: number) => {
+                    {[...(meal.items ?? [])].sort((a: any, b: any) => {
+                        const fa = foodDb.find((f: any) => f.name === a.food);
+                        const fb = foodDb.find((f: any) => f.name === b.food);
+                        const gaRaw = parseFloat(a.grams) || 0;
+                        const gbRaw = parseFloat(b.grams) || 0;
+                        const gaG = fa ? (fa.servingGrams ? gaRaw * fa.servingGrams : gaRaw) : gaRaw;
+                        const gbG = fb ? (fb.servingGrams ? gbRaw * fb.servingGrams : gbRaw) : gbRaw;
+                        const pA = fa ? (fa.protein * gaG / 100) : 0;
+                        const pB = fb ? (fb.protein * gbG / 100) : 0;
+                        if (pB !== pA) return pB - pA;
+                        return gbG - gaG;
+                      }).map((item: any, j: number) => {
                       const food = foodDb.find((f: any) => f.name === item.food);
                       const rawAmount = parseFloat(item.grams) || 0;
                       const effectiveGrams = food ? itemToGrams(food, rawAmount) : rawAmount;
