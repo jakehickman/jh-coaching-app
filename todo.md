@@ -326,3 +326,4 @@
 - [x] Getting Started page: investigate and fix TOC navigation — sections not scrolling to correct position
 - [x] Restrict /getting-started to logged-in clients only (redirect unauthenticated visitors to login)
 - [x] Client training tab: collapse all session cards by default
+- [x] Client check-in tab: fix "What to send each check-in" — even vertical spacing between points + increase subtext font size

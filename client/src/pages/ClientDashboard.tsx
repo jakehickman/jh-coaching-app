@@ -2345,7 +2345,7 @@ function ChoiceQuestion({ label, subtext, field, options, form, setForm, hasErro
   return (
     <div>
       <p className={`text-sm mb-1 ${hasError && !form[field] ? 'text-destructive font-semibold' : 'text-foreground'}`}>{label}</p>
-      {subtext && <p className="text-xs text-muted-foreground mb-2.5">{subtext}</p>}
+      {subtext && <p className="text-sm text-muted-foreground mb-2.5 leading-relaxed">{subtext}</p>}
       {!subtext && <div className="mb-2.5" />}
       {hasError && !form[field] && (
         <p className="text-xs text-destructive mb-2">Please answer this question</p>
@@ -2498,7 +2498,7 @@ function CheckInsTab() {
       </div>
 
       {/* What to send each check-in */}
-      <Card className="space-y-3.5">
+      <Card className="space-y-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">What to send each check-in</p>
         {[
           { num: '1', title: 'Log your measurements', sub: 'Use the Measurements tab above.' },
@@ -2511,7 +2511,10 @@ function CheckInsTab() {
             <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{item.num}</span>
             <div>
               <p className="text-sm font-medium text-foreground">{item.title}</p>
-              {item.sub && <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>}
+              {item.sub
+                ? <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{item.sub}</p>
+                : <p className="text-sm text-muted-foreground/0 mt-0.5 leading-relaxed select-none">&nbsp;</p>
+              }
             </div>
           </div>
         ))}
