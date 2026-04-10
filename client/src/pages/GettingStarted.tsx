@@ -180,7 +180,7 @@ export default function GettingStarted() {
     setTimeout(() => {
       const el = document.getElementById(id);
       if (el) {
-        const offset = 108; // header (56) + TOC bar (52)
+        const offset = 124; // header (56) + TOC bar (52) + 16px breathing room
         const top = el.getBoundingClientRect().top + window.scrollY - offset;
         window.scrollTo({ top, behavior: "smooth" });
       }
