@@ -112,7 +112,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     }
 
     // Combine: count clients that need attention (unreviewed OR overdue, not double-counted)
-    const allIds = new Set([...unreviewedIds, ...overdueIds]);
+    const allIds = new Set([...Array.from(unreviewedIds), ...Array.from(overdueIds)]);
     return allIds.size;
   })();
 

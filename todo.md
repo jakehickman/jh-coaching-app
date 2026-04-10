@@ -291,3 +291,4 @@
 - [x] Fix: clientProfilesRef is not defined crash in CheckInsSection sort function (resolved by overdue logic redesign)
 - [x] Fix: Jake Hickman's check-in day pill not showing — set coachId to his own userId so getAllClients includes his profile
 - [x] Redesign overdue logic: move to server-side tRPC procedure, return list of overdue clientIds with dueDate; remove fragile client-side date arithmetic
+- [x] Fix overdue condition: today > scheduledDate + 7 days (7-day grace period after scheduled check-in date)

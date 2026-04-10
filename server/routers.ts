@@ -480,41 +480,46 @@ export const appRouter = router({
         friday: 5, saturday: 6, sunday: 0,
       };
 
-      // Get current UTC date components
+      // Today at UTC midnight
       const now = new Date();
       const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-      const todayJsDay = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-
-      // Monday of current week in UTC
-      const daysFromMonday = todayJsDay === 0 ? 6 : todayJsDay - 1;
-      const mondayUtc = new Date(todayUtc);
-      mondayUtc.setUTCDate(todayUtc.getUTCDate() - daysFromMonday);
 
       const result: { clientId: number; dueDate: Date }[] = [];
 
       for (const profile of profiles) {
-        if (!profile.checkInDay) continue;
+        if (!profile.checkInDay || !profile.startDate) continue;
 
-        const assignedJsDay = dayMap[profile.checkInDay];
+        const assignedJsDay = dayMap[profile.checkInDay]; // JS day: 0=Sun..6=Sat
         if (assignedJsDay === undefined) continue;
 
-        // Calculate the due date for this week in UTC
-        // Mon-scale offset: Mon=0, Tue=1, ..., Sun=6
-        const assignedMonOffset = assignedJsDay === 0 ? 6 : assignedJsDay - 1;
-        const dueDateUtc = new Date(mondayUtc);
-        dueDateUtc.setUTCDate(mondayUtc.getUTCDate() + assignedMonOffset);
+        // Parse startDate as UTC midnight
+        const startUtc = new Date(Date.UTC(
+          new Date(profile.startDate).getUTCFullYear(),
+          new Date(profile.startDate).getUTCMonth(),
+          new Date(profile.startDate).getUTCDate()
+        ));
 
-        // Start date guard: client must have started on or before their due date
-        if (profile.startDate) {
-          const startUtc = new Date(Date.UTC(
-            new Date(profile.startDate).getUTCFullYear(),
-            new Date(profile.startDate).getUTCMonth(),
-            new Date(profile.startDate).getUTCDate()
-          ));
-          if (startUtc > dueDateUtc) continue;
-        }
+        // First expected check-in: first occurrence of assignedJsDay on or after startDate
+        const startJsDay = startUtc.getUTCDay();
+        const daysUntilFirst = (assignedJsDay - startJsDay + 7) % 7; // 0 = same day
+        const firstCheckInUtc = new Date(startUtc);
+        firstCheckInUtc.setUTCDate(startUtc.getUTCDate() + daysUntilFirst);
 
-        // Check if already submitted this week
+        // Most recent scheduled check-in: firstCheckIn + N*7 days, largest N where date <= today
+        const daysSinceFirst = Math.floor(
+          (todayUtc.getTime() - firstCheckInUtc.getTime()) / (7 * 24 * 60 * 60 * 1000)
+        );
+        if (daysSinceFirst < 0) continue; // first check-in is in the future
+        const mostRecentScheduledUtc = new Date(firstCheckInUtc);
+        mostRecentScheduledUtc.setUTCDate(firstCheckInUtc.getUTCDate() + daysSinceFirst * 7);
+
+        // Overdue threshold: scheduled date + 7 days
+        // Client has a full 7-day window to submit before being flagged
+        const overdueThresholdUtc = new Date(mostRecentScheduledUtc);
+        overdueThresholdUtc.setUTCDate(mostRecentScheduledUtc.getUTCDate() + 7);
+        if (todayUtc <= overdueThresholdUtc) continue; // still within grace period
+
+        // Check if client has submitted on or after the most recent scheduled date
         const ci = latestCheckIns.find((c: any) => c.clientId === profile.userId);
         if (ci) {
           const submittedUtc = new Date(Date.UTC(
@@ -522,13 +527,10 @@ export const appRouter = router({
             new Date(ci.submittedAt).getUTCMonth(),
             new Date(ci.submittedAt).getUTCDate()
           ));
-          if (submittedUtc >= mondayUtc) continue; // submitted this week
+          if (submittedUtc >= mostRecentScheduledUtc) continue; // submitted on time
         }
 
-        // Overdue: today is strictly after the due date
-        if (todayUtc > dueDateUtc) {
-          result.push({ clientId: profile.userId, dueDate: dueDateUtc });
-        }
+        result.push({ clientId: profile.userId, dueDate: mostRecentScheduledUtc });
       }
 
       return result;
