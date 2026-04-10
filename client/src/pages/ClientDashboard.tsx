@@ -2374,13 +2374,16 @@ function CheckInsTab() {
 
 
   // Generic single-choice question component for the check-in form
-  const ChoiceQuestion = ({ label, field, options }: {
+  const ChoiceQuestion = ({ label, subtext, field, options }: {
     label: string;
+    subtext?: string;
     field: keyof typeof blankForm;
     options: { value: string; label: string }[];
   }) => (
     <div>
-      <p className="text-sm text-foreground mb-2.5">{label}</p>
+      <p className="text-sm text-foreground mb-1">{label}</p>
+      {subtext && <p className="text-xs text-muted-foreground mb-2.5">{subtext}</p>}
+      {!subtext && <div className="mb-2.5" />}
       <div className="space-y-2">
         {options.map(opt => (
           <button
@@ -2518,7 +2521,8 @@ function CheckInsTab() {
           />
 
           <ChoiceQuestion
-            label="Excluding any off-plan meals, how often did you eat or drink anything that was not in your meal plan this week? (e.g. snacks, bites while cooking...)"
+            label="Excluding any off-plan meals, how often did you eat or drink anything that was not in your meal plan this week?"
+            subtext="e.g. snacks, bites while cooking, handfuls of food, drinks with calories, finishing someone else's food, sauces, dressings, spreads, toppings"
             field="dietExtrasFrequency"
             options={[
               { value: 'never', label: 'Never' },
