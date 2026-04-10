@@ -389,8 +389,6 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
   barrierExplain: text("barrierExplain"), // only shown if barrier != no_issues
   // Section 3: Weekly Self-Assessment
   weeklyAssessment: mysqlEnum("weeklyAssessment", ["executed_exactly","mostly_followed","inconsistent","didnt_follow"]),
-  // Section 4: Focus for Next Week
-  focusNextWeek: text("focusNextWeek"),
   // Coach review status
   reviewedAt: timestamp("reviewedAt"),
   submittedAt: timestamp("submittedAt").defaultNow().notNull(),

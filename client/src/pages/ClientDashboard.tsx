@@ -2305,22 +2305,25 @@ type CheckInFormState = {
   dietAddedFats: string;
   dietMealTiming: string;
   dietOffPlanQuality: string;
-  focusNextWeek: string;
 };
 
-function ChoiceQuestion({ label, subtext, field, options, form, setForm }: {
+function ChoiceQuestion({ label, subtext, field, options, form, setForm, hasError }: {
   label: string;
   subtext?: string;
   field: keyof CheckInFormState;
   options: { value: string; label: string }[];
   form: CheckInFormState;
   setForm: React.Dispatch<React.SetStateAction<CheckInFormState>>;
+  hasError?: boolean;
 }) {
   return (
     <div>
-      <p className="text-sm text-foreground mb-1">{label}</p>
+      <p className={`text-sm mb-1 ${hasError && !form[field] ? 'text-destructive font-semibold' : 'text-foreground'}`}>{label}</p>
       {subtext && <p className="text-xs text-muted-foreground mb-2.5">{subtext}</p>}
       {!subtext && <div className="mb-2.5" />}
+      {hasError && !form[field] && (
+        <p className="text-xs text-destructive mb-2">Please answer this question</p>
+      )}
       <div className="space-y-2">
         {options.map(opt => (
           <button
@@ -2330,7 +2333,9 @@ function ChoiceQuestion({ label, subtext, field, options, form, setForm }: {
             className={`w-full py-3 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
               form[field] === opt.value
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border text-muted-foreground hover:border-muted-foreground/40'
+                : hasError && !form[field]
+                  ? 'border-destructive/60 text-muted-foreground hover:border-destructive'
+                  : 'border-border text-muted-foreground hover:border-muted-foreground/40'
             }`}
           >
             {opt.label}
@@ -2364,10 +2369,10 @@ function CheckInsTab() {
     dietAddedFats: '',
     dietMealTiming: '',
     dietOffPlanQuality: '',
-    focusNextWeek: '',
   };
   const [form, setForm] = useState(blankForm);
   const [submitted, setSubmitted] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
     if (existingCheckIn) {
@@ -2378,7 +2383,6 @@ function CheckInsTab() {
         dietAddedFats: existingCheckIn.dietAddedFats ?? '',
         dietMealTiming: existingCheckIn.dietMealTiming ?? '',
         dietOffPlanQuality: existingCheckIn.dietOffPlanQuality ?? '',
-        focusNextWeek: existingCheckIn.focusNextWeek ?? '',
       });
       setSubmitted(true);
     } else {
@@ -2398,7 +2402,7 @@ function CheckInsTab() {
 
   const handleSubmit = () => {
     const dietFields = [form.dietWeighedFoods, form.dietMealPrepAccuracy, form.dietExtrasFrequency, form.dietAddedFats, form.dietMealTiming, form.dietOffPlanQuality];
-    if (dietFields.some(f => !f)) { toast.error('Please answer all diet execution questions.'); return; }
+    if (dietFields.some(f => !f)) { setShowErrors(true); return; }
     submitMutation.mutate({
       weekStartDate: currentWeekStart,
       dietWeighedFoods: form.dietWeighedFoods as any,
@@ -2407,7 +2411,6 @@ function CheckInsTab() {
       dietAddedFats: form.dietAddedFats as any,
       dietMealTiming: form.dietMealTiming as any,
       dietOffPlanQuality: form.dietOffPlanQuality as any,
-      focusNextWeek: form.focusNextWeek || undefined,
     });
   };
 
@@ -2519,6 +2522,7 @@ function CheckInsTab() {
             field="dietWeighedFoods"
             form={form}
             setForm={setForm}
+            hasError={showErrors}
             options={[
               { value: 'every_meal', label: 'Every meal or nearly every meal' },
               { value: 'most_meals', label: 'Most meals' },
@@ -2533,6 +2537,7 @@ function CheckInsTab() {
             field="dietMealPrepAccuracy"
             form={form}
             setForm={setForm}
+            hasError={showErrors}
             options={[
               { value: 'every_meal', label: 'Every meal or nearly every meal' },
               { value: 'most_meals', label: 'Most meals' },
@@ -2548,6 +2553,7 @@ function CheckInsTab() {
             field="dietExtrasFrequency"
             form={form}
             setForm={setForm}
+            hasError={showErrors}
             options={[
               { value: 'never', label: 'Never' },
               { value: 'one_two_days', label: 'On 1–2 days' },
@@ -2562,6 +2568,7 @@ function CheckInsTab() {
             field="dietAddedFats"
             form={form}
             setForm={setForm}
+            hasError={showErrors}
             options={[
               { value: 'light_spray', label: 'I use a light spray (e.g. cooking spray / Pam)' },
               { value: 'small_amount', label: 'I add a small amount (less than 1 tsp)' },
@@ -2575,6 +2582,7 @@ function CheckInsTab() {
             field="dietMealTiming"
             form={form}
             setForm={setForm}
+            hasError={showErrors}
             options={[
               { value: 'never', label: 'Never' },
               { value: 'one_two_days', label: 'On 1–2 days' },
@@ -2589,6 +2597,7 @@ function CheckInsTab() {
             field="dietOffPlanQuality"
             form={form}
             setForm={setForm}
+            hasError={showErrors}
             options={[
               { value: 'very_close', label: 'Very close' },
               { value: 'somewhat_close', label: 'Somewhat close' },

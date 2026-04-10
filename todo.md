@@ -300,3 +300,5 @@
 - [x] Meal plan: sort ingredients by protein content (highest first), secondary sort by quantity (descending)
 - [x] Coach check-in list: day badge stays grey if today is the client's start date (first check-in is due the following week)
 - [x] Check-in form: fix scroll-to-top on answer click (ChoiceQuestion defined inside parent causes remount on every state change)
+- [x] Remove focusNextWeek field from db.ts, schema.ts, and all remaining references
+- [x] Check-in form: highlight unanswered questions in red when client tries to submit without answering all questions

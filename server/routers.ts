@@ -446,8 +446,6 @@ export const appRouter = router({
         barrierExplain: z.string().max(500).optional(),
         // Section 3: Weekly Self-Assessment
         weeklyAssessment: z.enum(["executed_exactly","mostly_followed","inconsistent","didnt_follow"]).optional(),
-        // Section 4: Focus for Next Week
-        focusNextWeek: z.string().max(300).optional(),
       }))
       .mutation(({ ctx, input }) =>
         db.submitCheckIn({ clientId: ctx.user.id, ...input })

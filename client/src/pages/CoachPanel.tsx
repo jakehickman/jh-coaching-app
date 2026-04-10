@@ -3590,14 +3590,6 @@ function CheckInsSection() {
                         </div>
                       )}
 
-                      {/* Focus next week */}
-                      {ci.focusNextWeek && (
-                        <div className="px-4 py-2 border-t border-border/50">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Focus Next Week</p>
-                          <p className="text-sm text-foreground">{ci.focusNextWeek}</p>
-                        </div>
-                      )}
-
                       {/* Actions */}
                       <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between gap-2">
                         <button

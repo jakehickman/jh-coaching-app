@@ -901,7 +901,7 @@ export async function submitCheckIn(data: {
   // Section 3: Weekly Self-Assessment
   weeklyAssessment?: "executed_exactly" | "mostly_followed" | "inconsistent" | "didnt_follow";
   // Section 4: Focus for Next Week
-  focusNextWeek?: string;
+
 }) {
   const db = await getDb();
   if (!db) return null;
