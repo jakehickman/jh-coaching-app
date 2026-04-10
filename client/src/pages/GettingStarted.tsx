@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "wouter";
 
 const sections = [
   { id: "welcome", label: "1. Welcome" },
@@ -107,7 +106,6 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export default function GettingStarted() {
-  const [, navigate] = useLocation();
   const [activeSection, setActiveSection] = useState("welcome");
   const [tocOpen, setTocOpen] = useState(false);
   const inPageTocRef = useRef<HTMLDivElement>(null);
@@ -163,7 +161,7 @@ export default function GettingStarted() {
         <div className="max-w-[900px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           {/* Back to dashboard */}
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => window.history.back()}
             className="flex items-center gap-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors shrink-0 py-1"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -600,7 +598,7 @@ export default function GettingStarted() {
               {/* Back to dashboard CTA */}
               <div className="mt-10 pt-8 border-t border-border/50">
                 <button
-                  onClick={() => navigate("/dashboard")}
+                  onClick={() => window.history.back()}
                   className="inline-flex items-center gap-2.5 px-6 py-3 rounded-lg text-base font-body font-medium transition-colors cursor-pointer"
                   style={{ backgroundColor: "#052E1A", color: "#59BE50", border: "1.5px solid #59BE50" }}
                 >
