@@ -318,4 +318,3 @@
 - [x] Getting Started page: fix browser back button requiring multiple taps — replace href anchors with router Link so no extra history entries are pushed
 - [x] Getting Started page: move Contents out of header, add sticky "On this page" in-page TOC bar below intro section
 - [x] Getting Started page: move Contents out of header, add sticky "On this page" in-page TOC bar below intro section
-- [x] Getting Started page: full design refinement pass — simplify header, improve typography rhythm, bottom sheet TOC, soften active states, premium editorial feel
