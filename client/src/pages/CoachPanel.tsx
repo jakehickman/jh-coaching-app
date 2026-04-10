@@ -3488,7 +3488,10 @@ function CheckInsSection() {
                     if (!day) return null;
                     const abbr: Record<string,string> = { monday:'Mon', tuesday:'Tue', wednesday:'Wed', thursday:'Thu', friday:'Fri', saturday:'Sat', sunday:'Sun' };
                     const todayDayName = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()];
-                    const isToday = day === todayDayName;
+                    const todayIsoLocal = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+                    const clientStart = p?.startDate ? (typeof p.startDate === 'string' ? p.startDate.slice(0,10) : new Date(p.startDate).toISOString().slice(0,10)) : null;
+                    const isStartDay = clientStart === todayIsoLocal;
+                    const isToday = day === todayDayName && !isStartDay;
                     const overdue = isOverdue(client.id);
                     const pillClass = overdue
                       ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
