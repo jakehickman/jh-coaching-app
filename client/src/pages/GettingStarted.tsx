@@ -126,7 +126,7 @@ export default function GettingStarted() {
           setActiveSection(topmost.target.id);
         }
       },
-      { rootMargin: "-20% 0px -70% 0px", threshold: 0 }
+      { rootMargin: "-10% 0px -60% 0px", threshold: 0 }
     );
     sectionEls.forEach(el => observerRef.current!.observe(el));
     return () => observerRef.current?.disconnect();
@@ -151,7 +151,10 @@ export default function GettingStarted() {
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Manual offset scroll: header (56px) + in-page TOC bar (~48px) + 16px breathing room
+      const offset = 120;
+      const top = el.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: "smooth" });
       setTocOpen(false);
     }
   };

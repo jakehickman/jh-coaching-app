@@ -321,3 +321,4 @@
 - [x] Getting Started page: remove "1:1 Online Coaching with Jake Hickman" subtitle from header
 - [x] Getting Started page: fix back-to-dashboard button in top left
 - [x] Getting Started page: use history.replaceState so browser back gesture doesn't return to the guide
+- [x] Getting Started page: fix TOC navigation — clicking "10. Communication" scrolls to "11. FAQ" instead
