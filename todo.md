@@ -328,3 +328,4 @@
 - [x] Client training tab: collapse all session cards by default
 - [x] Client check-in tab: fix "What to send each check-in" — even vertical spacing between points + increase subtext font size
 - [x] Check-in tab: add subtext 'Questions about your week.' to the check-in form list item
+- [x] Fix React error #310 on /getting-started — move auth guard after all hooks

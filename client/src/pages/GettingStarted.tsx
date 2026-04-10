@@ -117,31 +117,11 @@ export default function GettingStarted() {
   const isScrollingRef = useRef(false);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [, navigate] = useLocation();
+  const headerRef = useRef<HTMLElement>(null);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground text-sm">You need to sign in to access this page.</p>
-        <a
-          href={getLoginUrl()}
-          className="px-6 py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 transition-opacity"
-        >
-          Sign In
-        </a>
-      </div>
-    );
-  }
-
-  // Active section tracking
+  // Active section tracking — only runs when authenticated
   useEffect(() => {
+    if (!isAuthenticated) return;
     const sectionEls = sections.map(s => document.getElementById(s.id)).filter(Boolean) as HTMLElement[];
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -177,8 +157,6 @@ export default function GettingStarted() {
     };
   }, [tocOpen]);
 
-  const headerRef = useRef<HTMLElement>(null);
-
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -208,6 +186,28 @@ export default function GettingStarted() {
       });
     });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground text-sm">You need to sign in to access this page.</p>
+        <a
+          href={getLoginUrl()}
+          className="px-6 py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 transition-opacity"
+        >
+          Sign In
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
