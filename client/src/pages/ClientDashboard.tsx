@@ -1517,7 +1517,7 @@ function getYouTubeEmbedUrl(url: string): string | null {
 function TrainingTab() {
   const { data: program } = trpc.training.get.useQuery();
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
-  const [expandedDay, setExpandedDay] = useState<number | null>(0);
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [videoModal, setVideoModal] = useState<{ name: string; embedUrl: string } | null>(null);
 
   const days = (program?.days as any[]) ?? [];
