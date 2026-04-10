@@ -152,29 +152,42 @@ export default function GettingStarted() {
     };
   }, [tocOpen]);
 
+  const headerRef = useRef<HTMLElement>(null);
+
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
-    if (el) {
-      // Set active section immediately so TOC reflects the tapped item right away
-      setActiveSection(id);
-      // Pause the observer so it doesn't override our selection during the scroll animation
-      isScrollingRef.current = true;
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-      scrollTimerRef.current = setTimeout(() => {
-        isScrollingRef.current = false;
-      }, 1000);
-      // Manual offset scroll: header (56px) + in-page TOC bar (~48px) + 16px breathing room
-      const offset = 120;
-      const top = el.getBoundingClientRect().top + window.scrollY - offset;
-      window.scrollTo({ top, behavior: "smooth" });
-      setTocOpen(false);
-    }
+    if (!el) return;
+
+    // Set active section immediately so TOC label updates right away
+    setActiveSection(id);
+    // Pause the observer so it doesn't override our selection during scroll
+    isScrollingRef.current = true;
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 1200);
+
+    // Close TOC first, then wait two frames for React to re-render and collapse
+    // the TOC bar before measuring positions — otherwise getBoundingClientRect
+    // returns stale values while the dropdown is still open and tall.
+    setTocOpen(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const headerEl = headerRef.current;
+        const tocEl = inPageTocRef.current;
+        const headerH = headerEl ? headerEl.getBoundingClientRect().height : 56;
+        const tocH = tocEl ? tocEl.getBoundingClientRect().height : 44;
+        const offset = headerH + tocH + 12; // 12px breathing room
+        const top = el.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top, behavior: "smooth" });
+      });
+    });
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Sticky header — global nav only */}
-      <header className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur-sm">
+      <header ref={headerRef} className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur-sm">
         <div className="max-w-[900px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           {/* Back to dashboard */}
           <button
