@@ -111,6 +111,8 @@ export default function GettingStarted() {
   const [tocOpen, setTocOpen] = useState(false);
   const inPageTocRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const isScrollingRef = useRef(false);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [, navigate] = useLocation();
 
   // Active section tracking
@@ -118,6 +120,8 @@ export default function GettingStarted() {
     const sectionEls = sections.map(s => document.getElementById(s.id)).filter(Boolean) as HTMLElement[];
     observerRef.current = new IntersectionObserver(
       (entries) => {
+        // Don't update active section while we're programmatically scrolling
+        if (isScrollingRef.current) return;
         const visible = entries.filter(e => e.isIntersecting);
         if (visible.length > 0) {
           const topmost = visible.reduce((a, b) =>
@@ -151,6 +155,14 @@ export default function GettingStarted() {
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
+      // Set active section immediately so TOC reflects the tapped item right away
+      setActiveSection(id);
+      // Pause the observer so it doesn't override our selection during the scroll animation
+      isScrollingRef.current = true;
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 1000);
       // Manual offset scroll: header (56px) + in-page TOC bar (~48px) + 16px breathing room
       const offset = 120;
       const top = el.getBoundingClientRect().top + window.scrollY - offset;

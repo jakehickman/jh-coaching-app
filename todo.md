@@ -322,3 +322,4 @@
 - [x] Getting Started page: fix back-to-dashboard button in top left
 - [x] Getting Started page: use history.replaceState so browser back gesture doesn't return to the guide
 - [x] Getting Started page: fix TOC navigation — clicking "10. Communication" scrolls to "11. FAQ" instead
+- [x] Getting Started page: fix TOC scroll — set active section immediately on click, pause observer during animation
