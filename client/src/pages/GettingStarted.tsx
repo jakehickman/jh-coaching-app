@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 
 const sections = [
   { id: "welcome", label: "1. Welcome" },
@@ -106,6 +107,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export default function GettingStarted() {
+  const [, navigate] = useLocation();
   const [activeSection, setActiveSection] = useState("welcome");
   const [tocOpen, setTocOpen] = useState(false);
   const tocRef = useRef<HTMLDivElement>(null);
@@ -160,15 +162,15 @@ export default function GettingStarted() {
       <header className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur-sm" ref={tocRef}>
         <div className="max-w-[900px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           {/* Back to dashboard */}
-          <a
-            href="/dashboard"
+          <button
+            onClick={() => navigate("/dashboard")}
             className="flex items-center gap-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors shrink-0 py-1"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
             Dashboard
-          </a>
+          </button>
 
           {/* Centre label — hidden on very small screens */}
           <p className="hidden sm:block font-body text-muted-foreground text-xs uppercase tracking-widest truncate">
@@ -581,16 +583,16 @@ export default function GettingStarted() {
 
               {/* Back to dashboard CTA */}
               <div className="mt-10 pt-8 border-t border-border/50">
-                <a
-                  href="/dashboard"
-                  className="inline-flex items-center gap-2.5 px-6 py-3 rounded-lg text-base font-body font-medium transition-colors"
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className="inline-flex items-center gap-2.5 px-6 py-3 rounded-lg text-base font-body font-medium transition-colors cursor-pointer"
                   style={{ backgroundColor: "#052E1A", color: "#59BE50", border: "1.5px solid #59BE50" }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
                   Back to Dashboard
-                </a>
+                </button>
               </div>
             </Section>
 

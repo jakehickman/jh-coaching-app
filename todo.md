@@ -315,3 +315,4 @@
 - [x] Getting Started page: open in same tab so browser back button returns to dashboard
 - [x] Getting Started page: make Contents button and Back to Dashboard button larger on mobile
 - [x] Coach client progress page: show step goal next to average steps for the week
+- [x] Getting Started page: fix browser back button requiring multiple taps — replace href anchors with router Link so no extra history entries are pushed
