@@ -42,8 +42,8 @@ function SubSection({ title, children }: { title: string; children: React.ReactN
 
 function Section({ id, number, title, children }: { id: string; number: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="pt-10 pb-2 border-t border-border/50 scroll-mt-[72px]">
-      <div className="flex items-start gap-3 mb-4">
+    <section id={id} className="pt-14 pb-4 border-t border-border/50 scroll-mt-[72px]">
+      <div className="flex items-start gap-3 mb-5">
         <span
           className="w-7 h-7 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 mt-0.5"
           style={{ backgroundColor: "#052E1A", color: "#59BE50", border: "1.5px solid #59BE50" }}
@@ -162,9 +162,9 @@ export default function GettingStarted() {
           {/* Back to dashboard */}
           <a
             href="/dashboard"
-            className="flex items-center gap-1.5 text-xs font-body text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="flex items-center gap-2 text-sm font-body text-muted-foreground hover:text-foreground transition-colors shrink-0 py-1"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
             Dashboard
@@ -178,9 +178,9 @@ export default function GettingStarted() {
           {/* Mobile TOC toggle */}
           <button
             onClick={() => setTocOpen(o => !o)}
-            className="lg:hidden flex items-center gap-1.5 text-xs font-body text-muted-foreground border border-border rounded-md px-2.5 py-1.5 hover:border-muted-foreground/40 transition-colors shrink-0"
+            className="lg:hidden flex items-center gap-2 text-sm font-body text-muted-foreground border border-border rounded-lg px-3.5 py-2 hover:border-muted-foreground/40 transition-colors shrink-0"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
             </svg>
             Contents
@@ -252,7 +252,7 @@ export default function GettingStarted() {
           </aside>
 
           {/* Content */}
-          <main className="flex-1 min-w-0 space-y-0">
+          <main className="flex-1 min-w-0 space-y-2">
 
             {/* 1. Welcome */}
             <Section id="welcome" number="1" title="Welcome">
@@ -583,7 +583,7 @@ export default function GettingStarted() {
               <div className="mt-10 pt-8 border-t border-border/50">
                 <a
                   href="/dashboard"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-body font-medium transition-colors"
+                  className="inline-flex items-center gap-2.5 px-6 py-3 rounded-lg text-base font-body font-medium transition-colors"
                   style={{ backgroundColor: "#052E1A", color: "#59BE50", border: "1.5px solid #59BE50" }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

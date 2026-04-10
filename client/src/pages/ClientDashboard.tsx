@@ -432,8 +432,6 @@ function OverviewTab() {
       {/* Getting Started Guide */}
       <a
         href="/getting-started"
-        target="_blank"
-        rel="noopener noreferrer"
         className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3.5 hover:border-primary/40 hover:bg-primary/5 transition-colors group"
       >
         <div className="flex items-center gap-3">

@@ -311,3 +311,6 @@
 - [x] Getting Started page: optimise layout for mobile viewing
 - [x] Replace phone number display with WhatsApp button linking to https://wa.me/61468764276
 - [x] Getting Started page: increase body text size for better mobile readability
+- [x] Getting Started page: increase section spacing for better readability
+- [x] Getting Started page: open in same tab so browser back button returns to dashboard
+- [x] Getting Started page: make Contents button and Back to Dashboard button larger on mobile
