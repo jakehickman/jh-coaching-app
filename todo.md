@@ -314,3 +314,4 @@
 - [x] Getting Started page: increase section spacing for better readability
 - [x] Getting Started page: open in same tab so browser back button returns to dashboard
 - [x] Getting Started page: make Contents button and Back to Dashboard button larger on mobile
+- [x] Coach client progress page: show step goal next to average steps for the week

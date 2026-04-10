@@ -2625,7 +2625,7 @@ function ProgressSection() {
       <div className="bg-secondary rounded-xl p-3">
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
         <p className="text-xl font-bold text-foreground">{value}</p>
-
+        {sub && <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>}
       </div>
     );
   }
@@ -2680,10 +2680,16 @@ function ProgressSection() {
                 {(curAvgSteps != null || (clientProfile as any)?.stepGoal) && (
                   <ProgCard
                     label="Avg Steps"
-                    value={curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—"}
+                    value={(() => {
+                      const goal = (clientProfile as any)?.stepGoal as number | null;
+                      const avg = curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—";
+                      return goal ? `${avg} / ${goal.toLocaleString()}` : avg;
+                    })()}
                     sub={(() => {
                       const goal = (clientProfile as any)?.stepGoal as number | null;
-                      return goal ? `Goal: ${goal.toLocaleString()} steps` : undefined;
+                      if (!goal || curAvgSteps == null) return undefined;
+                      const pct = Math.round((curAvgSteps / goal) * 100);
+                      return `${pct}% of goal`;
                     })()}
                   />
                 )}
