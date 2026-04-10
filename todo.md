@@ -324,3 +324,4 @@
 - [x] Getting Started page: fix TOC navigation — clicking "10. Communication" scrolls to "11. FAQ" instead
 - [x] Getting Started page: fix TOC scroll — set active section immediately on click, pause observer during animation
 - [x] Getting Started page: investigate and fix TOC navigation — sections not scrolling to correct position
+- [x] Restrict /getting-started to logged-in clients only (redirect unauthenticated visitors to login)

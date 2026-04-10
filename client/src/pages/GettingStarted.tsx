@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
 
 const sections = [
@@ -107,6 +109,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export default function GettingStarted() {
+  const { isAuthenticated, loading } = useAuth();
   const [activeSection, setActiveSection] = useState("welcome");
   const [tocOpen, setTocOpen] = useState(false);
   const inPageTocRef = useRef<HTMLDivElement>(null);
@@ -114,6 +117,28 @@ export default function GettingStarted() {
   const isScrollingRef = useRef(false);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [, navigate] = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground text-sm">You need to sign in to access this page.</p>
+        <a
+          href={getLoginUrl()}
+          className="px-6 py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 transition-opacity"
+        >
+          Sign In
+        </a>
+      </div>
+    );
+  }
 
   // Active section tracking
   useEffect(() => {
