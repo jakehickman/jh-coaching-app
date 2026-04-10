@@ -9,6 +9,7 @@ import ClientDashboard from "./pages/ClientDashboard";
 import CoachPanel from "./pages/CoachPanel";
 import CoachingLanding from "./pages/CoachingLanding";
 import Onboarding from "./pages/Onboarding";
+import GettingStarted from "./pages/GettingStarted";
 
 function AppRoutes() {
   return (
@@ -20,6 +21,7 @@ function AppRoutes() {
       <Route path="/coach/:section" component={CoachPanel} />
       <Route path="/coaching" component={CoachingLanding} />
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/getting-started" component={GettingStarted} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

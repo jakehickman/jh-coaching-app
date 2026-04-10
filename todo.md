@@ -303,3 +303,4 @@
 - [x] Remove focusNextWeek field from db.ts, schema.ts, and all remaining references
 - [x] Check-in form: highlight unanswered questions in red when client tries to submit without answering all questions
 - [x] Onboarding page: fix three steps layout on mobile (upside-down triangle wrapping issue — should be a single vertical column)
+- [x] Build /getting-started client onboarding guide page with exact content, sticky TOC, matching design language

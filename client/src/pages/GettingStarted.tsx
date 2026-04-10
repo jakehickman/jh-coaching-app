@@ -1,0 +1,560 @@
+import { useState, useEffect, useRef } from "react";
+
+const sections = [
+  { id: "welcome", label: "1. Welcome" },
+  { id: "how-it-works", label: "2. How the Coaching Works" },
+  { id: "core-expectations", label: "3. Core Expectations" },
+  { id: "nutrition", label: "4. Nutrition" },
+  { id: "training", label: "5. Training" },
+  { id: "data-collection", label: "6. Data Collection" },
+  { id: "weekly-check-in", label: "7. Weekly Check-in" },
+  { id: "lifestyle", label: "8. Lifestyle Factors" },
+  { id: "common-mistakes", label: "9. Common Mistakes" },
+  { id: "communication", label: "10. Communication" },
+  { id: "faq", label: "11. FAQ" },
+  { id: "final-notes", label: "12. Final Notes" },
+];
+
+function BulletList({ items }: { items: string[] }) {
+  return (
+    <ul className="space-y-2 mt-3">
+      {items.map((item, i) => (
+        <li key={i} className="flex items-start gap-3">
+          <span
+            className="mt-[6px] w-1.5 h-1.5 rounded-full shrink-0"
+            style={{ backgroundColor: "#59BE50" }}
+          />
+          <span className="font-body text-foreground text-[15px] leading-relaxed">{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SubSection({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
+  return (
+    <div id={id} className="mt-8">
+      <h3 className="font-display text-foreground text-base font-semibold mb-3 tracking-tight">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function Section({ id, number, title, children }: { id: string; number: string; title: string; children: React.ReactNode }) {
+  return (
+    <section id={id} className="pt-12 pb-2 border-t border-border/50 scroll-mt-20">
+      <div className="flex items-start gap-3 mb-5">
+        <span
+          className="w-7 h-7 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 mt-0.5"
+          style={{ backgroundColor: "#052E1A", color: "#59BE50", border: "1.5px solid #59BE50" }}
+        >
+          {number}
+        </span>
+        <h2 className="font-display text-foreground text-xl font-bold leading-tight">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Body({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-3">{children}</p>
+  );
+}
+
+function Callout({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="mt-4 px-4 py-3 rounded-lg border-l-2 text-sm font-body leading-relaxed"
+      style={{ borderColor: "#59BE50", backgroundColor: "#052E1A22", color: "var(--foreground)" }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export default function GettingStarted() {
+  const [activeSection, setActiveSection] = useState("welcome");
+  const [tocOpen, setTocOpen] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    const sectionEls = sections.map(s => document.getElementById(s.id)).filter(Boolean) as HTMLElement[];
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter(e => e.isIntersecting);
+        if (visible.length > 0) {
+          // Pick the topmost visible section
+          const topmost = visible.reduce((a, b) =>
+            a.boundingClientRect.top < b.boundingClientRect.top ? a : b
+          );
+          setActiveSection(topmost.target.id);
+        }
+      },
+      { rootMargin: "-20% 0px -70% 0px", threshold: 0 }
+    );
+
+    sectionEls.forEach(el => observerRef.current!.observe(el));
+    return () => observerRef.current?.disconnect();
+  }, []);
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTocOpen(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur-sm">
+        <div className="max-w-[900px] mx-auto px-5 py-4 flex items-center justify-between gap-4">
+          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest">
+            1:1 Online Coaching with Jake Hickman
+          </p>
+          {/* Mobile TOC toggle */}
+          <button
+            onClick={() => setTocOpen(o => !o)}
+            className="lg:hidden flex items-center gap-1.5 text-xs font-body text-muted-foreground border border-border rounded-md px-3 py-1.5 hover:border-muted-foreground/40 transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+            Contents
+          </button>
+        </div>
+
+        {/* Mobile TOC dropdown */}
+        {tocOpen && (
+          <div className="lg:hidden border-t border-border bg-background px-5 py-4 max-h-72 overflow-y-auto">
+            <nav className="space-y-1">
+              {sections.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => scrollTo(s.id)}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-body transition-colors ${
+                    activeSection === s.id
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+      </header>
+
+      {/* Hero */}
+      <section className="pt-12 pb-10 bg-background">
+        <div className="max-w-[900px] mx-auto px-5">
+          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-6">
+            Getting Started
+          </p>
+          <h1 className="font-display text-foreground text-3xl md:text-4xl font-bold leading-[1.1] mb-4">
+            Client Onboarding Guide
+          </h1>
+          <p className="font-body text-muted-foreground text-base leading-relaxed max-w-xl">
+            Read through this guide carefully before getting started. If anything is unclear, message me.
+          </p>
+        </div>
+      </section>
+
+      {/* Main layout: sidebar TOC + content */}
+      <div className="flex-1 max-w-[900px] mx-auto w-full px-5 pb-20">
+        <div className="flex gap-12 items-start">
+
+          {/* Sticky sidebar TOC — desktop only */}
+          <aside className="hidden lg:block w-52 shrink-0 sticky top-20 self-start">
+            <p className="font-body text-muted-foreground text-[10px] uppercase tracking-widest mb-4">Contents</p>
+            <nav className="space-y-0.5">
+              {sections.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => scrollTo(s.id)}
+                  className={`w-full text-left px-2 py-1.5 rounded text-[13px] font-body transition-colors ${
+                    activeSection === s.id
+                      ? "text-primary font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          {/* Content */}
+          <main className="flex-1 min-w-0 space-y-0">
+
+            {/* 1. Welcome */}
+            <Section id="welcome" number="1" title="Welcome">
+              <Body>Your plan is now ready. This guide is here to get you up to speed on how everything works, what is expected of you, and how to get the best result from the process. Read through it carefully before getting started, and if anything is unclear, message me.</Body>
+              <Body>This coaching is a structured, personalised, evidence-based system for body transformation. It gives you a clear plan to follow, keeps you accountable, and uses your data to keep progress moving in the right direction.</Body>
+              <Body>My job is to get you a result. I do that by giving you a clear plan, helping you work through any issues that come up, making sure the process is realistic and sustainable, and adjusting things when needed so you keep progressing.</Body>
+              <Body>Your job is to follow the plan closely, communicate honestly, and take ownership of the process. That means doing the work, being accurate with your nutrition and tracking, staying consistent, and telling me early if something is not working.</Body>
+              <Callout>If you stick to the plan, report honestly, and apply the changes made along the way, you will put yourself in the best position to get results.</Callout>
+              <Body>Go through this guide properly, get clear on how the coaching works, and then get started.</Body>
+            </Section>
+
+            {/* 2. How the Coaching Works */}
+            <Section id="how-it-works" number="2" title="How the Coaching Works">
+              <Body>Everything is set up for you in the coaching app from the start. That includes your training program, meal plan, Daily Log, and weekly check-in process.</Body>
+              <Body>The coaching is built around four core parts.</Body>
+
+              <SubSection title="2.1 Training Program">
+                <Body>Your training is designed to build or maintain muscle while you lose fat. The goal is not just to lose weight, but to make sure the weight you lose comes from fat rather than muscle.</Body>
+              </SubSection>
+
+              <SubSection title="2.2 Nutrition Plan">
+                <Body>Nutrition is usually set up using a meal plan approach. I use this because it keeps things simple, accurate, and repeatable. It reduces decision fatigue and makes it easier to consistently hit the intake needed for progress, while keeping food choices nutritious and supportive of health.</Body>
+                <Body>If calorie and macro tracking is a better fit for you, that can be used instead. The goal is to use an approach that works and can be followed properly.</Body>
+                <Body>I also do not expect you to use a rigid meal plan forever. Part of the process is building habits alongside the fat loss phase, so you are not only getting a result now, but also learning how to maintain it long term.</Body>
+              </SubSection>
+
+              <SubSection title="2.3 Data Collection">
+                <Body>Your Daily Log is where your day-to-day data is collected. This includes body composition data, sleep, steps, hunger, off-plan meals, and habit tracking.</Body>
+                <Body>This information helps me see how your body is responding, what may be influencing progress, and whether anything needs to be adjusted. It also gives useful context during your weekly check-in.</Body>
+              </SubSection>
+
+              <SubSection title="2.4 Weekly Check-ins">
+                <Body>Your weekly check-in is where everything comes together. It gives you the chance to tell me how the week went, what went well, where you struggled, and anything else I need to know.</Body>
+                <Body>It is also where I review your progress and decide whether anything needs to change. If progress is good, the plan will often stay the same. If something needs to change, I adjust based on the data and feedback you provide.</Body>
+                <Body>In simple terms, you follow the plan, complete your Daily Log, and check in each week. I review the information, assess your progress, and make the adjustments needed to keep things moving forward.</Body>
+              </SubSection>
+            </Section>
+
+            {/* 3. Core Expectations */}
+            <Section id="core-expectations" number="3" title="Core Expectations">
+              <Body>To get the best results from this coaching, there are a few things I need from you.</Body>
+              <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-3">You are expected to:</p>
+              <BulletList items={[
+                "Follow your meal plan as closely as possible",
+                "Complete your scheduled training sessions",
+                "Complete your Daily Log consistently",
+                "Complete your weekly check-in on time",
+                "Communicate honestly",
+              ]} />
+              <Callout>These are the basics. They are not optional.</Callout>
+              <Body>This process works best when you follow the plan properly and stay consistent. That gives me a clear picture of how things are going and whether anything needs to be adjusted.</Body>
+              <Body>You do not need to be perfect, but you do need to take the process seriously. That means being accurate with your nutrition, staying consistent, and being honest about how things are going.</Body>
+              <Body>My job is to guide the process and make the right changes when needed. Your job is to carry out the plan and give me the information I need to coach you properly.</Body>
+              <Body>If you do that, you will get results.</Body>
+            </Section>
+
+            {/* 4. Nutrition */}
+            <Section id="nutrition" number="4" title="Nutrition">
+              <SubSection title="4.1 Accuracy">
+                <Body>All foods should be weighed raw or uncooked unless otherwise stated.</Body>
+                <Body>Use a digital food scale. Do not guess portions or rely on eyeballing them.</Body>
+                <Body>This matters because small inaccuracies add up quickly. A little extra here and there may not seem like much, but over the course of a week it can make a real difference to your intake and slow progress.</Body>
+                <Callout>The more accurate you are, the better the plan works.</Callout>
+              </SubSection>
+
+              <SubSection title="4.2 Hidden Extras">
+                <Body>One of the easiest ways calories creep in is through small extras that often go unnoticed.</Body>
+                <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-3">This can include things like:</p>
+                <BulletList items={["Cooking oils", "Butter", "Sauces", "Dressings", "Snacks or little bites throughout the day", "Liquid calories"]} />
+                <Body>These may seem minor, but they add up quickly and can easily throw off your intake without you realising it.</Body>
+                <Body>Be especially careful with cooking oils. If you use oil, it is best to use an aerosol spray and only use as much as needed to stop your food from sticking.</Body>
+                <Body>The closer you keep your intake to the plan as written, the better your results will be.</Body>
+              </SubSection>
+
+              <SubSection title="4.3 Branded Foods">
+                <Body>If your meal plan includes a packaged food product, choose a brand with calories as close as possible to the one intended.</Body>
+                <Body>For example, if your plan includes non-fat Greek yogurt, check the label and find one with calories as close as possible. Products can vary from brand to brand, even when they seem very similar.</Body>
+              </SubSection>
+
+              <SubSection title="4.4 Seasonings & Low-Calorie Condiments">
+                <Body>I recommend using seasonings and low-calorie condiments to improve the flavour of your meals. Meals are easier to stick to when they taste good.</Body>
+                <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-3">Examples of low-calorie condiments include:</p>
+                <BulletList items={["Mustard", "Salsa", "Hot sauce", "Reduced-sugar ketchup", "Low-calorie BBQ sauce", "Light soy sauce"]} />
+                <Body>Use these in moderation.</Body>
+                <Body>You should also salt all meals to taste with iodized salt. This helps you get enough iodine, which is an essential mineral that many people do not get enough of.</Body>
+              </SubSection>
+
+              <SubSection title="4.5 Eating Out">
+                <Body>I am not telling you that you cannot eat out while working with me. You do not need to stop seeing friends, going to restaurants, or putting your social life on hold.</Body>
+                <Body>What you do need to understand is that eating out will usually make fat loss harder. Restaurant meals are often much higher in calories than they seem because of oils, sauces, and portion sizes. Too many meals out will impact your results.</Body>
+                <Body>If you do eat out, do it with some caution and keep it sensible. There is a big difference between a reasonable meal out and turning it into an all-out blowout.</Body>
+                <Body>Any restaurant meal should be logged as an off-plan meal.</Body>
+                <Body>As a general recommendation, 1 to 3 off-plan meals per week is reasonable for most people during a fat loss phase. The more often you eat out, and the less controlled those meals are, the more likely it is to slow progress.</Body>
+              </SubSection>
+
+              <SubSection title="4.6 Meal Prep vs Fresh Cooking">
+                <Body>Both meal prep and fresh cooking can work. The best option is the one that helps you stay most consistent.</Body>
+                <Body>Meal prep saves time and makes the week easier to manage, but some people enjoy their food less when meals are prepared in advance. Fresh cooking takes more time, but some people prefer it and find it easier to stick to.</Body>
+                <Body>There is no right or wrong choice here.</Body>
+                <Body>If you are meal prepping, I recommend preparing meals no more than 3 days in advance for freshness.</Body>
+              </SubSection>
+            </Section>
+
+            {/* 5. Training */}
+            <Section id="training" number="5" title="Training">
+              <SubSection title="5.1 Structure">
+                <Body>Your training program is built around efficient, hypertrophy-focused strength training. The goal is to build or maintain muscle mass while you lose fat, so that the weight you lose comes from fat rather than muscle.</Body>
+                <Body>Your full program is set up for you in the app, along with your training schedule. This will usually follow a pattern such as A / B / off / repeat.</Body>
+                <Body>Complete the sessions in the order assigned and log all of your workouts in the app.</Body>
+                <Body>Demo videos are available where needed, so use them if you are unsure on an exercise.</Body>
+                <Body>If you cannot do a planned exercise for a practical reason, such as equipment being taken, use the substitute exercise feature in the app. In most cases, the best substitute is a similar movement using a different implement. For example, if the smith machine is not available, the same exercise with a barbell or dumbbells would usually be a sensible alternative.</Body>
+              </SubSection>
+
+              <SubSection title="5.2 Progression">
+                <Body>Increase the load when you hit the top of the target rep range on your first working set with good technique.</Body>
+                <Body>For example, if an exercise is programmed for 6 to 8 reps, and you get 8 reps on your first working set with solid form, that is your cue to increase the weight next time.</Body>
+                <Body>Always prioritise good form over adding load. The goal is not to use the most weight possible. The goal is to make the target muscle work hard.</Body>
+                <Body>When you can perform more reps or use more load with good form, that is a sign that progress is happening. Building on that over time is a key part of building muscle.</Body>
+              </SubSection>
+
+              <SubSection title="5.3 Filming Your Lifts">
+                <Body>Please film your lifts in the gym and send them to me in your weekly check-ins. This is an essential part of the coaching process.</Body>
+                <Body>Because I coach online, I cannot be there with you in person. Filming your lifts is the best alternative and allows me to assess your technique properly, make corrections where needed, and help you get more out of your training.</Body>
+                <Body>A lot of people feel awkward filming themselves at first or worry about what other people in the gym might think. In reality, most people are too focused on themselves to care. This is part of the process, and it is there to help you.</Body>
+                <Body>I recommend using a tripod with a magnetic ring to make filming easier. Set the camera up at an angle that allows me to clearly see your technique and the full movement.</Body>
+                <Body>The better the footage, the better the feedback I can give you.</Body>
+              </SubSection>
+
+              <SubSection title="5.4 Pain vs Soreness">
+                <Body>Muscle soreness and pain are not the same thing.</Body>
+                <Body>Soreness is normal, especially in the first few weeks of a new training program. Your body will adapt, and this will settle down over time.</Body>
+                <Body>Pain is different. Pain is a sign that something is not right, and pushing through it can lead to injury.</Body>
+                <Callout>If you feel pain during an exercise, stop the exercise and inform me. Do not push through pain under any circumstance.</Callout>
+              </SubSection>
+            </Section>
+
+            {/* 6. Data Collection */}
+            <Section id="data-collection" number="6" title="Data Collection">
+              <Body>Your Daily Log should be completed in the app every day.</Body>
+              <Body>This is where I collect the information I use to assess how things are going, identify patterns, and decide whether anything needs to change. It gives context to your body composition progress and helps inform the decision-making process during your weekly check-in.</Body>
+              <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-3">You will be logging:</p>
+              <ul className="space-y-3 mt-3">
+                {[
+                  { label: "Body weight", detail: "taken first thing in the morning, after using the bathroom, before eating or drinking" },
+                  { label: "Sleep (hours)", detail: "total hours slept" },
+                  { label: "Caffeine (servings)", detail: "number of servings, where 1 serving is roughly 80 to 100mg, or about one small coffee or espresso" },
+                  { label: "Steps", detail: "total daily steps, tracked by your phone or watch" },
+                  { label: "Sleep quality (1 to 5)", detail: "how well rested you feel after waking — 1 = slept very poorly, feel very tired / 5 = slept great, feel well rested" },
+                  { label: "Hunger level (1 to 5)", detail: "your overall hunger across the day — 1 = not hungry at all / 5 = very hungry throughout the day" },
+                  { label: "Number of off-plan meals", detail: "" },
+                  { label: "Habit tracking", detail: "" },
+                  { label: "Notes", detail: "anything out of the ordinary that may be relevant" },
+                ].map(({ label, detail }, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="mt-[6px] w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: "#59BE50" }} />
+                    <span className="font-body text-[15px] leading-relaxed">
+                      <span className="text-foreground font-medium">{label}</span>
+                      {detail && <span className="text-foreground/70"> — {detail}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Body>This data matters because it gives me a clearer picture of what is influencing your progress and whether anything needs to change.</Body>
+              <Callout>Be honest with your logging. The more accurate the information is, the better I can coach you.</Callout>
+            </Section>
+
+            {/* 7. Weekly Check-in */}
+            <Section id="weekly-check-in" number="7" title="Weekly Check-in">
+              <Body>Your weekly check-in is an important part of the coaching process. This is where I review your week, assess your progress, and decide what needs to happen next.</Body>
+              <Body>You will have an assigned check-in day, which you can see in the app. Your check-in needs to be completed once per week and done on time.</Body>
+
+              <SubSection title="7.1 Check-in Form">
+                <Body>Your check-in form should be completed in the app.</Body>
+                <Body>Answer it honestly. The more accurate your check-in is, the better I can assess what is going on and make the right decisions. If you need to add more context, you can do that in your voice note.</Body>
+              </SubSection>
+
+              <SubSection title="7.2 Measurements">
+                <Body>Your waist measurement should be taken first thing in the morning, after using the bathroom, before eating or drinking.</Body>
+                <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-3">To take it properly:</p>
+                <BulletList items={["Fully exhale", "Tense your abs", "Measure around the navel"]} />
+                <Body>Keep the conditions the same each week so the measurement is as useful as possible.</Body>
+              </SubSection>
+
+              <SubSection title="7.3 Progress Photos">
+                <Body>Progress photos should be taken at the same time as your waist measurement where possible.</Body>
+                <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-3">You will need to take:</p>
+                <BulletList items={["Front", "Side", "Back"]} />
+                <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-4">Make sure:</p>
+                <BulletList items={[
+                  "Your full body is visible from head to toe",
+                  "The lighting is good",
+                  "You use the same conditions each week",
+                  "You are in a relaxed pose",
+                  "You use a tripod, not mirror selfies",
+                ]} />
+                <Body>Please send your progress photos to me on WhatsApp.</Body>
+              </SubSection>
+
+              <SubSection title="7.4 Form Videos">
+                <Body>Please send me one full training session per week on WhatsApp.</Body>
+                <Body>This allows me to continuously review your lifts as you progress and make sure your technique stays where it needs to be.</Body>
+              </SubSection>
+
+              <SubSection title="7.5 Voice Note">
+                <Body>Please also send me a voice note each week, no longer than 10 minutes.</Body>
+                <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-3">Use this to cover:</p>
+                <BulletList items={[
+                  "Wins from the week",
+                  "Struggles or issues you ran into",
+                  "Any questions you want answered",
+                  "Anything else you think I should know",
+                ]} />
+              </SubSection>
+
+              <SubSection title="7.6 What You Receive">
+                <Body>You will receive a video response from me within 24 hours.</Body>
+                <Body>This will include feedback on your progress, answers to your questions, technique feedback where needed, any adjustments that need to be made, and clear next steps for the week ahead.</Body>
+                <Callout>The better your check-in, the better I can coach you.</Callout>
+              </SubSection>
+            </Section>
+
+            {/* 8. Lifestyle Factors */}
+            <Section id="lifestyle" number="8" title="Lifestyle Factors">
+              <Body>Lifestyle factors play an important role in your results. They affect fat loss, but they also affect how easy or difficult the process feels day to day.</Body>
+
+              <SubSection title="8.1 Sleep">
+                <Body>Poor sleep can negatively impact fat loss and make sticking to your diet harder. Most people notice the same pattern when sleep is off: hunger goes up, food decisions get worse, and the process feels harder than it needs to.</Body>
+                <Body>The aim is to get enough sleep to feel well rested when you wake up. For most people, that will usually mean at least around 7.5 hours, but this can vary from person to person.</Body>
+                <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-3">A few things that help:</p>
+                <BulletList items={[
+                  "Keep a consistent sleep and wake time",
+                  "Limit screens before bed",
+                  "Avoid caffeine too late in the day",
+                  "Keep your room cool, dark, and quiet",
+                  "Have a simple wind-down routine before bed",
+                ]} />
+                <Body>You do not need a perfect routine. You just need one that helps you sleep well consistently.</Body>
+              </SubSection>
+
+              <SubSection title="8.2 Steps">
+                <Body>You will have a step target in the app. Try to reach that target on average across the week.</Body>
+                <Body>Walking helps increase your overall activity levels, supports fat loss, and is a simple way to increase energy expenditure. It is also good for general health.</Body>
+                <p className="font-body text-foreground/85 text-[15px] leading-relaxed mt-3">A few easy ways to get more steps in:</p>
+                <BulletList items={[
+                  "Go for 10-minute walks after meals",
+                  "Use a walking pad",
+                  "Park further away when possible",
+                  "Take the stairs instead of the lift or escalator where practical",
+                  "Add a walk at the start or end of your day",
+                ]} />
+                <Body>No need to overcomplicate this. Small bits of movement done consistently add up over the week and make a real difference.</Body>
+              </SubSection>
+            </Section>
+
+            {/* 9. Common Mistakes */}
+            <Section id="common-mistakes" number="9" title="Common Mistakes">
+              <Body>Most people struggle because the basics are not being done consistently enough. The most common mistakes I see are:</Body>
+              <BulletList items={[
+                "Not being accurate with food, such as estimating or eyeballing portions",
+                "Too many off-plan meals",
+                "Missing training sessions",
+                "Not prioritising sleep",
+              ]} />
+              <Body>These things can add up over the week and slow progress.</Body>
+              <Body>Slip-ups happen. If you go off plan, overeat, or have a bad meal, get back on track as soon as possible. Do not let one mistake turn into a bad day or weekend.</Body>
+              <Callout>Avoid the all-or-nothing mindset. One meal off plan is not the issue. Repeating it is.</Callout>
+            </Section>
+
+            {/* 10. Communication */}
+            <Section id="communication" number="10" title="Communication">
+              <Body>We will mainly use WhatsApp to communicate, and my contact details are provided for you below.</Body>
+              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#59BE50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6.29 6.29l.98-.98a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                <span className="font-body text-foreground font-medium text-[15px]">+61 468 764 276</span>
+              </div>
+              <Body>The weekly check-in is where we will review your progress in full, but you do not need to wait until then if something comes up and you need help. You are welcome to message me anytime if you have a question, are struggling with something, or want to share a win.</Body>
+              <Body>I will always aim to reply within 24 hours.</Body>
+              <Body>If you are genuinely unsure about something, ask. If something is affecting your ability to follow the plan, let me know. Good communication makes the coaching process easier and more effective for both of us.</Body>
+            </Section>
+
+            {/* 11. FAQ */}
+            <Section id="faq" number="11" title="FAQ">
+              {[
+                {
+                  q: "Do I have to eat the same thing every day?",
+                  a: "No.\n\nThe meal plan gives you structure, but that does not mean every day has to look exactly the same. If you prefer, a calorie and macro tracking approach can also work, where you track manually and create your own meals. The main thing is that calories and protein are matched.\n\nThat said, use some common sense. Matching calories and macros does not automatically make two food choices equal. Food quality still matters, and so do health and micronutrients. Every meal should include fruit and/or vegetables, and the overall diet should still be built around mostly whole, nutritious foods.",
+                },
+                {
+                  q: "Can I eat out?",
+                  a: "Yes.\n\nYou do not need to stop eating out while working with me. Just understand that the more often you eat out, the harder fat loss becomes. Restaurant meals are usually much higher in calories than they seem, so this needs to be done with some caution and in moderation.",
+                },
+                {
+                  q: "Will I have to weigh food forever?",
+                  a: "No.\n\nWeighing food is a tool to help you be accurate and consistent. It is not something I expect you to do forever.\n\nAlongside targeted fat loss, we will also be working on habits so you are not just getting a result now, but learning how to maintain it later.\n\nThe goal is not only to help you lose fat, but to help you build the habits and understanding needed to keep the result once you have achieved it.",
+                },
+                {
+                  q: "What if I feel pain?",
+                  a: "Stop the exercise and let me know.\n\nDo not push through pain. Pain is not the same as normal training discomfort or soreness, and ignoring it can turn a small issue into a bigger one.",
+                },
+                {
+                  q: "I messed up my diet. What do I do?",
+                  a: "Get back to the plan at the next meal.\n\nDo not wait until tomorrow, and do not turn one off-plan meal into a full day or weekend off plan. One slip-up is not the problem. Repeating it is.",
+                },
+                {
+                  q: "I'm hungry. What do I do?",
+                  a: "First, stick to the plan.\n\nHunger is a normal part of the process, especially during a fat loss phase. It is not an emergency. Sometimes it simply needs to be accepted as part of dieting.\n\nThat said, if hunger is becoming a regular issue, mention it in your check-in. We may need to look at things like food volume, sleep, and whether the deficit is at a sustainable level.",
+                },
+              ].map(({ q, a }, i) => (
+                <FAQItem key={i} question={q} answer={a} />
+              ))}
+            </Section>
+
+            {/* 12. Final Notes */}
+            <Section id="final-notes" number="12" title="Final Notes">
+              <Body>At this point, you should be clear on how the coaching works, what is expected of you, and how to get the best result from the process.</Body>
+              <Body>Now the focus is simple: follow the plan closely, be accurate with your nutrition, stay consistent, and communicate honestly. You do not need to be perfect, but you do need to take the process seriously.</Body>
+              <Body>Everything is set up for you in the app, and your plan is ready.</Body>
+              <Callout>Read through this guide properly, get started, and if you need anything, reach out.</Callout>
+            </Section>
+
+          </main>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="py-6 border-t border-border">
+        <div className="max-w-[900px] mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span className="font-body text-muted-foreground text-xs">Jake Hickman · 1:1 Online Coaching</span>
+          <span className="font-body text-muted-foreground text-xs">© {new Date().getFullYear()}</span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function FAQItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  const paragraphs = answer.split("\n\n").filter(Boolean);
+
+  return (
+    <div className="border-b border-border/50 last:border-0">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-start justify-between gap-4 py-4 text-left"
+      >
+        <span className="font-body text-foreground text-[15px] font-medium leading-relaxed">{question}</span>
+        <span
+          className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 transition-transform"
+          style={{ backgroundColor: "#052E1A", color: "#59BE50", transform: open ? "rotate(45deg)" : "none" }}
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </span>
+      </button>
+      {open && (
+        <div className="pb-4 space-y-3">
+          {paragraphs.map((p, i) => (
+            <p key={i} className="font-body text-foreground/80 text-[15px] leading-relaxed">{p}</p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
