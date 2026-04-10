@@ -316,3 +316,5 @@
 - [x] Getting Started page: make Contents button and Back to Dashboard button larger on mobile
 - [x] Coach client progress page: show step goal next to average steps for the week
 - [x] Getting Started page: fix browser back button requiring multiple taps — replace href anchors with router Link so no extra history entries are pushed
+- [x] Getting Started page: move Contents out of header, add sticky "On this page" in-page TOC bar below intro section
+- [x] Getting Started page: move Contents out of header, add sticky "On this page" in-page TOC bar below intro section

@@ -110,7 +110,7 @@ export default function GettingStarted() {
   const [, navigate] = useLocation();
   const [activeSection, setActiveSection] = useState("welcome");
   const [tocOpen, setTocOpen] = useState(false);
-  const tocRef = useRef<HTMLDivElement>(null);
+  const inPageTocRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Active section tracking
@@ -136,7 +136,7 @@ export default function GettingStarted() {
   useEffect(() => {
     if (!tocOpen) return;
     const handler = (e: MouseEvent | TouchEvent) => {
-      if (tocRef.current && !tocRef.current.contains(e.target as Node)) {
+      if (inPageTocRef.current && !inPageTocRef.current.contains(e.target as Node)) {
         setTocOpen(false);
       }
     };
@@ -158,8 +158,8 @@ export default function GettingStarted() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Sticky header */}
-      <header className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur-sm" ref={tocRef}>
+      {/* Sticky header — global nav only */}
+      <header className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur-sm">
         <div className="max-w-[900px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           {/* Back to dashboard */}
           <button
@@ -172,46 +172,14 @@ export default function GettingStarted() {
             Dashboard
           </button>
 
-          {/* Centre label — hidden on very small screens */}
-          <p className="hidden sm:block font-body text-muted-foreground text-xs uppercase tracking-widest truncate">
+          {/* Centre label */}
+          <p className="font-body text-muted-foreground text-xs uppercase tracking-widest truncate">
             1:1 Online Coaching with Jake Hickman
           </p>
 
-          {/* Mobile TOC toggle */}
-          <button
-            onClick={() => setTocOpen(o => !o)}
-            className="lg:hidden flex items-center gap-2 text-sm font-body text-muted-foreground border border-border rounded-lg px-3.5 py-2 hover:border-muted-foreground/40 transition-colors shrink-0"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-            Contents
-          </button>
-
-          {/* Desktop spacer to balance back link */}
-          <div className="hidden lg:block w-20" />
+          {/* Spacer */}
+          <div className="w-20" />
         </div>
-
-        {/* Mobile TOC dropdown */}
-        {tocOpen && (
-          <div className="lg:hidden border-t border-border bg-background px-4 py-3 max-h-64 overflow-y-auto">
-            <nav className="space-y-0.5">
-              {sections.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => scrollTo(s.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-body transition-colors ${
-                    activeSection === s.id
-                      ? "text-primary font-medium bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-        )}
       </header>
 
       {/* Hero */}
@@ -228,6 +196,54 @@ export default function GettingStarted() {
           </p>
         </div>
       </section>
+
+      {/* In-page TOC bar — mobile only, sticky below header (top-14 = 56px header height) */}
+      <div
+        ref={inPageTocRef}
+        className="lg:hidden sticky top-14 z-30 bg-background/95 backdrop-blur-sm border-b border-border"
+      >
+        <div className="max-w-[900px] mx-auto px-4">
+          <button
+            onClick={() => setTocOpen(o => !o)}
+            className="w-full flex items-center justify-between py-3 text-sm font-body"
+          >
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="15" y2="12" /><line x1="3" y1="18" x2="18" y2="18" />
+              </svg>
+              <span className="text-[11px] uppercase tracking-widest">On this page</span>
+            </span>
+            <span className="flex items-center gap-1.5 text-foreground font-medium">
+              <span className="truncate max-w-[180px]">{sections.find(s => s.id === activeSection)?.label ?? ""}</span>
+              <svg
+                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                strokeLinecap="round" strokeLinejoin="round"
+                className={`transition-transform duration-200 ${tocOpen ? "rotate-180" : ""}`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </span>
+          </button>
+
+          {tocOpen && (
+            <nav className="pb-2 border-t border-border/50 pt-1 space-y-0.5">
+              {sections.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => scrollTo(s.id)}
+                  className={`w-full text-left px-2 py-2.5 rounded-md text-sm font-body transition-colors ${
+                    activeSection === s.id
+                      ? "text-primary font-medium bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </nav>
+          )}
+        </div>
+      </div>
 
       {/* Main layout */}
       <div className="flex-1 max-w-[900px] mx-auto w-full px-4 sm:px-6 pb-16">
