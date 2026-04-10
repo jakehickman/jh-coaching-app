@@ -2458,29 +2458,7 @@ const DIET_LABEL_MAP: Record<string, string> = {
   very_different: 'Very different',
   no_off_plan_meals: 'No off-plan meals',
 };
-const BARRIER_LABEL_MAP: Record<string, string> = {
-  no_issues: 'No issues',
-  hunger: 'Hunger / cravings',
-  cravings: 'Hunger / cravings',
-  social_events: 'Social events',
-  busy_time: 'Time / schedule',
-  poor_planning: 'Poor planning / prep',
-  low_motivation: 'Low motivation',
-  travel_disruption: 'Travel',
-  other: 'Other',
-};
-const ASSESS_LABEL_MAP: Record<string, string> = {
-  executed_exactly: 'Executed the plan exactly',
-  mostly_followed: 'Mostly followed the plan',
-  inconsistent: 'Was inconsistent',
-  didnt_follow: "Didn't follow the plan",
-};
-const assessColorFn = (v: string | null) => {
-  if (!v || v === 'executed_exactly') return 'text-green-400';
-  if (v === 'mostly_followed') return 'text-amber-400';
-  if (v === 'inconsistent') return 'text-orange-400';
-  return 'text-red-400';
-};
+
 
 const fmtCheckInDate = (iso: string) => {
   const d = new Date(iso + 'T00:00:00');
@@ -3606,23 +3584,6 @@ function CheckInsSection() {
                               </div>
                             ))}
                           </div>
-                        </div>
-                      )}
-
-                      {/* Deviation cause */}
-                      {ci.adherenceBarrier && ci.adherenceBarrier !== 'no_issues' && (
-                        <div className="px-4 py-2 border-t border-border/50">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Main Deviation Cause</p>
-                          <p className="text-sm text-foreground">{BARRIER_LABEL_MAP[ci.adherenceBarrier] ?? ci.adherenceBarrier}</p>
-                          {ci.barrierExplain && <p className="text-xs text-muted-foreground mt-0.5">{ci.barrierExplain}</p>}
-                        </div>
-                      )}
-
-                      {/* Self-assessment */}
-                      {ci.weeklyAssessment && (
-                        <div className="px-4 py-2 border-t border-border/50">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Self-Assessment</p>
-                          <p className="text-sm font-medium text-foreground">{ASSESS_LABEL_MAP[ci.weeklyAssessment] ?? ci.weeklyAssessment}</p>
                         </div>
                       )}
 

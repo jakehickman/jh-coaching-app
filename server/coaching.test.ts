@@ -186,8 +186,6 @@ describe("checkIn", () => {
       dietAddedFats: "light_spray",
       dietMealTiming: "never",
       dietOffPlanQuality: "no_off_plan_meals",
-      adherenceBarrier: "no_issues",
-      weeklyAssessment: "executed_exactly",
     });
     // submitCheckIn mock returns { id: 1 }
     expect(result).toBeTruthy();

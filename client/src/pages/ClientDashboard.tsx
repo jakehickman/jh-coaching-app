@@ -2309,9 +2309,6 @@ function CheckInsTab() {
   type AddedFatsVal = '' | 'light_spray' | 'small_amount' | 'one_tsp_or_more' | 'no_added_fats';
   type MealTimingVal = '' | 'never' | 'one_two_days' | 'few_days' | 'most_days' | 'every_day';
   type OffPlanQualityVal = '' | 'very_close' | 'somewhat_close' | 'not_very_close' | 'very_different' | 'no_off_plan_meals';
-  type BarrierVal = '' | 'hunger' | 'cravings' | 'social_events' | 'busy_time' | 'poor_planning' | 'low_motivation' | 'travel_disruption' | 'other';
-  type AssessVal = '' | 'executed_exactly' | 'mostly_followed' | 'inconsistent' | 'didnt_follow';
-
   const blankForm = {
     dietWeighedFoods: '' as WeighFoodsVal,
     dietMealPrepAccuracy: '' as MealPrepVal,
@@ -2319,9 +2316,6 @@ function CheckInsTab() {
     dietAddedFats: '' as AddedFatsVal,
     dietMealTiming: '' as MealTimingVal,
     dietOffPlanQuality: '' as OffPlanQualityVal,
-    adherenceBarrier: '' as BarrierVal,
-    barrierExplain: '',
-    weeklyAssessment: '' as AssessVal,
     focusNextWeek: '',
   };
   const [form, setForm] = useState(blankForm);
@@ -2336,9 +2330,6 @@ function CheckInsTab() {
         dietAddedFats: (existingCheckIn.dietAddedFats ?? '') as AddedFatsVal,
         dietMealTiming: (existingCheckIn.dietMealTiming ?? '') as MealTimingVal,
         dietOffPlanQuality: (existingCheckIn.dietOffPlanQuality ?? '') as OffPlanQualityVal,
-        adherenceBarrier: ((existingCheckIn.adherenceBarrier === 'no_issues' ? '' : existingCheckIn.adherenceBarrier) ?? '') as BarrierVal,
-        barrierExplain: existingCheckIn.barrierExplain ?? '',
-        weeklyAssessment: ((existingCheckIn as any).weeklyAssessment ?? '') as AssessVal,
         focusNextWeek: existingCheckIn.focusNextWeek ?? '',
       });
       setSubmitted(true);
@@ -2360,8 +2351,6 @@ function CheckInsTab() {
   const handleSubmit = () => {
     const dietFields = [form.dietWeighedFoods, form.dietMealPrepAccuracy, form.dietExtrasFrequency, form.dietAddedFats, form.dietMealTiming, form.dietOffPlanQuality];
     if (dietFields.some(f => !f)) { toast.error('Please answer all diet execution questions.'); return; }
-    if (!form.adherenceBarrier) { toast.error('Please select what caused the most deviation this week.'); return; }
-    if (!form.weeklyAssessment) { toast.error('Please select which best describes your week.'); return; }
     submitMutation.mutate({
       weekStartDate: currentWeekStart,
       dietWeighedFoods: form.dietWeighedFoods as any,
@@ -2370,9 +2359,6 @@ function CheckInsTab() {
       dietAddedFats: form.dietAddedFats as any,
       dietMealTiming: form.dietMealTiming as any,
       dietOffPlanQuality: form.dietOffPlanQuality as any,
-      adherenceBarrier: form.adherenceBarrier as any,
-      barrierExplain: form.barrierExplain || undefined,
-      weeklyAssessment: form.weeklyAssessment as any,
       focusNextWeek: form.focusNextWeek || undefined,
     });
   };
@@ -2385,22 +2371,7 @@ function CheckInsTab() {
     return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  const BARRIER_OPTIONS: { value: BarrierVal; label: string }[] = [
-    { value: 'hunger', label: 'Hunger / cravings' },
-    { value: 'social_events', label: 'Social events' },
-    { value: 'busy_time', label: 'Time / schedule' },
-    { value: 'travel_disruption', label: 'Travel' },
-    { value: 'low_motivation', label: 'Low motivation' },
-    { value: 'poor_planning', label: 'Poor planning / prep' },
-    { value: 'other', label: 'Other' },
-  ];
 
-  const ASSESS_OPTIONS: { value: AssessVal; label: string }[] = [
-    { value: 'executed_exactly', label: 'I executed the plan exactly' },
-    { value: 'mostly_followed', label: 'I mostly followed it' },
-    { value: 'inconsistent', label: 'I was inconsistent' },
-    { value: 'didnt_follow', label: "I didn't follow the plan" },
-  ];
 
   // Generic single-choice question component for the check-in form
   const ChoiceQuestion = ({ label, field, options }: {
@@ -2437,8 +2408,7 @@ function CheckInsTab() {
     if (submitted) setIsEditing(false);
   }, [submitted]);
 
-  const barrierLabel = (v: string) => BARRIER_OPTIONS.find(o => o.value === v)?.label ?? v;
-  const assessLabel = (v: string) => ASSESS_OPTIONS.find(o => o.value === v)?.label ?? v;
+
 
   return (
     <div className="space-y-5">
@@ -2596,56 +2566,6 @@ function CheckInsTab() {
           />
         </Card>
 
-        {/* Section 2: Main deviation cause */}
-        <Card className="space-y-4 mb-4">
-          <p className="text-sm font-semibold text-foreground">What caused the MOST deviation this week?</p>
-          <div className="grid grid-cols-2 gap-2">
-            {BARRIER_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setForm(p => ({ ...p, adherenceBarrier: opt.value, barrierExplain: p.barrierExplain }))}
-                className={`py-3 px-3 rounded-lg border text-sm font-medium transition-all text-left ${
-                  form.adherenceBarrier === opt.value
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border text-muted-foreground hover:border-muted-foreground/40'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          {form.adherenceBarrier === 'other' && (
-            <textarea
-              value={form.barrierExplain}
-              onChange={e => setForm(p => ({ ...p, barrierExplain: e.target.value }))}
-              placeholder="Please describe..."
-              rows={3}
-              className="w-full rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          )}
-        </Card>
-
-        {/* Section 3: Weekly self-assessment */}
-        <Card className="space-y-4 mb-4">
-          <p className="text-sm font-semibold text-foreground">Which best describes your week?</p>
-          <div className="space-y-2">
-            {ASSESS_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setForm(p => ({ ...p, weeklyAssessment: opt.value }))}
-                className={`w-full py-3 px-4 rounded-lg border text-sm font-medium transition-all text-left ${
-                  form.weeklyAssessment === opt.value
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border text-muted-foreground hover:border-muted-foreground/40'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </Card>
 
         <div className="flex gap-3">
           {isEditing && (
@@ -2693,9 +2613,7 @@ function CheckInsTab() {
                   <p className="text-sm font-semibold text-foreground">Week of {fmtWeekStart(toLocalDateStr(ci.weekStartDate))}</p>
 
                 </div>
-                {(ci as any).weeklyAssessment && (
-                  <p className="text-xs text-muted-foreground mt-1">{ASSESS_OPTIONS.find(a => a.value === (ci as any).weeklyAssessment)?.label}</p>
-                )}
+
               </Card>
             ))}
           </div>

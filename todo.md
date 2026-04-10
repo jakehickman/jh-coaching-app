@@ -294,3 +294,6 @@
 - [x] Fix overdue condition: today > scheduledDate + 7 days (7-day grace period after scheduled check-in date)
 - [x] Fix overdue logic: scan all scheduled check-in dates (not just most recent); overdue if any missed scheduled date is more than 7 days old
 - [x] Check-in form: replace diet execution section with 6 new questions (food weighing, meal prep accuracy, off-plan eating, added fats, meal timing, off-plan meal quality)
+- [ ] Check-in form: remove last two diet execution questions (meal timing, off-plan meal quality)
+- [ ] Check-in form: remove "added fats" (dietAddedFats) and "off-plan meal quality" (dietOffPlanQuality) questions from diet execution section
+- [x] Check-in form: remove "What caused the MOST deviation this week?" (adherenceBarrier) and "Which best describes your week?" (weeklyAssessment) sections
