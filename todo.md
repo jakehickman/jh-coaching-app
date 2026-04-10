@@ -310,3 +310,4 @@
 - [x] Getting Started page: close mobile TOC dropdown when tapping anywhere outside it
 - [x] Getting Started page: optimise layout for mobile viewing
 - [x] Replace phone number display with WhatsApp button linking to https://wa.me/61468764276
+- [x] Getting Started page: increase body text size for better mobile readability

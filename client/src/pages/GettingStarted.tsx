@@ -24,7 +24,7 @@ function BulletList({ items }: { items: string[] }) {
             className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0"
             style={{ backgroundColor: "#59BE50" }}
           />
-          <span className="font-body text-foreground/85 text-[15px] leading-relaxed">{item}</span>
+          <span className="font-body text-foreground/85 text-[15px] sm:text-[15px] leading-relaxed">{item}</span>
         </li>
       ))}
     </ul>
@@ -34,7 +34,7 @@ function BulletList({ items }: { items: string[] }) {
 function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mt-8">
-      <h3 className="font-display text-foreground text-[15px] font-semibold mb-3 tracking-tight">{title}</h3>
+      <h3 className="font-display text-foreground text-base font-semibold mb-3 tracking-tight">{title}</h3>
       {children}
     </div>
   );
@@ -50,7 +50,7 @@ function Section({ id, number, title, children }: { id: string; number: string; 
         >
           {number}
         </span>
-        <h2 className="font-display text-foreground text-xl font-bold leading-tight">{title}</h2>
+        <h2 className="font-display text-foreground text-[22px] font-bold leading-tight">{title}</h2>
       </div>
       {children}
     </section>
@@ -59,14 +59,14 @@ function Section({ id, number, title, children }: { id: string; number: string; 
 
 function Body({ children }: { children: React.ReactNode }) {
   return (
-    <p className="font-body text-foreground/80 text-[15px] leading-relaxed mt-3">{children}</p>
+    <p className="font-body text-foreground/80 text-base leading-[1.75] mt-3">{children}</p>
   );
 }
 
 function Callout({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="mt-4 px-4 py-3 rounded-lg border-l-2 text-[14px] font-body leading-relaxed"
+      className="mt-4 px-4 py-3 rounded-lg border-l-2 text-[15px] font-body leading-relaxed"
       style={{ borderColor: "#59BE50", backgroundColor: "#052E1A33", color: "var(--foreground)" }}
     >
       {children}
@@ -84,7 +84,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-start justify-between gap-4 py-4 text-left"
       >
-        <span className="font-body text-foreground text-[15px] font-medium leading-relaxed">{question}</span>
+        <span className="font-body text-foreground text-base font-medium leading-relaxed">{question}</span>
         <span
           className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 transition-transform duration-200"
           style={{ backgroundColor: "#052E1A", color: "#59BE50", transform: open ? "rotate(45deg)" : "none" }}
@@ -97,7 +97,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
       {open && (
         <div className="pb-4 space-y-3">
           {paragraphs.map((p, i) => (
-            <p key={i} className="font-body text-foreground/75 text-[15px] leading-relaxed">{p}</p>
+            <p key={i} className="font-body text-foreground/75 text-base leading-[1.75]">{p}</p>
           ))}
         </div>
       )}
@@ -393,7 +393,7 @@ export default function GettingStarted() {
             <Section id="data-collection" number="6" title="Data Collection">
               <Body>Your Daily Log should be completed in the app every day.</Body>
               <Body>This is where I collect the information I use to assess how things are going, identify patterns, and decide whether anything needs to change. It gives context to your body composition progress and helps inform the decision-making process during your weekly check-in.</Body>
-              <p className="font-body text-foreground/80 text-[15px] leading-relaxed mt-3">You will be logging:</p>
+              <p className="font-body text-foreground/80 text-base leading-[1.75] mt-3">You will be logging:</p>
               <ul className="space-y-3 mt-3">
                 {[
                   { label: "Body weight", detail: "taken first thing in the morning, after using the bathroom, before eating or drinking" },
@@ -408,7 +408,7 @@ export default function GettingStarted() {
                 ].map(({ label, detail }, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: "#59BE50" }} />
-                    <span className="font-body text-[15px] leading-relaxed">
+                    <span className="font-body text-base leading-[1.75]">
                       <span className="text-foreground font-medium">{label}</span>
                       {detail && <span className="text-foreground/65"> — {detail}</span>}
                     </span>
