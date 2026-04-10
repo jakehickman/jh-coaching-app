@@ -47,9 +47,9 @@ export default function Onboarding() {
           <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-8 text-center">
             What happens next
           </p>
-          <div className="flex flex-row items-start justify-center gap-10 flex-wrap">
+          <div className="flex flex-col items-start gap-6 max-w-xs mx-auto">
             {steps.map(({ step, text }, i) => (
-              <div key={step} className="flex flex-col items-center gap-3 text-center" style={{ maxWidth: 148 }}>
+              <div key={step} className="flex flex-row items-start gap-4 text-left">
                 {/* Circle badge */}
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center font-display font-bold text-sm shrink-0"
@@ -57,8 +57,7 @@ export default function Onboarding() {
                 >
                   {step}
                 </div>
-                {/* Connector line (not after last) */}
-                <p className="font-body text-foreground text-sm leading-relaxed">{text}</p>
+                <p className="font-body text-foreground text-sm leading-relaxed pt-1.5">{text}</p>
               </div>
             ))}
           </div>
