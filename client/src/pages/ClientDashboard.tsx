@@ -1168,26 +1168,10 @@ function MealPlanTab() {
   const { data: plan } = trpc.mealPlan.get.useQuery({ dayType });
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
 
-  // Mode detection: prefer explicit activeMode column, fall back to legacy planType in dailyTargets
-  const activeMode = (plan as any)?.activeMode;
-  const legacyDailyTargets = (plan?.dailyTargets as Record<string,string> | null | undefined) ?? null;
-  const legacyIsMacro = (legacyDailyTargets as any)?.planType === "macro_targets";
-  const isMacroTargetsMode = activeMode === "macro_targets" || (!activeMode && legacyIsMacro);
-
-  // Meal Plan mode data
-  const meals = isMacroTargetsMode ? [] : ((plan?.meals as any[]) ?? []);
-  const planDailyTargets = isMacroTargetsMode ? null : (legacyDailyTargets && !legacyIsMacro ? legacyDailyTargets : null);
+  const meals = (plan?.meals as any[]) ?? [];
+  const planDailyTargets = (plan?.dailyTargets as Record<string,string> | null | undefined) ?? null;
+  const isMacroTargetsMode = (planDailyTargets as any)?.planType === "macro_targets";
   const hasPlanTargets = !isMacroTargetsMode && planDailyTargets && Object.keys(planDailyTargets).filter(k => k !== "planType").length > 0;
-
-  // Macro Targets mode data — read from dedicated columns, fall back to legacy meals column
-  const macroTargetMeals: any[] = isMacroTargetsMode
-    ? (((plan as any)?.macroTargetMeals as any[])?.length > 0
-        ? ((plan as any).macroTargetMeals as any[])
-        : (legacyIsMacro ? ((plan?.meals as any[]) ?? []) : []))
-    : [];
-  const macroTargetDailyTargets: Record<string,string> = isMacroTargetsMode
-    ? (((plan as any)?.macroTargetDailyTargets as Record<string,string>) ?? (legacyIsMacro ? (legacyDailyTargets ?? {}) : {}))
-    : {};
 
   // Helper: convert item amount to grams (handles serving-based foods)
   function itemToGrams(food: any, amount: number): number {
@@ -1282,72 +1266,28 @@ function MealPlanTab() {
       {plan && (
         <div className="space-y-4">
 
-          {/* Macro Targets mode — show daily targets + per-meal target cards */}
+          {/* Macro Targets mode — show only the targets card */}
           {isMacroTargetsMode && (
-            <>
-              {/* Daily-level targets card (shown when any daily target is set) */}
-              {(() => {
-                const dt2 = macroTargetDailyTargets;
-                const hasDailyTargets = ["calories_min","calories_max","protein_min","protein_max","carbs_min","carbs_max","fat_min","fat_max"].some(k => hasVal((dt2 as any)[k]));
-                if (!hasDailyTargets) return null;
-                return (
-                  <Card>
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Daily Targets</p>
-                      <span className="text-[9px] text-muted-foreground">Set by coach</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      {[
-                        { label: "Calories", min: (dt2 as any).calories_min, max: (dt2 as any).calories_max, unit: "kcal", highlight: true },
-                        { label: "Protein",  min: (dt2 as any).protein_min,  max: (dt2 as any).protein_max,  unit: "g" },
-                        { label: "Carbs",    min: (dt2 as any).carbs_min,    max: (dt2 as any).carbs_max,    unit: "g" },
-                        { label: "Fat",      min: (dt2 as any).fat_min,      max: (dt2 as any).fat_max,      unit: "g" },
-                      ].map(({ label, min, max, unit, highlight }: any) => (
-                        <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
-                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                          <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{fmtRange(min, max)} {unit}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                );
-              })()}
-              {/* Per-meal target cards */}
-              {macroTargetMeals.length > 0 ? (
-                <div className="space-y-4">
-                  {macroTargetMeals.map((meal: any, i: number) => (
-                    <Card key={i}>
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-sm font-semibold text-foreground">{meal.name ?? `Meal ${i + 1}`}</p>
-                        {meal.time && (
-                          <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
-                            {(() => { try { const [h, m] = meal.time.split(":"); const d = new Date(); d.setHours(+h, +m); return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); } catch { return meal.time; } })()}
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        {[
-                          { label: "Calories", range: fmtRange(meal.targetCaloriesMin, meal.targetCaloriesMax), unit: "kcal", highlight: true },
-                          { label: "Protein",  range: fmtRange(meal.targetProteinMin,  meal.targetProteinMax),  unit: "g" },
-                          { label: "Carbs",    range: fmtRange(meal.targetCarbsMin,    meal.targetCarbsMax),    unit: "g" },
-                          { label: "Fat",      range: fmtRange(meal.targetFatMin,      meal.targetFatMax),      unit: "g" },
-                        ].map(({ label, range, unit, highlight }: any) => (
-                          <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
-                            <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                            <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{range} {unit}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <Card className="text-center py-8">
-                  <p className="text-muted-foreground text-sm">No meal targets set for {dayType} days yet.</p>
-                  <p className="text-xs text-muted-foreground mt-1">Your coach will add your targets here.</p>
-                </Card>
-              )}
-            </>
+            <Card>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Daily Targets</p>
+                <span className="text-[9px] text-muted-foreground">Set by coach</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  { label: "Calories", min: dt.calories_min, max: dt.calories_max, unit: "kcal", highlight: true },
+                  { label: "Protein", min: dt.protein_min, max: dt.protein_max, unit: "g" },
+                  { label: "Carbs", min: dt.carbs_min, max: dt.carbs_max, unit: "g" },
+                  { label: "Fat", min: dt.fat_min, max: dt.fat_max, unit: "g" },
+                ].map(({ label, min, max, unit, highlight }: any) => (
+                  <div key={label} className={`flex flex-col items-center px-3 py-3 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
+                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                    <span className={`text-sm font-bold mt-1 ${ highlight ? "text-primary" : "text-foreground" }`}>{fmtRange(min, max)}</span>
+                    <span className="text-[9px] text-muted-foreground">{unit}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
           )}
 
           {/* Meal Plan mode — show meals list + daily totals */}
