@@ -1865,62 +1865,12 @@ function MealPlansSection() {
                     className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-primary" />
                   <input type="time" value={meal.time ?? ""} onChange={e => updateMealTime(i, e.target.value)}
                     className="w-28 bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-                  <button
-                    onClick={() => toggleMealType(i)}
-                    title={meal.type === "macro_targets" ? "Switch to Specific Foods" : "Switch to Macro Targets"}
-                    className={`px-2 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wide border transition-colors ${
-                      meal.type === "macro_targets"
-                        ? "bg-primary/20 border-primary/50 text-primary"
-                        : "bg-secondary border-border text-muted-foreground hover:text-foreground"
-                    }`}>
-                    {meal.type === "macro_targets" ? "Macros" : "Foods"}
-                  </button>
+
                   <button onClick={() => removeMeal(i)} className="text-destructive hover:opacity-80">
                     <Trash2 size={15} />
                   </button>
                 </div>
 
-                {/* Macro Targets mode */}
-                {meal.type === "macro_targets" ? (
-                  <div className="space-y-3">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Set macro targets for this meal</p>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {[
-                        { minField: "targetCaloriesMin", maxField: "targetCaloriesMax", label: "Calories", unit: "kcal" },
-                        { minField: "targetProteinMin", maxField: "targetProteinMax", label: "Protein", unit: "g" },
-                        { minField: "targetCarbsMin", maxField: "targetCarbsMax", label: "Carbs", unit: "g" },
-                        { minField: "targetFatMin", maxField: "targetFatMax", label: "Fat", unit: "g" },
-                      ].map(({ minField, maxField, label, unit }) => (
-                        <div key={label}>
-                          <label className="text-[10px] text-muted-foreground block mb-1">{label} ({unit})</label>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1">
-                              <span className="text-[9px] text-muted-foreground block mb-0.5">Min</span>
-                              <input
-                                type="number" min="0" step="1"
-                                value={meal[minField] ?? ""}
-                                onChange={e => updateMealMacroTarget(i, minField, e.target.value)}
-                                placeholder="—"
-                                className="w-full bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                            </div>
-                            <span className="text-muted-foreground text-xs mt-4">–</span>
-                            <div className="flex-1">
-                              <span className="text-[9px] text-muted-foreground block mb-0.5">Max</span>
-                              <input
-                                type="number" min="0" step="1"
-                                value={meal[maxField] ?? ""}
-                                onChange={e => updateMealMacroTarget(i, maxField, e.target.value)}
-                                placeholder="—"
-                                className="w-full bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-1 px-1">
                     <p className="col-span-6 text-[10px] text-muted-foreground">Food</p>
@@ -2003,51 +1953,19 @@ function MealPlansSection() {
                     <Plus size={12} /> Add Item
                   </button>
                 </div>
-                )}
-                {/* Meal subtotal — shown for both modes when there are values */}
-                {meal.type === "macro_targets" ? (
-                  (() => {
-                    const hasAny = meal.targetCaloriesMin || meal.targetCaloriesMax || meal.targetProteinMin || meal.targetProteinMax ||
-                      meal.targetCarbsMin || meal.targetCarbsMax || meal.targetFatMin || meal.targetFatMax;
-                    if (!hasAny) return null;
-                    const fmtRange = (min: any, max: any) => {
-                      const lo = parseFloat(min); const hi = parseFloat(max);
-                      if (!isNaN(lo) && !isNaN(hi)) return `${lo}–${hi}`;
-                      if (!isNaN(lo)) return `≥${lo}`;
-                      if (!isNaN(hi)) return `≤${hi}`;
-                      return "—";
-                    };
-                    return (
-                      <div className="mt-3 pt-3 border-t border-border/50">
-                        <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Targets</p>
-                        <div className="flex gap-2 flex-wrap">
-                          {[{label:"Cal",min:meal.targetCaloriesMin,max:meal.targetCaloriesMax,unit:"kcal",highlight:true},
-                            {label:"P",min:meal.targetProteinMin,max:meal.targetProteinMax,unit:"g"},
-                            {label:"C",min:meal.targetCarbsMin,max:meal.targetCarbsMax,unit:"g"},
-                            {label:"F",min:meal.targetFatMin,max:meal.targetFatMax,unit:"g"}]
-                            .map(({label,min,max,unit,highlight}: any) => (
-                            <div key={label} className={`flex flex-col items-center px-2 py-1 rounded text-center ${ highlight ? "bg-primary/10 border border-primary/20" : "bg-secondary/60" }`}>
-                              <span className="text-[8px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                              <span className={`text-[11px] font-semibold ${ highlight ? "text-primary" : "text-foreground" }`}>{fmtRange(min,max)} {unit}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  (meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
-                    <div className="mt-3 pt-3 border-t border-border/50">
-                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Meal Total</p>
-                      <div className="flex gap-2 flex-wrap">
-                        <MacroChip label="Calories" value={mealMacros[i].calories} unit="kcal" highlight />
-                        <MacroChip label="Protein" value={mealMacros[i].protein} />
-                        <MacroChip label="Carbs" value={mealMacros[i].carbs} />
-                        <MacroChip label="Fiber" value={mealMacros[i].fiber} />
-                        <MacroChip label="Fat" value={mealMacros[i].fat} />
-                      </div>
+
+                {/* Meal subtotal */}
+                {(meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
+                  <div className="mt-3 pt-3 border-t border-border/50">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Meal Total</p>
+                    <div className="flex gap-2 flex-wrap">
+                      <MacroChip label="Calories" value={mealMacros[i].calories} unit="kcal" highlight />
+                      <MacroChip label="Protein" value={mealMacros[i].protein} />
+                      <MacroChip label="Carbs" value={mealMacros[i].carbs} />
+                      <MacroChip label="Fiber" value={mealMacros[i].fiber} />
+                      <MacroChip label="Fat" value={mealMacros[i].fat} />
                     </div>
-                  )
+                  </div>
                 )}
               </Card>
             ))}

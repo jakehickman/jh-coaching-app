@@ -1169,8 +1169,7 @@ function MealPlanTab() {
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
 
   const meals = (plan?.meals as any[]) ?? [];
-  const planDailyTargets = (plan?.dailyTargets as Record<string,string> | null | undefined) ?? null;
-  const hasPlanTargets = planDailyTargets && Object.keys(planDailyTargets).length > 0;
+
 
   // Helper: convert item amount to grams (handles serving-based foods)
   function itemToGrams(food: any, amount: number): number {
@@ -1178,67 +1177,32 @@ function MealPlanTab() {
     return food.servingUnit && food.servingGrams ? amount * food.servingGrams : amount;
   }
 
-  // Calculate macros per meal — handles both specific_foods and macro_targets modes
-  const hasVal = (v: any) => v !== undefined && v !== null && String(v).trim() !== "" && isFinite(parseFloat(String(v)));
-  const parseMacroVal = (max: any, min: any) => parseFloat(max) || parseFloat(min) || 0;
-  const hasMacroTargetMeal = meals.some((m: any) => m.type === "macro_targets");
-  const mealMacros = meals.map((meal: any) => {
-    if (meal.type === "macro_targets") {
-      return {
-        // Calories: use max (ceiling ≤), protein/fat: use min (floor ≥), carbs: use min if set
-        calories: parseFloat(meal.targetCaloriesMax) || 0,
-        protein: Math.round(parseFloat(meal.targetProteinMin) || 0),
-        carbs: Math.round(parseFloat(meal.targetCarbsMin) || 0),
-        fiber: 0,
-        fat: Math.round(parseFloat(meal.targetFatMin) || 0),
-        _hasCalories: hasVal(meal.targetCaloriesMax),
-        _hasProtein: hasVal(meal.targetProteinMin),
-        _hasCarbs: hasVal(meal.targetCarbsMin),
-        _hasFat: hasVal(meal.targetFatMin),
-        _isMacroTarget: true,
-      };
-    }
-    return (meal.items ?? []).reduce((acc: any, item: any) => {
-      const food = foodDb.find((f: any) => f.name === item.food);
-      if (!food || !parseFloat(item.grams)) return acc;
-      const grams = itemToGrams(food, parseFloat(item.grams));
-      const factor = grams / 100;
-      return {
-        calories: acc.calories + Math.round(food.calories * factor),
-        protein: Math.round(acc.protein + food.protein * factor),
-        carbs: Math.round(acc.carbs + food.carbs * factor),
-        fiber: Math.round(acc.fiber + food.fiber * factor),
-        fat: Math.round(acc.fat + food.fat * factor),
-        _hasCalories: true, _hasProtein: true, _hasCarbs: true, _hasFat: true, _isMacroTarget: false,
-      };
-    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, _hasCalories: true, _hasProtein: true, _hasCarbs: true, _hasFat: true, _isMacroTarget: false });
-  });
+  // Calculate macros per meal — food-based only
+  const mealMacros = meals
+    .filter((m: any) => m.type !== "macro_targets")
+    .map((meal: any) =>
+      (meal.items ?? []).reduce((acc: any, item: any) => {
+        const food = foodDb.find((f: any) => f.name === item.food);
+        if (!food || !parseFloat(item.grams)) return acc;
+        const grams = itemToGrams(food, parseFloat(item.grams));
+        const factor = grams / 100;
+        return {
+          calories: acc.calories + Math.round(food.calories * factor),
+          protein: Math.round(acc.protein + food.protein * factor),
+          carbs: Math.round(acc.carbs + food.carbs * factor),
+          fiber: Math.round(acc.fiber + food.fiber * factor),
+          fat: Math.round(acc.fat + food.fat * factor),
+        };
+      }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 })
+    );
+  const foodMeals = meals.filter((m: any) => m.type !== "macro_targets");
   const dailyTotals = mealMacros.reduce((acc: any, m: any) => ({
     calories: acc.calories + m.calories,
     protein: Math.round(acc.protein + m.protein),
     carbs: Math.round(acc.carbs + m.carbs),
     fiber: Math.round(acc.fiber + m.fiber),
     fat: Math.round(acc.fat + m.fat),
-    _allHaveCalories: acc._allHaveCalories && (m._isMacroTarget ? m._hasCalories : true),
-    _allHaveProtein: acc._allHaveProtein && (m._isMacroTarget ? m._hasProtein : true),
-    _allHaveCarbs: acc._allHaveCarbs && (m._isMacroTarget ? m._hasCarbs : true),
-    _allHaveFat: acc._allHaveFat && (m._isMacroTarget ? m._hasFat : true),
-  }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, _allHaveCalories: true, _allHaveProtein: true, _allHaveCarbs: true, _allHaveFat: true });
-
-  // Plan-level daily targets override per-meal sums when set
-  const dt = planDailyTargets ?? {};
-  const fmtDailyCalories = hasPlanTargets
-    ? (hasVal(dt.calories_max) ? `≤${Math.round(parseFloat(dt.calories_max))}` : hasVal(dt.calories_min) ? `≥${Math.round(parseFloat(dt.calories_min))}` : "—")
-    : (!dailyTotals._allHaveCalories ? "—" : hasMacroTargetMeal ? `≤${dailyTotals.calories}` : `${dailyTotals.calories}`);
-  const fmtDailyProtein = hasPlanTargets
-    ? (hasVal(dt.protein_min) ? `≥${Math.round(parseFloat(dt.protein_min))}` : hasVal(dt.protein_max) ? `≤${Math.round(parseFloat(dt.protein_max))}` : "—")
-    : (!dailyTotals._allHaveProtein ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.protein}` : `${dailyTotals.protein}`);
-  const fmtDailyCarbs = hasPlanTargets
-    ? (hasVal(dt.carbs_min) ? `≥${Math.round(parseFloat(dt.carbs_min))}` : hasVal(dt.carbs_max) ? `≤${Math.round(parseFloat(dt.carbs_max))}` : "—")
-    : (!dailyTotals._allHaveCarbs ? "—" : `${dailyTotals.carbs}`);
-  const fmtDailyFat = hasPlanTargets
-    ? (hasVal(dt.fat_min) ? `≥${Math.round(parseFloat(dt.fat_min))}` : hasVal(dt.fat_max) ? `≤${Math.round(parseFloat(dt.fat_max))}` : "—")
-    : (!dailyTotals._allHaveFat ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.fat}` : `${dailyTotals.fat}`);
+  }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
 
   return (
     <div className="space-y-6">
@@ -1256,36 +1220,29 @@ function MealPlanTab() {
       {plan && (
         <div className="space-y-4">
           {/* Daily totals */}
-          {meals.length > 0 && (hasPlanTargets || dailyTotals.calories > 0 || hasMacroTargetMeal) && (
+          {foodMeals.length > 0 && dailyTotals.calories > 0 && (
             <Card>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                  {hasPlanTargets ? "Daily Targets" : "Daily Totals"}
-                </p>
-                {hasPlanTargets && (
-                  <span className="text-[9px] text-muted-foreground">Set by coach</span>
-                )}
-              </div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Daily Totals</p>
               <div className="grid grid-cols-5 gap-2">
                 {[
-                  { label: "Calories", fmt: fmtDailyCalories, unit: "kcal", highlight: true },
-                  { label: "Protein", fmt: fmtDailyProtein, unit: "g" },
-                  { label: "Carbs", fmt: fmtDailyCarbs, unit: "g" },
-                  { label: "Fiber", fmt: hasPlanTargets ? "—" : (dailyTotals.fiber > 0 ? `${dailyTotals.fiber}` : "—"), unit: "g" },
-                  { label: "Fat", fmt: fmtDailyFat, unit: "g" },
-                ].map(({ label, fmt, unit, highlight }) => (
+                  { label: "Calories", value: `${dailyTotals.calories}`, unit: "kcal", highlight: true },
+                  { label: "Protein", value: `${dailyTotals.protein}`, unit: "g" },
+                  { label: "Carbs", value: `${dailyTotals.carbs}`, unit: "g" },
+                  { label: "Fiber", value: dailyTotals.fiber > 0 ? `${dailyTotals.fiber}` : "—", unit: "g" },
+                  { label: "Fat", value: `${dailyTotals.fat}`, unit: "g" },
+                ].map(({ label, value, unit, highlight }) => (
                   <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
                     <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                    <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{fmt === "—" ? fmt : `${fmt} ${unit}`}</span>
+                    <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{value === "—" ? value : `${value} ${unit}`}</span>
                   </div>
                 ))}
               </div>
             </Card>
           )}
 
-          {meals.length > 0 ? (
+          {foodMeals.length > 0 ? (
             <div className="space-y-4">
-              {meals.map((meal: any, i: number) => {
+              {foodMeals.map((meal: any, i: number) => {
                 const mm = mealMacros[i];
                 const hasMacros = mm.calories > 0;
                 return (
@@ -1298,33 +1255,7 @@ function MealPlanTab() {
                         </span>
                       )}
                     </div>
-                    {meal.type === "macro_targets" ? (
-                      <div className="py-3">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Macro Targets</p>
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                          {(() => {
-                            const fmtRange = (min: any, max: any) => {
-                              const lo = parseFloat(min); const hi = parseFloat(max);
-                              if (!isNaN(lo) && !isNaN(hi)) return `${lo}–${hi}`;
-                              if (!isNaN(lo)) return `≥${lo}`;
-                              if (!isNaN(hi)) return `≤${hi}`;
-                              return "—";
-                            };
-                            return [
-                              { label: "Calories", range: fmtRange(meal.targetCaloriesMin, meal.targetCaloriesMax), unit: "kcal", highlight: true },
-                              { label: "Protein", range: fmtRange(meal.targetProteinMin, meal.targetProteinMax), unit: "g" },
-                              { label: "Carbs", range: fmtRange(meal.targetCarbsMin, meal.targetCarbsMax), unit: "g" },
-                              { label: "Fat", range: fmtRange(meal.targetFatMin, meal.targetFatMax), unit: "g" },
-                            ].map(({ label, range, unit, highlight }: any) => (
-                              <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
-                                <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                                <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{range} {unit}</span>
-                              </div>
-                            ));
-                          })()}
-                        </div>
-                      </div>
-                    ) : [...(meal.items ?? [])].sort((a: any, b: any) => {
+                    {[...(meal.items ?? [])].sort((a: any, b: any) => {
                         const fa = foodDb.find((f: any) => f.name === a.food);
                         const fb = foodDb.find((f: any) => f.name === b.food);
                         const gaRaw = parseFloat(a.grams) || 0;
@@ -1365,7 +1296,7 @@ function MealPlanTab() {
                         </div>
                       );
                     })}
-                    {meal.type !== "macro_targets" && hasMacros && (
+                    {hasMacros && (
                       <div className="mt-3 pt-2 border-t border-border/40">
                         <div className="flex gap-2 flex-wrap">
                           <span className="text-[9px] uppercase tracking-wider text-muted-foreground self-center">Total:</span>
