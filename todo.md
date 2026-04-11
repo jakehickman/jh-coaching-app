@@ -333,3 +333,4 @@
 - [x] Update Getting Started Guide copy with new content from user upload
 - [x] Check-in form: add bedtime consistency question with 5 answer options
 - [x] Getting Started Guide: add 7.3 Training Intensity, 7.4 Warming Up, 7.5 Rest Times to Section 7
+- [x] Getting Started Guide: add Section 11 Habits and update TOC

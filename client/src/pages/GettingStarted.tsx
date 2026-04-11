@@ -14,10 +14,11 @@ const sections = [
   { id: "data-collection", label: "8. Data Collection" },
   { id: "weekly-check-in", label: "9. Weekly Check-in" },
   { id: "lifestyle", label: "10. Lifestyle Factors" },
-  { id: "common-mistakes", label: "11. Common Mistakes" },
-  { id: "communication", label: "12. Communication" },
-  { id: "faq", label: "13. FAQ" },
-  { id: "final-notes", label: "14. Final Notes" },
+  { id: "habits", label: "11. Habits" },
+  { id: "common-mistakes", label: "12. Common Mistakes" },
+  { id: "communication", label: "13. Communication" },
+  { id: "faq", label: "14. FAQ" },
+  { id: "final-notes", label: "15. Final Notes" },
 ];
 
 function BulletList({ items }: { items: string[] }) {
@@ -653,8 +654,17 @@ export default function GettingStarted() {
               </SubSection>
             </Section>
 
-            {/* 11. Common Mistakes */}
-            <Section id="common-mistakes" number="11" title="Common Mistakes">
+            {/* 11. Habits */}
+            <Section id="habits" number="11" title="Habits">
+              <Body>Alongside everything else, we will also be working on building habits.</Body>
+              <Body>The goal is not just to help you get results now, but to help you maintain them later without always needing precise tracking or a strict meal plan.</Body>
+              <Body>These habits are mainly about food and how you approach it day to day. Over time, they should help you become more independent and less reliant on a highly structured setup.</Body>
+              <Body>Habits are how you will maintain your results after we stop working together.</Body>
+              <Callout>If you miss a day, just keep going. The aim is to build habits that stick.</Callout>
+            </Section>
+
+            {/* 12. Common Mistakes */}
+            <Section id="common-mistakes" number="12" title="Common Mistakes">
               <Body>Most people struggle because the basics are not being done consistently enough. The most common mistakes I see are:</Body>
               <BulletList items={[
                 "Not being accurate with food, such as estimating or eyeballing portions",
@@ -668,7 +678,7 @@ export default function GettingStarted() {
             </Section>
 
             {/* 12. Communication */}
-            <Section id="communication" number="12" title="Communication">
+            <Section id="communication" number="13" title="Communication">
               <Body>We will mainly use WhatsApp to communicate, and my contact details are provided for you below.</Body>
               <a
                 href="https://wa.me/61468764276"
@@ -687,7 +697,7 @@ export default function GettingStarted() {
             </Section>
 
             {/* 13. FAQ */}
-            <Section id="faq" number="13" title="FAQ">
+            <Section id="faq" number="14" title="FAQ">
               {[
                 {
                   q: "Do I have to eat the same thing every day?",
@@ -719,7 +729,7 @@ export default function GettingStarted() {
             </Section>
 
             {/* 14. Final Notes */}
-            <Section id="final-notes" number="14" title="Final Notes">
+            <Section id="final-notes" number="15" title="Final Notes">
               <Body>At this point, you should be clear on how the coaching works, what is expected of you, and how to get the best result from the process.</Body>
               <Body>Your plan is ready, everything is set up, and you have a clear path forward. Now it's about putting it into action and doing the basics well, week after week.</Body>
               <Callout>Get started, trust the process, and let's build some momentum.</Callout>
