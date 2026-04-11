@@ -336,3 +336,4 @@
 - [x] Getting Started Guide: add Section 11 Habits and update TOC
 - [x] Coach check-in view: show Q7 sleepBedtimeConsistency answer
 - [x] Getting Started Guide: add 7.2 The Stack section with image, renumber existing 7.2+
+- [x] Getting Started Guide: add check-in accountability copy to Weekly Check-in section intro

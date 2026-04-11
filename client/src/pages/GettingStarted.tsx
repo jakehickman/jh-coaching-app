@@ -581,6 +581,8 @@ export default function GettingStarted() {
 
             {/* 9. Weekly Check-in */}
             <Section id="weekly-check-in" number="9" title="Weekly Check-in">
+              <Body>It is your responsibility to complete your weekly check-in on time. I will not chase you for check-ins.</Body>
+              <Callout>If you miss 3 check-ins in a row, you will be removed from the program.</Callout>
               <Body>Your weekly check-in is where I review your week, assess your progress, and decide what needs to happen next.</Body>
               <Body>You will have an assigned check-in day, which you can see in the app. Your check-in needs to be completed once per week and done on time.</Body>
 
