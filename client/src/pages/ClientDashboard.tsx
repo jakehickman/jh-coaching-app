@@ -1168,10 +1168,26 @@ function MealPlanTab() {
   const { data: plan } = trpc.mealPlan.get.useQuery({ dayType });
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
 
-  const meals = (plan?.meals as any[]) ?? [];
-  const planDailyTargets = (plan?.dailyTargets as Record<string,string> | null | undefined) ?? null;
-  const isMacroTargetsMode = (planDailyTargets as any)?.planType === "macro_targets";
+  // Mode detection: prefer explicit activeMode column, fall back to legacy planType in dailyTargets
+  const activeMode = (plan as any)?.activeMode;
+  const legacyDailyTargets = (plan?.dailyTargets as Record<string,string> | null | undefined) ?? null;
+  const legacyIsMacro = (legacyDailyTargets as any)?.planType === "macro_targets";
+  const isMacroTargetsMode = activeMode === "macro_targets" || (!activeMode && legacyIsMacro);
+
+  // Meal Plan mode data
+  const meals = isMacroTargetsMode ? [] : ((plan?.meals as any[]) ?? []);
+  const planDailyTargets = isMacroTargetsMode ? null : (legacyDailyTargets && !legacyIsMacro ? legacyDailyTargets : null);
   const hasPlanTargets = !isMacroTargetsMode && planDailyTargets && Object.keys(planDailyTargets).filter(k => k !== "planType").length > 0;
+
+  // Macro Targets mode data — read from dedicated columns, fall back to legacy meals column
+  const macroTargetMeals: any[] = isMacroTargetsMode
+    ? (((plan as any)?.macroTargetMeals as any[])?.length > 0
+        ? ((plan as any).macroTargetMeals as any[])
+        : (legacyIsMacro ? ((plan?.meals as any[]) ?? []) : []))
+    : [];
+  const macroTargetDailyTargets: Record<string,string> = isMacroTargetsMode
+    ? (((plan as any)?.macroTargetDailyTargets as Record<string,string>) ?? (legacyIsMacro ? (legacyDailyTargets ?? {}) : {}))
+    : {};
 
   // Helper: convert item amount to grams (handles serving-based foods)
   function itemToGrams(food: any, amount: number): number {
@@ -1271,7 +1287,7 @@ function MealPlanTab() {
             <>
               {/* Daily-level targets card (shown when any daily target is set) */}
               {(() => {
-                const dt2 = planDailyTargets ?? {};
+                const dt2 = macroTargetDailyTargets;
                 const hasDailyTargets = ["calories_min","calories_max","protein_min","protein_max","carbs_min","carbs_max","fat_min","fat_max"].some(k => hasVal((dt2 as any)[k]));
                 if (!hasDailyTargets) return null;
                 return (
@@ -1297,9 +1313,9 @@ function MealPlanTab() {
                 );
               })()}
               {/* Per-meal target cards */}
-              {meals.length > 0 ? (
+              {macroTargetMeals.length > 0 ? (
                 <div className="space-y-4">
-                  {meals.map((meal: any, i: number) => (
+                  {macroTargetMeals.map((meal: any, i: number) => (
                     <Card key={i}>
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-sm font-semibold text-foreground">{meal.name ?? `Meal ${i + 1}`}</p>

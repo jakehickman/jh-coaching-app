@@ -104,8 +104,11 @@ export const mealPlans = mysqlTable("meal_plans", {
   userId: int("userId").notNull(), // client
   coachId: int("coachId"),
   dayType: mysqlEnum("dayType", ["training", "rest"]).notNull(),
-  meals: json("meals"), // JSON array of meal objects
-  dailyTargets: json("dailyTargets"), // Plan-level daily targets: { caloriesMin, caloriesMax, proteinMin, proteinMax, carbsMin, carbsMax, fatMin, fatMax }
+  activeMode: varchar("activeMode", { length: 32 }), // "meal_plan" | "macro_targets"
+  meals: json("meals"), // JSON array of meal objects (meal_plan mode)
+  dailyTargets: json("dailyTargets"), // Plan-level daily targets for meal_plan mode
+  macroTargetMeals: json("macroTargetMeals"), // JSON array of per-meal macro target cards (macro_targets mode)
+  macroTargetDailyTargets: json("macroTargetDailyTargets"), // Plan-level daily targets for macro_targets mode
   totalCalories: int("totalCalories"),
   totalProtein: int("totalProtein"),
   totalCarbs: int("totalCarbs"),
