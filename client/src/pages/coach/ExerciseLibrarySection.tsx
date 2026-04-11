@@ -3,10 +3,11 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Search, Plus, Save, X, Pencil, Trash2, Play } from "lucide-react";
 import { Card } from "./shared";
+import type { MuscleKey } from "@shared/types";
 
 // ─── Constants & types ───────────────────────────────────────────────────────
 
-export const MUSCLE_GROUPS = [
+export const MUSCLE_GROUPS: { key: MuscleKey; label: string }[] = [
   { key: "chest", label: "Chest" },
   { key: "frontDelts", label: "Front Delts" },
   { key: "sideDelts", label: "Side Delts" },
@@ -20,7 +21,7 @@ export const MUSCLE_GROUPS = [
   { key: "glutes", label: "Glutes" },
   { key: "calves", label: "Calves" },
   { key: "abs", label: "Abs" },
-] as const;
+];
 
 type ExerciseRow = {
   id?: number;

@@ -3,8 +3,9 @@
  * Keep this file small — only truly shared, stateless helpers belong here.
  */
 import React, { useEffect, useState } from "react";
+import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { trpc } from "@/lib/trpc";
-import { Check, ChevronsUpDown, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, ChevronsUpDown, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -350,3 +351,282 @@ export function MeasurementsCard({
     </div>
   );
 }
+
+// ─── DailyLogRow type ────────────────────────────────────────────────────────
+export type DailyLogRow = {
+  id: number;
+  logDate: unknown;
+  weight?: number | null;
+  sleepHours?: number | null;
+  caffeineServings?: number | null;
+  trainingCompleted?: boolean | number | null;
+  trainingType?: string | null;
+  stepsCount?: number | null;
+  sleepQuality?: number | null;
+  hungerLevel?: number | null;
+  offPlanMeals?: number | null;
+  notes?: string | null;
+};
+
+// ─── MuscleGroupSection ──────────────────────────────────────────────────────
+export function MuscleGroupSection({ group, children, globalToggle }: { group: string; children: React.ReactNode; globalToggle?: { expanded: boolean; gen: number } | null }) {
+  const [localOpen, setLocalOpen] = useState(false);
+  const [lastGen, setLastGen] = useState(0);
+  useEffect(() => {
+    if (globalToggle && globalToggle.gen !== lastGen) {
+      setLocalOpen(globalToggle.expanded);
+      setLastGen(globalToggle.gen);
+    }
+  }, [globalToggle, lastGen]);
+  const open = localOpen;
+  return (
+    <div className="border border-border rounded-xl overflow-hidden">
+      <button
+        onClick={() => setLocalOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-card hover:bg-muted/40 transition-colors"
+      >
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group}</span>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+      {open && <div className="px-4 pb-4 pt-3 space-y-3 bg-card">{children}</div>}
+    </div>
+  );
+}
+
+// ─── ProgressHistoryTable ────────────────────────────────────────────────────
+export function ProgressHistoryTable({
+  logs,
+  measurements,
+  startDate,
+}: {
+  logs: DailyLogRow[];
+  measurements: any[];
+  startDate?: string | null;
+}) {
+  function siteAvg(vals: (number | null | undefined)[]): number | null {
+    const nums = vals.filter((v): v is number => v != null);
+    return nums.length ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
+  }
+
+  // ── Build weight and measurement maps ──────────────────────────────────────
+  const weightByDate: Record<string, number> = {};
+  for (const log of logs) {
+    const iso = toLocalDateStr(log.logDate);
+    if (!iso || log.weight == null) continue;
+    if (startDate && iso < startDate) continue;
+    weightByDate[iso] = log.weight as number;
+  }
+
+  const measByDate: Record<string, any> = {};
+  for (const m of measurements) {
+    const iso = toLocalDateStr(m.measureDate);
+    if (!iso) continue;
+    if (startDate && iso < startDate) continue;
+    measByDate[iso] = m;
+  }
+
+  // ── Determine date range ────────────────────────────────────────────────────
+  const today = new Date();
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const allDates = [...Object.keys(weightByDate), ...Object.keys(measByDate)].sort();
+  if (allDates.length === 0) return null;
+  const firstDate = startDate && startDate <= allDates[0] ? startDate : allDates[0];
+
+  // Generate every calendar day
+  const days: string[] = [];
+  const cursor = new Date(firstDate + "T00:00:00");
+  const end = new Date(todayIso + "T00:00:00");
+  while (cursor <= end) {
+    days.push(`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,"0")}-${String(cursor.getDate()).padStart(2,"0")}`);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  // ── Group into Mon-Sun weeks ────────────────────────────────────────────────
+  const weeks: string[][] = [];
+  let currentWeek: string[] = [];
+  for (const iso of days) {
+    const dow = new Date(iso + "T00:00:00").getDay();
+    if (dow === 1 && currentWeek.length > 0) { weeks.push(currentWeek); currentWeek = []; }
+    currentWeek.push(iso);
+  }
+  if (currentWeek.length > 0) weeks.push(currentWeek);
+
+  // ── Compute per-week stats ──────────────────────────────────────────────────
+  function weekAvg(wkDays: string[]): number | null {
+    const ws = wkDays.map(d => weightByDate[d]).filter((v): v is number => v != null);
+    return ws.length ? parseFloat((ws.reduce((a, b) => a + b, 0) / ws.length).toFixed(2)) : null;
+  }
+  function weekEntries(wkDays: string[]): number {
+    return wkDays.filter(d => weightByDate[d] != null).length;
+  }
+  // Best measurement in the week (prefer most recent)
+  function weekMeas(wkDays: string[]): any | null {
+    for (let i = wkDays.length - 1; i >= 0; i--) {
+      if (measByDate[wkDays[i]]) return measByDate[wkDays[i]];
+    }
+    return null;
+  }
+  function fmtWeekLabel(wkDays: string[]): string {
+    const fmt = (iso: string) => {
+      const [, m, d] = iso.split("-");
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      return `${parseInt(d)} ${months[parseInt(m)-1]}`;
+    };
+    return `${fmt(wkDays[0])} – ${fmt(wkDays[wkDays.length-1])}`;
+  }
+
+  // Build rows oldest→newest for chart, newest→oldest for table display
+  type WeekRow = {
+    label: string;
+    avg: number | null;
+    entries: number;
+    waist: number | null;
+    skinfold: number | null;
+    pctChange: number | null; // % vs previous week
+  };
+  const weekRows: WeekRow[] = weeks.map((wkDays, i) => {
+    const avg = weekAvg(wkDays);
+    const prevAvg = i > 0 ? weekAvg(weeks[i - 1]) : null;
+    const pctChange = avg != null && prevAvg != null && prevAvg !== 0
+      ? parseFloat(((avg - prevAvg) / prevAvg * 100).toFixed(2))
+      : null;
+    const m = weekMeas(wkDays);
+    const umbAvg = m ? siteAvg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]) : null;
+    const supAvg = m ? siteAvg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]) : null;
+    const calfAvg = m ? siteAvg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]) : null;
+    const thighAvg = m ? siteAvg([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]) : null;
+    const skinfoldSites = [umbAvg, supAvg, calfAvg, thighAvg].filter(v => v != null) as number[];
+    const skinfold = skinfoldSites.length > 0 ? parseFloat(skinfoldSites.reduce((a, b) => a + b, 0).toFixed(1)) : null;
+    return {
+      label: fmtWeekLabel(wkDays),
+      avg,
+      entries: weekEntries(wkDays),
+      waist: m?.waist ?? null,
+      skinfold,
+      pctChange,
+    };
+  });
+
+  if (weekRows.length === 0) return null;
+
+  // Chart data: oldest first
+  const chartData = weekRows.map(r => ({
+    week: r.label,
+    weight: r.avg,
+    skinfold: r.skinfold,
+  }));
+
+  // Table rows: newest first
+  const tableRows = [...weekRows].reverse();
+
+  const INITIAL_WEEKS = 4;
+  const [showAllWeeks, setShowAllWeeks] = useState(false);
+  const visibleRows = showAllWeeks ? tableRows : tableRows.slice(0, INITIAL_WEEKS);
+
+  return (
+    <div>
+      <SectionLabel>Body Composition History</SectionLabel>
+      <div className="space-y-3">
+        {visibleRows.map((row, i) => {
+          const isFirst = i === 0;
+          const pctDown = row.pctChange != null && row.pctChange < 0;
+          const pctUp = row.pctChange != null && row.pctChange > 0;
+          const pctColor = row.pctChange == null ? 'text-muted-foreground' : pctDown ? 'text-green-400' : pctUp ? 'text-red-400' : 'text-muted-foreground';
+          const pctBg = row.pctChange == null ? 'bg-secondary' : pctDown ? 'bg-green-500/15' : pctUp ? 'bg-red-500/15' : 'bg-secondary';
+          const pctLabel = row.pctChange != null ? `${row.pctChange > 0 ? '+' : ''}${row.pctChange}%` : null;
+          return (
+            <div
+              key={i}
+              className={`rounded-xl border transition-colors ${
+                isFirst ? 'border-primary/30 bg-primary/5' : 'border-border bg-card'
+              }`}
+            >
+              {/* Week header */}
+              <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                <div className="flex items-center gap-2">
+                  {isFirst && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold uppercase tracking-wide">Latest</span>}
+                  <p className={`text-sm font-semibold ${isFirst ? 'text-foreground' : 'text-muted-foreground'}`}>{row.label}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                </div>
+              </div>
+
+              {/* Metrics row */}
+              <div className="grid grid-cols-3 gap-px bg-border mx-4 mb-3 rounded-lg overflow-hidden">
+                <div className="bg-card px-3 py-2.5">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Avg Weight</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
+                      {row.avg != null ? `${row.avg} kg` : <span className="text-muted-foreground text-sm">—</span>}
+                    </p>
+                    {pctLabel && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${pctColor} ${pctBg}`}>
+                        {pctDown ? <ArrowDown size={9} /> : pctUp ? <ArrowUp size={9} /> : <Minus size={9} />}
+                        {pctLabel}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-card px-3 py-2.5">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist Circumference</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
+                      {row.waist != null ? `${row.waist} cm` : <span className="text-muted-foreground text-sm">—</span>}
+                    </p>
+                    {(() => {
+                      const prev = tableRows[i + 1]?.waist;
+                      if (row.waist == null || prev == null) return null;
+                      const diff = parseFloat((row.waist - prev).toFixed(1));
+                      if (diff === 0) return null;
+                      const isDown = diff < 0;
+                      return (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                          isDown ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+                        }`}>
+                          {isDown ? <ArrowDown size={9} /> : <ArrowUp size={9} />}
+                          {diff > 0 ? '+' : ''}{diff} cm
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+                <div className="bg-card px-3 py-2.5">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Skinfold Thickness</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
+                      {row.skinfold != null ? `${row.skinfold} mm` : <span className="text-muted-foreground text-sm">—</span>}
+                    </p>
+                    {(() => {
+                      const prev = tableRows[i + 1]?.skinfold;
+                      if (row.skinfold == null || prev == null) return null;
+                      const diff = parseFloat((row.skinfold - prev).toFixed(1));
+                      if (diff === 0) return null;
+                      const isDown = diff < 0;
+                      return (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                          isDown ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+                        }`}>
+                          {isDown ? <ArrowDown size={9} /> : <ArrowUp size={9} />}
+                          {diff > 0 ? '+' : ''}{diff} mm
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {tableRows.length > INITIAL_WEEKS && (
+        <button
+          onClick={() => setShowAllWeeks(v => !v)}
+          className="mt-3 text-xs text-primary hover:underline w-full text-center"
+        >
+          {showAllWeeks ? `Show less` : `View ${tableRows.length - INITIAL_WEEKS} more week${tableRows.length - INITIAL_WEEKS !== 1 ? 's' : ''}`}
+        </button>
+      )}
+    </div>
+  );
+}
+
