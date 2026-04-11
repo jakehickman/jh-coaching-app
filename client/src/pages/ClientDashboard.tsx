@@ -1730,6 +1730,7 @@ function WorkoutLogTab() {
   }
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
+  const [collapsedExercises, setCollapsedExercises] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
 
@@ -1893,6 +1894,9 @@ function WorkoutLogTab() {
     setExerciseData(prev => {
       const sets = [...(prev[exName] ?? [])];
       sets[idx] = { ...sets[idx], completed: !sets[idx].completed };
+      const allDone = sets.length > 0 && sets.every(s => s.completed);
+      // Auto-collapse when all sets are marked complete; auto-expand when any is unchecked
+      setCollapsedExercises(c => ({ ...c, [exName]: allDone }));
       return { ...prev, [exName]: sets };
     });
   }
@@ -1991,9 +1995,14 @@ function WorkoutLogTab() {
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
               const hasEquipment = !!(equipmentDetails[displayName]?.trim());
               const isEquipmentOpen = equipmentOpen[displayName] || hasEquipment;
+              const isCollapsed = collapsedExercises[displayName] ?? false;
+              const allSetsComplete = sets.length > 0 && sets.every(s => s.completed);
               return (
-                <Card key={i}>
-                  <div className="flex items-start justify-between gap-2 mb-3">
+                <Card key={i} className={allSetsComplete ? "border-green-500/30" : ""}>
+                  <div
+                    className="flex items-start justify-between gap-2 mb-3 cursor-pointer select-none"
+                    onClick={() => setCollapsedExercises(c => ({ ...c, [displayName]: !c[displayName] }))}
+                  >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-base font-semibold text-foreground">{displayName}</p>
@@ -2026,7 +2035,7 @@ function WorkoutLogTab() {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {/* Equipment details toggle */}
                       <button
-                        onClick={() => setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] }))}
+                        onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
                         title="Equipment details"
                         className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
                           hasEquipment
@@ -2037,15 +2046,26 @@ function WorkoutLogTab() {
                         <Dumbbell size={13} />
                       </button>
                       <button
-                        onClick={() => { setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
+                        onClick={e => { e.stopPropagation(); setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
                         className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors bg-secondary px-2 py-1.5 rounded-lg"
                       >
                         <Shuffle size={11} /> Sub
                       </button>
+                      {/* Collapse chevron */}
+                      <div className="flex items-center justify-center w-6 h-6 text-muted-foreground">
+                        {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                      </div>
                     </div>
                   </div>
+                  {/* Collapsed summary */}
+                  {isCollapsed && (
+                    <div className="flex items-center gap-2 mt-1 mb-1">
+                      <span className="text-xs text-muted-foreground">{sets.filter(s => s.completed).length}/{sets.length} sets</span>
+                      {allSetsComplete && <span className="text-xs font-semibold text-green-400">Complete</span>}
+                    </div>
+                  )}
                   {/* Equipment details inline input */}
-                  {isEquipmentOpen && (
+                  {!isCollapsed && isEquipmentOpen && (
                     <div className="mb-3 -mt-1">
                       <input
                         type="text"
@@ -2060,7 +2080,7 @@ function WorkoutLogTab() {
                   )}
 
                   {/* All sets — unified layout with checkbox */}
-                  {sets.length > 0 && (
+                  {!isCollapsed && sets.length > 0 && (
                     <div className="mb-2">
                       {/* Column headers */}
                       <div className="flex items-center gap-2 mb-1.5">
@@ -2114,6 +2134,8 @@ function WorkoutLogTab() {
                     </div>
                   )}
 
+                  {!isCollapsed && (
+                    <>
                   <button
                     onClick={() => addSet(displayName)}
                     className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
@@ -2121,7 +2143,7 @@ function WorkoutLogTab() {
                     <Plus size={13} /> Add Set
                   </button>
 
-                  {/* Equipment details */}
+                  {/* Exercise notes */}
                   <div className="mt-3 pt-3 border-t border-border">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">Exercise notes</p>
                     <input
@@ -2132,6 +2154,8 @@ function WorkoutLogTab() {
                       className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
+                    </>
+                  )}
                 </Card>
               );
             })}
