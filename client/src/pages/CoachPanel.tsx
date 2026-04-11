@@ -1704,9 +1704,18 @@ function MealPlansSection() {
     }
   }, [mealDraftKey, planNotes, meals]);
 
-  // Auto-calculate macros from food db
-  const mealMacros = meals.map(meal =>
-    (meal.items ?? []).reduce((acc: any, item: any) => {
+  // Auto-calculate macros from food db (specific_foods) or from targets (macro_targets)
+  const mealMacros = meals.map(meal => {
+    if (meal.type === "macro_targets") {
+      return {
+        calories: parseFloat(meal.targetCalories) || 0,
+        protein: Math.round(parseFloat(meal.targetProtein) || 0),
+        carbs: Math.round(parseFloat(meal.targetCarbs) || 0),
+        fiber: 0,
+        fat: Math.round(parseFloat(meal.targetFat) || 0),
+      };
+    }
+    return (meal.items ?? []).reduce((acc: any, item: any) => {
       const m = calcItemMacros(foodDb, item.food, parseFloat(item.grams) || 0);
       return {
         calories: acc.calories + m.calories,
@@ -1715,8 +1724,8 @@ function MealPlansSection() {
         fiber: Math.round(acc.fiber + m.fiber),
         fat: Math.round(acc.fat + m.fat),
       };
-    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 })
-  );
+    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
+  });
 
   const dailyTotals = mealMacros.reduce((acc, m) => ({
     calories: acc.calories + m.calories,
@@ -1726,7 +1735,12 @@ function MealPlansSection() {
     fat: Math.round(acc.fat + m.fat),
   }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
 
-  const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", items: [] }]);
+  const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", type: "specific_foods", items: [] }]);
+  const toggleMealType = (i: number) => setMeals(m => m.map((meal, idx) => idx === i
+    ? { ...meal, type: meal.type === "macro_targets" ? "specific_foods" : "macro_targets" }
+    : meal));
+  const updateMealMacroTarget = (i: number, field: string, value: string) =>
+    setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, [field]: value } : meal));
   const removeMeal = (i: number) => setMeals(m => m.filter((_, idx) => idx !== i));
   const moveMeal = (from: number, to: number) => setMeals(m => {
     const next = [...m];
@@ -1815,10 +1829,46 @@ function MealPlansSection() {
                     className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-primary" />
                   <input type="time" value={meal.time ?? ""} onChange={e => updateMealTime(i, e.target.value)}
                     className="w-28 bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                  <button
+                    onClick={() => toggleMealType(i)}
+                    title={meal.type === "macro_targets" ? "Switch to Specific Foods" : "Switch to Macro Targets"}
+                    className={`px-2 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wide border transition-colors ${
+                      meal.type === "macro_targets"
+                        ? "bg-primary/20 border-primary/50 text-primary"
+                        : "bg-secondary border-border text-muted-foreground hover:text-foreground"
+                    }`}>
+                    {meal.type === "macro_targets" ? "Macros" : "Foods"}
+                  </button>
                   <button onClick={() => removeMeal(i)} className="text-destructive hover:opacity-80">
                     <Trash2 size={15} />
                   </button>
                 </div>
+
+                {/* Macro Targets mode */}
+                {meal.type === "macro_targets" ? (
+                  <div className="space-y-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Set macro targets for this meal</p>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {[
+                        { field: "targetCalories", label: "Calories", unit: "kcal" },
+                        { field: "targetProtein", label: "Protein", unit: "g" },
+                        { field: "targetCarbs", label: "Carbs", unit: "g" },
+                        { field: "targetFat", label: "Fat", unit: "g" },
+                      ].map(({ field, label, unit }) => (
+                        <div key={field}>
+                          <label className="text-[10px] text-muted-foreground block mb-1">{label} ({unit})</label>
+                          <input
+                            type="number" min="0" step="1"
+                            value={meal[field] ?? ""}
+                            onChange={e => updateMealMacroTarget(i, field, e.target.value)}
+                            placeholder="0"
+                            className="w-full bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-1 px-1">
                     <p className="col-span-6 text-[10px] text-muted-foreground">Food</p>
@@ -1901,18 +1951,33 @@ function MealPlansSection() {
                     <Plus size={12} /> Add Item
                   </button>
                 </div>
-                {/* Meal subtotal */}
-                {(meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
-                  <div className="mt-3 pt-3 border-t border-border/50">
-                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Meal Total</p>
-                    <div className="flex gap-2 flex-wrap">
-                      <MacroChip label="Calories" value={mealMacros[i].calories} unit="kcal" highlight />
-                      <MacroChip label="Protein" value={mealMacros[i].protein} />
-                      <MacroChip label="Carbs" value={mealMacros[i].carbs} />
-                      <MacroChip label="Fiber" value={mealMacros[i].fiber} />
-                      <MacroChip label="Fat" value={mealMacros[i].fat} />
+                )}
+                {/* Meal subtotal — shown for both modes when there are values */}
+                {meal.type === "macro_targets" ? (
+                  (meal.targetCalories || meal.targetProtein || meal.targetCarbs || meal.targetFat) ? (
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Meal Total</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <MacroChip label="Calories" value={mealMacros[i].calories} unit="kcal" highlight />
+                        <MacroChip label="Protein" value={mealMacros[i].protein} />
+                        <MacroChip label="Carbs" value={mealMacros[i].carbs} />
+                        <MacroChip label="Fat" value={mealMacros[i].fat} />
+                      </div>
                     </div>
-                  </div>
+                  ) : null
+                ) : (
+                  (meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Meal Total</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <MacroChip label="Calories" value={mealMacros[i].calories} unit="kcal" highlight />
+                        <MacroChip label="Protein" value={mealMacros[i].protein} />
+                        <MacroChip label="Carbs" value={mealMacros[i].carbs} />
+                        <MacroChip label="Fiber" value={mealMacros[i].fiber} />
+                        <MacroChip label="Fat" value={mealMacros[i].fat} />
+                      </div>
+                    </div>
+                  )
                 )}
               </Card>
             ))}

@@ -1159,9 +1159,18 @@ function MealPlanTab() {
     return food.servingUnit && food.servingGrams ? amount * food.servingGrams : amount;
   }
 
-  // Calculate macros per meal and daily totals from food DB
-  const mealMacros = meals.map(meal =>
-    (meal.items ?? []).reduce((acc: any, item: any) => {
+  // Calculate macros per meal — handles both specific_foods and macro_targets modes
+  const mealMacros = meals.map((meal: any) => {
+    if (meal.type === "macro_targets") {
+      return {
+        calories: parseFloat(meal.targetCalories) || 0,
+        protein: Math.round(parseFloat(meal.targetProtein) || 0),
+        carbs: Math.round(parseFloat(meal.targetCarbs) || 0),
+        fiber: 0,
+        fat: Math.round(parseFloat(meal.targetFat) || 0),
+      };
+    }
+    return (meal.items ?? []).reduce((acc: any, item: any) => {
       const food = foodDb.find((f: any) => f.name === item.food);
       if (!food || !parseFloat(item.grams)) return acc;
       const grams = itemToGrams(food, parseFloat(item.grams));
@@ -1173,8 +1182,8 @@ function MealPlanTab() {
         fiber: Math.round(acc.fiber + food.fiber * factor),
         fat: Math.round(acc.fat + food.fat * factor),
       };
-    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 })
-  );
+    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
+  });
   const dailyTotals = mealMacros.reduce((acc: any, m: any) => ({
     calories: acc.calories + m.calories,
     protein: Math.round(acc.protein + m.protein),
@@ -1234,7 +1243,24 @@ function MealPlanTab() {
                         </span>
                       )}
                     </div>
-                    {[...(meal.items ?? [])].sort((a: any, b: any) => {
+                    {meal.type === "macro_targets" ? (
+                      <div className="py-3">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Macro Targets</p>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          {[
+                            { label: "Calories", value: mm.calories, unit: "kcal", highlight: true },
+                            { label: "Protein", value: mm.protein, unit: "g" },
+                            { label: "Carbs", value: mm.carbs, unit: "g" },
+                            { label: "Fat", value: mm.fat, unit: "g" },
+                          ].map(({ label, value, unit, highlight }) => (
+                            <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
+                              <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                              <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{value} {unit}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : [...(meal.items ?? [])].sort((a: any, b: any) => {
                         const fa = foodDb.find((f: any) => f.name === a.food);
                         const fb = foodDb.find((f: any) => f.name === b.food);
                         const gaRaw = parseFloat(a.grams) || 0;
@@ -1275,7 +1301,7 @@ function MealPlanTab() {
                         </div>
                       );
                     })}
-                    {hasMacros && (
+                    {meal.type !== "macro_targets" && hasMacros && (
                       <div className="mt-3 pt-2 border-t border-border/40">
                         <div className="flex gap-2 flex-wrap">
                           <span className="text-[9px] uppercase tracking-wider text-muted-foreground self-center">Total:</span>
