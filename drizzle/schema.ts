@@ -380,6 +380,8 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
   dietMealTiming: mysqlEnum("dietMealTiming", ["never","one_two_days","few_days","most_days","every_day"]),
   // Q6: When you had an off-plan meal, how close was it to your plan in calories/macros?
   dietOffPlanQuality: mysqlEnum("dietOffPlanQuality", ["very_close","somewhat_close","not_very_close","very_different","no_off_plan_meals"]),
+  // Q7: How often did you go to bed more than 1 hour later than your planned bedtime?
+  sleepBedtimeConsistency: mysqlEnum("sleepBedtimeConsistency", ["never","one_two_days","few_days","most_days","every_day"]),
 
   // Section 2: Adherence Barrier
   adherenceBarrier: mysqlEnum("adherenceBarrier", [

@@ -2325,6 +2325,7 @@ function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program
 
 // ─── Check-ins Tab ─────────────────────────────────────────────────────────
 type CheckInFormState = {
+  sleepBedtimeConsistency: string;
   dietWeighedFoods: string;
   dietMealPrepAccuracy: string;
   dietExtrasFrequency: string;
@@ -2396,6 +2397,7 @@ function CheckInsTab() {
     dietAddedFats: '',
     dietMealTiming: '',
     dietOffPlanQuality: '',
+    sleepBedtimeConsistency: '',
   };
   const [form, setForm] = useState(blankForm);
   const [submitted, setSubmitted] = useState(false);
@@ -2408,6 +2410,7 @@ function CheckInsTab() {
   const q4Ref = useRef<HTMLDivElement>(null);
   const q5Ref = useRef<HTMLDivElement>(null);
   const q6Ref = useRef<HTMLDivElement>(null);
+  const q7Ref = useRef<HTMLDivElement>(null);
   const questionRefs: [keyof CheckInFormState, React.RefObject<HTMLDivElement | null>][] = [
     ['dietWeighedFoods', q1Ref],
     ['dietMealPrepAccuracy', q2Ref],
@@ -2415,6 +2418,7 @@ function CheckInsTab() {
     ['dietAddedFats', q4Ref],
     ['dietMealTiming', q5Ref],
     ['dietOffPlanQuality', q6Ref],
+    ['sleepBedtimeConsistency', q7Ref],
   ];
 
   useEffect(() => {
@@ -2426,6 +2430,7 @@ function CheckInsTab() {
         dietAddedFats: existingCheckIn.dietAddedFats ?? '',
         dietMealTiming: existingCheckIn.dietMealTiming ?? '',
         dietOffPlanQuality: existingCheckIn.dietOffPlanQuality ?? '',
+        sleepBedtimeConsistency: existingCheckIn.sleepBedtimeConsistency ?? '',
       });
       setSubmitted(true);
     } else {
@@ -2444,7 +2449,7 @@ function CheckInsTab() {
   });
 
   const handleSubmit = () => {
-    const dietFields = [form.dietWeighedFoods, form.dietMealPrepAccuracy, form.dietExtrasFrequency, form.dietAddedFats, form.dietMealTiming, form.dietOffPlanQuality];
+    const dietFields = [form.dietWeighedFoods, form.dietMealPrepAccuracy, form.dietExtrasFrequency, form.dietAddedFats, form.dietMealTiming, form.dietOffPlanQuality, form.sleepBedtimeConsistency];
     if (dietFields.some(f => !f)) {
       setShowErrors(true);
       // Scroll to first unanswered question
@@ -2462,6 +2467,7 @@ function CheckInsTab() {
       dietAddedFats: form.dietAddedFats as any,
       dietMealTiming: form.dietMealTiming as any,
       dietOffPlanQuality: form.dietOffPlanQuality as any,
+      sleepBedtimeConsistency: form.sleepBedtimeConsistency as any,
     });
   };
 
@@ -2664,6 +2670,22 @@ function CheckInsTab() {
               { value: 'not_very_close', label: 'Not very close' },
               { value: 'very_different', label: 'Very different' },
               { value: 'no_off_plan_meals', label: 'I did not have any off-plan meals' },
+            ]}
+          />
+
+          <ChoiceQuestion
+            label="How often did you go to bed more than 1 hour later than your planned bedtime?"
+            field="sleepBedtimeConsistency"
+            form={form}
+            setForm={setForm}
+            hasError={showErrors}
+            scrollRef={q7Ref}
+            options={[
+              { value: 'never', label: 'Never' },
+              { value: 'one_two_days', label: 'On 1–2 days' },
+              { value: 'few_days', label: 'On a few days' },
+              { value: 'most_days', label: 'On most days' },
+              { value: 'every_day', label: 'Every day' },
             ]}
           />
         </Card>

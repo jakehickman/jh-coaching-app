@@ -440,6 +440,8 @@ export const appRouter = router({
         dietAddedFats: z.enum(["light_spray","small_amount","one_tsp_or_more","no_added_fats"]).optional(),
         dietMealTiming: z.enum(["never","one_two_days","few_days","most_days","every_day"]).optional(),
         dietOffPlanQuality: z.enum(["very_close","somewhat_close","not_very_close","very_different","no_off_plan_meals"]).optional(),
+        // Q7: How often did you go to bed more than 1 hour later than your planned bedtime?
+        sleepBedtimeConsistency: z.enum(["never","one_two_days","few_days","most_days","every_day"]).optional(),
 
         // Section 2: Adherence Barrier
         adherenceBarrier: z.enum(["no_issues","hunger","cravings","social_events","busy_time","poor_planning","low_motivation","travel_disruption","other"]).optional(),
