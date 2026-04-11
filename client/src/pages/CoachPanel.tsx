@@ -3596,6 +3596,17 @@ function CheckInsSection() {
                         </div>
                       )}
 
+                      {/* Sleep — Q7 */}
+                      {ci.sleepBedtimeConsistency && (
+                        <div className="px-4 pt-3 pb-2 border-t border-border/50">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Sleep</p>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-xs text-muted-foreground">How often did you go to bed more than 1 hour later than your planned bedtime?</span>
+                            <span className="text-sm font-medium text-foreground">{DIET_LABEL_MAP[(ci as any).sleepBedtimeConsistency] ?? (ci as any).sleepBedtimeConsistency}</span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Actions */}
                       <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between gap-2">
                         <button
