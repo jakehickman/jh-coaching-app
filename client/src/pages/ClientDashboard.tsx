@@ -86,6 +86,9 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
 
   const handleEditDay = (iso: string) => {
     sessionStorage.setItem('editLogDate', iso);
+    // If already on the daily-log tab the component won't remount, so dispatch a
+    // custom event that DailyLogTab listens for to update its date directly.
+    window.dispatchEvent(new CustomEvent('editLogDate', { detail: iso }));
     navigate('/dashboard/daily-log');
   };
 
@@ -689,6 +692,20 @@ function DailyLogTab() {
     }
     return today;
   });
+
+  // Listen for in-tab edit requests (fired when user is already on this tab)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const iso = (e as CustomEvent<string>).detail;
+      if (iso) {
+        sessionStorage.removeItem('editLogDate');
+        setDate(iso);
+      }
+    };
+    window.addEventListener('editLogDate', handler);
+    return () => window.removeEventListener('editLogDate', handler);
+  }, []);
+
   const blankDailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: null as number | null, hungerLevel: null as number | null, offPlanMeals: 0, notes: "" };
   const [form, setForm, clearDraft] = useDraft(`draft:dailyLog:${date}`, blankDailyForm);
   // Track whether we've loaded server data for this date yet (avoid overwriting draft with blank)
