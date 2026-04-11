@@ -9,38 +9,7 @@ import {
 } from "recharts";
 import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil, CheckSquare, Square, Shuffle, Tag } from "lucide-react";
 import { toast } from "sonner";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-// Convert a DB date value (ISO timestamp or plain date string) to yyyy-mm-dd.
-// MySQL DATE columns are stored as the correct calendar date and returned as
-// UTC midnight timestamps (e.g. "2026-04-06T04:00:00.000Z" for April 6 AEST).
-// We MUST use UTC date parts to avoid the local timezone shifting the date back.
-function toLocalDateStr(val: unknown): string {
-  if (!val) return "";
-  const s = String(val);
-  // If it's a full ISO timestamp, use UTC date parts to preserve the stored date
-  if (s.includes('T') || s.includes('Z')) {
-    const d = new Date(s);
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-  }
-  // Plain date string like "2026-04-06" — use as-is
-  return s.slice(0, 10);
-}
-
-// Get today's date as yyyy-mm-dd in the user's LOCAL timezone (not UTC)
-function localToday(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-// Display a DB date value as dd/mm/yyyy in local time
-function fmtDate(val: unknown): string {
-  if (!val) return "";
-  const iso = toLocalDateStr(val);
-  const [y, m, d] = iso.split('-');
-  if (y && m && d) return `${d}/${m}/${y}`;
-  return iso;
-}
+import { toUTCDateStr as toLocalDateStr, localToday, fmtDate } from "@/lib/dates";
 
 // Native HTML date picker — value and onChange use yyyy-mm-dd strings
 // The browser's date input always produces a yyyy-mm-dd string in local time,

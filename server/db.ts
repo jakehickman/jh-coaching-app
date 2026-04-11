@@ -535,53 +535,6 @@ export async function updateCoachingNote(data: {
   await db.update(coachingNotes).set(updateData as any).where(eq(coachingNotes.id, id));
 }
 
-// Weekly Check-ins
-export async function getWeeklyCheckIns(userId: number, limit = 12) {
-  const db = await getDb();
-  if (!db) return [];
-  return db
-    .select()
-    .from(weeklyCheckIns)
-    .where(eq(weeklyCheckIns.userId, userId))
-    .orderBy(desc(weeklyCheckIns.weekStartDate))
-    .limit(limit);
-}
-
-export async function upsertWeeklyCheckIn(data: {
-  userId: number;
-  weekStartDate: string;
-  avgWeight?: number;
-  weightChange?: number;
-  trainingAdherence?: number;
-  nutritionAdherence?: number;
-  overallFeeling?: number;
-  wins?: string;
-  challenges?: string;
-  nextWeekGoals?: string;
-  coachFeedback?: string;
-}) {
-  const db = await getDb();
-  if (!db) return;
-  const existing = await db
-    .select()
-    .from(weeklyCheckIns)
-    .where(
-      and(
-        eq(weeklyCheckIns.userId, data.userId),
-        eq(weeklyCheckIns.weekStartDate, data.weekStartDate as any)
-      )
-    )
-    .limit(1);
-  if (existing.length > 0) {
-    await db
-      .update(weeklyCheckIns)
-      .set({ ...data, updatedAt: new Date() } as any)
-      .where(eq(weeklyCheckIns.id, existing[0].id));
-  } else {
-    await db.insert(weeklyCheckIns).values(data as any);
-  }
-}
-
 // ─── Exercise Library ────────────────────────────────────────────────────────
 export async function listExercises() {
   const db = await getDb();
@@ -875,10 +828,6 @@ export async function getHabitCompletionsForClient(clientId: number, fromDate?: 
   const conditions = [eq(habitCompletions.clientId, clientId)];
   if (fromDate) conditions.push(gte(habitCompletions.completedDate, fromDate as any));
   return db.select().from(habitCompletions).where(and(...conditions));
-}
-
-export async function getHabitCompletionsForCoach(clientId: number, fromDate?: string) {
-  return getHabitCompletionsForClient(clientId, fromDate);
 }
 
 // ─── Check-in Submissions ────────────────────────────────────────────────────

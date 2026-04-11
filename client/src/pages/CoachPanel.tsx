@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useDraft } from "@/hooks/useDraft";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import { toUTCDateStr as toLocalDateStr, localToday, fmtDate } from "@/lib/dates";
+import { pctChange as pctChangeNum } from "@/lib/stats";
 import { Plus, Trash2, ChevronDown, ChevronUp, Save, Users, Dumbbell, Zap, ClipboardList, TrendingUp, GripVertical, BookOpen, Search, Pencil, X, Play, ExternalLink, Check, ChevronsUpDown, ArrowUp, ArrowDown, Minus, CheckSquare } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -32,20 +34,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-// Convert a DB date value (ISO timestamp or plain date string) to local yyyy-mm-dd
-function toLocalDateStr(val: unknown): string {
-  if (!val) return "";
-  const s = String(val);
-  if (s.includes('T') || s.includes('Z')) {
-    const d = new Date(s);
-    // Use UTC date parts — MySQL DATE columns are stored as the correct calendar date
-    // and returned as UTC midnight timestamps. Using local date parts would shift the
-    // date back by one day for users in positive UTC offsets (e.g. AEST UTC+10).
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-  }
-  return s.slice(0, 10);
-}
+
 
 // Native HTML date picker — value and onChange use yyyy-mm-dd strings
 function DateInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -2324,15 +2313,6 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ noteDate: "", content: "", category: "General" });
 
-  function localToday() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-  function fmtDate(val: unknown) {
-    const s = String(val ?? "").slice(0, 10);
-    const [y, m, d] = s.split('-');
-    return y && m && d ? `${d}/${m}/${y}` : s;
-  }
   function startEdit(note: any) {
     setEditingId(note.id);
     setEditForm({
@@ -2516,11 +2496,7 @@ function ProgressSection() {
     const nums = arr.filter((v): v is number => v != null);
     return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
   }
-  function pctChange(cur: number | null, prev: number | null): string | null {
-    if (cur == null || prev == null || prev === 0) return null;
-    const pct = ((cur - prev) / prev) * 100;
-    return (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%";
-  }
+  const pctChange = pctChangeNum;
 
   // ── 7-day averages ──────────────────────────────────────────────────────────
   const curAvgWeight = avgOf(cur7.map(l => l.weight as number | null));

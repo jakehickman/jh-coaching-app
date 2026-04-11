@@ -633,7 +633,7 @@ export const appRouter = router({
     // Coach: get completions for a specific client
     clientCompletions: adminProcedure
       .input(z.object({ clientId: z.number(), fromDate: z.string().optional() }))
-      .query(({ input }) => db.getHabitCompletionsForCoach(input.clientId, input.fromDate)),
+      .query(({ input }) => db.getHabitCompletionsForClient(input.clientId, input.fromDate)),
 
     // Coach: get assigned habits for a specific client
     clientHabits: adminProcedure
