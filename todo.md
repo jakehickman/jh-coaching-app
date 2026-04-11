@@ -338,3 +338,4 @@
 - [x] Getting Started Guide: add 7.2 The Stack section with image, renumber existing 7.2+
 - [x] Getting Started Guide: add check-in accountability copy to Weekly Check-in section intro
 - [ ] Meal plan: add per-meal Macro Targets mode (meal_type: specific_foods | macro_targets)
+- [x] Meal plan macro targets: replace single values with min/max pairs, show hyphen when blank

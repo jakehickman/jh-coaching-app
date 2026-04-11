@@ -1705,14 +1705,16 @@ function MealPlansSection() {
   }, [mealDraftKey, planNotes, meals]);
 
   // Auto-calculate macros from food db (specific_foods) or from targets (macro_targets)
+  // For macro_targets meals: use max if set, otherwise min, for daily totals estimate
+  const parseMacroVal = (max: any, min: any) => parseFloat(max) || parseFloat(min) || 0;
   const mealMacros = meals.map(meal => {
     if (meal.type === "macro_targets") {
       return {
-        calories: parseFloat(meal.targetCalories) || 0,
-        protein: Math.round(parseFloat(meal.targetProtein) || 0),
-        carbs: Math.round(parseFloat(meal.targetCarbs) || 0),
+        calories: parseMacroVal(meal.targetCaloriesMax, meal.targetCaloriesMin),
+        protein: Math.round(parseMacroVal(meal.targetProteinMax, meal.targetProteinMin)),
+        carbs: Math.round(parseMacroVal(meal.targetCarbsMax, meal.targetCarbsMin)),
         fiber: 0,
-        fat: Math.round(parseFloat(meal.targetFat) || 0),
+        fat: Math.round(parseMacroVal(meal.targetFatMax, meal.targetFatMin)),
       };
     }
     return (meal.items ?? []).reduce((acc: any, item: any) => {
@@ -1848,22 +1850,38 @@ function MealPlansSection() {
                 {meal.type === "macro_targets" ? (
                   <div className="space-y-3">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Set macro targets for this meal</p>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {[
-                        { field: "targetCalories", label: "Calories", unit: "kcal" },
-                        { field: "targetProtein", label: "Protein", unit: "g" },
-                        { field: "targetCarbs", label: "Carbs", unit: "g" },
-                        { field: "targetFat", label: "Fat", unit: "g" },
-                      ].map(({ field, label, unit }) => (
-                        <div key={field}>
+                        { minField: "targetCaloriesMin", maxField: "targetCaloriesMax", label: "Calories", unit: "kcal" },
+                        { minField: "targetProteinMin", maxField: "targetProteinMax", label: "Protein", unit: "g" },
+                        { minField: "targetCarbsMin", maxField: "targetCarbsMax", label: "Carbs", unit: "g" },
+                        { minField: "targetFatMin", maxField: "targetFatMax", label: "Fat", unit: "g" },
+                      ].map(({ minField, maxField, label, unit }) => (
+                        <div key={label}>
                           <label className="text-[10px] text-muted-foreground block mb-1">{label} ({unit})</label>
-                          <input
-                            type="number" min="0" step="1"
-                            value={meal[field] ?? ""}
-                            onChange={e => updateMealMacroTarget(i, field, e.target.value)}
-                            placeholder="0"
-                            className="w-full bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                          />
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <span className="text-[9px] text-muted-foreground block mb-0.5">Min</span>
+                              <input
+                                type="number" min="0" step="1"
+                                value={meal[minField] ?? ""}
+                                onChange={e => updateMealMacroTarget(i, minField, e.target.value)}
+                                placeholder="—"
+                                className="w-full bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                            </div>
+                            <span className="text-muted-foreground text-xs mt-4">–</span>
+                            <div className="flex-1">
+                              <span className="text-[9px] text-muted-foreground block mb-0.5">Max</span>
+                              <input
+                                type="number" min="0" step="1"
+                                value={meal[maxField] ?? ""}
+                                onChange={e => updateMealMacroTarget(i, maxField, e.target.value)}
+                                placeholder="—"
+                                className="w-full bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1954,17 +1972,35 @@ function MealPlansSection() {
                 )}
                 {/* Meal subtotal — shown for both modes when there are values */}
                 {meal.type === "macro_targets" ? (
-                  (meal.targetCalories || meal.targetProtein || meal.targetCarbs || meal.targetFat) ? (
-                    <div className="mt-3 pt-3 border-t border-border/50">
-                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Meal Total</p>
-                      <div className="flex gap-2 flex-wrap">
-                        <MacroChip label="Calories" value={mealMacros[i].calories} unit="kcal" highlight />
-                        <MacroChip label="Protein" value={mealMacros[i].protein} />
-                        <MacroChip label="Carbs" value={mealMacros[i].carbs} />
-                        <MacroChip label="Fat" value={mealMacros[i].fat} />
+                  (() => {
+                    const hasAny = meal.targetCaloriesMin || meal.targetCaloriesMax || meal.targetProteinMin || meal.targetProteinMax ||
+                      meal.targetCarbsMin || meal.targetCarbsMax || meal.targetFatMin || meal.targetFatMax;
+                    if (!hasAny) return null;
+                    const fmtRange = (min: any, max: any) => {
+                      const lo = parseFloat(min); const hi = parseFloat(max);
+                      if (!isNaN(lo) && !isNaN(hi)) return `${lo}–${hi}`;
+                      if (!isNaN(lo)) return `≥${lo}`;
+                      if (!isNaN(hi)) return `≤${hi}`;
+                      return "—";
+                    };
+                    return (
+                      <div className="mt-3 pt-3 border-t border-border/50">
+                        <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Targets</p>
+                        <div className="flex gap-2 flex-wrap">
+                          {[{label:"Cal",min:meal.targetCaloriesMin,max:meal.targetCaloriesMax,unit:"kcal",highlight:true},
+                            {label:"P",min:meal.targetProteinMin,max:meal.targetProteinMax,unit:"g"},
+                            {label:"C",min:meal.targetCarbsMin,max:meal.targetCarbsMax,unit:"g"},
+                            {label:"F",min:meal.targetFatMin,max:meal.targetFatMax,unit:"g"}]
+                            .map(({label,min,max,unit,highlight}: any) => (
+                            <div key={label} className={`flex flex-col items-center px-2 py-1 rounded text-center ${ highlight ? "bg-primary/10 border border-primary/20" : "bg-secondary/60" }`}>
+                              <span className="text-[8px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                              <span className={`text-[11px] font-semibold ${ highlight ? "text-primary" : "text-foreground" }`}>{fmtRange(min,max)} {unit}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ) : null
+                    );
+                  })()
                 ) : (
                   (meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
                     <div className="mt-3 pt-3 border-t border-border/50">
