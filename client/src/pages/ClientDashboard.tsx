@@ -1266,31 +1266,36 @@ function MealPlanTab() {
       {plan && (
         <div className="space-y-4">
 
-          {/* Macro Targets mode — show per-meal target cards */}
+          {/* Macro Targets mode — show daily targets + per-meal target cards */}
           {isMacroTargetsMode && (
             <>
-              {/* Daily totals summary */}
-              {meals.length > 0 && (
-                <Card>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Daily Totals</p>
-                    <span className="text-[9px] text-muted-foreground">Set by coach</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { label: "Calories", fmt: fmtDailyCalories, unit: "kcal", highlight: true },
-                      { label: "Protein", fmt: fmtDailyProtein, unit: "g" },
-                      { label: "Carbs", fmt: fmtDailyCarbs, unit: "g" },
-                      { label: "Fat", fmt: fmtDailyFat, unit: "g" },
-                    ].map(({ label, fmt, unit, highlight }) => (
-                      <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
-                        <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                        <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{fmt === "—" ? fmt : `${fmt} ${unit}`}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
+              {/* Daily-level targets card (shown when any daily target is set) */}
+              {(() => {
+                const dt2 = planDailyTargets ?? {};
+                const hasDailyTargets = ["calories_min","calories_max","protein_min","protein_max","carbs_min","carbs_max","fat_min","fat_max"].some(k => hasVal((dt2 as any)[k]));
+                if (!hasDailyTargets) return null;
+                return (
+                  <Card>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Daily Targets</p>
+                      <span className="text-[9px] text-muted-foreground">Set by coach</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {[
+                        { label: "Calories", min: (dt2 as any).calories_min, max: (dt2 as any).calories_max, unit: "kcal", highlight: true },
+                        { label: "Protein",  min: (dt2 as any).protein_min,  max: (dt2 as any).protein_max,  unit: "g" },
+                        { label: "Carbs",    min: (dt2 as any).carbs_min,    max: (dt2 as any).carbs_max,    unit: "g" },
+                        { label: "Fat",      min: (dt2 as any).fat_min,      max: (dt2 as any).fat_max,      unit: "g" },
+                      ].map(({ label, min, max, unit, highlight }: any) => (
+                        <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                          <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{fmtRange(min, max)} {unit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                );
+              })()}
               {/* Per-meal target cards */}
               {meals.length > 0 ? (
                 <div className="space-y-4">
