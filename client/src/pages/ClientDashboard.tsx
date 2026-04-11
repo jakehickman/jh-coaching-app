@@ -1152,6 +1152,8 @@ function MealPlanTab() {
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
 
   const meals = (plan?.meals as any[]) ?? [];
+  const planDailyTargets = (plan?.dailyTargets as Record<string,string> | null | undefined) ?? null;
+  const hasPlanTargets = planDailyTargets && Object.keys(planDailyTargets).length > 0;
 
   // Helper: convert item amount to grams (handles serving-based foods)
   function itemToGrams(food: any, amount: number): number {
@@ -1205,10 +1207,21 @@ function MealPlanTab() {
     _allHaveCarbs: acc._allHaveCarbs && (m._isMacroTarget ? m._hasCarbs : true),
     _allHaveFat: acc._allHaveFat && (m._isMacroTarget ? m._hasFat : true),
   }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, _allHaveCalories: true, _allHaveProtein: true, _allHaveCarbs: true, _allHaveFat: true });
-  const fmtDailyCalories = !dailyTotals._allHaveCalories ? "—" : hasMacroTargetMeal ? `≤${dailyTotals.calories}` : `${dailyTotals.calories}`;
-  const fmtDailyProtein = !dailyTotals._allHaveProtein ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.protein}` : `${dailyTotals.protein}`;
-  const fmtDailyCarbs = !dailyTotals._allHaveCarbs ? "—" : `${dailyTotals.carbs}`;
-  const fmtDailyFat = !dailyTotals._allHaveFat ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.fat}` : `${dailyTotals.fat}`;
+
+  // Plan-level daily targets override per-meal sums when set
+  const dt = planDailyTargets ?? {};
+  const fmtDailyCalories = hasPlanTargets
+    ? (hasVal(dt.calories_max) ? `≤${Math.round(parseFloat(dt.calories_max))}` : hasVal(dt.calories_min) ? `≥${Math.round(parseFloat(dt.calories_min))}` : "—")
+    : (!dailyTotals._allHaveCalories ? "—" : hasMacroTargetMeal ? `≤${dailyTotals.calories}` : `${dailyTotals.calories}`);
+  const fmtDailyProtein = hasPlanTargets
+    ? (hasVal(dt.protein_min) ? `≥${Math.round(parseFloat(dt.protein_min))}` : hasVal(dt.protein_max) ? `≤${Math.round(parseFloat(dt.protein_max))}` : "—")
+    : (!dailyTotals._allHaveProtein ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.protein}` : `${dailyTotals.protein}`);
+  const fmtDailyCarbs = hasPlanTargets
+    ? (hasVal(dt.carbs_min) ? `≥${Math.round(parseFloat(dt.carbs_min))}` : hasVal(dt.carbs_max) ? `≤${Math.round(parseFloat(dt.carbs_max))}` : "—")
+    : (!dailyTotals._allHaveCarbs ? "—" : `${dailyTotals.carbs}`);
+  const fmtDailyFat = hasPlanTargets
+    ? (hasVal(dt.fat_min) ? `≥${Math.round(parseFloat(dt.fat_min))}` : hasVal(dt.fat_max) ? `≤${Math.round(parseFloat(dt.fat_max))}` : "—")
+    : (!dailyTotals._allHaveFat ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.fat}` : `${dailyTotals.fat}`);
 
   return (
     <div className="space-y-6">
@@ -1226,15 +1239,22 @@ function MealPlanTab() {
       {plan && (
         <div className="space-y-4">
           {/* Daily totals */}
-          {meals.length > 0 && (dailyTotals.calories > 0 || hasMacroTargetMeal) && (
+          {meals.length > 0 && (hasPlanTargets || dailyTotals.calories > 0 || hasMacroTargetMeal) && (
             <Card>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">Daily Totals</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+                  {hasPlanTargets ? "Daily Targets" : "Daily Totals"}
+                </p>
+                {hasPlanTargets && (
+                  <span className="text-[9px] text-muted-foreground">Set by coach</span>
+                )}
+              </div>
               <div className="grid grid-cols-5 gap-2">
                 {[
                   { label: "Calories", fmt: fmtDailyCalories, unit: "kcal", highlight: true },
                   { label: "Protein", fmt: fmtDailyProtein, unit: "g" },
                   { label: "Carbs", fmt: fmtDailyCarbs, unit: "g" },
-                  { label: "Fiber", fmt: dailyTotals.fiber > 0 ? `${dailyTotals.fiber}` : "—", unit: "g" },
+                  { label: "Fiber", fmt: hasPlanTargets ? "—" : (dailyTotals.fiber > 0 ? `${dailyTotals.fiber}` : "—"), unit: "g" },
                   { label: "Fat", fmt: fmtDailyFat, unit: "g" },
                 ].map(({ label, fmt, unit, highlight }) => (
                   <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>

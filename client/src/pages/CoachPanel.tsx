@@ -1661,14 +1661,15 @@ function MealPlansSection() {
 
   const [planNotes, setPlanNotes] = useState("");
   const [meals, setMeals] = useState<any[]>([]);
+  const [dailyTargets, setDailyTargets] = useState<Record<string,string>>({});
 
   // Snapshot of the last server-saved state — used to detect genuine changes
-  const mealSavedSnapshot = useRef<{ planNotes: string; meals: any[] } | null>(null);
+  const mealSavedSnapshot = useRef<{ planNotes: string; meals: any[]; dailyTargets: Record<string,string> } | null>(null);
 
   const upsert = trpc.mealPlan.upsert.useMutation({
     onSuccess: () => {
       // Update snapshot to current state and clear draft
-      mealSavedSnapshot.current = { planNotes, meals };
+      mealSavedSnapshot.current = { planNotes, meals, dailyTargets };
       if (mealDraftKey) { try { localStorage.removeItem(mealDraftKey); } catch {} }
       toast.success("Meal plan saved"); refetch();
     }
@@ -1683,9 +1684,11 @@ function MealPlansSection() {
     if (plan === undefined) return; // still fetching
     const serverNotes = plan?.notes ?? "";
     const serverMeals = (plan?.meals as any[]) ?? [];
+    const serverDailyTargets = (plan?.dailyTargets as Record<string,string>) ?? {};
     setPlanNotes(serverNotes);
     setMeals(serverMeals);
-    mealSavedSnapshot.current = { planNotes: serverNotes, meals: serverMeals };
+    setDailyTargets(serverDailyTargets);
+    mealSavedSnapshot.current = { planNotes: serverNotes, meals: serverMeals, dailyTargets: serverDailyTargets };
     // Clear any stale draft for this key since we just loaded fresh server data
     const draftKey = `draft:mealPlan:${mealLoadKey}`;
     try { localStorage.removeItem(draftKey); } catch {}
@@ -1698,13 +1701,14 @@ function MealPlansSection() {
     const snap = mealSavedSnapshot.current;
     const isDirty =
       planNotes !== snap.planNotes ||
-      JSON.stringify(meals) !== JSON.stringify(snap.meals);
+      JSON.stringify(meals) !== JSON.stringify(snap.meals) ||
+      JSON.stringify(dailyTargets) !== JSON.stringify(snap.dailyTargets);
     if (isDirty) {
-      try { localStorage.setItem(mealDraftKey, JSON.stringify({ planNotes, meals })); window.dispatchEvent(new Event("draft-changed")); } catch {}
+      try { localStorage.setItem(mealDraftKey, JSON.stringify({ planNotes, meals, dailyTargets })); window.dispatchEvent(new Event("draft-changed")); } catch {}
     } else {
       try { localStorage.removeItem(mealDraftKey); } catch {}
     }
-  }, [mealDraftKey, planNotes, meals]);
+  }, [mealDraftKey, planNotes, meals, dailyTargets]);
 
   // Auto-calculate macros from food db (specific_foods) or from targets (macro_targets)
   // For macro_targets meals:
@@ -2054,6 +2058,49 @@ function MealPlansSection() {
             <Plus size={14} /> Add Meal
           </button>
 
+          {/* ── Daily Targets ── */}
+          <div className="border border-border rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 bg-card">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Daily Targets</p>
+              <span className="text-[10px] text-muted-foreground">Optional — overrides per-meal sum on client view</span>
+            </div>
+            <div className="px-4 pb-4 pt-3 bg-card space-y-3">
+              {(["calories", "protein", "carbs", "fat"] as const).map(macro => {
+                const labels: Record<string, string> = { calories: "Calories", protein: "Protein", carbs: "Carbs", fat: "Fat" };
+                const units: Record<string, string> = { calories: "kcal", protein: "g", carbs: "g", fat: "g" };
+                const prefixes: Record<string, string> = { calories: "≤", protein: "≥", carbs: "—", fat: "≥" };
+                const minKey = `${macro}_min`;
+                const maxKey = `${macro}_max`;
+                return (
+                  <div key={macro} className="grid grid-cols-[80px_1fr_1fr] items-center gap-2">
+                    <span className="text-xs text-foreground font-medium">
+                      {labels[macro]} <span className="text-muted-foreground">({units[macro]})</span>
+                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <label className="text-[10px] text-muted-foreground">Min</label>
+                      <input
+                        type="number" min="0" placeholder="—"
+                        value={dailyTargets[minKey] ?? ""}
+                        onChange={e => setDailyTargets(prev => { const n = { ...prev }; if (e.target.value === "") { delete n[minKey]; } else { n[minKey] = e.target.value; } return n; })}
+                        className="w-full bg-secondary border border-border rounded px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <label className="text-[10px] text-muted-foreground">Max</label>
+                      <input
+                        type="number" min="0" placeholder="—"
+                        value={dailyTargets[maxKey] ?? ""}
+                        onChange={e => setDailyTargets(prev => { const n = { ...prev }; if (e.target.value === "") { delete n[maxKey]; } else { n[maxKey] = e.target.value; } return n; })}
+                        className="w-full bg-secondary border border-border rounded px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-[10px] text-muted-foreground pt-1">Leave all blank to fall back to per-meal sums. Calories = max (≤), Protein/Fat = min (≥), Carbs = shown as — when blank.</p>
+            </div>
+          </div>
+
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Notes</label>
             <textarea value={planNotes} onChange={e => setPlanNotes(e.target.value)} rows={2}
@@ -2063,6 +2110,7 @@ function MealPlansSection() {
           <button
             onClick={() => upsert.mutate({
               userId: selectedUserId, dayType, meals,
+              dailyTargets: Object.keys(dailyTargets).length > 0 ? dailyTargets : undefined,
               totalCalories: dailyTotals.calories || undefined,
               totalProtein: dailyTotals.protein ? Math.round(dailyTotals.protein) : undefined,
               totalCarbs: dailyTotals.carbs ? Math.round(dailyTotals.carbs) : undefined,

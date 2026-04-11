@@ -105,6 +105,7 @@ export const mealPlans = mysqlTable("meal_plans", {
   coachId: int("coachId"),
   dayType: mysqlEnum("dayType", ["training", "rest"]).notNull(),
   meals: json("meals"), // JSON array of meal objects
+  dailyTargets: json("dailyTargets"), // Plan-level daily targets: { caloriesMin, caloriesMax, proteinMin, proteinMax, carbsMin, carbsMax, fatMin, fatMax }
   totalCalories: int("totalCalories"),
   totalProtein: int("totalProtein"),
   totalCarbs: int("totalCarbs"),
