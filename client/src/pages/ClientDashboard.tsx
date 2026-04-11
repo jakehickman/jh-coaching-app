@@ -1784,11 +1784,12 @@ function WorkoutLogTab() {
   }
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
-  // Persist collapsed state in sessionStorage so it survives navigation
-  const collapsedKey = selectedDay ? `collapsed:workout:${selectedDay}` : null;
+  // Persist collapsed state in sessionStorage keyed by date+day so different
+  // sessions of the same day label don't share collapse state.
+  const collapsedKey = selectedDay ? `collapsed:workout:${sessionDate}:${selectedDay}` : null;
   const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>(() => {
     if (!selectedDay) return {};
-    try { const raw = sessionStorage.getItem(`collapsed:workout:${selectedDay}`); return raw ? JSON.parse(raw) : {}; } catch { return {}; }
+    try { const raw = sessionStorage.getItem(`collapsed:workout:${sessionDate}:${selectedDay}`); return raw ? JSON.parse(raw) : {}; } catch { return {}; }
   });
   function setCollapsedExercises(updater: ((prev: Record<string, boolean>) => Record<string, boolean>) | Record<string, boolean>) {
     setCollapsedExercisesRaw(prev => {
@@ -1864,15 +1865,16 @@ function WorkoutLogTab() {
   });
 
   // When user picks a day, load existing session, or restore draft, or init blank
-  function selectDay(label: string) {
+  function selectDay(label: string, date?: string) {
+    const effectiveDate = date ?? sessionDate;
     setSelectedDay(label);
-    // Restore collapsed state for this day from sessionStorage
+    // Restore collapsed state for this date+day from sessionStorage
     try {
-      const raw = sessionStorage.getItem(`collapsed:workout:${label}`);
+      const raw = sessionStorage.getItem(`collapsed:workout:${effectiveDate}:${label}`);
       setCollapsedExercisesRaw(raw ? JSON.parse(raw) : {});
     } catch { setCollapsedExercisesRaw({}); }
     const dayDef = days.find(d => d.label === label);
-    const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === sessionDate && s.dayLabel === label);
+    const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === effectiveDate && s.dayLabel === label);
     if (existing) {
       const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
       const eqData: Record<string, string> = {};
@@ -1899,7 +1901,7 @@ function WorkoutLogTab() {
       setSessionNotes((existing.notes as string) ?? "");
     } else {
       // Try to restore an in-progress draft first
-      const draftKey = `draft:workout:${sessionDate}:${label}`;
+      const draftKey = `draft:workout:${effectiveDate}:${label}`;
       try {
         const stored = localStorage.getItem(draftKey);
         if (stored) {
@@ -1934,12 +1936,41 @@ function WorkoutLogTab() {
       setExerciseNotes({});
       setSubstitutions({});
     }
+    // Sync sessionDate if a different date was passed (e.g. from Past Sessions click)
+    if (date && date !== sessionDate) setSessionDate(date);
   }
 
-  // Re-load when date changes
+  // Re-load exercise data when date or sessions change — but DON'T reset collapse state
+  // (collapse state is managed separately via the collapsedKey/sessionStorage mechanism).
   useEffect(() => {
-    if (selectedDay) selectDay(selectedDay);
-  }, [sessionDate, sessions.length]);
+    if (!selectedDay) return;
+    const effectiveDate = sessionDate;
+    const dayDef = days.find(d => d.label === selectedDay);
+    const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === effectiveDate && s.dayLabel === selectedDay);
+    if (existing) {
+      const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
+      const eqData: Record<string, string> = {};
+      const enData: Record<string, string> = {};
+      const subData: Record<string, string> = {};
+      for (const ex of (existing.exercises as any[])) {
+        if (ex.substitutedFor) subData[ex.substitutedFor] = ex.name;
+        exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
+          weight: s.weight != null ? String(s.weight) : "",
+          reps: s.reps != null ? String(s.reps) : "",
+          notes: s.notes ?? "",
+          completed: s.completed ?? (s.weight != null || s.reps != null),
+        }));
+        if (ex.equipmentDetails) eqData[ex.name] = ex.equipmentDetails;
+        if (ex.exerciseNotes) enData[ex.name] = ex.exerciseNotes;
+      }
+      setExerciseData(exData);
+      setEquipmentDetails(eqData);
+      setExerciseNotes(enData);
+      setSubstitutions(subData);
+      setSessionNotes((existing.notes as string) ?? "");
+    }
+    // If no existing session, don't overwrite in-progress draft — selectDay handles that on initial pick
+  }, [sessionDate, sessions.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function setSet(exName: string, idx: number, field: "weight" | "reps" | "notes", val: string) {
     setExerciseData(prev => {
@@ -2380,7 +2411,7 @@ function WorkoutLogTab() {
                 </div>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => { setSessionDate(toLocalDateStr(s.sessionDate)); selectDay(s.dayLabel); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => { const d = toLocalDateStr(s.sessionDate); selectDay(s.dayLabel, d); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-sm font-medium text-primary hover:bg-secondary/70 transition-colors"
                   >
                     Edit
