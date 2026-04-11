@@ -1170,7 +1170,8 @@ function MealPlanTab() {
 
   const meals = (plan?.meals as any[]) ?? [];
   const planDailyTargets = (plan?.dailyTargets as Record<string,string> | null | undefined) ?? null;
-  const hasPlanTargets = planDailyTargets && Object.keys(planDailyTargets).length > 0;
+  const isMacroTargetsMode = (planDailyTargets as any)?.planType === "macro_targets";
+  const hasPlanTargets = !isMacroTargetsMode && planDailyTargets && Object.keys(planDailyTargets).filter(k => k !== "planType").length > 0;
 
   // Helper: convert item amount to grams (handles serving-based foods)
   function itemToGrams(food: any, amount: number): number {
@@ -1240,6 +1241,15 @@ function MealPlanTab() {
     ? (hasVal(dt.fat_min) ? `≥${Math.round(parseFloat(dt.fat_min))}` : hasVal(dt.fat_max) ? `≤${Math.round(parseFloat(dt.fat_max))}` : "—")
     : (!dailyTotals._allHaveFat ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.fat}` : `${dailyTotals.fat}`);
 
+  // fmtRange helper for macro_targets mode
+  const fmtRange = (min: any, max: any) => {
+    const lo = parseFloat(min); const hi = parseFloat(max);
+    if (!isNaN(lo) && !isNaN(hi)) return `${lo}–${hi}`;
+    if (!isNaN(lo)) return `≥${lo}`;
+    if (!isNaN(hi)) return `≤${hi}`;
+    return "—";
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex gap-2">
@@ -1255,23 +1265,45 @@ function MealPlanTab() {
 
       {plan && (
         <div className="space-y-4">
-          {/* Daily totals */}
+
+          {/* Macro Targets mode — show only the targets card */}
+          {isMacroTargetsMode && (
+            <Card>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Daily Targets</p>
+                <span className="text-[9px] text-muted-foreground">Set by coach</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  { label: "Calories", min: dt.calories_min, max: dt.calories_max, unit: "kcal", highlight: true },
+                  { label: "Protein", min: dt.protein_min, max: dt.protein_max, unit: "g" },
+                  { label: "Carbs", min: dt.carbs_min, max: dt.carbs_max, unit: "g" },
+                  { label: "Fat", min: dt.fat_min, max: dt.fat_max, unit: "g" },
+                ].map(({ label, min, max, unit, highlight }: any) => (
+                  <div key={label} className={`flex flex-col items-center px-3 py-3 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
+                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                    <span className={`text-sm font-bold mt-1 ${ highlight ? "text-primary" : "text-foreground" }`}>{fmtRange(min, max)}</span>
+                    <span className="text-[9px] text-muted-foreground">{unit}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Meal Plan mode — show meals list + daily totals */}
+          {!isMacroTargetsMode && (
+            <>
           {meals.length > 0 && (hasPlanTargets || dailyTotals.calories > 0 || hasMacroTargetMeal) && (
             <Card>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                  {hasPlanTargets ? "Daily Targets" : "Daily Totals"}
-                </p>
-                {hasPlanTargets && (
-                  <span className="text-[9px] text-muted-foreground">Set by coach</span>
-                )}
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Daily Totals</p>
               </div>
               <div className="grid grid-cols-5 gap-2">
                 {[
                   { label: "Calories", fmt: fmtDailyCalories, unit: "kcal", highlight: true },
                   { label: "Protein", fmt: fmtDailyProtein, unit: "g" },
                   { label: "Carbs", fmt: fmtDailyCarbs, unit: "g" },
-                  { label: "Fiber", fmt: hasPlanTargets ? "—" : (dailyTotals.fiber > 0 ? `${dailyTotals.fiber}` : "—"), unit: "g" },
+                  { label: "Fiber", fmt: dailyTotals.fiber > 0 ? `${dailyTotals.fiber}` : "—", unit: "g" },
                   { label: "Fat", fmt: fmtDailyFat, unit: "g" },
                 ].map(({ label, fmt, unit, highlight }) => (
                   <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
@@ -1387,6 +1419,9 @@ function MealPlanTab() {
               <p className="text-xs text-muted-foreground mt-1">Your coach will add your meal plan here.</p>
             </Card>
           )}
+
+          </>
+          )}{/* end meal plan mode */}
 
           {plan.notes && (
             <Card>
