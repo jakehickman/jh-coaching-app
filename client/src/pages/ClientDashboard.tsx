@@ -86,6 +86,8 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
 
   const handleEditDay = (iso: string) => {
     sessionStorage.setItem('editLogDate', iso);
+    // Dispatch a custom event so DailyLogTab can react even when already mounted on this route
+    window.dispatchEvent(new CustomEvent('editLogDate', { detail: { date: iso } }));
     navigate('/dashboard/daily-log');
   };
 
@@ -713,6 +715,19 @@ function DailyLogTab() {
   const todaysSessions = workoutSessions.filter(s => toDateStr(s.sessionDate as Date | string) === date);
   const autoTrained = todaysSessions.length > 0;
   const autoTrainingType = todaysSessions.map(s => s.dayLabel).filter(Boolean).join(", ") || undefined;
+
+  // Listen for editLogDate custom event dispatched by RecentLogsPanel when already on this tab
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const iso = (e as CustomEvent<{ date: string }>).detail?.date;
+      if (iso) {
+        sessionStorage.removeItem('editLogDate');
+        setDate(iso);
+      }
+    };
+    window.addEventListener('editLogDate', handler);
+    return () => window.removeEventListener('editLogDate', handler);
+  }, []);
 
   // Load existing log for selected date — only overwrite if no local draft exists
   useEffect(() => {
