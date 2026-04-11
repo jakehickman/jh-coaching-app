@@ -335,3 +335,4 @@
 - [x] Getting Started Guide: add 7.3 Training Intensity, 7.4 Warming Up, 7.5 Rest Times to Section 7
 - [x] Getting Started Guide: add Section 11 Habits and update TOC
 - [x] Coach check-in view: show Q7 sleepBedtimeConsistency answer
+- [x] Getting Started Guide: add 7.2 The Stack section with image, renumber existing 7.2+
