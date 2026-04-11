@@ -1694,6 +1694,27 @@ function WorkoutLogTab() {
   }
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
+  // Collapse state for exercise cards — persisted in sessionStorage keyed by date:dayLabel:exerciseName
+  const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>({});
+  function getCollapseKey(date: string, dayLabel: string) {
+    return `collapse:workout:${date}:${dayLabel}`;
+  }
+  function loadCollapsed(date: string, dayLabel: string): Record<string, boolean> {
+    try {
+      const stored = sessionStorage.getItem(getCollapseKey(date, dayLabel));
+      return stored ? JSON.parse(stored) : {};
+    } catch { return {}; }
+  }
+  function saveCollapsed(date: string, dayLabel: string, state: Record<string, boolean>) {
+    try { sessionStorage.setItem(getCollapseKey(date, dayLabel), JSON.stringify(state)); } catch {}
+  }
+  function toggleExerciseCollapse(exName: string) {
+    setCollapsedExercisesRaw(prev => {
+      const next = { ...prev, [exName]: !prev[exName] };
+      if (selectedDay) saveCollapsed(sessionDate, selectedDay, next);
+      return next;
+    });
+  }
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
 
@@ -1789,6 +1810,14 @@ function WorkoutLogTab() {
       setExerciseNotes(enData);
       setSubstitutions(subData);
       setSessionNotes((existing.notes as string) ?? "");
+      // Restore persisted collapse state; default all to collapsed for saved sessions
+      const persisted = loadCollapsed(sessionDate, label);
+      const defaultCollapsed: Record<string, boolean> = {};
+      for (const ex of (existing.exercises as any[])) {
+        defaultCollapsed[ex.name] = persisted[ex.name] !== undefined ? persisted[ex.name] : true;
+      }
+      setCollapsedExercisesRaw(defaultCollapsed);
+      saveCollapsed(sessionDate, label, defaultCollapsed);
     } else {
       // Try to restore an in-progress draft first
       const draftKey = `draft:workout:${sessionDate}:${label}`;
@@ -1825,6 +1854,9 @@ function WorkoutLogTab() {
       setEquipmentDetails({});
       setExerciseNotes({});
       setSubstitutions({});
+      // New session — restore persisted collapse state or default all expanded
+      const persistedNew = loadCollapsed(sessionDate, label);
+      setCollapsedExercisesRaw(persistedNew);
     }
   }
 
@@ -1950,6 +1982,7 @@ function WorkoutLogTab() {
               const displayName = subName ?? ex.name;
               const sets = exerciseData[displayName] ?? [{ weight: "", reps: "", notes: "" }];
               const isExpanded = expandedSets[displayName];
+              const isCollapsed = collapsedExercises[displayName] ?? false;
               const prevSets = prevExMap[displayName] ?? prevExMap[ex.name] ?? [];
               const exVideoUrl = videoMap[displayName] ?? videoMap[ex.name];
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
@@ -1957,8 +1990,12 @@ function WorkoutLogTab() {
               const isEquipmentOpen = equipmentOpen[displayName] || hasEquipment;
               return (
                 <Card key={i}>
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex-1">
+                  {/* Card header — tap to collapse/expand */}
+                  <div
+                    onClick={() => toggleExerciseCollapse(displayName)}
+                    className="w-full flex items-center justify-between gap-2 mb-3 text-left cursor-pointer"
+                  >
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-base font-semibold text-foreground">{displayName}</p>
                         {subName && (
@@ -1990,7 +2027,7 @@ function WorkoutLogTab() {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {/* Equipment details toggle */}
                       <button
-                        onClick={() => setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] }))}
+                        onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
                         title="Equipment details"
                         className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
                           hasEquipment
@@ -2001,13 +2038,16 @@ function WorkoutLogTab() {
                         <Dumbbell size={13} />
                       </button>
                       <button
-                        onClick={() => { setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
+                        onClick={e => { e.stopPropagation(); setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
                         className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors bg-secondary px-2 py-1.5 rounded-lg"
                       >
                         <Shuffle size={11} /> Sub
                       </button>
+                      <ChevronDown size={16} className={`text-muted-foreground transition-transform ${isCollapsed ? '' : 'rotate-180'}`} />
                     </div>
                   </div>
+                  {/* Collapsible body */}
+                  {!isCollapsed && (<>
                   {/* Equipment details inline input */}
                   {isEquipmentOpen && (
                     <div className="mb-3 -mt-1">
@@ -2085,7 +2125,7 @@ function WorkoutLogTab() {
                     <Plus size={13} /> Add Set
                   </button>
 
-                  {/* Equipment details */}
+                  {/* Exercise notes */}
                   <div className="mt-3 pt-3 border-t border-border">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">Exercise notes</p>
                     <input
@@ -2096,6 +2136,7 @@ function WorkoutLogTab() {
                       className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
+                  </>)}
                 </Card>
               );
             })}
