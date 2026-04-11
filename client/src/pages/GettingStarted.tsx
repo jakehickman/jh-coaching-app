@@ -497,7 +497,28 @@ export default function GettingStarted() {
                 <Body>Always prioritise good form over adding load. The goal is not to use the most weight possible. The goal is to make the target muscle work hard.</Body>
               </SubSection>
 
-              <SubSection title="7.3 Filming Your Lifts">
+              <SubSection title="7.3 Training Intensity">
+                <Body>For your training to work as intended, the sets need to be hard enough.</Body>
+                <Body>Each working set should be taken to within 1 to 3 reps of failure. Failure means the point where you cannot complete another rep with good form.</Body>
+                <Body>Just reaching the target number of reps is not enough. If you get to the top end of the rep range but still had another 5 to 10 reps left, the weight is too light and the set is not hard enough.</Body>
+                <Body>The goal is not just to complete the reps. The goal is to train hard enough to create a stimulus for adaptation.</Body>
+              </SubSection>
+
+              <SubSection title="7.4 Warming Up">
+                <Body>Keep warm-ups simple. The goal is to increase blood flow, get your nervous system firing, and prepare the joints and muscles for the exercise ahead.</Body>
+                <Body>In most cases, your warm-up should just be the same exercise with a lighter weight for 1 to 3 sets. Warm-up sets do not need to be logged.</Body>
+                <Body>Your first exercise for a muscle group will usually need the most warm-up. After that, one lighter set is often enough just to get a feel for the movement before going into your working sets.</Body>
+                <Body>Warm-up sets should not be hard. They are there to prepare you, not tire you out. In most cases, 3 to 8 reps with a submaximal load is enough.</Body>
+                <Body>There is no need to rest long between warm-up sets. Keep them moving and save your effort for the working sets.</Body>
+              </SubSection>
+
+              <SubSection title="7.5 Rest Times">
+                <Body>Rest long enough between sets to feel ready for the next one.</Body>
+                <Body>In most cases, this will be somewhere between 1 and 3 minutes, but it can vary depending on the exercise and how demanding the set was.</Body>
+                <Body>The main thing is not to rush your rest. You want to be recovered enough to perform the next set properly.</Body>
+              </SubSection>
+
+              <SubSection title="7.6 Filming Your Lifts">
                 <Body>Please film your lifts in the gym and send them to me in your weekly check-ins. This is an essential part of the coaching process.</Body>
                 <Body>Because I coach online, I cannot be there with you in person. Filming your lifts is the best alternative and allows me to assess your technique properly, make corrections where needed, and help you get more out of your training.</Body>
                 <Body>A lot of people feel awkward filming themselves at first or worry about what other people in the gym might think. In reality, most people are too focused on themselves to care. This is part of the process, and it's there to help you.</Body>
@@ -505,7 +526,7 @@ export default function GettingStarted() {
                 <Body>The better the footage, the better the feedback I can give you.</Body>
               </SubSection>
 
-              <SubSection title="7.4 Pain vs Soreness">
+              <SubSection title="7.7 Pain vs Soreness">
                 <Body>Muscle soreness and pain are not the same thing.</Body>
                 <Body>Soreness is normal, especially in the first few weeks of a new training program. Your body will adapt, and this will settle down over time.</Body>
                 <Body>Pain is different. Pain is a sign that something is not right, and pushing through it can lead to injury.</Body>
