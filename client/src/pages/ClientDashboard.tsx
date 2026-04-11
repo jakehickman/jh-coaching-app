@@ -7,7 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar
 } from "recharts";
-import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil, CheckSquare, Square, Shuffle, Dumbbell } from "lucide-react";
+import { Check, Plus, Trash2, ChevronDown, ChevronUp, Play, X, Minus, Pencil, CheckSquare, Square, Shuffle, Tag } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -2035,7 +2035,7 @@ function WorkoutLogTab() {
                             : "bg-secondary text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <Dumbbell size={13} />
+                        <Tag size={13} />
                       </button>
                       <button
                         onClick={e => { e.stopPropagation(); setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
