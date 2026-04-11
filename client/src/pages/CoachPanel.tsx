@@ -1996,44 +1996,92 @@ function MealPlansSection() {
 
           {/* Macro Targets mode */}
           {planMode === "macro_targets" && (
+            <>
+            {/* Per-meal target cards */}
             <div className="space-y-4">
-              <Card>
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Daily Calorie &amp; Macro Targets</p>
-                <div className="space-y-3">
-                  {(["calories", "protein", "carbs", "fat"] as const).map(macro => {
-                    const labels: Record<string, string> = { calories: "Calories", protein: "Protein", carbs: "Carbs", fat: "Fat" };
-                    const units: Record<string, string> = { calories: "kcal", protein: "g", carbs: "g", fat: "g" };
-                    const minKey = `${macro}_min`;
-                    const maxKey = `${macro}_max`;
-                    return (
-                      <div key={macro} className="grid grid-cols-[100px_1fr_1fr] items-center gap-3">
-                        <span className="text-sm text-foreground font-medium">
-                          {labels[macro]} <span className="text-xs text-muted-foreground">({units[macro]})</span>
-                        </span>
-                        <div className="flex flex-col gap-0.5">
-                          <label className="text-[10px] text-muted-foreground">Min</label>
-                          <input
-                            type="number" min="0" placeholder="—"
-                            value={dailyTargets[minKey] ?? ""}
-                            onChange={e => setDailyTargets(prev => { const n = { ...prev }; if (e.target.value === "") { delete n[minKey]; } else { n[minKey] = e.target.value; } return n; })}
-                            className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          <label className="text-[10px] text-muted-foreground">Max</label>
-                          <input
-                            type="number" min="0" placeholder="—"
-                            value={dailyTargets[maxKey] ?? ""}
-                            onChange={e => setDailyTargets(prev => { const n = { ...prev }; if (e.target.value === "") { delete n[maxKey]; } else { n[maxKey] = e.target.value; } return n; })}
-                            className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                          />
-                        </div>
+              {meals.map((meal, i) => (
+                <Card key={i}>
+                  {/* Meal header */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="flex flex-col gap-0.5">
+                      <button onClick={() => i > 0 && moveMeal(i, i - 1)} disabled={i === 0}
+                        className="text-muted-foreground hover:text-foreground disabled:opacity-20 leading-none">
+                        <ArrowUp size={12} />
+                      </button>
+                      <button onClick={() => i < meals.length - 1 && moveMeal(i, i + 1)} disabled={i === meals.length - 1}
+                        className="text-muted-foreground hover:text-foreground disabled:opacity-20 leading-none">
+                        <ArrowDown size={12} />
+                      </button>
+                    </div>
+                    <input type="text" value={meal.name} onChange={e => updateMealName(i, e.target.value)}
+                      className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <input type="time" value={meal.time ?? ""} onChange={e => updateMealTime(i, e.target.value)}
+                      className="w-28 bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <button onClick={() => removeMeal(i)} className="text-destructive hover:opacity-80">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                  {/* Macro target fields */}
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-[1fr_80px_80px] gap-2 px-1">
+                      <span className="text-[10px] text-muted-foreground">Macro</span>
+                      <span className="text-[10px] text-muted-foreground text-center">Min</span>
+                      <span className="text-[10px] text-muted-foreground text-center">Max</span>
+                    </div>
+                    {([
+                      { label: "Calories (kcal)", minField: "targetCaloriesMin", maxField: "targetCaloriesMax" },
+                      { label: "Protein (g)",    minField: "targetProteinMin",  maxField: "targetProteinMax" },
+                      { label: "Carbs (g)",      minField: "targetCarbsMin",    maxField: "targetCarbsMax" },
+                      { label: "Fat (g)",        minField: "targetFatMin",      maxField: "targetFatMax" },
+                    ] as const).map(({ label, minField, maxField }) => (
+                      <div key={label} className="grid grid-cols-[1fr_80px_80px] gap-2 items-center">
+                        <span className="text-xs text-foreground">{label}</span>
+                        <input
+                          type="number" min="0" placeholder="—"
+                          value={meal[minField] ?? ""}
+                          onChange={e => updateMealMacroTarget(i, minField, e.target.value)}
+                          className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <input
+                          type="number" min="0" placeholder="—"
+                          value={meal[maxField] ?? ""}
+                          onChange={e => updateMealMacroTarget(i, maxField, e.target.value)}
+                          className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
                       </div>
-                    );
-                  })}
-                </div>
-              </Card>
+                    ))}
+                  </div>
+                  {/* Meal target summary chips */}
+                  {(hasVal(meal.targetCaloriesMin) || hasVal(meal.targetCaloriesMax) || hasVal(meal.targetProteinMin) || hasVal(meal.targetProteinMax)) && (
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <div className="flex gap-2 flex-wrap">
+                        {[
+                          { label: "Cal", min: meal.targetCaloriesMin, max: meal.targetCaloriesMax, unit: "kcal", highlight: true },
+                          { label: "P",   min: meal.targetProteinMin,  max: meal.targetProteinMax,  unit: "g" },
+                          { label: "C",   min: meal.targetCarbsMin,    max: meal.targetCarbsMax,    unit: "g" },
+                          { label: "F",   min: meal.targetFatMin,      max: meal.targetFatMax,      unit: "g" },
+                        ].map(({ label, min, max, unit, highlight }: any) => {
+                          const lo = parseFloat(min); const hi = parseFloat(max);
+                          const display = (!isNaN(lo) && !isNaN(hi)) ? `${lo}–${hi}` : !isNaN(lo) ? `≥${lo}` : !isNaN(hi) ? `≤${hi}` : null;
+                          if (!display) return null;
+                          return (
+                            <div key={label} className={`flex flex-col items-center px-2 py-1 rounded text-center ${ highlight ? "bg-primary/10 border border-primary/20" : "bg-secondary/60" }`}>
+                              <span className="text-[8px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                              <span className={`text-[11px] font-semibold ${ highlight ? "text-primary" : "text-foreground" }`}>{display} {unit}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              ))}
             </div>
+            <button onClick={() => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", type: "macro_targets", items: [] }])}
+              className="flex items-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors w-full justify-center">
+              <Plus size={14} /> Add Meal
+            </button>
+            </>
           )}{/* end macro_targets mode */}
 
           {/* Notes — shown in both modes */}
@@ -2056,14 +2104,22 @@ function MealPlansSection() {
                   notes: planNotes || null,
                 });
               } else {
-                const targets = { ...dailyTargets, planType: "macro_targets" };
+                // macro_targets mode: save per-meal target cards; use dailyTargets just to store the planType marker
+                const mealsWithType = meals.map(m => ({ ...m, type: "macro_targets" }));
+                // Compute daily totals from per-meal targets (use max for calories, min for protein/fat)
+                const mtTotals = mealsWithType.reduce((acc: any, m: any) => ({
+                  calories: acc.calories + (parseFloat(m.targetCaloriesMax) || 0),
+                  protein: acc.protein + (parseFloat(m.targetProteinMin) || 0),
+                  carbs: acc.carbs + (parseFloat(m.targetCarbsMin) || 0),
+                  fat: acc.fat + (parseFloat(m.targetFatMin) || 0),
+                }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
                 upsert.mutate({
-                  userId: selectedUserId, dayType, meals: [],
-                  dailyTargets: targets,
-                  totalCalories: undefined,
-                  totalProtein: undefined,
-                  totalCarbs: undefined,
-                  totalFat: undefined,
+                  userId: selectedUserId, dayType, meals: mealsWithType,
+                  dailyTargets: { planType: "macro_targets" } as any,
+                  totalCalories: mtTotals.calories || undefined,
+                  totalProtein: mtTotals.protein ? Math.round(mtTotals.protein) : undefined,
+                  totalCarbs: mtTotals.carbs ? Math.round(mtTotals.carbs) : undefined,
+                  totalFat: mtTotals.fat ? Math.round(mtTotals.fat) : undefined,
                   notes: planNotes || null,
                 });
               }
@@ -2100,36 +2156,25 @@ function MealPlansSection() {
                 <p className="text-xs text-muted-foreground text-center py-2">Add meals to see daily totals</p>
               )
             ) : (
-              (() => {
-                const hasVal = (v: any) => v !== undefined && v !== null && String(v).trim() !== "" && isFinite(parseFloat(String(v)));
-                const fmtRange = (min: any, max: any) => {
-                  const lo = parseFloat(min); const hi = parseFloat(max);
-                  if (!isNaN(lo) && !isNaN(hi)) return `${lo}–${hi}`;
-                  if (!isNaN(lo)) return `≥${lo}`;
-                  if (!isNaN(hi)) return `≤${hi}`;
-                  return "—";
-                };
-                const anySet = ["calories","protein","carbs","fat"].some(m => hasVal(dailyTargets[`${m}_min`]) || hasVal(dailyTargets[`${m}_max`]));
-                return anySet ? (
-                  <>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Targets</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="col-span-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 text-center">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Calories</p>
-                      <p className="text-xl font-bold text-primary">{fmtRange(dailyTargets.calories_min, dailyTargets.calories_max)} <span className="text-xs font-normal">kcal</span></p>
-                    </div>
-                    {[{l:'Protein',mk:'protein'},{l:'Carbs',mk:'carbs'},{l:'Fat',mk:'fat'}].map(({l,mk}) => (
-                      <div key={l} className="bg-secondary rounded-lg px-2 py-2 text-center">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{l}</p>
-                        <p className="text-sm font-bold text-foreground">{fmtRange(dailyTargets[`${mk}_min`], dailyTargets[`${mk}_max`])}g</p>
-                      </div>
-                    ))}
+              meals.length > 0 ? (
+                <>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Daily Totals</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="col-span-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Calories</p>
+                    <p className="text-xl font-bold text-primary">{fmtDailyCalories} <span className="text-xs font-normal">kcal</span></p>
                   </div>
-                  </>
-                ) : (
-                  <p className="text-xs text-muted-foreground text-center py-2">Enter targets to see a summary</p>
-                );
-              })()
+                  {[{l:'Protein',v:fmtDailyProtein},{l:'Carbs',v:fmtDailyCarbs},{l:'Fat',v:fmtDailyFat}].map(({l,v}) => (
+                    <div key={l} className="bg-secondary rounded-lg px-2 py-2 text-center">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{l}</p>
+                      <p className="text-sm font-bold text-foreground">{v}{v !== '—' ? 'g' : ''}</p>
+                    </div>
+                  ))}
+                </div>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-2">Add meals to see daily totals</p>
+              )
             )}
           </Card>
         </div>

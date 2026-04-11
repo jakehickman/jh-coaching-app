@@ -1266,28 +1266,67 @@ function MealPlanTab() {
       {plan && (
         <div className="space-y-4">
 
-          {/* Macro Targets mode — show only the targets card */}
+          {/* Macro Targets mode — show per-meal target cards */}
           {isMacroTargetsMode && (
-            <Card>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Daily Targets</p>
-                <span className="text-[9px] text-muted-foreground">Set by coach</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {[
-                  { label: "Calories", min: dt.calories_min, max: dt.calories_max, unit: "kcal", highlight: true },
-                  { label: "Protein", min: dt.protein_min, max: dt.protein_max, unit: "g" },
-                  { label: "Carbs", min: dt.carbs_min, max: dt.carbs_max, unit: "g" },
-                  { label: "Fat", min: dt.fat_min, max: dt.fat_max, unit: "g" },
-                ].map(({ label, min, max, unit, highlight }: any) => (
-                  <div key={label} className={`flex flex-col items-center px-3 py-3 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
-                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                    <span className={`text-sm font-bold mt-1 ${ highlight ? "text-primary" : "text-foreground" }`}>{fmtRange(min, max)}</span>
-                    <span className="text-[9px] text-muted-foreground">{unit}</span>
+            <>
+              {/* Daily totals summary */}
+              {meals.length > 0 && (
+                <Card>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Daily Totals</p>
+                    <span className="text-[9px] text-muted-foreground">Set by coach</span>
                   </div>
-                ))}
-              </div>
-            </Card>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { label: "Calories", fmt: fmtDailyCalories, unit: "kcal", highlight: true },
+                      { label: "Protein", fmt: fmtDailyProtein, unit: "g" },
+                      { label: "Carbs", fmt: fmtDailyCarbs, unit: "g" },
+                      { label: "Fat", fmt: fmtDailyFat, unit: "g" },
+                    ].map(({ label, fmt, unit, highlight }) => (
+                      <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
+                        <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                        <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{fmt === "—" ? fmt : `${fmt} ${unit}`}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+              {/* Per-meal target cards */}
+              {meals.length > 0 ? (
+                <div className="space-y-4">
+                  {meals.map((meal: any, i: number) => (
+                    <Card key={i}>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm font-semibold text-foreground">{meal.name ?? `Meal ${i + 1}`}</p>
+                        {meal.time && (
+                          <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
+                            {(() => { try { const [h, m] = meal.time.split(":"); const d = new Date(); d.setHours(+h, +m); return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); } catch { return meal.time; } })()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        {[
+                          { label: "Calories", range: fmtRange(meal.targetCaloriesMin, meal.targetCaloriesMax), unit: "kcal", highlight: true },
+                          { label: "Protein",  range: fmtRange(meal.targetProteinMin,  meal.targetProteinMax),  unit: "g" },
+                          { label: "Carbs",    range: fmtRange(meal.targetCarbsMin,    meal.targetCarbsMax),    unit: "g" },
+                          { label: "Fat",      range: fmtRange(meal.targetFatMin,      meal.targetFatMax),      unit: "g" },
+                        ].map(({ label, range, unit, highlight }: any) => (
+                          <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
+                            <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                            <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{range} {unit}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="text-center py-8">
+                  <p className="text-muted-foreground text-sm">No meal targets set for {dayType} days yet.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Your coach will add your targets here.</p>
+                </Card>
+              )}
+            </>
           )}
 
           {/* Meal Plan mode — show meals list + daily totals */}
