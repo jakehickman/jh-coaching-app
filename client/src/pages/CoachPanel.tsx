@@ -1632,11 +1632,13 @@ function getItemGrams(foodDb: any[], foodName: string, amount: number): number |
   return food.servingUnit && food.servingGrams ? Math.round(amount * food.servingGrams) : amount;
 }
 
-function MacroChip({ label, value, unit = "g", highlight = false }: { label: string; value: number; unit?: string; highlight?: boolean }) {
+function MacroChip({ label, value, displayValue, unit = "g", highlight = false }: { label: string; value?: number; displayValue?: string; unit?: string; highlight?: boolean }) {
+  const shown = displayValue ?? (value !== undefined ? `${value}` : "—");
+  const suffix = shown === "—" ? "" : unit === "kcal" ? " kcal" : "g";
   return (
     <div className={`flex flex-col items-center px-2 py-1 rounded-lg ${highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60"}` }>
       <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className={`text-xs font-semibold ${highlight ? "text-primary" : "text-foreground"}`}>{value}{unit === "kcal" ? " kcal" : `g`}</span>
+      <span className={`text-xs font-semibold ${highlight ? "text-primary" : "text-foreground"}`}>{shown}{suffix}</span>
     </div>
   );
 }
@@ -1705,16 +1707,24 @@ function MealPlansSection() {
   }, [mealDraftKey, planNotes, meals]);
 
   // Auto-calculate macros from food db (specific_foods) or from targets (macro_targets)
-  // For macro_targets meals: use max if set, otherwise min, for daily totals estimate
-  const parseMacroVal = (max: any, min: any) => parseFloat(max) || parseFloat(min) || 0;
+  // For macro_targets meals:
+  //   calories: use max (ceiling), prefix ~
+  //   protein: use min (floor), prefix ≥
+  //   carbs/fat: use max if set, else min; if any meal has no value → show — for that macro
   const mealMacros = meals.map(meal => {
     if (meal.type === "macro_targets") {
       return {
-        calories: parseMacroVal(meal.targetCaloriesMax, meal.targetCaloriesMin),
-        protein: Math.round(parseMacroVal(meal.targetProteinMax, meal.targetProteinMin)),
-        carbs: Math.round(parseMacroVal(meal.targetCarbsMax, meal.targetCarbsMin)),
+        calories: parseFloat(meal.targetCaloriesMax) || parseFloat(meal.targetCaloriesMin) || 0,
+        protein: Math.round(parseFloat(meal.targetProteinMin) || parseFloat(meal.targetProteinMax) || 0),
+        carbs: Math.round(parseFloat(meal.targetCarbsMax) || parseFloat(meal.targetCarbsMin) || 0),
+        fat: Math.round(parseFloat(meal.targetFatMax) || parseFloat(meal.targetFatMin) || 0),
         fiber: 0,
-        fat: Math.round(parseMacroVal(meal.targetFatMax, meal.targetFatMin)),
+        // track whether each macro has any value set
+        _hasCalories: !!(meal.targetCaloriesMax || meal.targetCaloriesMin),
+        _hasProtein: !!(meal.targetProteinMin || meal.targetProteinMax),
+        _hasCarbs: !!(meal.targetCarbsMax || meal.targetCarbsMin),
+        _hasFat: !!(meal.targetFatMax || meal.targetFatMin),
+        _isMacroTarget: true,
       };
     }
     return (meal.items ?? []).reduce((acc: any, item: any) => {
@@ -1725,17 +1735,29 @@ function MealPlansSection() {
         carbs: Math.round(acc.carbs + m.carbs),
         fiber: Math.round(acc.fiber + m.fiber),
         fat: Math.round(acc.fat + m.fat),
+        _hasCalories: true, _hasProtein: true, _hasCarbs: true, _hasFat: true, _isMacroTarget: false,
       };
-    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
+    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, _hasCalories: true, _hasProtein: true, _hasCarbs: true, _hasFat: true, _isMacroTarget: false });
   });
 
-  const dailyTotals = mealMacros.reduce((acc, m) => ({
+  const hasMacroTargetMeal = meals.some(m => m.type === "macro_targets");
+  const dailyTotals = mealMacros.reduce((acc: any, m: any) => ({
     calories: acc.calories + m.calories,
     protein: Math.round(acc.protein + m.protein),
     carbs: Math.round(acc.carbs + m.carbs),
     fiber: Math.round(acc.fiber + m.fiber),
     fat: Math.round(acc.fat + m.fat),
-  }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
+    _allHaveCalories: acc._allHaveCalories && m._hasCalories,
+    _allHaveProtein: acc._allHaveProtein && m._hasProtein,
+    _allHaveCarbs: acc._allHaveCarbs && m._hasCarbs,
+    _allHaveFat: acc._allHaveFat && m._hasFat,
+  }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, _allHaveCalories: true, _allHaveProtein: true, _allHaveCarbs: true, _allHaveFat: true });
+
+  // Format daily total display values
+  const fmtDailyCalories = !dailyTotals._allHaveCalories ? "—" : hasMacroTargetMeal ? `~${dailyTotals.calories}` : `${dailyTotals.calories}`;
+  const fmtDailyProtein = !dailyTotals._allHaveProtein ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.protein}` : `${dailyTotals.protein}`;
+  const fmtDailyCarbs = !dailyTotals._allHaveCarbs ? "—" : `${dailyTotals.carbs}`;
+  const fmtDailyFat = !dailyTotals._allHaveFat ? "—" : `${dailyTotals.fat}`;
 
   const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", type: "specific_foods", items: [] }]);
   const toggleMealType = (i: number) => setMeals(m => m.map((meal, idx) => idx === i
@@ -1804,11 +1826,11 @@ function MealPlansSection() {
             <Card>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">Daily Totals</p>
               <div className="flex gap-2 flex-wrap">
-                <MacroChip label="Calories" value={dailyTotals.calories} unit="kcal" highlight />
-                <MacroChip label="Protein" value={dailyTotals.protein} />
-                <MacroChip label="Carbs" value={dailyTotals.carbs} />
+                <MacroChip label="Calories" displayValue={fmtDailyCalories} unit="kcal" highlight />
+                <MacroChip label="Protein" displayValue={fmtDailyProtein} />
+                <MacroChip label="Carbs" displayValue={fmtDailyCarbs} />
                 <MacroChip label="Fiber" value={dailyTotals.fiber} />
-                <MacroChip label="Fat" value={dailyTotals.fat} />
+                <MacroChip label="Fat" displayValue={fmtDailyFat} />
               </div>
             </Card>
           )}
@@ -2056,12 +2078,12 @@ function MealPlansSection() {
               <div className="grid grid-cols-2 gap-2">
                 <div className="col-span-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 text-center">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Calories</p>
-                  <p className="text-xl font-bold text-primary">{dailyTotals.calories} <span className="text-xs font-normal">kcal</span></p>
+                  <p className="text-xl font-bold text-primary">{fmtDailyCalories} <span className="text-xs font-normal">kcal</span></p>
                 </div>
-                {[{l:'Protein',v:dailyTotals.protein},{l:'Carbs',v:dailyTotals.carbs},{l:'Fiber',v:dailyTotals.fiber},{l:'Fat',v:dailyTotals.fat}].map(({l,v}) => (
+                {[{l:'Protein',v:fmtDailyProtein},{l:'Carbs',v:fmtDailyCarbs},{l:'Fiber',v:`${dailyTotals.fiber}`},{l:'Fat',v:fmtDailyFat}].map(({l,v}) => (
                   <div key={l} className="bg-secondary rounded-lg px-2 py-2 text-center">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{l}</p>
-                    <p className="text-sm font-bold text-foreground">{v}g</p>
+                    <p className="text-sm font-bold text-foreground">{v}{v !== '—' ? 'g' : ''}</p>
                   </div>
                 ))}
               </div>
