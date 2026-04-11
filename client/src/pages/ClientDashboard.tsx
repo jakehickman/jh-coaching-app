@@ -2388,9 +2388,6 @@ type CheckInFormState = {
   dietWeighedFoods: string;
   dietMealPrepAccuracy: string;
   dietExtrasFrequency: string;
-  dietAddedFats: string;
-  dietMealTiming: string;
-  dietOffPlanQuality: string;
 };
 
 function ChoiceQuestion({ label, subtext, field, options, form, setForm, hasError, scrollRef }: {
@@ -2453,9 +2450,6 @@ function CheckInsTab() {
     dietWeighedFoods: '',
     dietMealPrepAccuracy: '',
     dietExtrasFrequency: '',
-    dietAddedFats: '',
-    dietMealTiming: '',
-    dietOffPlanQuality: '',
     sleepBedtimeConsistency: '',
   };
   const [form, setForm] = useState(blankForm);
@@ -2467,17 +2461,11 @@ function CheckInsTab() {
   const q2Ref = useRef<HTMLDivElement>(null);
   const q3Ref = useRef<HTMLDivElement>(null);
   const q4Ref = useRef<HTMLDivElement>(null);
-  const q5Ref = useRef<HTMLDivElement>(null);
-  const q6Ref = useRef<HTMLDivElement>(null);
-  const q7Ref = useRef<HTMLDivElement>(null);
   const questionRefs: [keyof CheckInFormState, React.RefObject<HTMLDivElement | null>][] = [
     ['dietWeighedFoods', q1Ref],
     ['dietMealPrepAccuracy', q2Ref],
     ['dietExtrasFrequency', q3Ref],
-    ['dietAddedFats', q4Ref],
-    ['dietMealTiming', q5Ref],
-    ['dietOffPlanQuality', q6Ref],
-    ['sleepBedtimeConsistency', q7Ref],
+    ['sleepBedtimeConsistency', q4Ref],
   ];
 
   useEffect(() => {
@@ -2486,9 +2474,6 @@ function CheckInsTab() {
         dietWeighedFoods: existingCheckIn.dietWeighedFoods ?? '',
         dietMealPrepAccuracy: existingCheckIn.dietMealPrepAccuracy ?? '',
         dietExtrasFrequency: existingCheckIn.dietExtrasFrequency ?? '',
-        dietAddedFats: existingCheckIn.dietAddedFats ?? '',
-        dietMealTiming: existingCheckIn.dietMealTiming ?? '',
-        dietOffPlanQuality: existingCheckIn.dietOffPlanQuality ?? '',
         sleepBedtimeConsistency: existingCheckIn.sleepBedtimeConsistency ?? '',
       });
       setSubmitted(true);
@@ -2508,7 +2493,7 @@ function CheckInsTab() {
   });
 
   const handleSubmit = () => {
-    const dietFields = [form.dietWeighedFoods, form.dietMealPrepAccuracy, form.dietExtrasFrequency, form.dietAddedFats, form.dietMealTiming, form.dietOffPlanQuality, form.sleepBedtimeConsistency];
+    const dietFields = [form.dietWeighedFoods, form.dietMealPrepAccuracy, form.dietExtrasFrequency, form.sleepBedtimeConsistency];
     if (dietFields.some(f => !f)) {
       setShowErrors(true);
       // Scroll to first unanswered question
@@ -2523,9 +2508,6 @@ function CheckInsTab() {
       dietWeighedFoods: form.dietWeighedFoods as any,
       dietMealPrepAccuracy: form.dietMealPrepAccuracy as any,
       dietExtrasFrequency: form.dietExtrasFrequency as any,
-      dietAddedFats: form.dietAddedFats as any,
-      dietMealTiming: form.dietMealTiming as any,
-      dietOffPlanQuality: form.dietOffPlanQuality as any,
       sleepBedtimeConsistency: form.sleepBedtimeConsistency as any,
     });
   };
@@ -2686,59 +2668,12 @@ function CheckInsTab() {
           />
 
           <ChoiceQuestion
-            label="When cooking, which best describes how you use added fats such as oil or butter?"
-            field="dietAddedFats"
-            form={form}
-            setForm={setForm}
-            hasError={showErrors}
-            scrollRef={q4Ref}
-            options={[
-              { value: 'light_spray', label: 'I use a light spray (e.g. cooking spray / Pam)' },
-              { value: 'small_amount', label: 'I add a small amount (less than 1 tsp)' },
-              { value: 'one_tsp_or_more', label: 'I add 1 tsp or more' },
-              { value: 'no_added_fats', label: 'I do not use added fats when cooking' },
-            ]}
-          />
-
-          <ChoiceQuestion
-            label="How often did you eat meals more than 2 hours earlier or later than planned this week?"
-            field="dietMealTiming"
-            form={form}
-            setForm={setForm}
-            hasError={showErrors}
-            scrollRef={q5Ref}
-            options={[
-              { value: 'never', label: 'Never' },
-              { value: 'one_two_days', label: 'On 1–2 days' },
-              { value: 'few_days', label: 'On a few days' },
-              { value: 'most_days', label: 'On most days' },
-              { value: 'every_day', label: 'Every day or almost every day' },
-            ]}
-          />
-
-          <ChoiceQuestion
-            label="When you ate an off-plan meal, how close was it usually, in your estimation, to your planned meal in calories and macros?"
-            field="dietOffPlanQuality"
-            form={form}
-            setForm={setForm}
-            hasError={showErrors}
-            scrollRef={q6Ref}
-            options={[
-              { value: 'very_close', label: 'Very close' },
-              { value: 'somewhat_close', label: 'Somewhat close' },
-              { value: 'not_very_close', label: 'Not very close' },
-              { value: 'very_different', label: 'Very different' },
-              { value: 'no_off_plan_meals', label: 'I did not have any off-plan meals' },
-            ]}
-          />
-
-          <ChoiceQuestion
             label="How often did you go to bed more than 1 hour later than your planned bedtime?"
             field="sleepBedtimeConsistency"
             form={form}
             setForm={setForm}
             hasError={showErrors}
-            scrollRef={q7Ref}
+            scrollRef={q4Ref}
             options={[
               { value: 'never', label: 'Never' },
               { value: 'one_two_days', label: 'On 1–2 days' },

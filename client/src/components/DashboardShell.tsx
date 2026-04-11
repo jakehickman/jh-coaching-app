@@ -13,7 +13,6 @@ import {
   Home,
   LogOut,
   Menu,
-  Ruler,
   TrendingUp,
   Users,
   Utensils,
