@@ -1166,15 +1166,16 @@ function MealPlanTab() {
   const mealMacros = meals.map((meal: any) => {
     if (meal.type === "macro_targets") {
       return {
-        calories: parseMacroVal(meal.targetCaloriesMax, meal.targetCaloriesMin),
-        protein: Math.round(parseMacroVal(meal.targetProteinMax, meal.targetProteinMin)),
-        carbs: Math.round(parseMacroVal(meal.targetCarbsMax, meal.targetCarbsMin)),
+        // Calories: use max (ceiling ≤), protein/fat: use min (floor ≥), carbs: use min if set
+        calories: parseFloat(meal.targetCaloriesMax) || 0,
+        protein: Math.round(parseFloat(meal.targetProteinMin) || 0),
+        carbs: Math.round(parseFloat(meal.targetCarbsMin) || 0),
         fiber: 0,
-        fat: Math.round(parseMacroVal(meal.targetFatMax, meal.targetFatMin)),
-        _hasCalories: hasVal(meal.targetCaloriesMax) || hasVal(meal.targetCaloriesMin),
-        _hasProtein: hasVal(meal.targetProteinMin) || hasVal(meal.targetProteinMax),
-        _hasCarbs: hasVal(meal.targetCarbsMax) || hasVal(meal.targetCarbsMin),
-        _hasFat: hasVal(meal.targetFatMax) || hasVal(meal.targetFatMin),
+        fat: Math.round(parseFloat(meal.targetFatMin) || 0),
+        _hasCalories: hasVal(meal.targetCaloriesMax),
+        _hasProtein: hasVal(meal.targetProteinMin),
+        _hasCarbs: hasVal(meal.targetCarbsMin),
+        _hasFat: hasVal(meal.targetFatMin),
         _isMacroTarget: true,
       };
     }
@@ -1204,10 +1205,10 @@ function MealPlanTab() {
     _allHaveCarbs: acc._allHaveCarbs && (m._isMacroTarget ? m._hasCarbs : true),
     _allHaveFat: acc._allHaveFat && (m._isMacroTarget ? m._hasFat : true),
   }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, _allHaveCalories: true, _allHaveProtein: true, _allHaveCarbs: true, _allHaveFat: true });
-  const fmtDailyCalories = !dailyTotals._allHaveCalories ? "—" : hasMacroTargetMeal ? `~${dailyTotals.calories}` : `${dailyTotals.calories}`;
+  const fmtDailyCalories = !dailyTotals._allHaveCalories ? "—" : hasMacroTargetMeal ? `≤${dailyTotals.calories}` : `${dailyTotals.calories}`;
   const fmtDailyProtein = !dailyTotals._allHaveProtein ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.protein}` : `${dailyTotals.protein}`;
   const fmtDailyCarbs = !dailyTotals._allHaveCarbs ? "—" : `${dailyTotals.carbs}`;
-  const fmtDailyFat = !dailyTotals._allHaveFat ? "—" : `${dailyTotals.fat}`;
+  const fmtDailyFat = !dailyTotals._allHaveFat ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.fat}` : `${dailyTotals.fat}`;
 
   return (
     <div className="space-y-6">

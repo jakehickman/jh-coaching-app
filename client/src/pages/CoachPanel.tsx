@@ -1716,15 +1716,16 @@ function MealPlansSection() {
 
   const mealMacros = meals.map(meal => {
     if (meal.type === "macro_targets") {
-      const hasCalories = hasVal(meal.targetCaloriesMax) || hasVal(meal.targetCaloriesMin);
-      const hasProtein = hasVal(meal.targetProteinMin) || hasVal(meal.targetProteinMax);
-      const hasCarbs = hasVal(meal.targetCarbsMax) || hasVal(meal.targetCarbsMin);
-      const hasFat = hasVal(meal.targetFatMax) || hasVal(meal.targetFatMin);
+      // Calories: use max (ceiling ≤), protein/fat: use min (floor ≥), carbs: use min if set
+      const hasCalories = hasVal(meal.targetCaloriesMax);
+      const hasProtein = hasVal(meal.targetProteinMin);
+      const hasCarbs = hasVal(meal.targetCarbsMin);
+      const hasFat = hasVal(meal.targetFatMin);
       return {
-        calories: parseFloat(meal.targetCaloriesMax) || parseFloat(meal.targetCaloriesMin) || 0,
-        protein: Math.round(parseFloat(meal.targetProteinMin) || parseFloat(meal.targetProteinMax) || 0),
-        carbs: Math.round(parseFloat(meal.targetCarbsMax) || parseFloat(meal.targetCarbsMin) || 0),
-        fat: Math.round(parseFloat(meal.targetFatMax) || parseFloat(meal.targetFatMin) || 0),
+        calories: parseFloat(meal.targetCaloriesMax) || 0,
+        protein: Math.round(parseFloat(meal.targetProteinMin) || 0),
+        carbs: Math.round(parseFloat(meal.targetCarbsMin) || 0),
+        fat: Math.round(parseFloat(meal.targetFatMin) || 0),
         fiber: 0,
         _hasCalories: hasCalories,
         _hasProtein: hasProtein,
@@ -1761,10 +1762,10 @@ function MealPlansSection() {
   }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, _allHaveCalories: true, _allHaveProtein: true, _allHaveCarbs: true, _allHaveFat: true });
 
   // Format daily total display values
-  const fmtDailyCalories = !dailyTotals._allHaveCalories ? "—" : hasMacroTargetMeal ? `~${dailyTotals.calories}` : `${dailyTotals.calories}`;
+  const fmtDailyCalories = !dailyTotals._allHaveCalories ? "—" : hasMacroTargetMeal ? `≤${dailyTotals.calories}` : `${dailyTotals.calories}`;
   const fmtDailyProtein = !dailyTotals._allHaveProtein ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.protein}` : `${dailyTotals.protein}`;
   const fmtDailyCarbs = !dailyTotals._allHaveCarbs ? "—" : `${dailyTotals.carbs}`;
-  const fmtDailyFat = !dailyTotals._allHaveFat ? "—" : `${dailyTotals.fat}`;
+  const fmtDailyFat = !dailyTotals._allHaveFat ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.fat}` : `${dailyTotals.fat}`;
 
   const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", type: "specific_foods", items: [] }]);
   const toggleMealType = (i: number) => setMeals(m => m.map((meal, idx) => idx === i

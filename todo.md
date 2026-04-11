@@ -343,3 +343,4 @@
 - [x] Workout log: collapsible exercise cards, auto-collapse when all sets marked complete
 - [x] Fix: daily totals showing numbers instead of — when some macro bounds are blank in macro_targets meal
 - [x] Workout log: persist collapsed exercise card state across navigation (sessionStorage)
+- [x] Meal plan daily totals: calories ≤max, protein/fat ≥min, carbs — when not prescribed
