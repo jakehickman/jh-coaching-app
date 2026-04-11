@@ -1711,19 +1711,25 @@ function MealPlansSection() {
   //   calories: use max (ceiling), prefix ~
   //   protein: use min (floor), prefix ≥
   //   carbs/fat: use max if set, else min; if any meal has no value → show — for that macro
+  // Helper: a macro field is considered "set" only if it's a non-empty string that parses to a finite number
+  function hasVal(v: any): boolean { return v !== undefined && v !== null && String(v).trim() !== "" && isFinite(parseFloat(String(v))); }
+
   const mealMacros = meals.map(meal => {
     if (meal.type === "macro_targets") {
+      const hasCalories = hasVal(meal.targetCaloriesMax) || hasVal(meal.targetCaloriesMin);
+      const hasProtein = hasVal(meal.targetProteinMin) || hasVal(meal.targetProteinMax);
+      const hasCarbs = hasVal(meal.targetCarbsMax) || hasVal(meal.targetCarbsMin);
+      const hasFat = hasVal(meal.targetFatMax) || hasVal(meal.targetFatMin);
       return {
         calories: parseFloat(meal.targetCaloriesMax) || parseFloat(meal.targetCaloriesMin) || 0,
         protein: Math.round(parseFloat(meal.targetProteinMin) || parseFloat(meal.targetProteinMax) || 0),
         carbs: Math.round(parseFloat(meal.targetCarbsMax) || parseFloat(meal.targetCarbsMin) || 0),
         fat: Math.round(parseFloat(meal.targetFatMax) || parseFloat(meal.targetFatMin) || 0),
         fiber: 0,
-        // track whether each macro has any value set
-        _hasCalories: !!(meal.targetCaloriesMax || meal.targetCaloriesMin),
-        _hasProtein: !!(meal.targetProteinMin || meal.targetProteinMax),
-        _hasCarbs: !!(meal.targetCarbsMax || meal.targetCarbsMin),
-        _hasFat: !!(meal.targetFatMax || meal.targetFatMin),
+        _hasCalories: hasCalories,
+        _hasProtein: hasProtein,
+        _hasCarbs: hasCarbs,
+        _hasFat: hasFat,
         _isMacroTarget: true,
       };
     }
@@ -1747,10 +1753,11 @@ function MealPlansSection() {
     carbs: Math.round(acc.carbs + m.carbs),
     fiber: Math.round(acc.fiber + m.fiber),
     fat: Math.round(acc.fat + m.fat),
-    _allHaveCalories: acc._allHaveCalories && m._hasCalories,
-    _allHaveProtein: acc._allHaveProtein && m._hasProtein,
-    _allHaveCarbs: acc._allHaveCarbs && m._hasCarbs,
-    _allHaveFat: acc._allHaveFat && m._hasFat,
+    // Only a macro_targets meal with a missing value should mark the macro as unavailable
+    _allHaveCalories: acc._allHaveCalories && (m._isMacroTarget ? m._hasCalories : true),
+    _allHaveProtein: acc._allHaveProtein && (m._isMacroTarget ? m._hasProtein : true),
+    _allHaveCarbs: acc._allHaveCarbs && (m._isMacroTarget ? m._hasCarbs : true),
+    _allHaveFat: acc._allHaveFat && (m._isMacroTarget ? m._hasFat : true),
   }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, _allHaveCalories: true, _allHaveProtein: true, _allHaveCarbs: true, _allHaveFat: true });
 
   // Format daily total display values

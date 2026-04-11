@@ -341,3 +341,4 @@
 - [x] Meal plan macro targets: replace single values with min/max pairs, show hyphen when blank
 - [ ] Meal plan daily totals: calories ~max, protein ≥min, carbs/fat exact or — when any bound missing
 - [x] Workout log: collapsible exercise cards, auto-collapse when all sets marked complete
+- [x] Fix: daily totals showing numbers instead of — when some macro bounds are blank in macro_targets meal

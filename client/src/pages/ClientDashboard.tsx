@@ -1160,7 +1160,9 @@ function MealPlanTab() {
   }
 
   // Calculate macros per meal — handles both specific_foods and macro_targets modes
+  const hasVal = (v: any) => v !== undefined && v !== null && String(v).trim() !== "" && isFinite(parseFloat(String(v)));
   const parseMacroVal = (max: any, min: any) => parseFloat(max) || parseFloat(min) || 0;
+  const hasMacroTargetMeal = meals.some((m: any) => m.type === "macro_targets");
   const mealMacros = meals.map((meal: any) => {
     if (meal.type === "macro_targets") {
       return {
@@ -1169,6 +1171,11 @@ function MealPlanTab() {
         carbs: Math.round(parseMacroVal(meal.targetCarbsMax, meal.targetCarbsMin)),
         fiber: 0,
         fat: Math.round(parseMacroVal(meal.targetFatMax, meal.targetFatMin)),
+        _hasCalories: hasVal(meal.targetCaloriesMax) || hasVal(meal.targetCaloriesMin),
+        _hasProtein: hasVal(meal.targetProteinMin) || hasVal(meal.targetProteinMax),
+        _hasCarbs: hasVal(meal.targetCarbsMax) || hasVal(meal.targetCarbsMin),
+        _hasFat: hasVal(meal.targetFatMax) || hasVal(meal.targetFatMin),
+        _isMacroTarget: true,
       };
     }
     return (meal.items ?? []).reduce((acc: any, item: any) => {
@@ -1182,8 +1189,9 @@ function MealPlanTab() {
         carbs: Math.round(acc.carbs + food.carbs * factor),
         fiber: Math.round(acc.fiber + food.fiber * factor),
         fat: Math.round(acc.fat + food.fat * factor),
+        _hasCalories: true, _hasProtein: true, _hasCarbs: true, _hasFat: true, _isMacroTarget: false,
       };
-    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
+    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, _hasCalories: true, _hasProtein: true, _hasCarbs: true, _hasFat: true, _isMacroTarget: false });
   });
   const dailyTotals = mealMacros.reduce((acc: any, m: any) => ({
     calories: acc.calories + m.calories,
@@ -1191,7 +1199,15 @@ function MealPlanTab() {
     carbs: Math.round(acc.carbs + m.carbs),
     fiber: Math.round(acc.fiber + m.fiber),
     fat: Math.round(acc.fat + m.fat),
-  }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
+    _allHaveCalories: acc._allHaveCalories && (m._isMacroTarget ? m._hasCalories : true),
+    _allHaveProtein: acc._allHaveProtein && (m._isMacroTarget ? m._hasProtein : true),
+    _allHaveCarbs: acc._allHaveCarbs && (m._isMacroTarget ? m._hasCarbs : true),
+    _allHaveFat: acc._allHaveFat && (m._isMacroTarget ? m._hasFat : true),
+  }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0, _allHaveCalories: true, _allHaveProtein: true, _allHaveCarbs: true, _allHaveFat: true });
+  const fmtDailyCalories = !dailyTotals._allHaveCalories ? "—" : hasMacroTargetMeal ? `~${dailyTotals.calories}` : `${dailyTotals.calories}`;
+  const fmtDailyProtein = !dailyTotals._allHaveProtein ? "—" : hasMacroTargetMeal ? `≥${dailyTotals.protein}` : `${dailyTotals.protein}`;
+  const fmtDailyCarbs = !dailyTotals._allHaveCarbs ? "—" : `${dailyTotals.carbs}`;
+  const fmtDailyFat = !dailyTotals._allHaveFat ? "—" : `${dailyTotals.fat}`;
 
   return (
     <div className="space-y-6">
@@ -1209,20 +1225,20 @@ function MealPlanTab() {
       {plan && (
         <div className="space-y-4">
           {/* Daily totals */}
-          {meals.length > 0 && dailyTotals.calories > 0 && (
+          {meals.length > 0 && (dailyTotals.calories > 0 || hasMacroTargetMeal) && (
             <Card>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">Daily Totals</p>
               <div className="grid grid-cols-5 gap-2">
                 {[
-                  { label: "Calories", value: dailyTotals.calories, unit: "kcal", highlight: true },
-                  { label: "Protein", value: dailyTotals.protein, unit: "g" },
-                  { label: "Carbs", value: dailyTotals.carbs, unit: "g" },
-                  { label: "Fiber", value: dailyTotals.fiber, unit: "g" },
-                  { label: "Fat", value: dailyTotals.fat, unit: "g" },
-                ].map(({ label, value, unit, highlight }) => (
+                  { label: "Calories", fmt: fmtDailyCalories, unit: "kcal", highlight: true },
+                  { label: "Protein", fmt: fmtDailyProtein, unit: "g" },
+                  { label: "Carbs", fmt: fmtDailyCarbs, unit: "g" },
+                  { label: "Fiber", fmt: dailyTotals.fiber > 0 ? `${dailyTotals.fiber}` : "—", unit: "g" },
+                  { label: "Fat", fmt: fmtDailyFat, unit: "g" },
+                ].map(({ label, fmt, unit, highlight }) => (
                   <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
                     <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                    <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{value} {unit}</span>
+                    <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{fmt === "—" ? fmt : `${fmt} ${unit}`}</span>
                   </div>
                 ))}
               </div>
