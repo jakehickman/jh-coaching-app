@@ -1746,7 +1746,19 @@ function WorkoutLogTab() {
   }
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
-  const [collapsedExercises, setCollapsedExercises] = useState<Record<string, boolean>>({});
+  // Persist collapsed state in sessionStorage so it survives navigation
+  const collapsedKey = selectedDay ? `collapsed:workout:${selectedDay}` : null;
+  const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>(() => {
+    if (!selectedDay) return {};
+    try { const raw = sessionStorage.getItem(`collapsed:workout:${selectedDay}`); return raw ? JSON.parse(raw) : {}; } catch { return {}; }
+  });
+  function setCollapsedExercises(updater: ((prev: Record<string, boolean>) => Record<string, boolean>) | Record<string, boolean>) {
+    setCollapsedExercisesRaw(prev => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      if (collapsedKey) { try { sessionStorage.setItem(collapsedKey, JSON.stringify(next)); } catch {} }
+      return next;
+    });
+  }
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
 
@@ -1816,6 +1828,11 @@ function WorkoutLogTab() {
   // When user picks a day, load existing session, or restore draft, or init blank
   function selectDay(label: string) {
     setSelectedDay(label);
+    // Restore collapsed state for this day from sessionStorage
+    try {
+      const raw = sessionStorage.getItem(`collapsed:workout:${label}`);
+      setCollapsedExercisesRaw(raw ? JSON.parse(raw) : {});
+    } catch { setCollapsedExercisesRaw({}); }
     const dayDef = days.find(d => d.label === label);
     const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === sessionDate && s.dayLabel === label);
     if (existing) {
