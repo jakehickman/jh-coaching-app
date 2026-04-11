@@ -580,7 +580,7 @@ export default function GettingStarted() {
                   </li>
                 ))}
               </ul>
-              >Body>If you eat a meal that is not in your meal plan, mark it as an off-plan meal.</Body>
+              <Body>If you eat a meal that is not in your meal plan, mark it as an off-plan meal.</Body>
               <Body>This data matters because it gives me a clearer picture of what is influencing your progress and whether anything needs to change.</Body>
               <Callout>Be honest with your logging. The more accurate the information is, the better I can coach you.</Callout>
             </Section>
