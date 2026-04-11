@@ -459,6 +459,11 @@ export default function GettingStarted() {
                       use: "5g daily, any time.",
                     },
                     {
+                      name: "Protein powder",
+                      desc: "A convenient way to help you hit your daily protein target when needed. Whey protein is a good default for most people. If regular whey does not agree with your digestion, try whey isolate instead. If you do not consume dairy, use a plant-based blend.",
+                      use: "As needed to help meet your protein intake.",
+                    },
+                    {
                       name: "Vitamin D3",
                       desc: "Supports general health, immune function, and bone health.",
                       use: "3,000 to 5,000 IU daily with food.",
@@ -575,6 +580,7 @@ export default function GettingStarted() {
                   </li>
                 ))}
               </ul>
+              >Body>If you eat a meal that is not in your meal plan, mark it as an off-plan meal.</Body>
               <Body>This data matters because it gives me a clearer picture of what is influencing your progress and whether anything needs to change.</Body>
               <Callout>Be honest with your logging. The more accurate the information is, the better I can coach you.</Callout>
             </Section>
@@ -593,6 +599,7 @@ export default function GettingStarted() {
 
               <SubSection title="9.2 Measurements">
                 <Body>Your waist measurement should be taken on your check-in day, first thing in the morning, after using the bathroom, before eating or drinking.</Body>
+                <Body>Use a tape measure with automatic tightness.</Body>
                 <p className="font-body text-foreground/80 text-[15px] leading-relaxed mt-3">To take it properly:</p>
                 <BulletList items={["Fully exhale", "Tense your abs", "Measure around the navel"]} />
                 <Body>Keep the conditions the same each week so the measurement is as useful as possible.</Body>
