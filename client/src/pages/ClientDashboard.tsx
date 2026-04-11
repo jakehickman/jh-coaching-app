@@ -723,6 +723,9 @@ function DailyLogTab() {
       if (iso) {
         sessionStorage.removeItem('editLogDate');
         setDate(iso);
+        // Scroll the main content area to the top so the date picker is visible
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
       }
     };
     window.addEventListener('editLogDate', handler);
