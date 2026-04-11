@@ -1,27 +1,118 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { appRouter } from "./routers";
+import type { TrpcContext } from "./_core/context";
 
-// ── Mock db module ────────────────────────────────────────────────────────────
+// Mock the db module — names must match current exports in server/db.ts
 vi.mock("./db", () => ({
-  db: {
-    createHabit: vi.fn(),
-    updateHabit: vi.fn(),
-    deleteHabit: vi.fn(),
-    listHabits: vi.fn(),
-    assignHabit: vi.fn(),
-    unassignHabit: vi.fn(),
-    getClientHabits: vi.fn(),
-    toggleHabitCompletion: vi.fn(),
-    getHabitCompletions: vi.fn(),
-    getClientHabitCompletions: vi.fn(),
-  },
+  getDb: vi.fn().mockResolvedValue(null),
+  upsertUser: vi.fn().mockResolvedValue(undefined),
+  getUserByOpenId: vi.fn().mockResolvedValue(undefined),
+  getAllUsers: vi.fn().mockResolvedValue([]),
+  getAllClients: vi.fn().mockResolvedValue([]),
+  setUserApproved: vi.fn().mockResolvedValue(undefined),
+  getPendingApprovalCount: vi.fn().mockResolvedValue(0),
+  deleteUser: vi.fn().mockResolvedValue(undefined),
+  getClientProfile: vi.fn().mockResolvedValue(null),
+  upsertClientProfile: vi.fn().mockResolvedValue(undefined),
+  updateClientProfileExtended: vi.fn().mockResolvedValue(undefined),
+  getDailyLogs: vi.fn().mockResolvedValue([]),
+  getDailyLogByDate: vi.fn().mockResolvedValue(null),
+  upsertDailyLog: vi.fn().mockResolvedValue(undefined),
+  deleteDailyLog: vi.fn().mockResolvedValue(undefined),
+  getMeasurements: vi.fn().mockResolvedValue([]),
+  addMeasurement: vi.fn().mockResolvedValue(undefined),
+  updateMeasurement: vi.fn().mockResolvedValue(undefined),
+  deleteMeasurement: vi.fn().mockResolvedValue(undefined),
+  getMealPlan: vi.fn().mockResolvedValue(null),
+  upsertMealPlan: vi.fn().mockResolvedValue(undefined),
+  getShoppingItems: vi.fn().mockResolvedValue([]),
+  toggleShoppingItem: vi.fn().mockResolvedValue(undefined),
+  addShoppingItem: vi.fn().mockResolvedValue(undefined),
+  deleteShoppingItem: vi.fn().mockResolvedValue(undefined),
+  getTrainingProgram: vi.fn().mockResolvedValue(null),
+  upsertTrainingProgram: vi.fn().mockResolvedValue(undefined),
+  listAllTrainingPrograms: vi.fn().mockResolvedValue([]),
+  getMesoCycles: vi.fn().mockResolvedValue([]),
+  getMesoSessions: vi.fn().mockResolvedValue([]),
+  upsertMesoSession: vi.fn().mockResolvedValue(undefined),
+  getTimelineMilestones: vi.fn().mockResolvedValue([]),
+  toggleMilestone: vi.fn().mockResolvedValue(undefined),
+  getCoachingNotes: vi.fn().mockResolvedValue([]),
+  addCoachingNote: vi.fn().mockResolvedValue(undefined),
+  deleteCoachingNote: vi.fn().mockResolvedValue(undefined),
+  updateCoachingNote: vi.fn().mockResolvedValue(undefined),
+  listExercises: vi.fn().mockResolvedValue([]),
+  upsertExercise: vi.fn().mockResolvedValue(undefined),
+  deleteExercise: vi.fn().mockResolvedValue(undefined),
+  listNutritionFoods: vi.fn().mockResolvedValue([]),
+  upsertNutritionFood: vi.fn().mockResolvedValue(undefined),
+  deleteNutritionFood: vi.fn().mockResolvedValue(undefined),
+  listWorkoutSessions: vi.fn().mockResolvedValue([]),
+  saveWorkoutSession: vi.fn().mockResolvedValue(undefined),
+  deleteWorkoutSession: vi.fn().mockResolvedValue(undefined),
+  createOnboardingSubmission: vi.fn().mockResolvedValue(undefined),
+  listOnboardingSubmissions: vi.fn().mockResolvedValue([]),
+  markOnboardingReviewed: vi.fn().mockResolvedValue(undefined),
+  // Habits — current names from db.ts
+  listHabitsByCoach: vi.fn().mockResolvedValue([]),
+  createHabit: vi.fn().mockResolvedValue(undefined),
+  updateHabit: vi.fn().mockResolvedValue(undefined),
+  deleteHabit: vi.fn().mockResolvedValue(undefined),
+  getHabitAssignments: vi.fn().mockResolvedValue([]),
+  setHabitAssignments: vi.fn().mockResolvedValue(undefined),
+  listAssignedHabitsForClient: vi.fn().mockResolvedValue([]),
+  toggleHabitCompletion: vi.fn().mockResolvedValue({ action: "added", completion: null }),
+  getHabitCompletionsForClient: vi.fn().mockResolvedValue([]),
+  // Check-ins
+  submitCheckIn: vi.fn().mockResolvedValue({ id: 1 }),
+  listCheckInsForClient: vi.fn().mockResolvedValue([]),
+  getCheckInForWeek: vi.fn().mockResolvedValue(null),
+  markCheckInReviewed: vi.fn().mockResolvedValue(undefined),
+  getLatestCheckInPerClient: vi.fn().mockResolvedValue([]),
+  getAllCheckInsPerClient: vi.fn().mockResolvedValue([]),
+  deleteCheckIn: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { db } from "./db";
+function createAdminContext(): TrpcContext {
+  return {
+    user: {
+      id: 1,
+      openId: "admin-user",
+      email: "coach@test.com",
+      name: "Coach Jake",
+      loginMethod: "manus",
+      role: "admin",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    },
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: { clearCookie: vi.fn() } as unknown as TrpcContext["res"],
+  };
+}
+
+function createUserContext(): TrpcContext {
+  return {
+    user: {
+      id: 7,
+      openId: "demo-client",
+      email: "client@test.com",
+      name: "Test Client",
+      loginMethod: "manus",
+      role: "user",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
+    },
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: { clearCookie: vi.fn() } as unknown as TrpcContext["res"],
+  };
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const mockHabit = (overrides = {}) => ({
   id: 1,
-  coachId: 10,
+  coachId: 1,
   name: "Drink 2L water",
   description: "Stay hydrated",
   frequency: "daily" as const,
@@ -31,8 +122,8 @@ const mockHabit = (overrides = {}) => ({
   ...overrides,
 });
 
-const mockCompletion = (habitId: number, date: string, clientId = 5) => ({
-  id: Math.random(),
+const mockCompletion = (habitId: number, date: string, clientId = 7) => ({
+  id: Math.floor(Math.random() * 10000),
   habitId,
   clientId,
   completedDate: date,
@@ -43,136 +134,55 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
-describe("Habit CRUD", () => {
-  it("creates a habit and returns it", async () => {
-    const habit = mockHabit();
-    vi.mocked(db.createHabit).mockResolvedValue(habit);
+// ── Router-level tests ────────────────────────────────────────────────────────
+describe("habits router — access control", () => {
+  it("list requires admin role", async () => {
+    const caller = appRouter.createCaller(createUserContext());
+    await expect(caller.habits.list()).rejects.toThrow();
+  });
 
-    const result = await db.createHabit({
-      coachId: 10,
-      name: "Drink 2L water",
-      description: "Stay hydrated",
-      frequency: "daily",
-      targetDays: 7,
-      startDate: "2026-03-01" as any,
+  it("list succeeds for admin and returns array", async () => {
+    const { listHabitsByCoach } = await import("./db");
+    vi.mocked(listHabitsByCoach).mockResolvedValue([mockHabit()] as any);
+    const caller = appRouter.createCaller(createAdminContext());
+    const result = await caller.habits.list();
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("myHabits returns array for authenticated client", async () => {
+    const caller = appRouter.createCaller(createUserContext());
+    const result = await caller.habits.myHabits();
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("myHabits requires authentication", async () => {
+    const caller = appRouter.createCaller({
+      user: null,
+      req: { protocol: "https", headers: {} } as TrpcContext["req"],
+      res: { clearCookie: vi.fn() } as unknown as TrpcContext["res"],
     });
-
-    expect(result).toEqual(habit);
-    expect(db.createHabit).toHaveBeenCalledOnce();
+    await expect(caller.habits.myHabits()).rejects.toThrow();
   });
 
-  it("updates a habit name", async () => {
-    const updated = mockHabit({ name: "Drink 3L water" });
-    vi.mocked(db.updateHabit).mockResolvedValue(updated);
-
-    const result = await db.updateHabit(1, 10, { name: "Drink 3L water" });
-
-    expect(result.name).toBe("Drink 3L water");
-    expect(db.updateHabit).toHaveBeenCalledWith(1, 10, { name: "Drink 3L water" });
+  it("myCompletions returns array for authenticated client", async () => {
+    const caller = appRouter.createCaller(createUserContext());
+    const result = await caller.habits.myCompletions({ fromDate: "2026-04-01" });
+    expect(Array.isArray(result)).toBe(true);
   });
 
-  it("deletes a habit", async () => {
-    vi.mocked(db.deleteHabit).mockResolvedValue(undefined);
-
-    await db.deleteHabit(1, 10);
-
-    expect(db.deleteHabit).toHaveBeenCalledWith(1, 10);
+  it("clientCompletions requires admin role", async () => {
+    const caller = appRouter.createCaller(createUserContext());
+    await expect(caller.habits.clientCompletions({ clientId: 7 })).rejects.toThrow();
   });
 
-  it("lists habits for a coach", async () => {
-    const habits = [mockHabit({ id: 1 }), mockHabit({ id: 2, name: "Walk 10k steps" })];
-    vi.mocked(db.listHabits).mockResolvedValue(habits);
-
-    const result = await db.listHabits(10);
-
-    expect(result).toHaveLength(2);
-    expect(result[1].name).toBe("Walk 10k steps");
+  it("clientCompletions succeeds for admin", async () => {
+    const caller = appRouter.createCaller(createAdminContext());
+    const result = await caller.habits.clientCompletions({ clientId: 7 });
+    expect(Array.isArray(result)).toBe(true);
   });
 });
 
-describe("Habit Assignment", () => {
-  it("assigns a habit to a client", async () => {
-    const assignment = { id: 1, habitId: 1, clientId: 5, assignedAt: new Date(), active: true };
-    vi.mocked(db.assignHabit).mockResolvedValue(assignment);
-
-    const result = await db.assignHabit(1, 5);
-
-    expect(result.clientId).toBe(5);
-    expect(result.active).toBe(true);
-  });
-
-  it("unassigns a habit from a client", async () => {
-    vi.mocked(db.unassignHabit).mockResolvedValue(undefined);
-
-    await db.unassignHabit(1, 5);
-
-    expect(db.unassignHabit).toHaveBeenCalledWith(1, 5);
-  });
-
-  it("returns habits assigned to a specific client", async () => {
-    const habits = [mockHabit({ id: 1 }), mockHabit({ id: 3, name: "Sleep 8 hours" })];
-    vi.mocked(db.getClientHabits).mockResolvedValue(habits);
-
-    const result = await db.getClientHabits(5);
-
-    expect(result).toHaveLength(2);
-    expect(result[1].name).toBe("Sleep 8 hours");
-  });
-});
-
-describe("Habit Completions", () => {
-  it("toggles a completion on (adds record)", async () => {
-    const completion = mockCompletion(1, "2026-04-07");
-    vi.mocked(db.toggleHabitCompletion).mockResolvedValue({ action: "added", completion });
-
-    const result = await db.toggleHabitCompletion(1, 5, "2026-04-07");
-
-    expect(result.action).toBe("added");
-    expect(result.completion?.habitId).toBe(1);
-  });
-
-  it("toggles a completion off (removes record)", async () => {
-    vi.mocked(db.toggleHabitCompletion).mockResolvedValue({ action: "removed", completion: null });
-
-    const result = await db.toggleHabitCompletion(1, 5, "2026-04-07");
-
-    expect(result.action).toBe("removed");
-    expect(result.completion).toBeNull();
-  });
-
-  it("fetches completions for a client from a given date", async () => {
-    const completions = [
-      mockCompletion(1, "2026-04-05"),
-      mockCompletion(1, "2026-04-06"),
-      mockCompletion(2, "2026-04-06"),
-    ];
-    vi.mocked(db.getHabitCompletions).mockResolvedValue(completions);
-
-    const result = await db.getHabitCompletions(5, "2026-04-05");
-
-    expect(result).toHaveLength(3);
-  });
-
-  it("fetches completions for a specific client (coach view)", async () => {
-    const completions = [mockCompletion(1, "2026-04-01"), mockCompletion(1, "2026-04-02")];
-    vi.mocked(db.getClientHabitCompletions).mockResolvedValue(completions);
-
-    const result = await db.getClientHabitCompletions(5, "2026-03-10");
-
-    expect(result).toHaveLength(2);
-    expect(db.getClientHabitCompletions).toHaveBeenCalledWith(5, "2026-03-10");
-  });
-
-  it("returns empty array when no completions exist", async () => {
-    vi.mocked(db.getHabitCompletions).mockResolvedValue([]);
-
-    const result = await db.getHabitCompletions(99, "2026-04-01");
-
-    expect(result).toEqual([]);
-  });
-});
-
+// ── Pure calculation tests ────────────────────────────────────────────────────
 describe("Habit adherence calculation", () => {
   it("correctly calculates 7-day adherence percentage", () => {
     const last7 = ["2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07"];
@@ -183,7 +193,6 @@ describe("Habit adherence calculation", () => {
   });
 
   it("correctly calculates streak of consecutive days", () => {
-    // Simulate: completed Apr 5, 6, 7 but not Apr 4
     const completedSet = new Set(["2026-04-05", "2026-04-06", "2026-04-07"]);
     const last7 = ["2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07"];
     let streak = 0;
@@ -194,7 +203,7 @@ describe("Habit adherence calculation", () => {
     expect(streak).toBe(3);
   });
 
-  it("returns 0 streak when today is not completed", () => {
+  it("returns 0 streak when most recent day is not completed", () => {
     const completedSet = new Set(["2026-04-05", "2026-04-06"]);
     const last7 = ["2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07"];
     let streak = 0;
@@ -203,5 +212,37 @@ describe("Habit adherence calculation", () => {
       else break;
     }
     expect(streak).toBe(0);
+  });
+
+  it("returns full streak when all days completed", () => {
+    const completedSet = new Set(["2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07"]);
+    const last7 = ["2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07"];
+    let streak = 0;
+    for (let i = last7.length - 1; i >= 0; i--) {
+      if (completedSet.has(last7[i])) streak++;
+      else break;
+    }
+    expect(streak).toBe(7);
+  });
+});
+
+describe("Habit completion toggle logic", () => {
+  it("toggle returns action: added when completion is new", async () => {
+    const { toggleHabitCompletion } = await import("./db");
+    const completion = mockCompletion(1, "2026-04-07");
+    vi.mocked(toggleHabitCompletion).mockResolvedValue({ action: "added", completion } as any);
+
+    const result = await toggleHabitCompletion(1, 7, "2026-04-07");
+    expect(result.action).toBe("added");
+    expect(result.completion?.habitId).toBe(1);
+  });
+
+  it("toggle returns action: removed when completion is deleted", async () => {
+    const { toggleHabitCompletion } = await import("./db");
+    vi.mocked(toggleHabitCompletion).mockResolvedValue({ action: "removed", completion: null } as any);
+
+    const result = await toggleHabitCompletion(1, 7, "2026-04-07");
+    expect(result.action).toBe("removed");
+    expect(result.completion).toBeNull();
   });
 });

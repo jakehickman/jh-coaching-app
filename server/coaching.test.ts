@@ -2,53 +2,94 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-// Mock the db module
+// Mock the db module — names must match current exports in server/db.ts
 vi.mock("./db", () => ({
   getDb: vi.fn().mockResolvedValue(null),
+  // Auth
   upsertUser: vi.fn().mockResolvedValue(undefined),
   getUserByOpenId: vi.fn().mockResolvedValue(undefined),
+  // Users / clients
+  getAllUsers: vi.fn().mockResolvedValue([]),
+  getAllClients: vi.fn().mockResolvedValue([]),
+  setUserApproved: vi.fn().mockResolvedValue(undefined),
+  getPendingApprovalCount: vi.fn().mockResolvedValue(0),
+  deleteUser: vi.fn().mockResolvedValue(undefined),
+  // Profile
+  getClientProfile: vi.fn().mockResolvedValue(null),
+  upsertClientProfile: vi.fn().mockResolvedValue(undefined),
+  updateClientProfileExtended: vi.fn().mockResolvedValue(undefined),
+  // Daily log
   getDailyLogs: vi.fn().mockResolvedValue([]),
+  getDailyLogByDate: vi.fn().mockResolvedValue(null),
+  upsertDailyLog: vi.fn().mockResolvedValue(undefined),
+  deleteDailyLog: vi.fn().mockResolvedValue(undefined),
+  // Measurements
   getMeasurements: vi.fn().mockResolvedValue([]),
+  addMeasurement: vi.fn().mockResolvedValue(undefined),
+  updateMeasurement: vi.fn().mockResolvedValue(undefined),
+  deleteMeasurement: vi.fn().mockResolvedValue(undefined),
+  // Meal plan
   getMealPlan: vi.fn().mockResolvedValue(null),
+  upsertMealPlan: vi.fn().mockResolvedValue(undefined),
+  // Shopping
   getShoppingItems: vi.fn().mockResolvedValue([]),
+  toggleShoppingItem: vi.fn().mockResolvedValue(undefined),
+  addShoppingItem: vi.fn().mockResolvedValue(undefined),
+  deleteShoppingItem: vi.fn().mockResolvedValue(undefined),
+  // Training program
   getTrainingProgram: vi.fn().mockResolvedValue(null),
+  upsertTrainingProgram: vi.fn().mockResolvedValue(undefined),
+  listAllTrainingPrograms: vi.fn().mockResolvedValue([]),
   getMesoCycles: vi.fn().mockResolvedValue([]),
   getMesoSessions: vi.fn().mockResolvedValue([]),
+  upsertMesoSession: vi.fn().mockResolvedValue(undefined),
+  // Timeline
   getTimelineMilestones: vi.fn().mockResolvedValue([]),
-  getWeeklyCheckIns: vi.fn().mockResolvedValue([]),
+  toggleMilestone: vi.fn().mockResolvedValue(undefined),
+  // Coaching notes
   getCoachingNotes: vi.fn().mockResolvedValue([]),
   addCoachingNote: vi.fn().mockResolvedValue(undefined),
   deleteCoachingNote: vi.fn().mockResolvedValue(undefined),
   updateCoachingNote: vi.fn().mockResolvedValue(undefined),
-  getClientProfile: vi.fn().mockResolvedValue(null),
-  getAllUsers: vi.fn().mockResolvedValue([]),
-  getClientProfileById: vi.fn().mockResolvedValue(null),
-  getTrainingProgramForClient: vi.fn().mockResolvedValue(null),
-  getMealPlanForClient: vi.fn().mockResolvedValue(null),
-  getDailyLogsForClient: vi.fn().mockResolvedValue([]),
-  getMeasurementsForClient: vi.fn().mockResolvedValue([]),
-  getCheckInsForClient: vi.fn().mockResolvedValue([]),
-  listCheckInsForClient: vi.fn().mockResolvedValue([]),
-  getCheckInForWeek: vi.fn().mockResolvedValue(null),
-  submitCheckIn: vi.fn().mockResolvedValue({ id: 1 }),
-  replyToCheckIn: vi.fn().mockResolvedValue(undefined),
-  updateClientProfileExtended: vi.fn().mockResolvedValue(undefined),
-  upsertDailyLog: vi.fn().mockResolvedValue(undefined),
-  getHabitsForClient: vi.fn().mockResolvedValue([]),
-  getHabitCompletionsForClient: vi.fn().mockResolvedValue([]),
-  getMyHabits: vi.fn().mockResolvedValue([]),
-  getMyHabitCompletions: vi.fn().mockResolvedValue([]),
-  toggleHabitCompletion: vi.fn().mockResolvedValue(undefined),
-  assignHabitToClient: vi.fn().mockResolvedValue(undefined),
-  unassignHabitFromClient: vi.fn().mockResolvedValue(undefined),
-  getExerciseLibrary: vi.fn().mockResolvedValue([]),
+  // Exercise library
+  listExercises: vi.fn().mockResolvedValue([]),
   upsertExercise: vi.fn().mockResolvedValue(undefined),
   deleteExercise: vi.fn().mockResolvedValue(undefined),
-  getWorkoutSessions: vi.fn().mockResolvedValue([]),
-  getWorkoutSessionsForClient: vi.fn().mockResolvedValue([]),
-  upsertWorkoutSession: vi.fn().mockResolvedValue(undefined),
+  // Nutrition
+  listNutritionFoods: vi.fn().mockResolvedValue([]),
+  upsertNutritionFood: vi.fn().mockResolvedValue(undefined),
+  deleteNutritionFood: vi.fn().mockResolvedValue(undefined),
+  // Workout sessions
+  listWorkoutSessions: vi.fn().mockResolvedValue([]),
+  saveWorkoutSession: vi.fn().mockResolvedValue(undefined),
   deleteWorkoutSession: vi.fn().mockResolvedValue(undefined),
+  // Onboarding
+  createOnboardingSubmission: vi.fn().mockResolvedValue(undefined),
+  listOnboardingSubmissions: vi.fn().mockResolvedValue([]),
+  markOnboardingReviewed: vi.fn().mockResolvedValue(undefined),
+  // Habits
+  listHabitsByCoach: vi.fn().mockResolvedValue([]),
+  createHabit: vi.fn().mockResolvedValue(undefined),
+  updateHabit: vi.fn().mockResolvedValue(undefined),
+  deleteHabit: vi.fn().mockResolvedValue(undefined),
+  getHabitAssignments: vi.fn().mockResolvedValue([]),
+  setHabitAssignments: vi.fn().mockResolvedValue(undefined),
+  listAssignedHabitsForClient: vi.fn().mockResolvedValue([]),
+  toggleHabitCompletion: vi.fn().mockResolvedValue(undefined),
+  getHabitCompletionsForClient: vi.fn().mockResolvedValue([]),
+  // Check-ins
+  submitCheckIn: vi.fn().mockResolvedValue({ id: 1 }),
+  listCheckInsForClient: vi.fn().mockResolvedValue([]),
+  getCheckInForWeek: vi.fn().mockResolvedValue(null),
+  markCheckInReviewed: vi.fn().mockResolvedValue(undefined),
+  getLatestCheckInPerClient: vi.fn().mockResolvedValue([]),
+  getAllCheckInsPerClient: vi.fn().mockResolvedValue([]),
+  deleteCheckIn: vi.fn().mockResolvedValue(undefined),
 }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 function createUserContext(role: "user" | "admin" = "user"): TrpcContext {
   return {
@@ -176,18 +217,14 @@ describe("checkIn", () => {
     expect(Array.isArray(result)).toBe(true);
   });
 
-  it("submit accepts new diet execution fields", async () => {
+  it("submit accepts current diet execution fields", async () => {
     const caller = appRouter.createCaller(createUserContext("user"));
     const result = await caller.checkIn.submit({
       weekStartDate: "2026-04-07",
       dietWeighedFoods: "every_meal",
       dietMealPrepAccuracy: "most_meals",
       dietExtrasFrequency: "never",
-      dietAddedFats: "light_spray",
-      dietMealTiming: "never",
-      dietOffPlanQuality: "no_off_plan_meals",
     });
-    // submitCheckIn mock returns { id: 1 }
     expect(result).toBeTruthy();
   });
 

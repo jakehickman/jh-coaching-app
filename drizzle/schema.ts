@@ -11,6 +11,60 @@ import {
   json,
 } from "drizzle-orm/mysql-core";
 
+// ─── JSON column shape types ─────────────────────────────────────────────────
+
+export interface MealIngredient {
+  foodId?: number;
+  name: string;
+  quantity: number; // grams
+  protein: number;
+  carbs: number;
+  fat: number;
+  calories: number;
+}
+
+export interface Meal {
+  id?: string;
+  name: string;
+  ingredients: MealIngredient[];
+  notes?: string;
+}
+
+export interface TrainingExercise {
+  name: string;
+  sets: string;
+  reps: string;
+  notes?: string;
+  equipment?: string;
+  libraryId?: number;
+}
+
+export interface TrainingDay {
+  name: string;
+  exercises: TrainingExercise[];
+}
+
+export interface WorkoutSet {
+  weight?: number | null;
+  reps?: number | null;
+  notes?: string | null;
+  completed?: boolean;
+}
+
+export interface WorkoutExercise {
+  name: string;
+  libraryId?: number;
+  substitutedFor?: string | null;
+  equipmentDetails?: string | null;
+  exerciseNotes?: string | null;
+  sets: WorkoutSet[];
+}
+
+export interface CustomMuscleGroup {
+  name: string;
+  value: number;
+}
+
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
@@ -104,7 +158,7 @@ export const mealPlans = mysqlTable("meal_plans", {
   userId: int("userId").notNull(), // client
   coachId: int("coachId"),
   dayType: mysqlEnum("dayType", ["training", "rest"]).notNull(),
-  meals: json("meals"), // JSON array of meal objects
+  meals: json("meals").$type<Meal[]>(), // JSON array of meal objects
   totalCalories: int("totalCalories"),
   totalProtein: int("totalProtein"),
   totalCarbs: int("totalCarbs"),
@@ -135,8 +189,8 @@ export const trainingPrograms = mysqlTable("training_programs", {
   userId: int("userId").notNull(), // client
   coachId: int("coachId"),
   programName: varchar("programName", { length: 128 }),
-  days: json("days"), // JSON: array of day objects with exercises
-  schedule: json("schedule"), // JSON: array of strings e.g. ["Day 1","Day 2","Off","Day 3","Day 4","Off"]
+  days: json("days").$type<TrainingDay[]>(), // JSON: array of day objects with exercises
+  schedule: json("schedule").$type<string[]>(), // JSON: array of strings e.g. ["Day 1","Day 2","Off","Day 3","Day 4","Off"]
   notes: text("notes"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -165,7 +219,7 @@ export const mesoSessions = mysqlTable("meso_sessions", {
   sessionDate: date("sessionDate"),
   weekNumber: int("weekNumber"),
   dayLabel: varchar("dayLabel", { length: 64 }), // e.g. "Day A - Upper"
-  exercises: json("exercises"), // JSON: [{name, sets:[{weight, reps, rir}]}]
+  exercises: json("exercises").$type<WorkoutExercise[]>(), // JSON: [{name, sets:[{weight, reps, rir}]}
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -219,7 +273,7 @@ export const exerciseLibrary = mysqlTable("exercise_library", {
   calves: float("calves").default(0),
   abs: float("abs").default(0),
   // Extra custom muscle groups stored as JSON: [{name, value}]
-  customGroups: json("customGroups"),
+  customGroups: json("customGroups").$type<CustomMuscleGroup[]>(),
   videoUrl: varchar("videoUrl", { length: 512 }), // YouTube or other video URL
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -273,7 +327,7 @@ export const workoutSessions = mysqlTable("workout_sessions", {
   sessionDate: date("sessionDate").notNull(),
   dayLabel: varchar("dayLabel", { length: 128 }).notNull(), // e.g. "Day A - Upper"
   // JSON: [{name: string, sets: [{weight: number|null, reps: number|null, notes: string|null}]}]
-  exercises: json("exercises").notNull(),
+  exercises: json("exercises").$type<WorkoutExercise[]>().notNull(),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

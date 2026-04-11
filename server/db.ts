@@ -25,6 +25,9 @@ import {
   checkInSubmissions,
   CheckInSubmission,
   InsertCheckInSubmission,
+  type Meal,
+  type TrainingDay,
+  type WorkoutExercise,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -661,7 +664,7 @@ export async function saveWorkoutSession(data: {
   userId: number;
   sessionDate: string;
   dayLabel: string;
-  exercises: unknown;
+  exercises: WorkoutExercise[];
   notes?: string | null;
 }) {
   const db = await getDb();
