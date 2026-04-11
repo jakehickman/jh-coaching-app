@@ -330,3 +330,4 @@
 - [x] Check-in tab: add subtext 'Questions about your week.' to the check-in form list item
 - [x] Fix React error #310 on /getting-started — move auth guard after all hooks
 - [x] Check-in form: auto-scroll to first unanswered question on submit validation
+- [x] Update Getting Started Guide copy with new content from user upload
