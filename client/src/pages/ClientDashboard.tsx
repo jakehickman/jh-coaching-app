@@ -86,9 +86,6 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
 
   const handleEditDay = (iso: string) => {
     sessionStorage.setItem('editLogDate', iso);
-    // If already on the daily-log tab the component won't remount, so dispatch a
-    // custom event that DailyLogTab listens for to update its date directly.
-    window.dispatchEvent(new CustomEvent('editLogDate', { detail: iso }));
     navigate('/dashboard/daily-log');
   };
 
@@ -692,20 +689,6 @@ function DailyLogTab() {
     }
     return today;
   });
-
-  // Listen for in-tab edit requests (fired when user is already on this tab)
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const iso = (e as CustomEvent<string>).detail;
-      if (iso) {
-        sessionStorage.removeItem('editLogDate');
-        setDate(iso);
-      }
-    };
-    window.addEventListener('editLogDate', handler);
-    return () => window.removeEventListener('editLogDate', handler);
-  }, []);
-
   const blankDailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: null as number | null, hungerLevel: null as number | null, offPlanMeals: 0, notes: "" };
   const [form, setForm, clearDraft] = useDraft(`draft:dailyLog:${date}`, blankDailyForm);
   // Track whether we've loaded server data for this date yet (avoid overwriting draft with blank)
@@ -1170,32 +1153,28 @@ function MealPlanTab() {
 
   const meals = (plan?.meals as any[]) ?? [];
 
-
   // Helper: convert item amount to grams (handles serving-based foods)
   function itemToGrams(food: any, amount: number): number {
     if (!food) return amount;
     return food.servingUnit && food.servingGrams ? amount * food.servingGrams : amount;
   }
 
-  // Calculate macros per meal — food-based only
-  const mealMacros = meals
-    .filter((m: any) => m.type !== "macro_targets")
-    .map((meal: any) =>
-      (meal.items ?? []).reduce((acc: any, item: any) => {
-        const food = foodDb.find((f: any) => f.name === item.food);
-        if (!food || !parseFloat(item.grams)) return acc;
-        const grams = itemToGrams(food, parseFloat(item.grams));
-        const factor = grams / 100;
-        return {
-          calories: acc.calories + Math.round(food.calories * factor),
-          protein: Math.round(acc.protein + food.protein * factor),
-          carbs: Math.round(acc.carbs + food.carbs * factor),
-          fiber: Math.round(acc.fiber + food.fiber * factor),
-          fat: Math.round(acc.fat + food.fat * factor),
-        };
-      }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 })
-    );
-  const foodMeals = meals.filter((m: any) => m.type !== "macro_targets");
+  // Calculate macros per meal and daily totals from food DB
+  const mealMacros = meals.map(meal =>
+    (meal.items ?? []).reduce((acc: any, item: any) => {
+      const food = foodDb.find((f: any) => f.name === item.food);
+      if (!food || !parseFloat(item.grams)) return acc;
+      const grams = itemToGrams(food, parseFloat(item.grams));
+      const factor = grams / 100;
+      return {
+        calories: acc.calories + Math.round(food.calories * factor),
+        protein: Math.round(acc.protein + food.protein * factor),
+        carbs: Math.round(acc.carbs + food.carbs * factor),
+        fiber: Math.round(acc.fiber + food.fiber * factor),
+        fat: Math.round(acc.fat + food.fat * factor),
+      };
+    }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 })
+  );
   const dailyTotals = mealMacros.reduce((acc: any, m: any) => ({
     calories: acc.calories + m.calories,
     protein: Math.round(acc.protein + m.protein),
@@ -1220,29 +1199,29 @@ function MealPlanTab() {
       {plan && (
         <div className="space-y-4">
           {/* Daily totals */}
-          {foodMeals.length > 0 && dailyTotals.calories > 0 && (
+          {meals.length > 0 && dailyTotals.calories > 0 && (
             <Card>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Daily Totals</p>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">Daily Totals</p>
               <div className="grid grid-cols-5 gap-2">
                 {[
-                  { label: "Calories", value: `${dailyTotals.calories}`, unit: "kcal", highlight: true },
-                  { label: "Protein", value: `${dailyTotals.protein}`, unit: "g" },
-                  { label: "Carbs", value: `${dailyTotals.carbs}`, unit: "g" },
-                  { label: "Fiber", value: dailyTotals.fiber > 0 ? `${dailyTotals.fiber}` : "—", unit: "g" },
-                  { label: "Fat", value: `${dailyTotals.fat}`, unit: "g" },
+                  { label: "Calories", value: dailyTotals.calories, unit: "kcal", highlight: true },
+                  { label: "Protein", value: dailyTotals.protein, unit: "g" },
+                  { label: "Carbs", value: dailyTotals.carbs, unit: "g" },
+                  { label: "Fiber", value: dailyTotals.fiber, unit: "g" },
+                  { label: "Fat", value: dailyTotals.fat, unit: "g" },
                 ].map(({ label, value, unit, highlight }) => (
                   <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
                     <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                    <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{value === "—" ? value : `${value} ${unit}`}</span>
+                    <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{value} {unit}</span>
                   </div>
                 ))}
               </div>
             </Card>
           )}
 
-          {foodMeals.length > 0 ? (
+          {meals.length > 0 ? (
             <div className="space-y-4">
-              {foodMeals.map((meal: any, i: number) => {
+              {meals.map((meal: any, i: number) => {
                 const mm = mealMacros[i];
                 const hasMacros = mm.calories > 0;
                 return (
@@ -1715,20 +1694,6 @@ function WorkoutLogTab() {
   }
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
-  // Persist collapsed state in sessionStorage keyed by date+day so different
-  // sessions of the same day label don't share collapse state.
-  const collapsedKey = selectedDay ? `collapsed:workout:${sessionDate}:${selectedDay}` : null;
-  const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>(() => {
-    if (!selectedDay) return {};
-    try { const raw = sessionStorage.getItem(`collapsed:workout:${sessionDate}:${selectedDay}`); return raw ? JSON.parse(raw) : {}; } catch { return {}; }
-  });
-  function setCollapsedExercises(updater: ((prev: Record<string, boolean>) => Record<string, boolean>) | Record<string, boolean>) {
-    setCollapsedExercisesRaw(prev => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      if (collapsedKey) { try { sessionStorage.setItem(collapsedKey, JSON.stringify(next)); } catch {} }
-      return next;
-    });
-  }
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
 
@@ -1796,16 +1761,10 @@ function WorkoutLogTab() {
   });
 
   // When user picks a day, load existing session, or restore draft, or init blank
-  function selectDay(label: string, date?: string) {
-    const effectiveDate = date ?? sessionDate;
+  function selectDay(label: string) {
     setSelectedDay(label);
-    // Restore collapsed state for this date+day from sessionStorage
-    try {
-      const raw = sessionStorage.getItem(`collapsed:workout:${effectiveDate}:${label}`);
-      setCollapsedExercisesRaw(raw ? JSON.parse(raw) : {});
-    } catch { setCollapsedExercisesRaw({}); }
     const dayDef = days.find(d => d.label === label);
-    const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === effectiveDate && s.dayLabel === label);
+    const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === sessionDate && s.dayLabel === label);
     if (existing) {
       const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
       const eqData: Record<string, string> = {};
@@ -1832,7 +1791,7 @@ function WorkoutLogTab() {
       setSessionNotes((existing.notes as string) ?? "");
     } else {
       // Try to restore an in-progress draft first
-      const draftKey = `draft:workout:${effectiveDate}:${label}`;
+      const draftKey = `draft:workout:${sessionDate}:${label}`;
       try {
         const stored = localStorage.getItem(draftKey);
         if (stored) {
@@ -1867,41 +1826,12 @@ function WorkoutLogTab() {
       setExerciseNotes({});
       setSubstitutions({});
     }
-    // Sync sessionDate if a different date was passed (e.g. from Past Sessions click)
-    if (date && date !== sessionDate) setSessionDate(date);
   }
 
-  // Re-load exercise data when date or sessions change — but DON'T reset collapse state
-  // (collapse state is managed separately via the collapsedKey/sessionStorage mechanism).
+  // Re-load when date changes
   useEffect(() => {
-    if (!selectedDay) return;
-    const effectiveDate = sessionDate;
-    const dayDef = days.find(d => d.label === selectedDay);
-    const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === effectiveDate && s.dayLabel === selectedDay);
-    if (existing) {
-      const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
-      const eqData: Record<string, string> = {};
-      const enData: Record<string, string> = {};
-      const subData: Record<string, string> = {};
-      for (const ex of (existing.exercises as any[])) {
-        if (ex.substitutedFor) subData[ex.substitutedFor] = ex.name;
-        exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
-          weight: s.weight != null ? String(s.weight) : "",
-          reps: s.reps != null ? String(s.reps) : "",
-          notes: s.notes ?? "",
-          completed: s.completed ?? (s.weight != null || s.reps != null),
-        }));
-        if (ex.equipmentDetails) eqData[ex.name] = ex.equipmentDetails;
-        if (ex.exerciseNotes) enData[ex.name] = ex.exerciseNotes;
-      }
-      setExerciseData(exData);
-      setEquipmentDetails(eqData);
-      setExerciseNotes(enData);
-      setSubstitutions(subData);
-      setSessionNotes((existing.notes as string) ?? "");
-    }
-    // If no existing session, don't overwrite in-progress draft — selectDay handles that on initial pick
-  }, [sessionDate, sessions.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (selectedDay) selectDay(selectedDay);
+  }, [sessionDate, sessions.length]);
 
   function setSet(exName: string, idx: number, field: "weight" | "reps" | "notes", val: string) {
     setExerciseData(prev => {
@@ -1927,9 +1857,6 @@ function WorkoutLogTab() {
     setExerciseData(prev => {
       const sets = [...(prev[exName] ?? [])];
       sets[idx] = { ...sets[idx], completed: !sets[idx].completed };
-      const allDone = sets.length > 0 && sets.every(s => s.completed);
-      // Auto-collapse when all sets are marked complete; auto-expand when any is unchecked
-      setCollapsedExercises(c => ({ ...c, [exName]: allDone }));
       return { ...prev, [exName]: sets };
     });
   }
@@ -2028,14 +1955,9 @@ function WorkoutLogTab() {
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
               const hasEquipment = !!(equipmentDetails[displayName]?.trim());
               const isEquipmentOpen = equipmentOpen[displayName] || hasEquipment;
-              const isCollapsed = collapsedExercises[displayName] ?? false;
-              const allSetsComplete = sets.length > 0 && sets.every(s => s.completed);
               return (
-                <Card key={i} className={allSetsComplete ? "border-green-500/30" : ""}>
-                  <div
-                    className="flex items-start justify-between gap-2 mb-3 cursor-pointer select-none"
-                    onClick={() => setCollapsedExercises(c => ({ ...c, [displayName]: !c[displayName] }))}
-                  >
+                <Card key={i}>
+                  <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-base font-semibold text-foreground">{displayName}</p>
@@ -2068,7 +1990,7 @@ function WorkoutLogTab() {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {/* Equipment details toggle */}
                       <button
-                        onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
+                        onClick={() => setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] }))}
                         title="Equipment details"
                         className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
                           hasEquipment
@@ -2079,26 +2001,15 @@ function WorkoutLogTab() {
                         <Dumbbell size={13} />
                       </button>
                       <button
-                        onClick={e => { e.stopPropagation(); setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
+                        onClick={() => { setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
                         className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors bg-secondary px-2 py-1.5 rounded-lg"
                       >
                         <Shuffle size={11} /> Sub
                       </button>
-                      {/* Collapse chevron */}
-                      <div className="flex items-center justify-center w-6 h-6 text-muted-foreground">
-                        {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-                      </div>
                     </div>
                   </div>
-                  {/* Collapsed summary */}
-                  {isCollapsed && (
-                    <div className="flex items-center gap-2 mt-1 mb-1">
-                      <span className="text-xs text-muted-foreground">{sets.filter(s => s.completed).length}/{sets.length} sets</span>
-                      {allSetsComplete && <span className="text-xs font-semibold text-green-400">Complete</span>}
-                    </div>
-                  )}
                   {/* Equipment details inline input */}
-                  {!isCollapsed && isEquipmentOpen && (
+                  {isEquipmentOpen && (
                     <div className="mb-3 -mt-1">
                       <input
                         type="text"
@@ -2113,7 +2024,7 @@ function WorkoutLogTab() {
                   )}
 
                   {/* All sets — unified layout with checkbox */}
-                  {!isCollapsed && sets.length > 0 && (
+                  {sets.length > 0 && (
                     <div className="mb-2">
                       {/* Column headers */}
                       <div className="flex items-center gap-2 mb-1.5">
@@ -2167,8 +2078,6 @@ function WorkoutLogTab() {
                     </div>
                   )}
 
-                  {!isCollapsed && (
-                    <>
                   <button
                     onClick={() => addSet(displayName)}
                     className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
@@ -2176,7 +2085,7 @@ function WorkoutLogTab() {
                     <Plus size={13} /> Add Set
                   </button>
 
-                  {/* Exercise notes */}
+                  {/* Equipment details */}
                   <div className="mt-3 pt-3 border-t border-border">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">Exercise notes</p>
                     <input
@@ -2187,8 +2096,6 @@ function WorkoutLogTab() {
                       className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
-                    </>
-                  )}
                 </Card>
               );
             })}
@@ -2342,7 +2249,7 @@ function WorkoutLogTab() {
                 </div>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => { const d = toLocalDateStr(s.sessionDate); selectDay(s.dayLabel, d); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => { setSessionDate(toLocalDateStr(s.sessionDate)); selectDay(s.dayLabel); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-sm font-medium text-primary hover:bg-secondary/70 transition-colors"
                   >
                     Edit

@@ -330,7 +330,6 @@ export async function upsertMealPlan(data: {
   coachId?: number;
   dayType: "training" | "rest";
   meals?: unknown;
-  dailyTargets?: unknown;
   totalCalories?: number;
   totalProtein?: number;
   totalCarbs?: number;

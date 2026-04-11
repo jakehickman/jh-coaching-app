@@ -161,7 +161,6 @@ export const appRouter = router({
           userId: z.number(),
           dayType: z.enum(["training", "rest"]),
           meals: z.any().optional(),
-          dailyTargets: z.any().optional(),
           totalCalories: z.number().optional(),
           totalProtein: z.number().optional(),
           totalCarbs: z.number().optional(),
