@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useMemo } from "react";
 import { useLocation } from "wouter";
+import { useViewAs } from "@/contexts/ViewAsContext";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -10,13 +11,18 @@ import { CheckSquare, Square, Check } from "lucide-react";
 
 // ─── HabitsSummary (used only in OverviewTab) ─────────────────────────────────
 function HabitsSummary() {
-  const { data: habits = [] } = trpc.habits.myHabits.useQuery();
+  const { viewAsUserId } = useViewAs();
+  const { data: habitsOwn = [] } = trpc.habits.myHabits.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: habitsAdmin = [] } = trpc.habits.clientHabits.useQuery({ clientId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const habits = viewAsUserId ? habitsAdmin : habitsOwn;
   const from30 = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 29);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }, []);
-  const { data: completions = [] } = trpc.habits.myCompletions.useQuery({ fromDate: from30 });
+  const { data: completionsOwn = [] } = trpc.habits.myCompletions.useQuery({ fromDate: from30 }, { enabled: !viewAsUserId });
+  const { data: completionsAdmin = [] } = trpc.habits.clientCompletions.useQuery({ clientId: viewAsUserId!, fromDate: from30 }, { enabled: !!viewAsUserId });
+  const completions = viewAsUserId ? completionsAdmin : completionsOwn;
 
   if (habits.length === 0) return null;
 
@@ -124,9 +130,16 @@ function HabitsSummary() {
 
 // ─── OverviewTab ──────────────────────────────────────────────────────────────
 export default function OverviewTab() {
-  const { data: logs } = trpc.dailyLog.list.useQuery({ limit: 30 });
-  const { data: profile } = trpc.profile.get.useQuery();
-  const { data: program } = trpc.training.get.useQuery();
+  const { viewAsUserId } = useViewAs();
+  const { data: logsOwn } = trpc.dailyLog.list.useQuery({ limit: 30 }, { enabled: !viewAsUserId });
+  const { data: logsAdmin } = trpc.dailyLog.listForClient.useQuery({ userId: viewAsUserId!, limit: 30 }, { enabled: !!viewAsUserId });
+  const logs = viewAsUserId ? logsAdmin : logsOwn;
+  const { data: profileOwn } = trpc.profile.get.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: profileAdmin } = trpc.profile.getById.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const profile = viewAsUserId ? profileAdmin : profileOwn;
+  const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: programAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const program = viewAsUserId ? programAdmin : programOwn;
 
   const weightData = (logs ?? [])
     .filter(l => l.weight)
@@ -209,10 +222,16 @@ export default function OverviewTab() {
     d.setDate(d.getDate() + diff);
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   };
-  const { data: thisWeekCheckIn } = trpc.checkIn.myWeek.useQuery(
-    { weekStartDate: getMondayStr() },
-    { enabled: isCheckInDay }
+  const [mondayStr] = useMemo(() => [getMondayStr()], []);
+  const { data: thisWeekCheckInOwn } = trpc.checkIn.myWeek.useQuery(
+    { weekStartDate: mondayStr },
+    { enabled: isCheckInDay && !viewAsUserId }
   );
+  const { data: thisWeekCheckInAdmin } = trpc.checkIn.weekForClient.useQuery(
+    { clientId: viewAsUserId!, weekStartDate: mondayStr },
+    { enabled: isCheckInDay && !!viewAsUserId }
+  );
+  const thisWeekCheckIn = viewAsUserId ? thisWeekCheckInAdmin : thisWeekCheckInOwn;
   const alreadySubmittedThisWeek = !!thisWeekCheckIn;
 
   return (

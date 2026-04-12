@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
+import { useViewAs } from "@/contexts/ViewAsContext";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr, localToday } from "@/lib/dates";
 import { Card } from "./shared";
@@ -55,9 +56,12 @@ function ChoiceQuestion({ label, subtext, field, options, form, setForm, hasErro
   );
 }
 
-// ─── CheckInsTab ──────────────────────────────────────────────────────────────
+// ─── CheckInsTab ────────────────────────────────────────────────────────────────────────────────
 export default function CheckInsTab() {
-  const { data: profile } = trpc.profile.get.useQuery();
+  const { viewAsUserId } = useViewAs();
+  const { data: profileOwn } = trpc.profile.get.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: profileAdmin } = trpc.profile.getById.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const profile = viewAsUserId ? profileAdmin : profileOwn;
   const today = localToday();
 
   const getMondayOfWeek = (dateStr: string) => {
@@ -68,9 +72,13 @@ export default function CheckInsTab() {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   };
   const currentWeekStart = getMondayOfWeek(today);
-  const { data: existingCheckIn, refetch } = trpc.checkIn.myWeek.useQuery({ weekStartDate: currentWeekStart });
-  const { data: allCheckIns = [] } = trpc.checkIn.myList.useQuery();
-
+  const { data: existingCheckInOwn, refetch: refetchOwn } = trpc.checkIn.myWeek.useQuery({ weekStartDate: currentWeekStart }, { enabled: !viewAsUserId });
+  const { data: existingCheckInAdmin, refetch: refetchAdmin } = trpc.checkIn.weekForClient.useQuery({ clientId: viewAsUserId!, weekStartDate: currentWeekStart }, { enabled: !!viewAsUserId });
+  const existingCheckIn = viewAsUserId ? existingCheckInAdmin : existingCheckInOwn;
+  const refetch = viewAsUserId ? refetchAdmin : refetchOwn;
+  const { data: allCheckInsOwn = [] } = trpc.checkIn.myList.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: allCheckInsAdmin = [] } = trpc.checkIn.clientList.useQuery({ clientId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const allCheckIns = viewAsUserId ? allCheckInsAdmin : allCheckInsOwn;
   const blankForm: CheckInFormState = {
     dietWeighedFoods: '',
     dietMealPrepAccuracy: '',
@@ -218,12 +226,14 @@ export default function CheckInsTab() {
               <span className="text-primary text-lg">✓</span>
               <p className="text-sm font-semibold text-foreground">You've submitted this week's check-in</p>
             </div>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="text-xs text-primary hover:opacity-80 font-medium"
-            >
-              Edit
-            </button>
+            {!viewAsUserId && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-xs text-primary hover:opacity-80 font-medium"
+              >
+                Edit
+              </button>
+            )}
           </div>
         </Card>
       )}
@@ -300,23 +310,25 @@ export default function CheckInsTab() {
           />
         </Card>
 
-        <div className="flex gap-3">
-          {isEditing && (
+        {!viewAsUserId && (
+          <div className="flex gap-3">
+            {isEditing && (
+              <button
+                onClick={() => setIsEditing(false)}
+                className="flex-1 py-4 border border-border text-muted-foreground font-semibold text-base rounded-xl hover:opacity-80 transition-opacity"
+              >
+                Cancel
+              </button>
+            )}
             <button
-              onClick={() => setIsEditing(false)}
-              className="flex-1 py-4 border border-border text-muted-foreground font-semibold text-base rounded-xl hover:opacity-80 transition-opacity"
+              onClick={handleSubmit}
+              disabled={submitMutation.isPending}
+              className="flex-1 py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              Cancel
+              {submitMutation.isPending ? 'Saving...' : isEditing ? 'Save Changes' : 'Submit Check-in'}
             </button>
-          )}
-          <button
-            onClick={handleSubmit}
-            disabled={submitMutation.isPending}
-            className="flex-1 py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            {submitMutation.isPending ? 'Saving...' : isEditing ? 'Save Changes' : 'Submit Check-in'}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
       )}
 

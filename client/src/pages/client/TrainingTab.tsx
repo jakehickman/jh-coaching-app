@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
+import { useViewAs } from "@/contexts/ViewAsContext";
 import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
@@ -13,9 +14,12 @@ function getYouTubeEmbedUrl(url: string): string | null {
   return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
 }
 
-// ─── TrainingTab ──────────────────────────────────────────────────────────────
+// ─── TrainingTab ────────────────────────────────────────────────────────────────────────────────
 function TrainingTab() {
-  const { data: program } = trpc.training.get.useQuery();
+  const { viewAsUserId } = useViewAs();
+  const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: programAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const program = viewAsUserId ? programAdmin : programOwn;
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [videoModal, setVideoModal] = useState<{ name: string; embedUrl: string } | null>(null);
@@ -149,10 +153,17 @@ function TrainingTab() {
   );
 }
 
-// ─── WorkoutLogTab ────────────────────────────────────────────────────────────
+// ─── WorkoutLogTab ────────────────────────────────────────────────────────────────────────────────
 function WorkoutLogTab() {
-  const { data: program } = trpc.training.get.useQuery();
-  const { data: sessions = [], refetch, isSuccess: sessionsLoaded } = trpc.workoutSessions.list.useQuery();
+  const { viewAsUserId } = useViewAs();
+  const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: programAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const program = viewAsUserId ? programAdmin : programOwn;
+  const { data: sessionsOwn = [], refetch: refetchOwn, isSuccess: sessionsLoadedOwn } = trpc.workoutSessions.list.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: sessionsAdmin = [], refetch: refetchAdmin, isSuccess: sessionsLoadedAdmin } = trpc.workoutSessions.listForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const sessions = viewAsUserId ? sessionsAdmin : sessionsOwn;
+  const refetch = viewAsUserId ? refetchAdmin : refetchOwn;
+  const sessionsLoaded = viewAsUserId ? sessionsLoadedAdmin : sessionsLoadedOwn;
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
   const utils = trpc.useUtils();
 
@@ -680,13 +691,15 @@ function WorkoutLogTab() {
               />
             </Card>
 
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              {saving ? "Saving..." : "Save Session"}
-            </button>
+            {!viewAsUserId && (
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save Session"}
+              </button>
+            )}
           </div>
         );
       })()}
@@ -815,21 +828,23 @@ function WorkoutLogTab() {
                   <p className="text-sm font-semibold text-foreground">{s.dayLabel}</p>
                   <p className="text-xs text-muted-foreground">{(() => { const d = new Date(toLocalDateStr(s.sessionDate) + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })()}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => { setSessionDate(toLocalDateStr(s.sessionDate)); selectDay(s.dayLabel); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-sm font-medium text-primary hover:bg-secondary/70 transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => { if (confirm("Delete this session?")) { setDeleting(s.id); deleteMutation.mutate({ id: s.id }); } }}
-                    disabled={deleting === s.id}
-                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
+                {!viewAsUserId && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => { setSessionDate(toLocalDateStr(s.sessionDate)); selectDay(s.dayLabel); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-sm font-medium text-primary hover:bg-secondary/70 transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => { if (confirm("Delete this session?")) { setDeleting(s.id); deleteMutation.mutate({ id: s.id }); } }}
+                      disabled={deleting === s.id}
+                      className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="mt-2 space-y-1">
                 {(s.exercises as any[]).map((ex: any, i: number) => {

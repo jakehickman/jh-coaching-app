@@ -32,6 +32,9 @@ export const checkInRouter = router({
   clientList: adminProcedure
     .input(z.object({ clientId: z.number() }))
     .query(({ input }) => db.listCheckInsForClient(input.clientId)),
+  weekForClient: adminProcedure
+    .input(z.object({ clientId: z.number(), weekStartDate: z.string() }))
+    .query(({ input }) => db.getCheckInForWeek(input.clientId, input.weekStartDate)),
   markReviewed: adminProcedure
     .input(z.object({ id: z.number(), reviewed: z.boolean() }))
     .mutation(({ input }) => db.markCheckInReviewed(input.id, input.reviewed)),

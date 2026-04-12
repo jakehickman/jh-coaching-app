@@ -4,7 +4,7 @@ import { useParams, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { Trash2, Users } from "lucide-react";
+import { Trash2, Users, Eye } from "lucide-react";
 import CheckInsSection from "./coach/CheckInsSection";
 import ExerciseLibrarySection from "./coach/ExerciseLibrarySection";
 import NutritionDataSection from "./coach/NutritionDataSection";
@@ -21,6 +21,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 // ─── Section: Clients ─────────────────────────────────────────────────────────
 function ClientsSection() {
   const [confirm, ConfirmDialogNode] = useConfirm();
+  const [, navigate] = useLocation();
   const { data: allUsers, refetch } = trpc.users.list.useQuery();
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const [seenKeys, setSeenKeys] = useState<Record<number, number>>(() => {
@@ -164,6 +165,17 @@ function ClientsSection() {
                         }`}
                       >
                         {(user as any).approved ? "✓ Approved" : "Approve"}
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          const name = encodeURIComponent(user.name ?? 'Client');
+                          navigate(`/dashboard/overview?viewAs=${user.id}&viewAsName=${name}`);
+                        }}
+                        className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-md hover:bg-primary/10"
+                        title={`View dashboard as ${user.name ?? 'client'}`}
+                      >
+                        <Eye size={13} />
                       </button>
                       <button
                         onClick={async e => {

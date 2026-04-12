@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
+import { useViewAs } from "@/contexts/ViewAsContext";
 import { Check, ChevronDown, ChevronUp, Pencil, CheckSquare, Square } from "lucide-react";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr, localToday } from "@/lib/dates";
@@ -8,6 +9,7 @@ import { SectionLabel, Card, DateInput, ScoreInput, DailyLogRow } from "./shared
 
 // ─── RecentLogsPanel ──────────────────────────────────────────────────────────
 function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?: string | null }) {
+  const { viewAsUserId } = useViewAs();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [, navigate] = useLocation();
@@ -108,15 +110,17 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
                     <p className="text-sm text-foreground italic">{log.notes}</p>
                   </div>
                 )}
-                <div className="mt-3 pt-3 border-t border-border">
-                  <button
-                    onClick={() => handleEditDay(iso)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <Pencil size={13} />
-                    Edit this day
-                  </button>
-                </div>
+                {!viewAsUserId && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <button
+                      onClick={() => handleEditDay(iso)}
+                      className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <Pencil size={13} />
+                      Edit this day
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -136,16 +140,22 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
   );
 }
 
-// ─── HabitsCard ───────────────────────────────────────────────────────────────
+// ─── HabitsCard ────────────────────────────────────────────────────────────────────────────────
 function HabitsCard({ date }: { date: string }) {
+  const { viewAsUserId } = useViewAs();
   const utils = trpc.useUtils();
-  const { data: habits = [] } = trpc.habits.myHabits.useQuery();
+  const { data: habitsOwn = [] } = trpc.habits.myHabits.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: habitsAdmin = [] } = trpc.habits.clientHabits.useQuery({ clientId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const habits = viewAsUserId ? habitsAdmin : habitsOwn;
   const from90 = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 89);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }, []);
-  const { data: completions = [], refetch } = trpc.habits.myCompletions.useQuery({ fromDate: from90 });
+  const { data: completionsOwn = [], refetch: refetchOwn } = trpc.habits.myCompletions.useQuery({ fromDate: from90 }, { enabled: !viewAsUserId });
+  const { data: completionsAdmin = [], refetch: refetchAdmin } = trpc.habits.clientCompletions.useQuery({ clientId: viewAsUserId!, fromDate: from90 }, { enabled: !!viewAsUserId });
+  const completions = viewAsUserId ? completionsAdmin : completionsOwn;
+  const refetch = viewAsUserId ? refetchAdmin : refetchOwn;
 
   const normDate = (val: any): string => {
     if (!val) return '';
@@ -182,8 +192,8 @@ function HabitsCard({ date }: { date: string }) {
           return (
             <button
               key={h.id}
-              onClick={() => toggleMutation.mutate({ habitId: h.id, date })}
-              disabled={toggleMutation.isPending}
+              onClick={() => !viewAsUserId && toggleMutation.mutate({ habitId: h.id, date })}
+              disabled={toggleMutation.isPending || !!viewAsUserId}
               className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
                 i > 0 ? "border-t border-border" : ""
               } ${done ? "bg-primary/5" : "hover:bg-muted/30"} disabled:opacity-70`}
@@ -266,9 +276,17 @@ export default function DailyLogTab() {
     saveDraft(data, key);
   };
 
-  const { data: profile } = trpc.profile.get.useQuery();
-  const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 90 });
-  const { data: workoutSessions = [] } = trpc.workoutSessions.list.useQuery();
+  const { viewAsUserId } = useViewAs();
+  const { data: profileOwn } = trpc.profile.get.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: profileAdmin } = trpc.profile.getById.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const profile = viewAsUserId ? profileAdmin : profileOwn;
+  const { data: logsOwn, refetch: refetchOwn } = trpc.dailyLog.list.useQuery({ limit: 90 }, { enabled: !viewAsUserId });
+  const { data: logsAdmin, refetch: refetchAdmin } = trpc.dailyLog.listForClient.useQuery({ userId: viewAsUserId!, limit: 90 }, { enabled: !!viewAsUserId });
+  const logs = viewAsUserId ? logsAdmin : logsOwn;
+  const refetch = viewAsUserId ? refetchAdmin : refetchOwn;
+  const { data: workoutSessionsOwn = [] } = trpc.workoutSessions.list.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: workoutSessionsAdmin = [] } = trpc.workoutSessions.listForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const workoutSessions = viewAsUserId ? workoutSessionsAdmin : workoutSessionsOwn;
   const upsert = trpc.dailyLog.upsert.useMutation({
     onSuccess: () => { toast.success("Log saved"); refetch(); }
   });
@@ -453,10 +471,12 @@ export default function DailyLogTab() {
 
       <HabitsCard date={date} />
 
-      <button onClick={handleSave} disabled={upsert.isPending}
-        className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
-        {upsert.isPending ? "Saving..." : "Save Log"}
-      </button>
+      {!viewAsUserId && (
+        <button onClick={handleSave} disabled={upsert.isPending}
+          className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
+          {upsert.isPending ? "Saving..." : "Save Log"}
+        </button>
+      )}
 
       <div>
         <SectionLabel>Recent Logs</SectionLabel>

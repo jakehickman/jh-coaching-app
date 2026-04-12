@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
+import { useViewAs } from "@/contexts/ViewAsContext";
 import { Plus, Pencil, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr, localToday, fmtDate } from "@/lib/dates";
@@ -21,7 +22,11 @@ function avgReadings(vals: (number | null | undefined)[]): number | null {
 }
 
 export default function MeasurementsTab() {
-  const { data: measurements, refetch } = trpc.measurements.list.useQuery();
+  const { viewAsUserId } = useViewAs();
+  const { data: measurementsOwn, refetch: refetchOwn } = trpc.measurements.list.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: measurementsAdmin, refetch: refetchAdmin } = trpc.measurements.listForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const measurements = viewAsUserId ? measurementsAdmin : measurementsOwn;
+  const refetch = viewAsUserId ? refetchAdmin : refetchOwn;
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const emptySkinfold = { r1: "", r2: "", r3: "", r4: "", r5: "" };
@@ -78,13 +83,15 @@ export default function MeasurementsTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <SectionLabel>Measurements</SectionLabel>
-        <button onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors">
-          <Plus size={14} /> Add Measurement
-        </button>
+        {!viewAsUserId && (
+          <button onClick={() => setShowForm(!showForm)}
+            className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors">
+            <Plus size={14} /> Add Measurement
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {!viewAsUserId && showForm && (
         <Card className="space-y-5">
           <div>
             <label className="text-sm text-muted-foreground block mb-1.5">Date</label>
@@ -173,16 +180,18 @@ export default function MeasurementsTab() {
                 <Card key={m.id}>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-base font-semibold text-foreground">{fmtDate(m.measureDate)}</p>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => isEditing ? setEditingId(null) : startEdit(m)}
-                        className="text-muted-foreground hover:text-primary transition-colors p-1 rounded" title={isEditing ? "Cancel edit" : "Edit entry"}>
-                        {isEditing ? <X size={14} /> : <Pencil size={14} />}
-                      </button>
-                      <button onClick={() => { if (confirm("Delete this measurement entry?")) del.mutate({ id: m.id }); }}
-                        className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded" title="Delete entry">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                    {!viewAsUserId && (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => isEditing ? setEditingId(null) : startEdit(m)}
+                          className="text-muted-foreground hover:text-primary transition-colors p-1 rounded" title={isEditing ? "Cancel edit" : "Edit entry"}>
+                          {isEditing ? <X size={14} /> : <Pencil size={14} />}
+                        </button>
+                        <button onClick={() => { if (confirm("Delete this measurement entry?")) del.mutate({ id: m.id }); }}
+                          className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded" title="Delete entry">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {isEditing ? (

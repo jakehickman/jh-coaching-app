@@ -352,3 +352,4 @@
 - [x] Exercise Library: muscle group inputs should clamp to 0–1, not 0–2
 - [x] Exercise Library: prevent creating an exercise with a duplicate name (client + server validation)
 - [x] Training schedule: subtext summary does not update when day selections change — fixed by cascading day renames into schedule slots
+- [x] View as [Client Name]: read-only coach preview of any client's dashboard

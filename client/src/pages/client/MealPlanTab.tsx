@@ -2,13 +2,17 @@ import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useMemo } from "react";
 import { Check } from "lucide-react";
 import { SectionLabel, Card } from "./shared";
+import { useViewAs } from "@/contexts/ViewAsContext";
 
 const SHOPPING_CHECKED_KEY = "jh_shopping_checked";
 
-// ─── MealPlanTab ──────────────────────────────────────────────────────────────
+// ─── MealPlanTab ────────────────────────────────────────────────────────────────────────────────
 function MealPlanTab() {
+  const { viewAsUserId } = useViewAs();
   const [dayType, setDayType] = useState<"training" | "rest">("training");
-  const { data: plan } = trpc.mealPlan.get.useQuery({ dayType });
+  const { data: planOwn } = trpc.mealPlan.get.useQuery({ dayType }, { enabled: !viewAsUserId });
+  const { data: planAdmin } = trpc.mealPlan.getForClient.useQuery({ userId: viewAsUserId!, dayType }, { enabled: !!viewAsUserId });
+  const plan = viewAsUserId ? planAdmin : planOwn;
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
 
   const meals = (plan?.meals as any[]) ?? [];
@@ -201,8 +205,13 @@ function ShoppingListTab() {
     setChecked({});
   }
 
-  const { data: trainingPlan } = trpc.mealPlan.get.useQuery({ dayType: "training" });
-  const { data: restPlan } = trpc.mealPlan.get.useQuery({ dayType: "rest" });
+  const { viewAsUserId } = useViewAs();
+  const { data: trainingPlanOwn } = trpc.mealPlan.get.useQuery({ dayType: "training" }, { enabled: !viewAsUserId });
+  const { data: trainingPlanAdmin } = trpc.mealPlan.getForClient.useQuery({ userId: viewAsUserId!, dayType: "training" }, { enabled: !!viewAsUserId });
+  const trainingPlan = viewAsUserId ? trainingPlanAdmin : trainingPlanOwn;
+  const { data: restPlanOwn } = trpc.mealPlan.get.useQuery({ dayType: "rest" }, { enabled: !viewAsUserId });
+  const { data: restPlanAdmin } = trpc.mealPlan.getForClient.useQuery({ userId: viewAsUserId!, dayType: "rest" }, { enabled: !!viewAsUserId });
+  const restPlan = viewAsUserId ? restPlanAdmin : restPlanOwn;
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
 
   function itemToGrams(food: any, amount: number): number {
