@@ -1,7 +1,7 @@
 import DashboardShell from "@/components/DashboardShell";
 import { trpc } from "@/lib/trpc";
 import { useParams, useLocation } from "wouter";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useDraft } from "@/hooks/useDraft";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
@@ -1702,6 +1702,32 @@ function WorkoutLogTab() {
       return next;
     });
   }
+  // Auto-collapse an exercise card when every one of its sets is marked complete.
+  // Uses a ref to track which exercises have already been auto-collapsed so the
+  // effect doesn't re-collapse cards the user has manually re-expanded.
+  const autoCollapsedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    setCollapsedExercisesRaw(prev => {
+      let changed = false;
+      const next = { ...prev };
+      for (const [exName, sets] of Object.entries(exerciseData)) {
+        const allDone = sets.length > 0 && sets.every(s => s.completed);
+        if (allDone && !autoCollapsedRef.current.has(exName) && !prev[exName]) {
+          next[exName] = true;
+          autoCollapsedRef.current.add(exName);
+          changed = true;
+        }
+        // Reset the auto-collapse tracker if the exercise is no longer all-done
+        // so it can auto-collapse again if the user completes it a second time.
+        if (!allDone) {
+          autoCollapsedRef.current.delete(exName);
+        }
+      }
+      if (changed && selectedDay) saveCollapsed(sessionDate, selectedDay, next);
+      return changed ? next : prev;
+    });
+  }, [exerciseData, sessionDate, selectedDay]);
+
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
 
