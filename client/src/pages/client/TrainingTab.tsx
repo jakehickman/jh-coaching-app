@@ -229,6 +229,9 @@ function WorkoutLogTab() {
   }
 
   const loadedRef = useRef<string | null>(null);
+  // Reset the load guard whenever the viewed user changes so loadDay
+  // always re-runs with the correct client's program data.
+  useEffect(() => { loadedRef.current = null; }, [viewAsUserId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
   const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>({});
