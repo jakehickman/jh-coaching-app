@@ -665,14 +665,11 @@ function DailyLogTab() {
   const draftKey = `draft:dailyLog:${date}`;
 
   // Helpers — direct localStorage, no hooks
-  const notifyDot = () => window.dispatchEvent(new Event("draft-changed"));
-  const saveDraft = (data: DailyForm) => {
-    try { localStorage.setItem(draftKey, JSON.stringify(data)); } catch { /* ignore */ }
-    notifyDot();
+  const saveDraft = (data: DailyForm, key = draftKey) => {
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* ignore */ }
   };
   const removeDraft = () => {
     try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
-    notifyDot();
   };
   const loadDraft = (key: string): DailyForm | null => {
     try {
@@ -697,9 +694,11 @@ function DailyLogTab() {
     });
   };
 
-  // Load server data into form (does NOT write to localStorage)
-  const loadServerData = (data: DailyForm) => {
+  // Load server data into form — also persists to localStorage so values survive tab switches
+  // Accepts an optional explicit key for when date hasn't updated in state yet (e.g. inside setDate)
+  const loadServerData = (data: DailyForm, key = draftKey) => {
     setFormRaw(data);
+    saveDraft(data, key);
   };
 
   const { data: profile } = trpc.profile.get.useQuery();
@@ -725,7 +724,8 @@ function DailyLogTab() {
   // When date changes: load draft if one exists, otherwise load server data
   const setDate = (newDate: string) => {
     setDateRaw(newDate);
-    const draft = loadDraft(`draft:dailyLog:${newDate}`);
+    const newKey = `draft:dailyLog:${newDate}`;
+    const draft = loadDraft(newKey);
     if (draft) {
       setFormRaw(draft);
     } else if (logs) {
@@ -742,12 +742,12 @@ function DailyLogTab() {
           hungerLevel: existing.hungerLevel ?? null,
           offPlanMeals: existing.offPlanMeals ?? 0,
           notes: existing.notes ?? "",
-        });
+        }, newKey);
       } else {
-        loadServerData({ ...blank, trainingCompleted: autoTrained, trainingType: autoTrainingType ?? "" });
+        loadServerData({ ...blank, trainingCompleted: autoTrained, trainingType: autoTrainingType ?? "" }, newKey);
       }
     } else {
-      loadServerData(blank);
+      loadServerData(blank, newKey);
     }
   };
 
