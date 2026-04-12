@@ -661,14 +661,23 @@ function DailyLogTab() {
     return today;
   });
   const blankDailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: null as number | null, hungerLevel: null as number | null, offPlanMeals: 0, notes: "" };
-  const [form, setForm, clearDraft] = useDraft(`draft:dailyLog:${date}`, blankDailyForm);
+  const [form, setForm, clearDraft, markDirty, isDirty] = useDraft(`draft:dailyLog:${date}`, blankDailyForm);
   // Track whether we've loaded server data for this date yet (avoid overwriting draft with blank)
   const serverLoadedRef = useRef<string | null>(null);
   const { data: profile } = trpc.profile.get.useQuery();
   const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 90 });
   const { data: workoutSessions = [] } = trpc.workoutSessions.list.useQuery();
   const upsert = trpc.dailyLog.upsert.useMutation({
-    onSuccess: () => { clearDraft(blankDailyForm); toast.success("Log saved"); refetch(); }
+    onSuccess: () => {
+      // Clear the draft key. Don't reset the form — the refetch will return the
+      // saved data and the server-load effect will reload it cleanly.
+      clearDraft();
+      // Reset serverLoadedRef so the server-load effect re-runs after refetch
+      // and shows the freshly saved data (not stale in-memory form values).
+      serverLoadedRef.current = null;
+      toast.success("Log saved");
+      refetch();
+    }
   });
   const del = trpc.dailyLog.delete.useMutation({
     onSuccess: () => { toast.success("Log deleted"); refetch(); }
@@ -701,22 +710,10 @@ function DailyLogTab() {
     return () => window.removeEventListener('editLogDate', handler);
   }, []);
 
-  // Load existing log for selected date — skip only if the user has a *real* draft
-  // (useDraft auto-writes even the blank form to localStorage, so we must compare
-  //  the stored value against the blank form to distinguish real user edits)
+  // Load existing log for selected date — skip if the user has a real unsaved draft (isDirty)
   useEffect(() => {
     if (!logs) return;
-    const cacheKey = `draft:dailyLog:${date}`;
-    const stored = localStorage.getItem(cacheKey);
-    const isRealDraft = (() => {
-      if (!stored) return false;
-      try {
-        const parsed = JSON.parse(stored);
-        // If the stored value is identical to the blank form, it's not a real draft
-        return JSON.stringify(parsed) !== JSON.stringify(blankDailyForm);
-      } catch { return false; }
-    })();
-    if (isRealDraft && serverLoadedRef.current === date) return; // user has real unsaved changes — keep them
+    if (isDirty && serverLoadedRef.current === date) return; // user has real unsaved changes — keep them
     const existing = logs.find(l => toLocalDateStr(l.logDate) === date);
     if (existing) {
       setForm({
@@ -731,7 +728,7 @@ function DailyLogTab() {
         offPlanMeals: existing.offPlanMeals ?? 0,
         notes: existing.notes ?? "",
       });
-    } else if (!isRealDraft) {
+    } else {
       setForm(blankDailyForm);
     }
     serverLoadedRef.current = date;
@@ -739,14 +736,7 @@ function DailyLogTab() {
 
   // Sync auto-derived training fields — but only when the user has no real unsaved draft
   useEffect(() => {
-    const cacheKey = `draft:dailyLog:${date}`;
-    const stored = localStorage.getItem(cacheKey);
-    const isRealDraft = (() => {
-      if (!stored) return false;
-      try { return JSON.stringify(JSON.parse(stored)) !== JSON.stringify(blankDailyForm); }
-      catch { return false; }
-    })();
-    if (isRealDraft) return; // user has real unsaved changes — don't clobber them
+    if (isDirty) return; // user has real unsaved changes — don't clobber them
     setForm(prev => ({
       ...prev,
       trainingCompleted: autoTrained,
@@ -770,8 +760,10 @@ function DailyLogTab() {
     });
   };
 
-  const f = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+  const f = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    markDirty();
     setForm(prev => ({ ...prev, [field]: e.target.value }));
+  };
 
   return (
     <div className="space-y-6">
@@ -819,8 +811,8 @@ function DailyLogTab() {
       <div>
         <SectionLabel>Biofeedback (1–5)</SectionLabel>
         <Card className="space-y-4">
-          <ScoreInput label="Sleep Quality" value={form.sleepQuality} onChange={v => setForm(p => ({ ...p, sleepQuality: v }))} max={5} />
-          <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => setForm(p => ({ ...p, hungerLevel: v }))} max={5} />
+          <ScoreInput label="Sleep Quality" value={form.sleepQuality} onChange={v => { markDirty(); setForm(p => ({ ...p, sleepQuality: v })); }} max={5} />
+          <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => { markDirty(); setForm(p => ({ ...p, hungerLevel: v })); }} max={5} />
         </Card>
       </div>
 
@@ -835,7 +827,7 @@ function DailyLogTab() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => setForm(p => ({ ...p, offPlanMeals: Math.max(0, (p.offPlanMeals ?? 0) - 1) }))}
+                onClick={() => { markDirty(); setForm(p => ({ ...p, offPlanMeals: Math.max(0, (p.offPlanMeals ?? 0) - 1) })); }}
                 className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors text-lg font-medium"
               >−</button>
               <span className={`text-xl font-bold w-6 text-center ${
@@ -843,7 +835,7 @@ function DailyLogTab() {
               }`}>{form.offPlanMeals ?? 0}</span>
               <button
                 type="button"
-                onClick={() => setForm(p => ({ ...p, offPlanMeals: (p.offPlanMeals ?? 0) + 1 }))}
+                onClick={() => { markDirty(); setForm(p => ({ ...p, offPlanMeals: (p.offPlanMeals ?? 0) + 1 })); }}
                 className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors text-lg font-medium"
               >+</button>
             </div>
