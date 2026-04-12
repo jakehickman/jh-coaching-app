@@ -25,10 +25,8 @@ import {
   checkInSubmissions,
   CheckInSubmission,
   InsertCheckInSubmission,
-  type Meal,
-  type TrainingDay,
-  type WorkoutExercise,
 } from "../drizzle/schema";
+import type { WorkoutExercise } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;

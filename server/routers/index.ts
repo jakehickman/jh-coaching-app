@@ -1,0 +1,10 @@
+export { authRouter } from "./auth";
+export { profileRouter } from "./profile";
+export { usersRouter } from "./users";
+export { dailyLogRouter } from "./dailyLog";
+export { measurementsRouter } from "./measurements";
+export { mealPlanRouter, shoppingRouter } from "./mealPlan";
+export { trainingRouter, mesoRouter, workoutSessionsRouter, exerciseLibraryRouter } from "./training";
+export { checkInRouter } from "./checkIns";
+export { habitsRouter } from "./habits";
+export { timelineRouter, notesRouter, nutritionFoodsRouter, onboardingRouter, clientConfigRouter } from "./misc";

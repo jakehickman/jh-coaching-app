@@ -339,3 +339,9 @@
 - [x] Getting Started Guide: add check-in accountability copy to Weekly Check-in section intro
 - [x] Workout log: auto-collapse exercise card when all sets are marked complete (manual re-expand always available; no auto-reopen on un-complete)
 - [ ] Meal plans (coach): show which client has unsaved changes alongside the amber dot indicator
+
+## Refactor (Apr 2026)
+- [x] Fix stale imports in server/db.ts (Meal, TrainingDay, WorkoutExercise)
+- [x] Split server/routers.ts into server/routers/ feature files (auth, profile, users, dailyLog, measurements, mealPlan, training, checkIns, habits, misc)
+- [x] Extract client dashboard tabs into client/src/pages/client/ (shared, OverviewTab, MeasurementsTab, DailyLogTab, MealPlanTab, TrainingTab, CheckInsTab)
+- [x] Slim ClientDashboard.tsx to 40-line shell + tab router
