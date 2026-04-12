@@ -73,20 +73,25 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                 <p className="text-sm font-semibold text-foreground">{fmtDay(iso)}</p>
                 <p className="text-[10px] text-muted-foreground">{dayLabel(iso)}</p>
               </div>
-              {/* Middle: chips */}
-              <div className="flex-1 flex items-center gap-2 px-3 flex-wrap">
-                {hasData ? (
-                  <>
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
-                      trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                    }`}>{sessionLabel}</span>
-                    {(log.offPlanMeals ?? 0) > 0 ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">{(log.offPlanMeals ?? 0) > 1 ? `${log.offPlanMeals} Off Plan Meals` : 'Off Plan Meal'}</span>
-                    ) : null}
-                  </>
-                ) : (
-                  <span className="text-xs text-muted-foreground italic">No entry</span>
-                )}
+              {/* Middle: chips + note preview */}
+              <div className="flex-1 flex flex-col gap-1 px-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {hasData ? (
+                    <>
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                        trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                      }`}>{sessionLabel}</span>
+                      {(log.offPlanMeals ?? 0) > 0 ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">{(log.offPlanMeals ?? 0) > 1 ? `${log.offPlanMeals} Off Plan Meals` : 'Off Plan Meal'}</span>
+                      ) : null}
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground italic">No entry</span>
+                  )}
+                </div>
+                {hasData && log.notes ? (
+                  <p className="text-[11px] text-muted-foreground italic truncate max-w-[220px]">{log.notes}</p>
+                ) : null}
               </div>
               {/* Right: weight + chevron */}
               <div className="flex items-center gap-2 flex-shrink-0">
