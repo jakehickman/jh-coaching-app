@@ -353,3 +353,4 @@
 - [x] Exercise Library: prevent creating an exercise with a duplicate name (client + server validation)
 - [x] Training schedule: subtext summary does not update when day selections change — fixed by cascading day renames into schedule slots
 - [x] View as [Client Name]: read-only coach preview of any client's dashboard
+- [x] Fix: viewAs tab navigation drops viewAs URL params when switching tabs (reverts to own client view)

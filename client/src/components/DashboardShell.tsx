@@ -21,7 +21,7 @@ import {
   CalendarCheck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 
 interface NavItem {
   href: string;
@@ -57,7 +57,17 @@ interface DashboardShellProps {
 export default function DashboardShell({ children, mode }: DashboardShellProps) {
   const { user, isAuthenticated, loading } = useAuth();
   const [location] = useLocation();
+  const currentSearch = useSearch();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Preserve viewAs params when navigating between client tabs
+  const viewAsParams = (() => {
+    const sp = new URLSearchParams(currentSearch);
+    const viewAs = sp.get("viewAs");
+    const viewAsName = sp.get("viewAsName");
+    if (viewAs) return `?viewAs=${viewAs}${viewAsName ? `&viewAsName=${viewAsName}` : ""}`;
+    return "";
+  })();
   const logout = trpc.auth.logout.useMutation({
     onSuccess: () => (window.location.href = "/"),
   });
@@ -402,7 +412,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={`${item.href}${viewAsParams}`}
                   className={cn(
                     "flex flex-col items-center justify-center gap-1.5 py-3 transition-colors min-h-[68px] flex-shrink-0 w-[82px]",
                     isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
