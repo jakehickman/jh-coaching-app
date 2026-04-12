@@ -1852,7 +1852,14 @@ function WorkoutLogTab() {
       setEquipmentDetails(draft.equipmentDetails ?? {});
       setExerciseNotes(draft.exerciseNotes ?? {});
       setSubstitutions(draft.substitutions ?? {});
-      setCollapsedExercisesRaw(loadCollapsed(date, label));
+      // Incomplete exercises must always be uncollapsed; complete ones use persisted state
+      const persisted = loadCollapsed(date, label);
+      const collapsed: Record<string, boolean> = {};
+      for (const [exName, sets] of Object.entries(migratedData)) {
+        const allDone = sets.length > 0 && sets.every(s => s.completed);
+        collapsed[exName] = allDone ? (persisted[exName] ?? true) : false;
+      }
+      setCollapsedExercisesRaw(collapsed);
       return;
     }
 
@@ -1882,7 +1889,10 @@ function WorkoutLogTab() {
       const persisted = loadCollapsed(date, label);
       const defaultCollapsed: Record<string, boolean> = {};
       for (const ex of (existing.exercises as any[])) {
-        defaultCollapsed[ex.name] = persisted[ex.name] !== undefined ? persisted[ex.name] : true;
+        const sets = exData[ex.name] ?? [];
+        const allDone = sets.length > 0 && sets.every(s => s.completed);
+        // Incomplete exercises always uncollapsed; complete ones use persisted state (default collapsed)
+        defaultCollapsed[ex.name] = allDone ? (persisted[ex.name] ?? true) : false;
       }
       setCollapsedExercisesRaw(defaultCollapsed);
       saveCollapsed(date, label, defaultCollapsed);
