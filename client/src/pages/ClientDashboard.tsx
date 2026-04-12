@@ -727,8 +727,12 @@ function DailyLogTab() {
     serverLoadedRef.current = date;
   }, [date, logs]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync auto-derived training fields whenever date or workout sessions change
+  // Sync auto-derived training fields — but only when there is no unsaved draft,
+  // so navigating away and back does not overwrite what the user had typed.
   useEffect(() => {
+    const cacheKey = `draft:dailyLog:${date}`;
+    const hasDraft = !!localStorage.getItem(cacheKey);
+    if (hasDraft) return; // user has unsaved changes — don't clobber them
     setForm(prev => ({
       ...prev,
       trainingCompleted: autoTrained,
