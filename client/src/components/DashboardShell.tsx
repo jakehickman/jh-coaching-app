@@ -141,13 +141,26 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
 
   // Track whether any localStorage draft exists for coach meal plans or training programs
   const [hasMealDraft, setHasMealDraft] = useState(false);
+  const [mealDraftUserId, setMealDraftUserId] = useState<number | null>(null);
   const [hasTrainingDraft, setHasTrainingDraft] = useState(false);
+  const { data: allClients = [] } = trpc.users.clients.useQuery(undefined, {
+    enabled: mode === "coach" && user?.role === "admin",
+  });
 
   useEffect(() => {
     if (mode !== "coach") return;
     function checkDrafts() {
       const keys = Object.keys(localStorage);
-      setHasMealDraft(keys.some(k => k.startsWith("draft:mealPlan:")));
+      const mealKey = keys.find(k => k.startsWith("draft:mealPlan:"));
+      setHasMealDraft(!!mealKey);
+      if (mealKey) {
+        // key format: draft:mealPlan:{userId}:{dayType}
+        const parts = mealKey.split(":");
+        const uid = parts[2] ? parseInt(parts[2], 10) : NaN;
+        setMealDraftUserId(!isNaN(uid) ? uid : null);
+      } else {
+        setMealDraftUserId(null);
+      }
       setHasTrainingDraft(keys.some(k => k.startsWith("draft:training:")));
     }
     // Run once on mount and whenever localStorage changes (cross-tab or same-tab via storage event)
@@ -286,9 +299,24 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                       {checkInsAttentionCount}
                     </span>
                   )}
-                  {item.href === "/coach/meal-plans" && hasMealDraft && (
-                    <span className="ml-auto flex-shrink-0 w-1.5 h-1.5 rounded-full bg-amber-400" title="Unsaved changes" />
-                  )}
+                  {item.href === "/coach/meal-plans" && hasMealDraft && (() => {
+                    const profile = mealDraftUserId
+                      ? (allClients as any[]).find((p: any) => p.userId === mealDraftUserId)
+                      : null;
+                    const firstName = profile?.displayName
+                      ? profile.displayName.split(" ")[0]
+                      : null;
+                    return (
+                      <span className="ml-auto flex items-center gap-1.5 flex-shrink-0">
+                        {firstName && (
+                          <span className="text-[10px] text-amber-400 font-medium leading-none">
+                            {firstName}
+                          </span>
+                        )}
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="Unsaved changes" />
+                      </span>
+                    );
+                  })()}
                   {item.href === "/coach/training" && hasTrainingDraft && (
                     <span className="ml-auto flex-shrink-0 w-1.5 h-1.5 rounded-full bg-amber-400" title="Unsaved changes" />
                   )}

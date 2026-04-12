@@ -338,3 +338,4 @@
 - [x] Getting Started Guide: add 7.2 The Stack section with image, renumber existing 7.2+
 - [x] Getting Started Guide: add check-in accountability copy to Weekly Check-in section intro
 - [x] Workout log: auto-collapse exercise card when all sets are marked complete (manual re-expand always available; no auto-reopen on un-complete)
+- [ ] Meal plans (coach): show which client has unsaved changes alongside the amber dot indicator
