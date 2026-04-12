@@ -1667,8 +1667,13 @@ function WorkoutLogTab() {
   const days: Array<{ label: string; exercises: Array<{ name: string; sets: number; reps: string; notes?: string }> }> =
     ((program?.days as any[]) ?? []).map((d: any) => ({ ...d, label: d.label ?? d.name }));
 
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [sessionDate, setSessionDate] = useState(today);
+  // Persist selectedDay and sessionDate across tab switches (component remounts)
+  const [selectedDay, setSelectedDay] = useState<string | null>(() => {
+    try { return sessionStorage.getItem('workoutLog:selectedDay') ?? null; } catch { return null; }
+  });
+  const [sessionDate, setSessionDate] = useState(() => {
+    try { return sessionStorage.getItem('workoutLog:sessionDate') ?? today; } catch { return today; }
+  });
   // exerciseData: { [exerciseName]: { equipmentDetails: string; sets: Array<{weight, reps, notes, completed}> } }
   // For backward compat we keep a flat sets array keyed by exercise name, plus a separate equipmentDetails map
   const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({})
@@ -1676,12 +1681,19 @@ function WorkoutLogTab() {
   const [exerciseNotes, setExerciseNotes] = useState<Record<string, string>>({});
   const [sessionNotes, setSessionNotes] = useState("");
 
-  // Persist in-progress workout to localStorage so tab switches don't lose data
-  const workoutDraftKey = selectedDay ? `draft:workout:${sessionDate}:${selectedDay}` : null;
+  // Persist selectedDay and sessionDate to sessionStorage so they survive remounts
   useEffect(() => {
-    if (!workoutDraftKey) return;
-    try { localStorage.setItem(workoutDraftKey, JSON.stringify({ v: 2, exerciseData, sessionNotes, equipmentDetails, exerciseNotes, substitutions })); } catch {}
-  }, [workoutDraftKey, exerciseData, sessionNotes]);
+    try {
+      if (selectedDay) sessionStorage.setItem('workoutLog:selectedDay', selectedDay);
+      else sessionStorage.removeItem('workoutLog:selectedDay');
+    } catch {}
+  }, [selectedDay]);
+  useEffect(() => {
+    try { sessionStorage.setItem('workoutLog:sessionDate', sessionDate); } catch {}
+  }, [sessionDate]);
+
+  // Draft key — defined early so clearWorkoutDraft can reference it
+  const workoutDraftKey = selectedDay ? `draft:workout:${sessionDate}:${selectedDay}` : null;
   function clearWorkoutDraft() {
     if (workoutDraftKey) { try { localStorage.removeItem(workoutDraftKey); } catch {} }
   }
@@ -1739,6 +1751,14 @@ function WorkoutLogTab() {
 
   // Substitution state: { [originalExName]: substituteName }
   const [substitutions, setSubstitutions] = useState<Record<string, string>>({});
+
+  // Persist in-progress workout to localStorage so tab switches don't lose data
+  // (placed after substitutions so all state is in scope for the dependency array)
+  useEffect(() => {
+    if (!workoutDraftKey) return;
+    try { localStorage.setItem(workoutDraftKey, JSON.stringify({ v: 2, exerciseData, sessionNotes, equipmentDetails, exerciseNotes, substitutions })); } catch {}
+  }, [workoutDraftKey, exerciseData, sessionNotes, equipmentDetails, exerciseNotes, substitutions]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Sub picker modal state
   const [subPicker, setSubPicker] = useState<{ originalName: string } | null>(null);
   const [subSearch, setSubSearch] = useState("");
