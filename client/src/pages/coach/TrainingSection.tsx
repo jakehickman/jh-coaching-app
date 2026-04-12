@@ -835,8 +835,21 @@ export default function TrainingSection() {
 
   const addDay = () => setDays(d => [...d, { name: `Day ${d.length + 1}`, focus: "", exercises: [] }]);
   const removeDay = (i: number) => setDays(d => d.filter((_, idx) => idx !== i));
-  const updateDay = (i: number, field: string, value: string) =>
-    setDays(d => d.map((day, idx) => idx === i ? { ...day, [field]: value } : day));
+  const updateDay = (i: number, field: string, value: string) => {
+    setDays(d => {
+      const oldDay = d[i];
+      const updated = d.map((day, idx) => idx === i ? { ...day, [field]: value } : day);
+      // If the day name changed, cascade the rename into schedule slots
+      if (field === 'name' && oldDay) {
+        const oldLabel = oldDay.name || `Day ${i + 1}`;
+        const newLabel = value || `Day ${i + 1}`;
+        if (oldLabel !== newLabel) {
+          setSchedule(s => s.map(slot => slot === oldLabel ? newLabel : slot));
+        }
+      }
+      return updated;
+    });
+  };
   const addExercise = (dayIdx: number) =>
     setDays(d => d.map((day, idx) => idx === dayIdx
       ? { ...day, exercises: [...(day.exercises ?? []), { name: "", sets: "", reps: "", notes: "" }] }

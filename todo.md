@@ -351,3 +351,4 @@
 - [x] Exercise Library: fix muscle group inputs — dot decimal separator not working, can't backspace 0 to type a new value
 - [x] Exercise Library: muscle group inputs should clamp to 0–1, not 0–2
 - [x] Exercise Library: prevent creating an exercise with a duplicate name (client + server validation)
+- [x] Training schedule: subtext summary does not update when day selections change — fixed by cascading day renames into schedule slots
