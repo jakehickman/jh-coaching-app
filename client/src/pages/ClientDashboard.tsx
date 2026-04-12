@@ -668,7 +668,6 @@ function DailyLogTab() {
   const { data: workoutSessions = [] } = trpc.workoutSessions.list.useQuery();
   const upsert = trpc.dailyLog.upsert.useMutation({
     onSuccess: () => {
-      clearDraft();
       toast.success("Log saved");
       refetch();
     }
@@ -729,6 +728,7 @@ function DailyLogTab() {
   }, [date, logs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = () => {
+    clearDraft(); // clear immediately so amber dot disappears and draft key is gone
     upsert.mutate({
       logDate: date,
       weight: form.weight ? parseFloat(form.weight) : undefined,
