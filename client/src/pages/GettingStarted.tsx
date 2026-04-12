@@ -621,7 +621,7 @@ export default function GettingStarted() {
               </SubSection>
 
               <SubSection title="9.4 Form Videos">
-                <Body>Please send me one full training session per week on WhatsApp.</Body>
+                <Body>Please send me one filmed set of each exercise from one full training session you completed that week on WhatsApp.</Body>
                 <Body>This allows me to continuously review your lifts as you progress and make sure your technique stays where it needs to be.</Body>
               </SubSection>
 
