@@ -355,3 +355,4 @@
 - [x] View as [Client Name]: read-only coach preview of any client's dashboard
 - [x] Fix: viewAs tab navigation drops viewAs URL params when switching tabs (reverts to own client view)
 - [x] Fix: viewAs shows coach's own cached data instead of client's data — fixed by clearing query cache on viewAsUserId change
+- [x] Fix: viewAs Daily Log form shows coach's own data from sessionStorage/localStorage drafts — fixed by skipping all draft loading in viewAs mode

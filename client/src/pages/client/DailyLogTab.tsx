@@ -237,7 +237,11 @@ const blank: DailyForm = {
 
 export default function DailyLogTab() {
   const today = localToday();
+  const { viewAsUserId } = useViewAs();
+
   const [date, setDateRaw] = useState(() => {
+    // In viewAs mode, never load from sessionStorage (belongs to coach)
+    if (viewAsUserId) return today;
     const editDate = sessionStorage.getItem('editLogDate');
     if (editDate) { sessionStorage.removeItem('editLogDate'); return editDate; }
     return today;
@@ -246,12 +250,17 @@ export default function DailyLogTab() {
   const draftKey = `draft:dailyLog:${date}`;
 
   const saveDraft = (data: DailyForm, key = draftKey) => {
+    // Never persist drafts in viewAs mode
+    if (viewAsUserId) return;
     try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* ignore */ }
   };
   const removeDraft = () => {
+    if (viewAsUserId) return;
     try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
   };
   const loadDraft = (key: string): DailyForm | null => {
+    // Never load drafts in viewAs mode
+    if (viewAsUserId) return null;
     try {
       const s = localStorage.getItem(key);
       if (s) return JSON.parse(s) as DailyForm;
@@ -259,9 +268,10 @@ export default function DailyLogTab() {
     return null;
   };
 
-  const [form, setFormRaw] = useState<DailyForm>(() => loadDraft(draftKey) ?? blank);
+  // In viewAs mode, always start blank — server data will populate via useEffect
+  const [form, setFormRaw] = useState<DailyForm>(() => viewAsUserId ? blank : (loadDraft(draftKey) ?? blank));
 
-  const hasDraft = () => localStorage.getItem(draftKey) !== null;
+  const hasDraft = () => !viewAsUserId && localStorage.getItem(draftKey) !== null;
 
   const setForm = (updater: DailyForm | ((prev: DailyForm) => DailyForm)) => {
     setFormRaw(prev => {
@@ -276,7 +286,6 @@ export default function DailyLogTab() {
     saveDraft(data, key);
   };
 
-  const { viewAsUserId } = useViewAs();
   const { data: profileOwn } = trpc.profile.get.useQuery(undefined, { enabled: !viewAsUserId });
   const { data: profileAdmin } = trpc.profile.getById.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const profile = viewAsUserId ? profileAdmin : profileOwn;
