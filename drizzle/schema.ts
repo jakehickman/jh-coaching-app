@@ -257,7 +257,7 @@ export type CoachingNote = typeof coachingNotes.$inferSelect;
 // Exercise library — exercises with muscle group volume contributions
 export const exerciseLibrary = mysqlTable("exercise_library", {
   id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 128 }).notNull(),
+  name: varchar("name", { length: 128 }).notNull().unique(),
   // Muscle group contributions (sets per set performed)
   chest: float("chest").default(0),
   frontDelts: float("frontDelts").default(0),

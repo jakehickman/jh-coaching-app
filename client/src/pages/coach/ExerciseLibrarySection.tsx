@@ -74,7 +74,9 @@ export default function ExerciseLibrarySection() {
       toast.success("Saved");
     },
     onError: (err) => {
-      toast.error(err.message || "Save failed");
+      // MySQL unique constraint violation code
+      const isDuplicate = err.message?.includes("Duplicate entry") || err.message?.includes("unique");
+      toast.error(isDuplicate ? "An exercise with that name already exists" : (err.message || "Save failed"));
     },
   });
   const del = trpc.exerciseLibrary.delete.useMutation({
@@ -115,7 +117,16 @@ export default function ExerciseLibrarySection() {
       toast.error("Exercise name is required");
       return;
     }
-    const payload = { ...editing, videoUrl: editing.videoUrl || undefined };
+    // Client-side duplicate check (case-insensitive, excluding the exercise being edited)
+    const trimmedName = editing.name.trim().toLowerCase();
+    const duplicate = exercises.find(
+      (e) => e.name.trim().toLowerCase() === trimmedName && e.id !== editing.id
+    );
+    if (duplicate) {
+      toast.error(`An exercise named "${duplicate.name}" already exists`);
+      return;
+    }
+    const payload = { ...editing, name: editing.name.trim(), videoUrl: editing.videoUrl || undefined };
     upsert.mutate(payload as any);
   }
 
