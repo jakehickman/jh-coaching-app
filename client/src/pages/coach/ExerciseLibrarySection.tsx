@@ -115,7 +115,7 @@ export default function ExerciseLibrarySection() {
     <div className="space-y-4">
       {/* Header row */}
       <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 max-w-md">
           <Search
             size={14}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -142,7 +142,7 @@ export default function ExerciseLibrarySection() {
       <div
         className={
           editing
-            ? "grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-5 items-start"
+            ? "grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5 items-start"
             : ""
         }
       >
@@ -238,7 +238,7 @@ export default function ExerciseLibrarySection() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/50">
-                <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[260px]">
+                <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[300px]">
                   Exercise
                 </th>
                 {MUSCLE_GROUPS.map((mg) => (

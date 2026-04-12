@@ -310,7 +310,7 @@ export default function MealPlansSection() {
       </div>
 
       {selectedUserId && (
-        <div className="xl:grid xl:grid-cols-[1fr_280px] xl:gap-6 xl:items-start">
+        <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:items-start">
         <div className="space-y-6">
           <div className="flex items-center gap-2 flex-wrap">
             {(["training", "rest"] as const).map(t => (

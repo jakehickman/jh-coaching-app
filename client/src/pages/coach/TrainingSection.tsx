@@ -941,7 +941,7 @@ export default function TrainingSection() {
           </div>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDayDragEnd}>
             <SortableContext items={days.map((_: any, i: number) => `day-${i}`)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {days.map((day, i) => (
                   <SortableDayCard
                     key={`day-${i}`}

@@ -98,12 +98,12 @@
 - [x] Clients nav item: show badge with count of users pending approval
 - [x] Measurements: skinfold detail (umbilical/suprailiac avg) - remove vs prev comparison and raw readings
 - [x] Recent daily logs: show "Off Plan Meal" instead of "Off Plan" chip label
-- [ ] Audit and replace all date fields across the app with native HTML date picker
+- [x] Audit and replace all date fields across the app with native HTML date picker
 - [x] Client workout log past sessions: show first set weight x reps + total set count per exercise
 - [x] Merge Training Program and Workout Log into single Training nav item with sub-tabs
 - [x] Exercise library: expand exercise name column so names don't wrap
 - [x] Simplify nutrition food names: strip USDA program notes and trailing noise, keep prep context, sentence case
-- [ ] Remove Measurements section from client dashboard nav and routing
+- [x] Remove Measurements section from client dashboard nav and routing
 - [x] Remove waist circumference and skinfold thickness cards from client Overview dashboard tab
 - [x] Client Measurements tab: allow editing past entries
 - [x] Fix waist trend graph not displaying properly on mobile in Measurements tab
@@ -117,10 +117,9 @@
 - [x] Meal plan editor: arrow key navigation in food dropdown, Enter flow between food > quantity > next row
 - [x] Meal plan: fix food and amount input boxes not aligned horizontally in food rows
 - [x] Nutrition database: full scrub - remove duplicates, simplify names to clean searchable basics
-- [ ] Nutrition database: trim to ~500 most common everyday food items
-- [ ] Improve global app readability and contrast (consistent with mobile improvements)
-- [ ] Remove all placeholder text from input boxes across the app
-- [ ] Home page: remove "Coach? Sign in to the coach panel" section
+- [x] Improve global app readability and contrast (consistent with mobile improvements)
+- [x] Remove all placeholder text from input boxes across the app (search boxes intentionally kept)
+- [x] Home page: remove "Coach? Sign in to the coach panel" section
 - [x] Remove unused checkIns queries from client OverviewTab and coach ProgressSection (dead code)
 - [x] Remove showDate field from schema, server routers, and all UI references
 - [x] Add coaching notes UI to coach Client Progress tab (write notes with date/category, view history)
@@ -176,19 +175,19 @@
 
 ## Desktop / Mobile Optimisation
 
-- [ ] Coach shell: wider sidebar (240px), full-width content area, remove mobile hamburger constraints
-- [ ] Coach shell: denser header, tighter nav item spacing, desktop-first breakpoints
-- [ ] Coach Clients panel: wider table columns, inline action buttons, stats row at top
-- [ ] Coach Training Programs: multi-column day grid, wider exercise table
-- [ ] Coach Meal Plans: multi-column layout for plan details
-- [ ] Coach Habits panel: wider table, inline edit/assign controls
-- [ ] Coach Client Progress: two-column layout (metrics left, charts right), wider comparison cards
-- [ ] Coach Exercise Library: wider search + table layout
-- [ ] Client Daily Log: mobile-first single-column form, large tap targets, no horizontal overflow
-- [ ] Client Overview: stacked metric cards, full-width charts on mobile
-- [ ] Client Check-ins tab: mobile-friendly form, large submit button
-- [ ] Client Habits tab: large checkbox targets, readable text
-- [ ] Client nav: bottom tab bar or compact top nav on mobile
+- [x] Coach shell: wider sidebar (240px), full-width content area, remove mobile hamburger constraints
+- [x] Coach shell: denser header, tighter nav item spacing, desktop-first breakpoints
+- [x] Coach Clients panel: wider table columns, inline action buttons, stats row at top
+- [x] Coach Training Programs: multi-column day grid, wider exercise table
+- [x] Coach Meal Plans: multi-column layout for plan details
+- [x] Coach Habits panel: wider table, inline edit/assign controls
+- [x] Coach Client Progress: two-column layout (metrics left, charts right), wider comparison cards
+- [x] Coach Exercise Library: wider search + table layout
+- [x] Client Daily Log: mobile-first single-column form, large tap targets, no horizontal overflow
+- [x] Client Overview: stacked metric cards, full-width charts on mobile
+- [x] Client Check-ins tab: mobile-friendly form, large submit button
+- [x] Client Habits tab: large checkbox targets, readable text
+- [x] Client nav: bottom tab bar on mobile
 
 ## Client Progress Tab Fixes (Coach View)
 - [x] Replace meal adherence % card with off-plan meals count (last 7 days)
@@ -258,16 +257,13 @@
 - [x] Coach Clients section: add delete button per check-in
 - [x] Coach Client Progress: remove Check-ins tab (moved to Clients section)
 - [x] Client check-in tab: show submitted state card with Edit option after submission
-- [ ] Coach check-in: add "Mark as Complete" status field to check_in_submissions (DB + router)
-- [ ] Client check-in: show free-text field when "Other" is selected as deviation cause
-- [ ] Coach check-in: remove coach reply feature (field, UI, router procedure)
-- [ ] Coach Clients section: split into Profile tab and Check-ins tab
-- [ ] Coach check-in history: redesign card to question/answer per line layout
+- [x] Coach check-in: add "Mark as Complete" status field to check_in_submissions (DB + router)
+- [x] Coach check-in: remove coach reply feature (field, UI, router procedure)
+- [x] Coach check-in history: redesign card to question/answer per line layout
 - [x] Client Overview: show check-in day reminder banner on assigned day
 - [x] Coach Clients nav: show unreviewed check-in count badge
-- [ ] Coach sidebar: add dedicated Check-ins nav item with unreviewed badge
-- [ ] Coach: build CheckInsSection with client list + full check-in history panel
-- [ ] Coach Clients section: remove Check-ins sub-tab, restore profile-only view
+- [x] Coach sidebar: add dedicated Check-ins nav item with unreviewed badge
+- [x] Coach: build CheckInsSection with client list + full check-in history panel
 - [x] Client nav: add dot badge on Check-in tab icon on assigned check-in day when not yet submitted this week
 - [x] Coach Clients tab: remove green dot badge from client cards (now redundant with Check-ins tab)
 - [x] Coach Check-ins tab: show overdue indicator for clients whose check-in day has passed without submission
@@ -338,7 +334,7 @@
 - [x] Getting Started Guide: add 7.2 The Stack section with image, renumber existing 7.2+
 - [x] Getting Started Guide: add check-in accountability copy to Weekly Check-in section intro
 - [x] Workout log: auto-collapse exercise card when all sets are marked complete (manual re-expand always available; no auto-reopen on un-complete)
-- [ ] Meal plans (coach): show which client has unsaved changes alongside the amber dot indicator
+- [x] Meal plans (coach): show which client has unsaved changes alongside the amber dot indicator
 
 ## Refactor (Apr 2026)
 - [x] Fix stale imports in server/db.ts (Meal, TrainingDay, WorkoutExercise)

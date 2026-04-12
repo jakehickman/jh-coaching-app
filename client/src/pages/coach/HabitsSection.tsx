@@ -257,7 +257,7 @@ export default function HabitsSection() {
   }
 
   return (
-    <div className="xl:grid xl:grid-cols-[1fr_360px] xl:gap-6 xl:items-start">
+    <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-6 lg:items-start">
       {/* Left: habits list */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">

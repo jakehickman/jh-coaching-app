@@ -104,18 +104,26 @@ function ClientsSection() {
   return (
     <div className="space-y-4">
       {/* Stats row */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className="bg-card border border-border rounded-lg px-5 py-3 flex items-center gap-3">
           <Users size={16} className="text-muted-foreground" />
           <div>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Clients</p>
-            <p className="text-xl font-bold text-foreground">{clients.length}</p>
+            <p className="text-xl font-bold text-foreground">{clients.filter(u => u.role !== 'admin').length}</p>
           </div>
+        </div>
+        <div className="bg-card border border-border rounded-lg px-5 py-3">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Approved</p>
+          <p className="text-xl font-bold text-foreground">{clients.filter(u => u.role !== 'admin' && (u as any).approved).length}</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg px-5 py-3">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pending</p>
+          <p className="text-xl font-bold text-foreground">{clients.filter(u => u.role !== 'admin' && !(u as any).approved).length}</p>
         </div>
       </div>
 
       {/* Two-column desktop layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5 items-start">
         {/* Left: client list */}
         <div>
           <SectionLabel>All Users</SectionLabel>
@@ -138,7 +146,7 @@ function ClientsSection() {
                   <p className="text-sm font-medium text-foreground truncate">{user.name ?? "Unnamed"}</p>
                   <p className="text-xs text-muted-foreground truncate">{user.email ?? "No email"}</p>
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${user.role === "admin" ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
                     {user.role}
                   </span>
@@ -149,13 +157,13 @@ function ClientsSection() {
                           e.stopPropagation();
                           setApproved.mutate({ userId: user.id, approved: !(user as any).approved });
                         }}
-                        className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${
+                        className={`text-[10px] px-2 py-1 rounded-md border font-medium transition-colors ${
                           (user as any).approved
                             ? "border-primary/40 text-primary bg-primary/10 hover:bg-primary/20"
-                            : "border-border text-muted-foreground bg-secondary hover:border-primary/40 hover:text-primary"
+                            : "border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20"
                         }`}
                       >
-                        {(user as any).approved ? "Approved" : "Approve"}
+                        {(user as any).approved ? "✓ Approved" : "Approve"}
                       </button>
                       <button
                         onClick={async e => {
@@ -168,10 +176,10 @@ function ClientsSection() {
                           });
                           if (ok) deleteUser.mutate({ userId: user.id });
                         }}
-                        className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-md hover:bg-destructive/10"
                         title="Delete user"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={13} />
                       </button>
                     </>
                   )}

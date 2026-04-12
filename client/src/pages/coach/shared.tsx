@@ -123,10 +123,18 @@ export function ClientCombobox({
           aria-expanded={open}
           className="w-full max-w-xs justify-between bg-card border-border text-foreground hover:bg-secondary"
         >
-          <span className="truncate">
-            {selected
-              ? selected.name ?? `User ${selected.id}`
-              : "Select client…"}
+          <span className="flex items-center gap-1.5 truncate">
+            <span className="truncate">
+              {selected
+                ? selected.name ?? `User ${selected.id}`
+                : "Select client…"}
+            </span>
+            {selected && draftUserIds?.has(selected.id) && (
+              <span className="flex items-center gap-1 flex-shrink-0 text-amber-400 text-[10px] font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                unsaved
+              </span>
+            )}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
