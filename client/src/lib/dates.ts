@@ -42,6 +42,20 @@ export function fmtDate(iso: unknown): string {
 }
 
 /**
+ * Format a yyyy-mm-dd string as e.g. "Wed April 08" for display.
+ * Uses noon UTC to avoid DST boundary issues.
+ */
+export function fmtDateLong(iso: unknown): string {
+  const s = String(iso ?? "").slice(0, 10);
+  if (!s || s.length < 10) return s;
+  const d = new Date(s + "T12:00:00Z");
+  const weekday = d.toLocaleDateString("en-AU", { weekday: "short", timeZone: "UTC" });
+  const month = d.toLocaleDateString("en-AU", { month: "long", timeZone: "UTC" });
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${weekday} ${month} ${day}`;
+}
+
+/**
  * Short weekday label (e.g. "Mon") for a yyyy-mm-dd string.
  * Uses noon UTC to avoid DST boundary issues.
  */

@@ -179,7 +179,7 @@ export default function MeasurementsTab() {
               return (
                 <Card key={m.id}>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-base font-semibold text-foreground">{fmtDate(m.measureDate)}</p>
+                    <p className="text-base font-semibold text-foreground">{fmtDate(toLocalDateStr(m.measureDate))}</p>
                     {!viewAsUserId && (
                       <div className="flex items-center gap-1">
                         <button onClick={() => isEditing ? setEditingId(null) : startEdit(m)}
