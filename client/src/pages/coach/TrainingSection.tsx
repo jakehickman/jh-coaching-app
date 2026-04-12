@@ -659,6 +659,39 @@ function SortableDayCard({
 export default function TrainingSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
+
+  // Compute which client userIds have an unsaved training draft in localStorage
+  const [trainingDraftUserIds, setTrainingDraftUserIds] = useState<Set<number>>(() => {
+    const ids = new Set<number>();
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith("draft:training:")) {
+        const uid = parseInt(k.replace("draft:training:", ""), 10);
+        if (!isNaN(uid)) ids.add(uid);
+      }
+    }
+    return ids;
+  });
+  useEffect(() => {
+    function refreshDraftIds() {
+      const ids = new Set<number>();
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith("draft:training:")) {
+          const uid = parseInt(k.replace("draft:training:", ""), 10);
+          if (!isNaN(uid)) ids.add(uid);
+        }
+      }
+      setTrainingDraftUserIds(ids);
+    }
+    window.addEventListener("storage", refreshDraftIds);
+    window.addEventListener("draft-changed", refreshDraftIds);
+    return () => {
+      window.removeEventListener("storage", refreshDraftIds);
+      window.removeEventListener("draft-changed", refreshDraftIds);
+    };
+  }, []);
+
   const { data: program, refetch } = trpc.training.getForClient.useQuery(
     { userId: selectedUserId! },
     { enabled: !!selectedUserId }
@@ -833,7 +866,7 @@ export default function TrainingSection() {
   return (
     <div className="space-y-6">
       <div>
-        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} />
+        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} draftUserIds={trainingDraftUserIds} />
       </div>
       {selectedUserId && (
         <div className="space-y-6">
