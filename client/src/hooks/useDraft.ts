@@ -49,6 +49,8 @@ export function useDraft<T>(key: string, initial: T): [T, React.Dispatch<React.S
     } catch {
       // ignore
     }
+    // Notify listeners (e.g. DashboardShell amber dot) that a draft was cleared
+    window.dispatchEvent(new Event("draft-changed"));
     // Reset in-memory state so the form reflects the cleared/reset value immediately
     // without requiring a navigation away and back.
     if (resetTo !== undefined) setValueRaw(resetTo);

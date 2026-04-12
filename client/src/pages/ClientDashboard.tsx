@@ -701,14 +701,22 @@ function DailyLogTab() {
     return () => window.removeEventListener('editLogDate', handler);
   }, []);
 
-  // Load existing log for selected date — never overwrite an existing draft
+  // Load existing log for selected date — skip only if the user has a *real* draft
+  // (useDraft auto-writes even the blank form to localStorage, so we must compare
+  //  the stored value against the blank form to distinguish real user edits)
   useEffect(() => {
     if (!logs) return;
     const cacheKey = `draft:dailyLog:${date}`;
-    const hasDraft = !!localStorage.getItem(cacheKey);
-    // If a draft exists for this date, the user has unsaved changes — don't touch the form.
-    // This also covers the remount case where serverLoadedRef resets to null.
-    if (hasDraft) return;
+    const stored = localStorage.getItem(cacheKey);
+    const isRealDraft = (() => {
+      if (!stored) return false;
+      try {
+        const parsed = JSON.parse(stored);
+        // If the stored value is identical to the blank form, it's not a real draft
+        return JSON.stringify(parsed) !== JSON.stringify(blankDailyForm);
+      } catch { return false; }
+    })();
+    if (isRealDraft && serverLoadedRef.current === date) return; // user has real unsaved changes — keep them
     const existing = logs.find(l => toLocalDateStr(l.logDate) === date);
     if (existing) {
       setForm({
@@ -723,18 +731,22 @@ function DailyLogTab() {
         offPlanMeals: existing.offPlanMeals ?? 0,
         notes: existing.notes ?? "",
       });
-    } else {
+    } else if (!isRealDraft) {
       setForm(blankDailyForm);
     }
     serverLoadedRef.current = date;
   }, [date, logs]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync auto-derived training fields — but only when there is no unsaved draft,
-  // so navigating away and back does not overwrite what the user had typed.
+  // Sync auto-derived training fields — but only when the user has no real unsaved draft
   useEffect(() => {
     const cacheKey = `draft:dailyLog:${date}`;
-    const hasDraft = !!localStorage.getItem(cacheKey);
-    if (hasDraft) return; // user has unsaved changes — don't clobber them
+    const stored = localStorage.getItem(cacheKey);
+    const isRealDraft = (() => {
+      if (!stored) return false;
+      try { return JSON.stringify(JSON.parse(stored)) !== JSON.stringify(blankDailyForm); }
+      catch { return false; }
+    })();
+    if (isRealDraft) return; // user has real unsaved changes — don't clobber them
     setForm(prev => ({
       ...prev,
       trainingCompleted: autoTrained,
@@ -1899,10 +1911,20 @@ function WorkoutLogTab() {
     }
   }
 
-  // Re-load when date changes
+  // Track which date+day combo we've already loaded to avoid re-running selectDay
+  // when sessions arrive from the server (which would overwrite a restored draft)
+  const loadedComboRef = useRef<string | null>(null);
+
+  // Re-load when date changes or sessions first arrive — but not if we've already
+  // loaded this exact combo (which means the draft was already restored)
   useEffect(() => {
-    if (selectedDay) selectDay(selectedDay);
-  }, [sessionDate, sessions.length]);
+    if (!selectedDay) return;
+    const combo = `${sessionDate}:${selectedDay}`;
+    // If we've already loaded this combo, only re-run if the date actually changed
+    if (loadedComboRef.current === combo) return;
+    selectDay(selectedDay);
+    loadedComboRef.current = combo;
+  }, [sessionDate, selectedDay, sessions.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function setSet(exName: string, idx: number, field: "weight" | "reps" | "notes", val: string) {
     setExerciseData(prev => {

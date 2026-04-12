@@ -166,9 +166,18 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
 
   useEffect(() => {
     if (mode !== "client") return;
+    const blankDailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: null, hungerLevel: null, offPlanMeals: 0, notes: "" };
+    const blankJson = JSON.stringify(blankDailyForm);
     function checkDailyLogDraft() {
-      const keys = Object.keys(localStorage);
-      setHasDailyLogDraft(keys.some(k => k.startsWith("draft:dailyLog:")));
+      const keys = Object.keys(localStorage).filter(k => k.startsWith("draft:dailyLog:"));
+      // Only flag as draft if the stored value differs from the blank form
+      const hasReal = keys.some(k => {
+        try {
+          const val = localStorage.getItem(k);
+          return val ? JSON.stringify(JSON.parse(val)) !== blankJson : false;
+        } catch { return false; }
+      });
+      setHasDailyLogDraft(hasReal);
     }
     checkDailyLogDraft();
     window.addEventListener("storage", checkDailyLogDraft);
