@@ -660,21 +660,15 @@ function DailyLogTab() {
     }
     return today;
   });
-  const blankDailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: null as number | null, hungerLevel: null as number | null, offPlanMeals: 0, notes: "" };
-  const [form, setForm, clearDraft, markDirty, isDirty] = useDraft(`draft:dailyLog:${date}`, blankDailyForm);
-  // Track whether we've loaded server data for this date yet (avoid overwriting draft with blank)
-  const serverLoadedRef = useRef<string | null>(null);
+  type DailyForm = { weight: string; sleepHours: string; caffeineServings: string; trainingCompleted: boolean; trainingType: string; stepsCount: string; sleepQuality: number | null; hungerLevel: number | null; offPlanMeals: number; notes: string; };
+  const blank: DailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: null, hungerLevel: null, offPlanMeals: 0, notes: "" };
+  const { form, setForm, isDirty, setDirty, clearDraft } = useDraft<DailyForm>(`draft:dailyLog:${date}`, blank);
   const { data: profile } = trpc.profile.get.useQuery();
   const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 90 });
   const { data: workoutSessions = [] } = trpc.workoutSessions.list.useQuery();
   const upsert = trpc.dailyLog.upsert.useMutation({
     onSuccess: () => {
-      // Clear the draft key. Don't reset the form — the refetch will return the
-      // saved data and the server-load effect will reload it cleanly.
       clearDraft();
-      // Reset serverLoadedRef so the server-load effect re-runs after refetch
-      // and shows the freshly saved data (not stale in-memory form values).
-      serverLoadedRef.current = null;
       toast.success("Log saved");
       refetch();
     }
@@ -710,10 +704,10 @@ function DailyLogTab() {
     return () => window.removeEventListener('editLogDate', handler);
   }, []);
 
-  // Load existing log for selected date — skip if the user has a real unsaved draft (isDirty)
+  // Load server data for the selected date — but only when the user has no unsaved draft.
+  // When isDirty is true, the user's in-progress edits take priority.
   useEffect(() => {
-    if (!logs) return;
-    if (isDirty && serverLoadedRef.current === date) return; // user has real unsaved changes — keep them
+    if (!logs || isDirty) return;
     const existing = logs.find(l => toLocalDateStr(l.logDate) === date);
     if (existing) {
       setForm({
@@ -729,20 +723,10 @@ function DailyLogTab() {
         notes: existing.notes ?? "",
       });
     } else {
-      setForm(blankDailyForm);
+      // Also sync auto-derived training fields when there is no saved log
+      setForm({ ...blank, trainingCompleted: autoTrained, trainingType: autoTrainingType ?? "" });
     }
-    serverLoadedRef.current = date;
   }, [date, logs]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Sync auto-derived training fields — but only when the user has no real unsaved draft
-  useEffect(() => {
-    if (isDirty) return; // user has real unsaved changes — don't clobber them
-    setForm(prev => ({
-      ...prev,
-      trainingCompleted: autoTrained,
-      trainingType: autoTrainingType ?? prev.trainingType,
-    }));
-  }, [date, autoTrained, autoTrainingType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = () => {
     upsert.mutate({
@@ -760,8 +744,9 @@ function DailyLogTab() {
     });
   };
 
-  const f = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    markDirty();
+  // Wrapper for text/number/select inputs — marks the form dirty on first user edit
+  const f = (field: keyof DailyForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setDirty(true);
     setForm(prev => ({ ...prev, [field]: e.target.value }));
   };
 
@@ -811,8 +796,8 @@ function DailyLogTab() {
       <div>
         <SectionLabel>Biofeedback (1–5)</SectionLabel>
         <Card className="space-y-4">
-          <ScoreInput label="Sleep Quality" value={form.sleepQuality} onChange={v => { markDirty(); setForm(p => ({ ...p, sleepQuality: v })); }} max={5} />
-          <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => { markDirty(); setForm(p => ({ ...p, hungerLevel: v })); }} max={5} />
+          <ScoreInput label="Sleep Quality" value={form.sleepQuality} onChange={v => { setDirty(true); setForm(p => ({ ...p, sleepQuality: v })); }} max={5} />
+          <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => { setDirty(true); setForm(p => ({ ...p, hungerLevel: v })); }} max={5} />
         </Card>
       </div>
 
@@ -827,7 +812,7 @@ function DailyLogTab() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => { markDirty(); setForm(p => ({ ...p, offPlanMeals: Math.max(0, (p.offPlanMeals ?? 0) - 1) })); }}
+                onClick={() => { setDirty(true); setForm(p => ({ ...p, offPlanMeals: Math.max(0, (p.offPlanMeals ?? 0) - 1) })); }}
                 className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors text-lg font-medium"
               >−</button>
               <span className={`text-xl font-bold w-6 text-center ${
@@ -835,7 +820,7 @@ function DailyLogTab() {
               }`}>{form.offPlanMeals ?? 0}</span>
               <button
                 type="button"
-                onClick={() => { markDirty(); setForm(p => ({ ...p, offPlanMeals: (p.offPlanMeals ?? 0) + 1 })); }}
+                onClick={() => { setDirty(true); setForm(p => ({ ...p, offPlanMeals: (p.offPlanMeals ?? 0) + 1 })); }}
                 className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors text-lg font-medium"
               >+</button>
             </div>
@@ -1652,7 +1637,7 @@ function TrainingTab() {
 // ─── Tab: Workout Log ────────────────────────────────────────────────────────
 function WorkoutLogTab() {
   const { data: program } = trpc.training.get.useQuery();
-  const { data: sessions = [], refetch } = trpc.workoutSessions.list.useQuery();
+  const { data: sessions = [], refetch, isSuccess: sessionsLoaded } = trpc.workoutSessions.list.useQuery();
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
   const utils = trpc.useUtils();
 
@@ -1824,10 +1809,40 @@ function WorkoutLogTab() {
     onError: () => { setDeleting(null); toast.error("Failed to delete."); },
   });
 
-  // When user picks a day, load existing session, or restore draft, or init blank
+  // When user picks a day (or on remount), load data using this priority:
+  //   1. In-progress draft in localStorage (always wins — user's unsaved work)
+  //   2. Saved session from server
+  //   3. Blank sets from program definition
   function selectDay(label: string) {
     setSelectedDay(label);
     const dayDef = days.find(d => d.label === label);
+
+    // Priority 1: draft
+    const draftKey = `draft:workout:${sessionDate}:${label}`;
+    try {
+      const stored = localStorage.getItem(draftKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if ((parsed.v ?? 1) >= 2) {
+          const migratedData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
+          for (const [k, sets] of Object.entries(parsed.exerciseData ?? {})) {
+            migratedData[k] = (sets as any[]).map(s => ({ ...s, completed: s.completed ?? (s.weight !== "" || s.reps !== "") }));
+          }
+          setExerciseData(migratedData);
+          setSessionNotes(parsed.sessionNotes ?? "");
+          setEquipmentDetails(parsed.equipmentDetails ?? {});
+          setExerciseNotes(parsed.exerciseNotes ?? {});
+          setSubstitutions(parsed.substitutions ?? {});
+          setCollapsedExercisesRaw(loadCollapsed(sessionDate, label));
+          return;
+        } else {
+          // Stale draft — discard
+          localStorage.removeItem(draftKey);
+        }
+      }
+    } catch {}
+
+    // Priority 2: saved session from server
     const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === sessionDate && s.dayLabel === label);
     if (existing) {
       const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
@@ -1835,10 +1850,7 @@ function WorkoutLogTab() {
       const enData: Record<string, string> = {};
       const subData: Record<string, string> = {};
       for (const ex of (existing.exercises as any[])) {
-        // If this exercise was a substitution, record it and key data by the substituted name
-        if (ex.substitutedFor) {
-          subData[ex.substitutedFor] = ex.name;
-        }
+        if (ex.substitutedFor) subData[ex.substitutedFor] = ex.name;
         exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
           weight: s.weight != null ? String(s.weight) : "",
           reps: s.reps != null ? String(s.reps) : "",
@@ -1853,7 +1865,6 @@ function WorkoutLogTab() {
       setExerciseNotes(enData);
       setSubstitutions(subData);
       setSessionNotes((existing.notes as string) ?? "");
-      // Restore persisted collapse state; default all to collapsed for saved sessions
       const persisted = loadCollapsed(sessionDate, label);
       const defaultCollapsed: Record<string, boolean> = {};
       for (const ex of (existing.exercises as any[])) {
@@ -1861,62 +1872,35 @@ function WorkoutLogTab() {
       }
       setCollapsedExercisesRaw(defaultCollapsed);
       saveCollapsed(sessionDate, label, defaultCollapsed);
-    } else {
-      // Try to restore an in-progress draft first
-      const draftKey = `draft:workout:${sessionDate}:${label}`;
-      try {
-        const stored = localStorage.getItem(draftKey);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          // Discard stale drafts saved before the sets-count fix (v2+)
-          if ((parsed.v ?? 1) < 2) {
-            localStorage.removeItem(draftKey);
-          } else {
-            // Migrate old drafts that may lack the completed field
-            const migratedData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
-            for (const [k, sets] of Object.entries(parsed.exerciseData ?? {})) {
-              migratedData[k] = (sets as any[]).map(s => ({ ...s, completed: s.completed ?? (s.weight !== "" || s.reps !== "") }));
-            }
-            setExerciseData(migratedData);
-            setSessionNotes(parsed.sessionNotes ?? "");
-            setEquipmentDetails(parsed.equipmentDetails ?? {});
-            setExerciseNotes(parsed.exerciseNotes ?? {});
-            setSubstitutions(parsed.substitutions ?? {});
-            return;
-          }
-        }
-      } catch {}
-      // No draft — init blank sets from program definition (pre-populate all sets)
-      const blank: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
-      for (const ex of (dayDef?.exercises ?? [])) {
-        const setCount = Math.max(1, parseInt(String(ex.sets ?? 1), 10) || 1);
-        blank[ex.name] = Array.from({ length: setCount }, () => ({ weight: "", reps: "", notes: "", completed: false }));
-      }
-      setExerciseData(blank);
-      setSessionNotes("");
-      setEquipmentDetails({});
-      setExerciseNotes({});
-      setSubstitutions({});
-      // New session — restore persisted collapse state or default all expanded
-      const persistedNew = loadCollapsed(sessionDate, label);
-      setCollapsedExercisesRaw(persistedNew);
+      return;
     }
+
+    // Priority 3: blank from program definition
+    const blankEx: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
+    for (const ex of (dayDef?.exercises ?? [])) {
+      const setCount = Math.max(1, parseInt(String(ex.sets ?? 1), 10) || 1);
+      blankEx[ex.name] = Array.from({ length: setCount }, () => ({ weight: "", reps: "", notes: "", completed: false }));
+    }
+    setExerciseData(blankEx);
+    setSessionNotes("");
+    setEquipmentDetails({});
+    setExerciseNotes({});
+    setSubstitutions({});
+    setCollapsedExercisesRaw(loadCollapsed(sessionDate, label));
   }
 
-  // Track which date+day combo we've already loaded to avoid re-running selectDay
-  // when sessions arrive from the server (which would overwrite a restored draft)
-  const loadedComboRef = useRef<string | null>(null);
-
-  // Re-load when date changes or sessions first arrive — but not if we've already
-  // loaded this exact combo (which means the draft was already restored)
+  // Re-load only when the user changes the date or selects a different day.
+  // We also run once when sessions first arrive (sessions.length goes from 0 to >0)
+  // so that a freshly-opened tab can show saved sessions. After that first load,
+  // the combo key stays stable and won't re-run even if sessions refresh.
+  const lastLoadedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!selectedDay) return;
+    if (!selectedDay || !sessionsLoaded) return; // wait for sessions query to complete
     const combo = `${sessionDate}:${selectedDay}`;
-    // If we've already loaded this combo, only re-run if the date actually changed
-    if (loadedComboRef.current === combo) return;
+    if (lastLoadedRef.current === combo) return; // already loaded this date+day
+    lastLoadedRef.current = combo;
     selectDay(selectedDay);
-    loadedComboRef.current = combo;
-  }, [sessionDate, selectedDay, sessions.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sessionDate, selectedDay, sessionsLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function setSet(exName: string, idx: number, field: "weight" | "reps" | "notes", val: string) {
     setExerciseData(prev => {

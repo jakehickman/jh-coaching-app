@@ -1,87 +1,72 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 /**
- * useDraft — persists form state to localStorage so unsaved data survives
- * tab switches and navigation. Clears the draft when `clearDraft()` is called
- * (typically in the mutation's onSuccess callback).
+ * useDraft — simple localStorage persistence for form state.
  *
- * Key design: only writes to localStorage when `markDirty()` has been called,
- * which prevents programmatic setForm calls (e.g. server-load effects) from
- * being mistaken for real user drafts.
+ * Design principles:
+ * - The hook owns the form value and persists it to localStorage on every change.
+ * - `isDirty` is true only after the caller explicitly calls `setDirty(true)`.
+ *   Programmatic loads (server data, date changes) should NOT call setDirty.
+ * - `clearDraft()` removes the key, resets isDirty, and dispatches "draft-changed"
+ *   so any amber-dot listeners update immediately.
  *
- * @param key     Unique localStorage key for this draft (e.g. "draft:dailyLog:2026-04-06")
- * @param initial Initial / default form value
+ * Usage:
+ *   const { form, setForm, isDirty, setDirty, clearDraft } = useDraft(key, blank);
+ *
+ *   // When user types:
+ *   onChange={e => { setDirty(true); setForm(p => ({ ...p, field: e.target.value })); }}
+ *
+ *   // When loading server data (not a user edit):
+ *   setForm(serverData);  // isDirty stays unchanged
+ *
+ *   // After successful save:
+ *   clearDraft();  // removes key, sets isDirty=false, fires draft-changed
  */
-export function useDraft<T>(
-  key: string,
-  initial: T
-): [T, React.Dispatch<React.SetStateAction<T>>, (resetTo?: T) => void, () => void, boolean] {
-  // isDirtyRef: true only when the user has made a real edit (not a programmatic setForm)
-  const isDirtyRef = useRef<boolean>(false);
-  const [isDirty, setIsDirty] = useState<boolean>(false);
-
-  const [value, setValueRaw] = useState<T>(() => {
+export function useDraft<T>(key: string, blank: T) {
+  // Initialise from localStorage if a draft exists, otherwise use blank
+  const [form, setFormRaw] = useState<T>(() => {
     try {
       const stored = localStorage.getItem(key);
-      if (stored) {
-        isDirtyRef.current = true;
-        return JSON.parse(stored) as T;
-      }
-    } catch {
-      // ignore parse errors
-    }
-    return initial;
+      if (stored) return JSON.parse(stored) as T;
+    } catch { /* ignore */ }
+    return blank;
   });
 
-  // Persist to localStorage only when dirty
-  useEffect(() => {
-    if (!isDirtyRef.current) return;
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-      window.dispatchEvent(new Event("draft-changed"));
-    } catch {
-      // ignore quota errors
-    }
-  }, [key, value]);
+  // isDirty: true only when the user has explicitly edited the form
+  const [isDirty, setDirty] = useState<boolean>(() => {
+    return localStorage.getItem(key) !== null;
+  });
 
-  // When the key changes (e.g. date changes), reload from storage or fall back to initial
+  // Persist to localStorage whenever form changes AND isDirty is true
+  useEffect(() => {
+    if (!isDirty) return;
+    try {
+      localStorage.setItem(key, JSON.stringify(form));
+      window.dispatchEvent(new Event("draft-changed"));
+    } catch { /* ignore quota errors */ }
+  }, [key, form, isDirty]);
+
+  // When the key changes (date changes), reload from storage or fall back to blank
   useEffect(() => {
     try {
       const stored = localStorage.getItem(key);
       if (stored) {
-        isDirtyRef.current = true;
-        setIsDirty(true);
-        setValueRaw(JSON.parse(stored) as T);
+        setFormRaw(JSON.parse(stored) as T);
+        setDirty(true);
         return;
       }
-    } catch {
-      // ignore
-    }
-    isDirtyRef.current = false;
-    setIsDirty(false);
-    setValueRaw(initial);
+    } catch { /* ignore */ }
+    setFormRaw(blank);
+    setDirty(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  /** Call this when the user explicitly changes the form (not programmatic loads) */
-  const markDirty = useCallback(() => {
-    isDirtyRef.current = true;
-    setIsDirty(true);
-  }, []);
-
-  const clearDraft = useCallback((resetTo?: T) => {
-    isDirtyRef.current = false;
-    setIsDirty(false);
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      // ignore
-    }
-    // Notify listeners (e.g. DashboardShell amber dot) that a draft was cleared
+  const clearDraft = useCallback(() => {
+    try { localStorage.removeItem(key); } catch { /* ignore */ }
+    setDirty(false);
     window.dispatchEvent(new Event("draft-changed"));
-    // Reset in-memory state so the form reflects the cleared/reset value immediately
-    if (resetTo !== undefined) setValueRaw(resetTo);
-  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Note: does NOT reset form — caller decides what to show after save
+  }, [key]);
 
-  return [value, setValueRaw, clearDraft, markDirty, isDirty];
+  return { form, setForm: setFormRaw, isDirty, setDirty, clearDraft };
 }
