@@ -701,12 +701,14 @@ function DailyLogTab() {
     return () => window.removeEventListener('editLogDate', handler);
   }, []);
 
-  // Load existing log for selected date — only overwrite if no local draft exists
+  // Load existing log for selected date — never overwrite an existing draft
   useEffect(() => {
     if (!logs) return;
     const cacheKey = `draft:dailyLog:${date}`;
     const hasDraft = !!localStorage.getItem(cacheKey);
-    if (hasDraft && serverLoadedRef.current === date) return; // user has unsaved changes, keep them
+    // If a draft exists for this date, the user has unsaved changes — don't touch the form.
+    // This also covers the remount case where serverLoadedRef resets to null.
+    if (hasDraft) return;
     const existing = logs.find(l => toLocalDateStr(l.logDate) === date);
     if (existing) {
       setForm({
@@ -721,7 +723,7 @@ function DailyLogTab() {
         offPlanMeals: existing.offPlanMeals ?? 0,
         notes: existing.notes ?? "",
       });
-    } else if (!hasDraft) {
+    } else {
       setForm(blankDailyForm);
     }
     serverLoadedRef.current = date;
