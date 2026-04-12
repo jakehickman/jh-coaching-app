@@ -213,7 +213,7 @@ export default function ExerciseLibrarySection() {
                       setMuscleStrings(prev => ({ ...prev, [mg.key]: raw }));
                       const num = parseFloat(raw);
                       if (!isNaN(num)) {
-                        setEditing(prev => prev ? { ...prev, [mg.key]: Math.min(2, Math.max(0, num)) } : prev);
+                        setEditing(prev => prev ? { ...prev, [mg.key]: Math.min(1, Math.max(0, num)) } : prev);
                       } else if (raw === "" || raw === ".") {
                         setEditing(prev => prev ? { ...prev, [mg.key]: 0 } : prev);
                       }
@@ -221,7 +221,7 @@ export default function ExerciseLibrarySection() {
                     onBlur={() => {
                       // Normalise on blur: empty → "0"
                       const num = parseFloat(muscleStrings[mg.key] ?? "");
-                      const clamped = isNaN(num) ? 0 : Math.min(2, Math.max(0, num));
+                      const clamped = isNaN(num) ? 0 : Math.min(1, Math.max(0, num));
                       setMuscleStrings(prev => ({ ...prev, [mg.key]: String(clamped) }));
                       setEditing(prev => prev ? { ...prev, [mg.key]: clamped } : prev);
                     }}

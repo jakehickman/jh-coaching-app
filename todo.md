@@ -349,3 +349,4 @@
 
 ## Bug Fixes
 - [x] Exercise Library: fix muscle group inputs — dot decimal separator not working, can't backspace 0 to type a new value
+- [x] Exercise Library: muscle group inputs should clamp to 0–1, not 0–2
