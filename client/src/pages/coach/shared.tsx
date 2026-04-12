@@ -79,11 +79,13 @@ export function ClientCombobox({
   selectedUserId,
   onSelect,
   latestCheckIns = [],
+  draftUserIds,
 }: {
   clients: { id: number; name?: string | null }[];
   selectedUserId: number | null;
   onSelect: (id: number) => void;
   latestCheckIns?: { clientId: number; submittedAt: Date | string }[];
+  draftUserIds?: Set<number>;
 }) {
   const [open, setOpen] = useState(false);
   const [seenKeys, setSeenKeys] = useState<Record<number, number>>(() => {
@@ -160,6 +162,9 @@ export function ClientCombobox({
                     />
                     <span className="flex items-center gap-1.5">
                       {c.name ?? `User ${c.id}`}
+                      {draftUserIds?.has(c.id) && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" title="Unsaved changes" />
+                      )}
                     </span>
                   </CommandItem>
                 );

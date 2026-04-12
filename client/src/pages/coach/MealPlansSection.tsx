@@ -129,6 +129,38 @@ export default function MealPlansSection() {
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const [dayType, setDayType] = useState<"training" | "rest">("training");
+
+  // Compute which client userIds have an unsaved meal plan draft in localStorage
+  const [mealDraftUserIds, setMealDraftUserIds] = useState<Set<number>>(() => {
+    const ids = new Set<number>();
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith("draft:mealPlan:")) {
+        const uid = parseInt(k.split(":")[2] ?? "", 10);
+        if (!isNaN(uid)) ids.add(uid);
+      }
+    }
+    return ids;
+  });
+  useEffect(() => {
+    function refreshDraftIds() {
+      const ids = new Set<number>();
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith("draft:mealPlan:")) {
+          const uid = parseInt(k.split(":")[2] ?? "", 10);
+          if (!isNaN(uid)) ids.add(uid);
+        }
+      }
+      setMealDraftUserIds(ids);
+    }
+    window.addEventListener("storage", refreshDraftIds);
+    window.addEventListener("draft-changed", refreshDraftIds);
+    return () => {
+      window.removeEventListener("storage", refreshDraftIds);
+      window.removeEventListener("draft-changed", refreshDraftIds);
+    };
+  }, []);
   const { data: plan, refetch } = trpc.mealPlan.getForClient.useQuery(
     { userId: selectedUserId!, dayType },
     { enabled: !!selectedUserId }
@@ -236,7 +268,7 @@ export default function MealPlansSection() {
   return (
     <div className="space-y-6">
       <div>
-        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} />
+        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} draftUserIds={mealDraftUserIds} />
       </div>
 
       {selectedUserId && (
