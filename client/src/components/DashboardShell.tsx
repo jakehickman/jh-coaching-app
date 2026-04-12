@@ -161,6 +161,24 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     };
   }, [mode]);
 
+  // Track whether a Daily Log draft exists for the client
+  const [hasDailyLogDraft, setHasDailyLogDraft] = useState(false);
+
+  useEffect(() => {
+    if (mode !== "client") return;
+    function checkDailyLogDraft() {
+      const keys = Object.keys(localStorage);
+      setHasDailyLogDraft(keys.some(k => k.startsWith("draft:dailyLog:")));
+    }
+    checkDailyLogDraft();
+    window.addEventListener("storage", checkDailyLogDraft);
+    window.addEventListener("draft-changed", checkDailyLogDraft);
+    return () => {
+      window.removeEventListener("storage", checkDailyLogDraft);
+      window.removeEventListener("draft-changed", checkDailyLogDraft);
+    };
+  }, [mode]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -411,6 +429,9 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                     {item.icon}
                     {item.href === "/dashboard/check-ins" && showCheckInBadge && (
                       <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary border-2 border-sidebar" />
+                    )}
+                    {item.href === "/dashboard/daily-log" && hasDailyLogDraft && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 border-2 border-sidebar" title="Unsaved changes" />
                     )}
                   </span>
                   <span className={cn("text-[11px] font-medium leading-none whitespace-nowrap", isActive ? "text-primary" : "text-muted-foreground")}>
