@@ -652,32 +652,67 @@ function HabitsCard({ date }: { date: string }) {
 
 function DailyLogTab() {
   const today = localToday();
-  const [date, setDate] = useState(() => {
+  const [date, setDateRaw] = useState(() => {
     const editDate = sessionStorage.getItem('editLogDate');
-    if (editDate) {
-      sessionStorage.removeItem('editLogDate');
-      return editDate;
-    }
+    if (editDate) { sessionStorage.removeItem('editLogDate'); return editDate; }
     return today;
   });
+
   type DailyForm = { weight: string; sleepHours: string; caffeineServings: string; trainingCompleted: boolean; trainingType: string; stepsCount: string; sleepQuality: number | null; hungerLevel: number | null; offPlanMeals: number; notes: string; };
   const blank: DailyForm = { weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false, trainingType: "", stepsCount: "", sleepQuality: null, hungerLevel: null, offPlanMeals: 0, notes: "" };
-  const { form, setForm, isDirty, setDirty, clearDraft } = useDraft<DailyForm>(`draft:dailyLog:${date}`, blank);
+
+  // Draft key for the current date
+  const draftKey = `draft:dailyLog:${date}`;
+
+  // Helpers — direct localStorage, no hooks
+  const notifyDot = () => window.dispatchEvent(new Event("draft-changed"));
+  const saveDraft = (data: DailyForm) => {
+    try { localStorage.setItem(draftKey, JSON.stringify(data)); } catch { /* ignore */ }
+    notifyDot();
+  };
+  const removeDraft = () => {
+    try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
+    notifyDot();
+  };
+  const loadDraft = (key: string): DailyForm | null => {
+    try {
+      const s = localStorage.getItem(key);
+      if (s) return JSON.parse(s) as DailyForm;
+    } catch { /* ignore */ }
+    return null;
+  };
+
+  // Form state — initialised from draft if one exists
+  const [form, setFormRaw] = useState<DailyForm>(() => loadDraft(draftKey) ?? blank);
+
+  // Track whether the current form value came from the user (has a draft) or from the server
+  const hasDraft = () => localStorage.getItem(draftKey) !== null;
+
+  // Wrapped setForm that also persists to localStorage
+  const setForm = (updater: DailyForm | ((prev: DailyForm) => DailyForm)) => {
+    setFormRaw(prev => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      saveDraft(next);
+      return next;
+    });
+  };
+
+  // Load server data into form (does NOT write to localStorage)
+  const loadServerData = (data: DailyForm) => {
+    setFormRaw(data);
+  };
+
   const { data: profile } = trpc.profile.get.useQuery();
   const { data: logs, refetch } = trpc.dailyLog.list.useQuery({ limit: 90 });
   const { data: workoutSessions = [] } = trpc.workoutSessions.list.useQuery();
   const upsert = trpc.dailyLog.upsert.useMutation({
-    onSuccess: () => {
-      toast.success("Log saved");
-      refetch();
-    }
+    onSuccess: () => { toast.success("Log saved"); refetch(); }
   });
   const del = trpc.dailyLog.delete.useMutation({
     onSuccess: () => { toast.success("Log deleted"); refetch(); }
   });
 
   // Auto-derive training status from workout sessions for the selected date
-  // sessionDate may be a Date object or a string depending on the driver
   const toDateStr = (v: Date | string | null | undefined): string => {
     if (!v) return "";
     if (typeof v === "string") return v.slice(0, 10);
@@ -687,29 +722,42 @@ function DailyLogTab() {
   const autoTrained = todaysSessions.length > 0;
   const autoTrainingType = todaysSessions.map(s => s.dayLabel).filter(Boolean).join(", ") || undefined;
 
-  // Listen for editLogDate custom event dispatched by RecentLogsPanel when already on this tab
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const iso = (e as CustomEvent<{ date: string }>).detail?.date;
-      if (iso) {
-        sessionStorage.removeItem('editLogDate');
-        setDate(iso);
-        // Scroll the main content area to the top so the date picker is visible
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+  // When date changes: load draft if one exists, otherwise load server data
+  const setDate = (newDate: string) => {
+    setDateRaw(newDate);
+    const draft = loadDraft(`draft:dailyLog:${newDate}`);
+    if (draft) {
+      setFormRaw(draft);
+    } else if (logs) {
+      const existing = logs.find(l => toLocalDateStr(l.logDate) === newDate);
+      if (existing) {
+        loadServerData({
+          weight: existing.weight?.toString() ?? "",
+          sleepHours: existing.sleepHours?.toString() ?? "",
+          caffeineServings: existing.caffeineServings?.toString() ?? "",
+          trainingCompleted: existing.trainingCompleted ?? false,
+          trainingType: existing.trainingType ?? "",
+          stepsCount: existing.stepsCount?.toString() ?? "",
+          sleepQuality: existing.sleepQuality ?? null,
+          hungerLevel: existing.hungerLevel ?? null,
+          offPlanMeals: existing.offPlanMeals ?? 0,
+          notes: existing.notes ?? "",
+        });
+      } else {
+        loadServerData({ ...blank, trainingCompleted: autoTrained, trainingType: autoTrainingType ?? "" });
       }
-    };
-    window.addEventListener('editLogDate', handler);
-    return () => window.removeEventListener('editLogDate', handler);
-  }, []);
+    } else {
+      loadServerData(blank);
+    }
+  };
 
-  // Load server data for the selected date — but only when the user has no unsaved draft.
-  // When isDirty is true, the user's in-progress edits take priority.
+  // When server data loads/refreshes: only apply if no draft exists for the current date
   useEffect(() => {
-    if (!logs || isDirty) return;
+    if (!logs) return;
+    if (hasDraft()) return; // user has unsaved edits — don't overwrite
     const existing = logs.find(l => toLocalDateStr(l.logDate) === date);
     if (existing) {
-      setForm({
+      loadServerData({
         weight: existing.weight?.toString() ?? "",
         sleepHours: existing.sleepHours?.toString() ?? "",
         caffeineServings: existing.caffeineServings?.toString() ?? "",
@@ -722,13 +770,28 @@ function DailyLogTab() {
         notes: existing.notes ?? "",
       });
     } else {
-      // Also sync auto-derived training fields when there is no saved log
-      setForm({ ...blank, trainingCompleted: autoTrained, trainingType: autoTrainingType ?? "" });
+      loadServerData({ ...blank, trainingCompleted: autoTrained, trainingType: autoTrainingType ?? "" });
     }
   }, [date, logs]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Listen for editLogDate custom event dispatched by RecentLogsPanel when already on this tab
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const iso = (e as CustomEvent<{ date: string }>).detail?.date;
+      if (iso) {
+        sessionStorage.removeItem('editLogDate');
+        setDate(iso);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    window.addEventListener('editLogDate', handler);
+    return () => window.removeEventListener('editLogDate', handler);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSave = () => {
-    clearDraft(); // clear immediately so amber dot disappears and draft key is gone
+    // Remove draft immediately — dot clears right away
+    removeDraft();
     upsert.mutate({
       logDate: date,
       weight: form.weight ? parseFloat(form.weight) : undefined,
@@ -744,9 +807,8 @@ function DailyLogTab() {
     });
   };
 
-  // Wrapper for text/number/select inputs — marks the form dirty on first user edit
+  // Wrapper for text/number/select inputs
   const f = (field: keyof DailyForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setDirty(true);
     setForm(prev => ({ ...prev, [field]: e.target.value }));
   };
 
@@ -796,8 +858,8 @@ function DailyLogTab() {
       <div>
         <SectionLabel>Biofeedback (1–5)</SectionLabel>
         <Card className="space-y-4">
-          <ScoreInput label="Sleep Quality" value={form.sleepQuality} onChange={v => { setDirty(true); setForm(p => ({ ...p, sleepQuality: v })); }} max={5} />
-          <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => { setDirty(true); setForm(p => ({ ...p, hungerLevel: v })); }} max={5} />
+          <ScoreInput label="Sleep Quality" value={form.sleepQuality} onChange={v => setForm(p => ({ ...p, sleepQuality: v }))} max={5} />
+          <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => setForm(p => ({ ...p, hungerLevel: v }))} max={5} />
         </Card>
       </div>
 
@@ -812,7 +874,7 @@ function DailyLogTab() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => { setDirty(true); setForm(p => ({ ...p, offPlanMeals: Math.max(0, (p.offPlanMeals ?? 0) - 1) })); }}
+                onClick={() => setForm(p => ({ ...p, offPlanMeals: Math.max(0, (p.offPlanMeals ?? 0) - 1) }))}
                 className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors text-lg font-medium"
               >−</button>
               <span className={`text-xl font-bold w-6 text-center ${
@@ -820,7 +882,7 @@ function DailyLogTab() {
               }`}>{form.offPlanMeals ?? 0}</span>
               <button
                 type="button"
-                onClick={() => { setDirty(true); setForm(p => ({ ...p, offPlanMeals: (p.offPlanMeals ?? 0) + 1 })); }}
+                onClick={() => setForm(p => ({ ...p, offPlanMeals: (p.offPlanMeals ?? 0) + 1 }))}
                 className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors text-lg font-medium"
               >+</button>
             </div>
