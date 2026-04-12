@@ -1,11 +1,12 @@
-const GOOGLE_FORM_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSeL6SYdRwha1US-ububaG5VWVpkAxMzhyoJxVASKWQBp0G7vw/viewform?embedded=true";
-
-const steps = [
-  { step: "1", text: "Complete the onboarding form below" },
-  { step: "2", text: "I'll review your answers and build your plan" },
-  { step: "3", text: "I'll be in touch within 48 hours with your plan." },
-];
+import {
+  GOOGLE_FORM_URL,
+  header,
+  hero,
+  whatHappensNext,
+  steps,
+  formSection,
+  footer,
+} from "@/content/onboardingPageContent";
 
 export default function Onboarding() {
   return (
@@ -14,7 +15,7 @@ export default function Onboarding() {
       <header className="border-b border-border">
         <div className="max-w-[680px] mx-auto px-6 py-4 text-center">
           <p className="font-body text-muted-foreground text-xs uppercase tracking-widest">
-            1:1 Online Coaching with Jake Hickman
+            {header.eyebrow}
           </p>
         </div>
       </header>
@@ -29,14 +30,14 @@ export default function Onboarding() {
               fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            Payment confirmed
+            {hero.paymentBadge}
           </div>
 
           <h1 className="font-display text-foreground text-4xl md:text-5xl font-bold leading-[1.1] mb-5">
-            You're in. Let's get started.
+            {hero.headline}
           </h1>
           <p className="font-body text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
-            I'm looking forward to working with you. Fill in the form below and I'll take it from there.
+            {hero.subheadline}
           </p>
         </div>
       </section>
@@ -45,10 +46,10 @@ export default function Onboarding() {
       <section className="py-10 border-y border-border" style={{ backgroundColor: "#0d0d0d" }}>
         <div className="max-w-[680px] mx-auto px-6">
           <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-8 text-center">
-            What happens next
+            {whatHappensNext.eyebrow}
           </p>
           <div className="flex flex-col items-start gap-6 max-w-xs mx-auto">
-            {steps.map(({ step, text }, i) => (
+            {steps.map(({ step, text }) => (
               <div key={step} className="flex flex-row items-start gap-4 text-left">
                 {/* Circle badge */}
                 <div
@@ -68,7 +69,7 @@ export default function Onboarding() {
       <section className="pt-10 pb-4 bg-background flex-1">
         <div className="max-w-[680px] mx-auto px-6">
           <p className="font-body text-muted-foreground text-xs uppercase tracking-widest mb-6 text-center">
-            Complete your onboarding below
+            {formSection.eyebrow}
           </p>
           <iframe
             src={GOOGLE_FORM_URL}
@@ -77,11 +78,11 @@ export default function Onboarding() {
             frameBorder={0}
             marginHeight={0}
             marginWidth={0}
-            title="Onboarding Form"
+            title={formSection.iframeTitle}
             className="w-full"
             style={{ border: "none" }}
           >
-            Loading…
+            {formSection.iframeFallback}
           </iframe>
         </div>
       </section>
@@ -89,7 +90,7 @@ export default function Onboarding() {
       {/* Footer */}
       <footer className="py-6 border-t border-border mt-auto">
         <div className="max-w-[680px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span className="font-body text-muted-foreground text-xs">Jake Hickman · 1:1 Online Coaching</span>
+          <span className="font-body text-muted-foreground text-xs">{footer.left}</span>
           <span className="font-body text-muted-foreground text-xs">© {new Date().getFullYear()}</span>
         </div>
       </footer>
