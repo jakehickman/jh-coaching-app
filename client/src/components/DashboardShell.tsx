@@ -39,14 +39,14 @@ const clientNav: NavItem[] = [
 ];
 
 const coachNav: NavItem[] = [
-  { href: "/coach/clients",          label: "Clients",          icon: <Users size={16} /> },
-  { href: "/coach/check-ins",        label: "Check-ins",        icon: <CalendarCheck size={16} /> },
-  { href: "/coach/training",         label: "Training Programs", icon: <Dumbbell size={16} /> },
-  { href: "/coach/meal-plans",       label: "Meal Plans",        icon: <Zap size={16} /> },
-  { href: "/coach/progress",         label: "Client Progress",   icon: <TrendingUp size={16} /> },
-  { href: "/coach/exercise-library", label: "Exercise Library",  icon: <BookOpen size={16} /> },
-  { href: "/coach/nutrition-data",   label: "Nutrition Data",    icon: <Salad size={16} /> },
-  { href: "/coach/habits",           label: "Habits",            icon: <CheckSquare size={16} /> },
+  { href: "/coach/clients",          label: "Clients",          icon: <Users size={18} /> },
+  { href: "/coach/check-ins",        label: "Check-ins",        icon: <CalendarCheck size={18} /> },
+  { href: "/coach/training",         label: "Training Programs", icon: <Dumbbell size={18} /> },
+  { href: "/coach/meal-plans",       label: "Meal Plans",        icon: <Zap size={18} /> },
+  { href: "/coach/progress",         label: "Client Progress",   icon: <TrendingUp size={18} /> },
+  { href: "/coach/exercise-library", label: "Exercise Library",  icon: <BookOpen size={18} /> },
+  { href: "/coach/nutrition-data",   label: "Nutrition Data",    icon: <Salad size={18} /> },
+  { href: "/coach/habits",           label: "Habits",            icon: <CheckSquare size={18} /> },
 ];
 
 interface DashboardShellProps {
@@ -222,7 +222,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
         {/* Sidebar — compact for desktop */}
         <aside
           className={cn(
-            "fixed top-0 left-0 h-full w-56 bg-sidebar border-r border-border z-30 flex flex-col transition-transform duration-200",
+            "fixed top-0 left-0 h-full w-60 bg-sidebar border-r border-border z-30 flex flex-col transition-transform duration-200",
             mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           )}
         >
@@ -267,7 +267,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] transition-colors",
                     isActive
                       ? "bg-primary/10 text-primary font-medium"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -320,7 +320,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
         </aside>
 
         {/* Main content — full width on desktop, no max-w cap */}
-        <div className="flex-1 lg:ml-56 flex flex-col min-h-screen">
+        <div className="flex-1 lg:ml-60 flex flex-col min-h-screen">
           {/* Mobile header */}
           <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar sticky top-0 z-10">
             <button

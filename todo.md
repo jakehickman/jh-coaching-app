@@ -345,3 +345,9 @@
 - [x] Split server/routers.ts into server/routers/ feature files (auth, profile, users, dailyLog, measurements, mealPlan, training, checkIns, habits, misc)
 - [x] Extract client dashboard tabs into client/src/pages/client/ (shared, OverviewTab, MeasurementsTab, DailyLogTab, MealPlanTab, TrainingTab, CheckInsTab)
 - [x] Slim ClientDashboard.tsx to 40-line shell + tab router
+
+## Apr 2026 — UI Polish
+- [x] Coach check-in: remove coach reply feature (coachReply field, coachRepliedAt, UI, router procedure) — already done in prior session
+- [x] Coach check-in history: redesign card to question/answer per-line layout
+- [x] Coach shell: wider sidebar (240px), full-width content area, desktop-first breakpoints
+- [x] Coach Client Progress: two-column layout (metrics left, charts/details right) — already done in prior session

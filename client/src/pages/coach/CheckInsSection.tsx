@@ -355,81 +355,37 @@ export default function CheckInsSection() {
                   {/* Expanded detail */}
                   {isExpanded && (
                     <div className="border-t border-border">
-                      {/* Diet Execution */}
-                      {(ci.dietWeighedFoods ||
-                        ci.dietMealPrepAccuracy ||
-                        ci.dietExtrasFrequency ||
-                        ci.dietAddedFats ||
-                        ci.dietMealTiming ||
-                        ci.dietOffPlanQuality) && (
-                        <div className="px-4 pt-3 pb-2">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
-                            Diet Execution
-                          </p>
-                          <div className="space-y-2">
-                            {[
-                              {
-                                q: "How often did you weigh all foods raw/uncooked with a digital scale?",
-                                val: ci.dietWeighedFoods,
-                              },
-                              {
-                                q: "How often did you prepare meals exactly as written in your plan?",
-                                val: ci.dietMealPrepAccuracy,
-                              },
-                              {
-                                q: "Excluding off-plan meals, how often did you eat/drink anything not in your plan?",
-                                val: ci.dietExtrasFrequency,
-                              },
-                              {
-                                q: "When cooking, how do you use added fats (oil, butter)?",
-                                val: ci.dietAddedFats,
-                              },
-                              {
-                                q: "How often did you eat meals more than 2 hours off schedule?",
-                                val: ci.dietMealTiming,
-                              },
-                              {
-                                q: "When you had an off-plan meal, how close was it to your plan?",
-                                val: ci.dietOffPlanQuality,
-                              },
-                            ]
-                              .filter((r) => r.val)
-                              .map((row) => (
-                                <div
-                                  key={row.q}
-                                  className="flex flex-col gap-0.5"
-                                >
-                                  <span className="text-xs text-muted-foreground">
-                                    {row.q}
-                                  </span>
-                                  <span className="text-sm font-medium text-foreground">
-                                    {DIET_LABEL_MAP[row.val!] ?? row.val}
-                                  </span>
-                                </div>
-                              ))}
+                      {/* All Q&A rows in a single table */}
+                      {(() => {
+                        const rows = [
+                          { label: "Food weighing", q: "How often did you weigh all foods raw/uncooked with a digital scale?", val: ci.dietWeighedFoods },
+                          { label: "Meal prep accuracy", q: "How often did you prepare meals exactly as written in your plan?", val: ci.dietMealPrepAccuracy },
+                          { label: "Off-plan eating", q: "Excluding off-plan meals, how often did you eat/drink anything not in your plan?", val: ci.dietExtrasFrequency },
+                          { label: "Added fats", q: "When cooking, how do you use added fats (oil, butter)?", val: ci.dietAddedFats },
+                          { label: "Meal timing", q: "How often did you eat meals more than 2 hours off schedule?", val: ci.dietMealTiming },
+                          { label: "Off-plan quality", q: "When you had an off-plan meal, how close was it to your plan?", val: ci.dietOffPlanQuality },
+                          { label: "Bedtime consistency", q: "How often did you go to bed more than 1 hour later than your planned bedtime?", val: (ci as any).sleepBedtimeConsistency },
+                        ].filter((r) => r.val);
+                        if (rows.length === 0) return null;
+                        return (
+                          <div className="px-4 pt-3 pb-1">
+                            <table className="w-full">
+                              <tbody>
+                                {rows.map((row, i) => (
+                                  <tr key={row.label} className={i < rows.length - 1 ? "border-b border-border/40" : ""}>
+                                    <td className="py-2.5 pr-4 align-top w-[38%]">
+                                      <span className="text-xs font-medium text-muted-foreground">{row.label}</span>
+                                    </td>
+                                    <td className="py-2.5 align-top">
+                                      <span className="text-sm text-foreground">{DIET_LABEL_MAP[row.val!] ?? row.val}</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
-                        </div>
-                      )}
-
-                      {/* Sleep */}
-                      {ci.sleepBedtimeConsistency && (
-                        <div className="px-4 pt-3 pb-2 border-t border-border/50">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
-                            Sleep
-                          </p>
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-xs text-muted-foreground">
-                              How often did you go to bed more than 1 hour
-                              later than your planned bedtime?
-                            </span>
-                            <span className="text-sm font-medium text-foreground">
-                              {DIET_LABEL_MAP[
-                                (ci as any).sleepBedtimeConsistency
-                              ] ?? (ci as any).sleepBedtimeConsistency}
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* Actions */}
                       <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between gap-2">
