@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Search, Plus, Save, X, Pencil, Trash2, Play } from "lucide-react";
 import { Card } from "./shared";
 import type { MuscleKey } from "@shared/types";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 // ─── Constants & types ───────────────────────────────────────────────────────
 
@@ -63,6 +64,7 @@ const EMPTY_EXERCISE: ExerciseRow = {
 // ─── ExerciseLibrarySection ──────────────────────────────────────────────────
 
 export default function ExerciseLibrarySection() {
+  const [confirm, ConfirmDialogNode] = useConfirm();
   const { data: exercises = [], refetch } =
     trpc.exerciseLibrary.list.useQuery();
   const upsert = trpc.exerciseLibrary.upsert.useMutation({
@@ -310,7 +312,15 @@ export default function ExerciseLibrarySection() {
                         <Pencil size={16} />
                       </button>
                       <button
-                        onClick={() => del.mutate({ id: ex.id! })}
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: `Delete "${ex.name}"?`,
+                            description: "This will remove the exercise from the library. Existing programs that reference it will keep the name as text.",
+                            confirmLabel: "Delete",
+                            variant: "destructive",
+                          });
+                          if (ok) del.mutate({ id: ex.id! });
+                        }}
                         className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                       >
                         <Trash2 size={16} />
@@ -327,6 +337,7 @@ export default function ExerciseLibrarySection() {
         Values represent sets contributed per set performed (e.g. 0.5 = half a
         set)
       </p>
+      {ConfirmDialogNode}
     </div>
   );
 }

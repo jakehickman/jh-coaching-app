@@ -702,6 +702,7 @@ export default function TrainingSection() {
   const [notes, setNotes] = useState("");
   const [days, setDays] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<string[]>([]);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   // Snapshot of the last server-saved state — used to detect genuine changes
   const trainingSavedSnapshot = useRef<{ programName: string; notes: string; days: any[]; schedule: string[] } | null>(null);
@@ -711,9 +712,38 @@ export default function TrainingSection() {
       // Update snapshot to current state and clear draft
       trainingSavedSnapshot.current = { programName, notes, days, schedule };
       if (trainingDraftKey) { try { localStorage.removeItem(trainingDraftKey); window.dispatchEvent(new Event("draft-changed")); } catch {} }
+      setLastSavedAt(new Date());
       toast.success("Training program saved"); refetch();
     }
   });
+
+  // Cmd/Ctrl+S keyboard shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        if (!selectedUserId || upsert.isPending) return;
+        upsert.mutate({ userId: selectedUserId, programName: programName || null, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null });
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedUserId, upsert.isPending, programName, notes, days, schedule]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Route-leave guard when there are unsaved changes
+  useEffect(() => {
+    const snap = trainingSavedSnapshot.current;
+    const isDirty = !!trainingDraftKey && !!snap && (
+      programName !== snap.programName ||
+      notes !== snap.notes ||
+      JSON.stringify(days) !== JSON.stringify(snap.days) ||
+      JSON.stringify(schedule) !== JSON.stringify(snap.schedule)
+    );
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [trainingDraftKey, programName, notes, days, schedule]);
 
   // Write draft only when state genuinely differs from the saved snapshot
   useEffect(() => {
@@ -940,14 +970,21 @@ export default function TrainingSection() {
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
           </div>
-           <button
-            onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || null, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null })}
-            disabled={upsert.isPending}
-            className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Save size={15} />
-            {upsert.isPending ? "Saving..." : "Save Training Program"}
-          </button>
+          <div className="space-y-1.5">
+            <button
+              onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || null, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null })}
+              disabled={upsert.isPending}
+              className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Save size={15} />
+              {upsert.isPending ? "Saving..." : "Save Training Program"}
+            </button>
+            {lastSavedAt && (
+              <p className="text-center text-[11px] text-muted-foreground">
+                Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            )}
+          </div>
           {/* ── Weekly Volume Table ── */}
           {volumeTable && (
             <div>

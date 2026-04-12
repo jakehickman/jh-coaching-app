@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Plus, Pencil, Trash2, CheckSquare } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckSquare, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionLabel } from "./shared";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 // ─── CoachHabitsPanel (used inside ProgressSection) ─────────────────────────
 
@@ -164,6 +165,7 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
 // ─── HabitsSection ───────────────────────────────────────────────────────────
 
 export default function HabitsSection() {
+  const [confirm, ConfirmDialogNode] = useConfirm();
   const utils = trpc.useUtils();
   const { data: habits = [], isLoading } = trpc.habits.list.useQuery();
   const { data: allUsers = [] } = trpc.users.list.useQuery();
@@ -172,6 +174,7 @@ export default function HabitsSection() {
   const [showForm, setShowForm] = useState(false);
   const [editHabit, setEditHabit] = useState<any | null>(null);
   const [assignHabit, setAssignHabit] = useState<any | null>(null);
+  const [assignSearch, setAssignSearch] = useState("");
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -324,9 +327,14 @@ export default function HabitsSection() {
                     <Pencil size={13} />
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`Delete "${h.name}"?`))
-                        deleteMutation.mutate({ id: h.id });
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: `Delete "${h.name}"?`,
+                        description: "This will remove the habit and all client assignments.",
+                        confirmLabel: "Delete",
+                        variant: "destructive",
+                      });
+                      if (ok) deleteMutation.mutate({ id: h.id });
                     }}
                     className="text-muted-foreground hover:text-destructive transition-colors p-1"
                   >
@@ -441,13 +449,26 @@ export default function HabitsSection() {
             <p className="text-sm font-semibold text-foreground">
               Assign "{assignHabit.name}"
             </p>
-            <div className="space-y-2 max-h-72 overflow-y-auto">
+            {/* Search filter for clients */}
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={assignSearch}
+                onChange={e => setAssignSearch(e.target.value)}
+                placeholder="Search clients…"
+                className="w-full pl-7 pr-3 py-1.5 bg-background border border-border rounded-lg text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
               {clients.length === 0 && (
                 <p className="text-xs text-muted-foreground">
                   No clients found.
                 </p>
               )}
-              {clients.map((c: any) => (
+              {clients.filter((c: any) => {
+                const name = (c.name ?? c.email ?? "").toLowerCase();
+                return name.includes(assignSearch.toLowerCase());
+              }).map((c: any) => (
                 <label
                   key={c.id}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 cursor-pointer"
@@ -496,6 +517,7 @@ export default function HabitsSection() {
           </div>
         )}
       </div>
+      {ConfirmDialogNode}
     </div>
   );
 }

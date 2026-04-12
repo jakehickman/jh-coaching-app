@@ -16,9 +16,11 @@ import { Button } from "@/components/ui/button";
 import { SectionLabel, Card, DateInput } from "./coach/shared";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 // ─── Section: Clients ─────────────────────────────────────────────────────────
 function ClientsSection() {
+  const [confirm, ConfirmDialogNode] = useConfirm();
   const { data: allUsers, refetch } = trpc.users.list.useQuery();
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const [seenKeys, setSeenKeys] = useState<Record<number, number>>(() => {
@@ -156,11 +158,15 @@ function ClientsSection() {
                         {(user as any).approved ? "Approved" : "Approve"}
                       </button>
                       <button
-                        onClick={e => {
+                        onClick={async e => {
                           e.stopPropagation();
-                          if (window.confirm(`Delete ${user.name ?? 'this user'}? This cannot be undone.`)) {
-                            deleteUser.mutate({ userId: user.id });
-                          }
+                          const ok = await confirm({
+                            title: `Delete ${user.name ?? 'this user'}?`,
+                            description: "This will permanently remove the client and all their data. This cannot be undone.",
+                            confirmLabel: "Delete",
+                            variant: "destructive",
+                          });
+                          if (ok) deleteUser.mutate({ userId: user.id });
                         }}
                         className="text-muted-foreground hover:text-destructive transition-colors p-1"
                         title="Delete user"
@@ -255,6 +261,7 @@ function ClientsSection() {
           </div>
         )}
       </div>
+      {ConfirmDialogNode}
     </div>
   );
 }

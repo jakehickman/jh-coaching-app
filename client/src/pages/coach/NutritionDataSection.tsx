@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Search, Plus, Save, X, Pencil, Trash2 } from "lucide-react";
 import { Card } from "./shared";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 // ─── Types & constants ───────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ const MACRO_FIELDS = [
 // ─── NutritionDataSection ────────────────────────────────────────────────────
 
 export default function NutritionDataSection() {
+  const [confirm, ConfirmDialogNode] = useConfirm();
   const { data: foods = [], refetch } = trpc.nutritionFoods.list.useQuery();
   const upsert = trpc.nutritionFoods.upsert.useMutation({
     onSuccess: () => {
@@ -301,7 +303,15 @@ export default function NutritionDataSection() {
                       <Pencil size={13} />
                     </button>
                     <button
-                      onClick={() => del.mutate({ id: food.id! })}
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: `Delete "${food.name}"?`,
+                          description: "This will remove the food from the nutrition database.",
+                          confirmLabel: "Delete",
+                          variant: "destructive",
+                        });
+                        if (ok) del.mutate({ id: food.id! });
+                      }}
                       className="text-muted-foreground hover:text-destructive transition-colors"
                     >
                       <Trash2 size={13} />
@@ -317,6 +327,7 @@ export default function NutritionDataSection() {
         {filtered.length} food{filtered.length !== 1 ? "s" : ""} · All
         nutritional values sourced from USDA FoodData Central (per 100g)
       </p>
+      {ConfirmDialogNode}
     </div>
   );
 }

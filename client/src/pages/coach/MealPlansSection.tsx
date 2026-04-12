@@ -175,6 +175,7 @@ export default function MealPlansSection() {
 
   const [planNotes, setPlanNotes] = useState("");
   const [meals, setMeals] = useState<any[]>([]);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   // Snapshot of the last server-saved state — used to detect genuine changes
   const mealSavedSnapshot = useRef<{ planNotes: string; meals: any[] } | null>(null);
@@ -184,6 +185,7 @@ export default function MealPlansSection() {
       // Update snapshot to current state and clear draft
       mealSavedSnapshot.current = { planNotes, meals };
       if (mealDraftKey) { try { localStorage.removeItem(mealDraftKey); window.dispatchEvent(new Event("draft-changed")); } catch {} }
+      setLastSavedAt(new Date());
       toast.success("Meal plan saved"); refetch();
     }
   });
@@ -241,6 +243,42 @@ export default function MealPlansSection() {
     fiber: Math.round(acc.fiber + m.fiber),
     fat: Math.round(acc.fat + m.fat),
   }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
+
+  const doSave = () => {
+    if (!selectedUserId || upsert.isPending) return;
+    upsert.mutate({
+      userId: selectedUserId, dayType, meals,
+      totalCalories: dailyTotals.calories || undefined,
+      totalProtein: dailyTotals.protein ? Math.round(dailyTotals.protein) : undefined,
+      totalCarbs: dailyTotals.carbs ? Math.round(dailyTotals.carbs) : undefined,
+      totalFat: dailyTotals.fat ? Math.round(dailyTotals.fat) : undefined,
+      notes: planNotes || null,
+    });
+  };
+
+  // Cmd/Ctrl+S keyboard shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        doSave();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedUserId, upsert.isPending, dayType, meals, planNotes, dailyTotals]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Route-leave guard when there are unsaved changes
+  useEffect(() => {
+    const isDirty = !!mealDraftKey && !!mealSavedSnapshot.current && (
+      planNotes !== mealSavedSnapshot.current.planNotes ||
+      JSON.stringify(meals) !== JSON.stringify(mealSavedSnapshot.current.meals)
+    );
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [mealDraftKey, planNotes, meals]);
 
   const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", items: [] }]);
   const removeMeal = (i: number) => setMeals(m => m.filter((_, idx) => idx !== i));
@@ -445,21 +483,21 @@ export default function MealPlansSection() {
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
           </div>
 
-          <button
-            onClick={() => upsert.mutate({
-              userId: selectedUserId, dayType, meals,
-              totalCalories: dailyTotals.calories || undefined,
-              totalProtein: dailyTotals.protein ? Math.round(dailyTotals.protein) : undefined,
-              totalCarbs: dailyTotals.carbs ? Math.round(dailyTotals.carbs) : undefined,
-              totalFat: dailyTotals.fat ? Math.round(dailyTotals.fat) : undefined,
-              notes: planNotes || null,
-            })}
-            disabled={upsert.isPending}
-            className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Save size={15} />
-            {upsert.isPending ? "Saving..." : "Save Meal Plan"}
-          </button>
+          <div className="space-y-1.5">
+            <button
+              onClick={doSave}
+              disabled={upsert.isPending}
+              className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Save size={15} />
+              {upsert.isPending ? "Saving..." : "Save Meal Plan"}
+            </button>
+            {lastSavedAt && (
+              <p className="text-center text-[11px] text-muted-foreground">
+                Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            )}
+          </div>
         </div>{/* end left column */}
 
         {/* Right column: macro summary sticky panel */}
