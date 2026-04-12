@@ -2303,7 +2303,7 @@ function WorkoutLogTab() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{s.dayLabel}</p>
-                  <p className="text-xs text-muted-foreground">{fmtDate(s.sessionDate)}</p>
+                  <p className="text-xs text-muted-foreground">{(() => { const d = new Date(toLocalDateStr(s.sessionDate) + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })()}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
