@@ -710,7 +710,7 @@ export default function TrainingSection() {
     onSuccess: () => {
       // Update snapshot to current state and clear draft
       trainingSavedSnapshot.current = { programName, notes, days, schedule };
-      if (trainingDraftKey) { try { localStorage.removeItem(trainingDraftKey); } catch {} }
+      if (trainingDraftKey) { try { localStorage.removeItem(trainingDraftKey); window.dispatchEvent(new Event("draft-changed")); } catch {} }
       toast.success("Training program saved"); refetch();
     }
   });
@@ -727,7 +727,7 @@ export default function TrainingSection() {
     if (isDirty) {
       try { localStorage.setItem(trainingDraftKey, JSON.stringify({ programName, notes, days, schedule })); window.dispatchEvent(new Event("draft-changed")); } catch {}
     } else {
-      try { localStorage.removeItem(trainingDraftKey); } catch {}
+      try { localStorage.removeItem(trainingDraftKey); window.dispatchEvent(new Event("draft-changed")); } catch {}
     }
   }, [trainingDraftKey, programName, notes, days, schedule]);
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
@@ -799,7 +799,7 @@ export default function TrainingSection() {
     setSchedule(serverSchedule);
     trainingSavedSnapshot.current = { programName: serverName, notes: serverNotes, days: serverDays, schedule: serverSchedule };
     // Clear any stale draft since we just loaded fresh server data
-    if (trainingDraftKey) { try { localStorage.removeItem(trainingDraftKey); } catch {} }
+    if (trainingDraftKey) { try { localStorage.removeItem(trainingDraftKey); window.dispatchEvent(new Event("draft-changed")); } catch {} }
     trainingServerLoadedRef.current = selectedUserId;
   }, [program, selectedUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -183,7 +183,7 @@ export default function MealPlansSection() {
     onSuccess: () => {
       // Update snapshot to current state and clear draft
       mealSavedSnapshot.current = { planNotes, meals };
-      if (mealDraftKey) { try { localStorage.removeItem(mealDraftKey); } catch {} }
+      if (mealDraftKey) { try { localStorage.removeItem(mealDraftKey); window.dispatchEvent(new Event("draft-changed")); } catch {} }
       toast.success("Meal plan saved"); refetch();
     }
   });
@@ -202,7 +202,7 @@ export default function MealPlansSection() {
     mealSavedSnapshot.current = { planNotes: serverNotes, meals: serverMeals };
     // Clear any stale draft for this key since we just loaded fresh server data
     const draftKey = `draft:mealPlan:${mealLoadKey}`;
-    try { localStorage.removeItem(draftKey); } catch {}
+    try { localStorage.removeItem(draftKey); window.dispatchEvent(new Event("draft-changed")); } catch {}
     mealServerLoadedRef.current = mealLoadKey;
   }, [plan, mealLoadKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -216,7 +216,7 @@ export default function MealPlansSection() {
     if (isDirty) {
       try { localStorage.setItem(mealDraftKey, JSON.stringify({ planNotes, meals })); window.dispatchEvent(new Event("draft-changed")); } catch {}
     } else {
-      try { localStorage.removeItem(mealDraftKey); } catch {}
+      try { localStorage.removeItem(mealDraftKey); window.dispatchEvent(new Event("draft-changed")); } catch {}
     }
   }, [mealDraftKey, planNotes, meals]);
 
