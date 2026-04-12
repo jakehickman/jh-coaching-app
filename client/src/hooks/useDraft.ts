@@ -3,27 +3,14 @@ import { useState, useEffect, useCallback } from "react";
 /**
  * useDraft — simple localStorage persistence for form state.
  *
- * Design principles:
- * - The hook owns the form value and persists it to localStorage on every change.
- * - `isDirty` is true only after the caller explicitly calls `setDirty(true)`.
- *   Programmatic loads (server data, date changes) should NOT call setDirty.
- * - `clearDraft()` removes the key, resets isDirty, and dispatches "draft-changed"
- *   so any amber-dot listeners update immediately.
- *
- * Usage:
- *   const { form, setForm, isDirty, setDirty, clearDraft } = useDraft(key, blank);
- *
- *   // When user types:
- *   onChange={e => { setDirty(true); setForm(p => ({ ...p, field: e.target.value })); }}
- *
- *   // When loading server data (not a user edit):
- *   setForm(serverData);  // isDirty stays unchanged
- *
- *   // After successful save:
- *   clearDraft();  // removes key, sets isDirty=false, fires draft-changed
+ * Rules:
+ * - `isDirty` starts true only if a key already exists in localStorage on mount.
+ * - `setDirty(true)` is called by the consumer on every user-initiated change.
+ * - When `isDirty` is true, form changes are written to localStorage.
+ * - `clearDraft()` removes the key, sets isDirty=false, dispatches "draft-changed".
+ * - "draft-changed" is ALWAYS dispatched whenever isDirty changes so listeners stay in sync.
  */
 export function useDraft<T>(key: string, blank: T) {
-  // Initialise from localStorage if a draft exists, otherwise use blank
   const [form, setFormRaw] = useState<T>(() => {
     try {
       const stored = localStorage.getItem(key);
@@ -32,19 +19,20 @@ export function useDraft<T>(key: string, blank: T) {
     return blank;
   });
 
-  // isDirty: true only when the user has explicitly edited the form
-  const [isDirty, setDirty] = useState<boolean>(() => {
+  const [isDirty, setDirtyRaw] = useState<boolean>(() => {
     return localStorage.getItem(key) !== null;
   });
 
-  // Persist to localStorage whenever form changes AND isDirty is true
+  // Persist to localStorage and notify listeners whenever form or isDirty changes
   useEffect(() => {
-    if (!isDirty) return;
-    try {
-      localStorage.setItem(key, JSON.stringify(form));
-      window.dispatchEvent(new Event("draft-changed"));
-    } catch { /* ignore quota errors */ }
-  }, [key, form, isDirty]);
+    if (isDirty) {
+      try { localStorage.setItem(key, JSON.stringify(form)); } catch { /* ignore quota */ }
+    } else {
+      try { localStorage.removeItem(key); } catch { /* ignore */ }
+    }
+    // Always dispatch so DashboardShell amber dot stays in sync
+    window.dispatchEvent(new Event("draft-changed"));
+  }, [key, form, isDirty]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // When the key changes (date changes), reload from storage or fall back to blank
   useEffect(() => {
@@ -52,21 +40,23 @@ export function useDraft<T>(key: string, blank: T) {
       const stored = localStorage.getItem(key);
       if (stored) {
         setFormRaw(JSON.parse(stored) as T);
-        setDirty(true);
+        setDirtyRaw(true);
         return;
       }
     } catch { /* ignore */ }
     setFormRaw(blank);
-    setDirty(false);
+    setDirtyRaw(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
+  const setDirty = useCallback((dirty: boolean) => {
+    setDirtyRaw(dirty);
+  }, []);
+
   const clearDraft = useCallback(() => {
-    try { localStorage.removeItem(key); } catch { /* ignore */ }
-    setDirty(false);
-    window.dispatchEvent(new Event("draft-changed"));
-    // Note: does NOT reset form — caller decides what to show after save
-  }, [key]);
+    setDirtyRaw(false);
+    // localStorage removal and draft-changed dispatch happen in the persist effect above
+  }, []);
 
   return { form, setForm: setFormRaw, isDirty, setDirty, clearDraft };
 }
