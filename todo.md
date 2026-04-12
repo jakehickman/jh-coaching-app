@@ -354,3 +354,4 @@
 - [x] Training schedule: subtext summary does not update when day selections change — fixed by cascading day renames into schedule slots
 - [x] View as [Client Name]: read-only coach preview of any client's dashboard
 - [x] Fix: viewAs tab navigation drops viewAs URL params when switching tabs (reverts to own client view)
+- [x] Fix: viewAs shows coach's own cached data instead of client's data — fixed by clearing query cache on viewAsUserId change

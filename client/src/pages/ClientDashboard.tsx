@@ -1,5 +1,6 @@
 import { useParams, useLocation, useSearch } from "wouter";
 import { useEffect, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import DashboardShell from "@/components/DashboardShell";
 import { ViewAsContext } from "@/contexts/ViewAsContext";
 import { trpc } from "@/lib/trpc";
@@ -43,6 +44,13 @@ export default function ClientDashboard() {
     viewAsUserId,
     viewAsName: resolvedName,
   }), [viewAsUserId, resolvedName]);
+
+  // Clear the query cache when entering or changing viewAs mode so stale
+  // own-user data is never shown for a different client.
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    queryClient.clear();
+  }, [viewAsUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!params.tab) {
