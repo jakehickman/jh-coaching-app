@@ -1,5 +1,5 @@
 import { useParams, useLocation, useSearch } from "wouter";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import DashboardShell from "@/components/DashboardShell";
 import { ViewAsContext } from "@/contexts/ViewAsContext";
@@ -45,11 +45,19 @@ export default function ClientDashboard() {
     viewAsName: resolvedName,
   }), [viewAsUserId, resolvedName]);
 
-  // Clear the query cache when entering or changing viewAs mode so stale
-  // own-user data is never shown for a different client.
+  // Clear the query cache only when *entering* viewAs mode (viewAsUserId
+  // changes from null to a real id) so stale own-user data is never shown
+  // for a different client. Clearing on every mount (including null -> null)
+  // wipes auth.me and causes an infinite loading spinner.
   const queryClient = useQueryClient();
+  const prevViewAsRef = useRef<number | null>(undefined as any);
   useEffect(() => {
-    queryClient.clear();
+    const prev = prevViewAsRef.current;
+    prevViewAsRef.current = viewAsUserId;
+    // Only clear when switching TO a real client (null -> id, or id -> different id)
+    if (viewAsUserId !== null && viewAsUserId !== prev) {
+      queryClient.clear();
+    }
   }, [viewAsUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
