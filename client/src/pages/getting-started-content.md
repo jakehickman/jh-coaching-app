@@ -2,22 +2,47 @@
 
 <!-- SECTION id="welcome" number="1" title="Welcome" -->
 
-Welcome to JH Coaching. I am glad to have you on board.
+This guide is here to get you up to speed on how everything works, what is expected of you, and how to get the best result from the process. Read through it carefully before getting started, and if anything is unclear, let me know.
 
-This guide covers everything you need to know to get started. Read through it carefully before you begin. If anything is unclear, let me know.
+This coaching is a structured, personalised, evidence-based system for body transformation. It gives you a clear plan to follow, keeps you accountable, and uses your data to keep progress moving in the right direction.
+
+My job is to get you results. I do that by giving you a clear plan, helping you work through any issues that come up, making sure the process is realistic and sustainable, and adjusting things when needed so you keep progressing.
+
+Your job is to follow the plan as closely as you can, communicate honestly, and take ownership of the process. That means doing the work, being accurate with your nutrition and tracking, staying consistent, and telling me early if something is not working.
+
+> If you stick to the plan, report honestly, and apply the adjustments made along the way, you will put yourself in the best position to get results.
 
 <!-- SECTION id="how-it-works" number="2" title="How the Coaching Works" -->
 
-This is a results-driven coaching program. The goal is to help you build a physique you are proud of, in a way that is sustainable and built on good habits.
+Everything is set up for you in the coaching app from the start. That includes your training program, meal plan, daily log, and weekly check-in process.
 
-Here is how it works:
+The coaching is built around four core pillars.
 
-- I build your training program and nutrition plan based on your goals, lifestyle, and starting point.
-- You follow the plan, log your data daily, and complete your weekly check-in.
-- I review your check-in each week, assess your progress, and make adjustments where needed.
-- You receive a video response from me with feedback, technique notes, and clear next steps.
+## 2.1 Training Program
 
-This process works best when you follow the plan properly and communicate honestly. The more accurate and consistent you are, the better I can coach you.
+Your training is designed to build or maintain muscle while you lose fat. The goal is not just to lose weight, but to make sure the weight you lose comes from fat rather than muscle.
+
+## 2.2 Nutrition Plan
+
+Nutrition is usually set up using a meal plan approach. I use this because it keeps things simple, accurate, and repeatable. It reduces decision fatigue and makes it easier to consistently hit the intake needed for progress, while keeping food choices nutritious and supportive of health.
+
+That being said, if calorie and macro tracking is a better fit for you, this can be used instead. The goal is to use an approach that works and can be followed properly.
+
+I also do not expect you to use a rigid meal plan forever. Part of the process is building habits alongside the fat loss phase, so you are not only getting a result now, but also learning how to maintain it long term.
+
+## 2.3 Data Collection
+
+Your daily log in the app is where your day-to-day data is collected. This includes body composition data, sleep, steps, hunger, off-plan meals, and habit tracking.
+
+This information helps me see how your body is responding, what may be influencing progress, and whether anything needs to be adjusted. It also gives useful context during your weekly check-in.
+
+## 2.4 Weekly Check-ins
+
+Your weekly check-in is where everything comes together. It gives you the chance to tell me how the week went, what went well, where you struggled, and anything else I need to know.
+
+It is also where I review your progress and decide whether anything needs to change. If progress is good, the plan will often stay the same. If something needs to change, I adjust based on the data and feedback you provide.
+
+In simple terms, you follow the plan, complete your daily log, and check in each week. I review the information, assess your progress, and make the adjustments needed to keep things moving forward.
 
 <!-- SECTION id="app-walkthrough" number="3" title="App Walkthrough" -->
 
@@ -127,8 +152,7 @@ Examples of low-calorie condiments include:
 - Hot sauce
 - Reduced-sugar ketchup
 - Low-calorie BBQ sauce
-
-Use these in moderation.
+- Calorie Condiments
 
 You should also salt all meals to taste with iodized salt. This helps you get enough iodine, which is an essential mineral that many people do not get enough of.
 
