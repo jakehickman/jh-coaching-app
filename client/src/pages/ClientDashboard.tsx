@@ -1656,21 +1656,13 @@ function WorkoutLogTab() {
   const days: Array<{ label: string; exercises: Array<{ name: string; sets: number; reps: string; notes?: string }> }> =
     ((program?.days as any[]) ?? []).map((d: any) => ({ ...d, label: d.label ?? d.name }));
 
-  // Persist selectedDay and sessionDate across tab switches (component remounts)
+  // ── Persistent state (survives tab switches via sessionStorage) ──────────────
   const [selectedDay, setSelectedDay] = useState<string | null>(() => {
     try { return sessionStorage.getItem('workoutLog:selectedDay') ?? null; } catch { return null; }
   });
   const [sessionDate, setSessionDate] = useState(() => {
     try { return sessionStorage.getItem('workoutLog:sessionDate') ?? today; } catch { return today; }
   });
-  // exerciseData: { [exerciseName]: { equipmentDetails: string; sets: Array<{weight, reps, notes, completed}> } }
-  // For backward compat we keep a flat sets array keyed by exercise name, plus a separate equipmentDetails map
-  const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({})
-  const [equipmentDetails, setEquipmentDetails] = useState<Record<string, string>>({});
-  const [exerciseNotes, setExerciseNotes] = useState<Record<string, string>>({});
-  const [sessionNotes, setSessionNotes] = useState("");
-
-  // Persist selectedDay and sessionDate to sessionStorage so they survive remounts
   useEffect(() => {
     try {
       if (selectedDay) sessionStorage.setItem('workoutLog:selectedDay', selectedDay);
@@ -1681,11 +1673,39 @@ function WorkoutLogTab() {
     try { sessionStorage.setItem('workoutLog:sessionDate', sessionDate); } catch {}
   }, [sessionDate]);
 
-  // Draft key — defined early so clearWorkoutDraft can reference it
-  const workoutDraftKey = selectedDay ? `draft:workout:${sessionDate}:${selectedDay}` : null;
-  function clearWorkoutDraft() {
-    if (workoutDraftKey) { try { localStorage.removeItem(workoutDraftKey); } catch {} }
+  // ── In-session form state ─────────────────────────────────────────────────
+  const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({})
+  const [equipmentDetails, setEquipmentDetails] = useState<Record<string, string>>({});
+  const [exerciseNotes, setExerciseNotes] = useState<Record<string, string>>({});
+  const [sessionNotes, setSessionNotes] = useState("");
+
+  // ── Draft helpers ─────────────────────────────────────────────────────────
+  // Draft key for the currently selected day
+  const draftKey = (date: string, day: string) => `draft:workout:${date}:${day}`;
+
+  // Read a draft from localStorage. Returns null if none or stale.
+  function readDraft(date: string, day: string) {
+    try {
+      const raw = localStorage.getItem(draftKey(date, day));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if ((parsed.v ?? 1) < 2) { localStorage.removeItem(draftKey(date, day)); return null; }
+      return parsed;
+    } catch { return null; }
   }
+
+  // Write current form state to localStorage as a draft.
+  function writeDraft(date: string, day: string) {
+    try { localStorage.setItem(draftKey(date, day), JSON.stringify({ v: 2, exerciseData, sessionNotes, equipmentDetails, exerciseNotes, substitutions })); } catch {}
+  }
+
+  // Remove the draft for the current day (called after a successful save).
+  function clearDraft(date: string, day: string) {
+    try { localStorage.removeItem(draftKey(date, day)); } catch {}
+  }
+
+  // ── Ref to track which date+day we have loaded so we don't reload on every render
+  const loadedRef = useRef<string | null>(null);
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
   // Collapse state for exercise cards — persisted in sessionStorage keyed by date:dayLabel:exerciseName
@@ -1741,12 +1761,14 @@ function WorkoutLogTab() {
   // Substitution state: { [originalExName]: substituteName }
   const [substitutions, setSubstitutions] = useState<Record<string, string>>({});
 
-  // Persist in-progress workout to localStorage so tab switches don't lose data
-  // (placed after substitutions so all state is in scope for the dependency array)
+  // ── Auto-persist draft whenever form state changes ──────────────────────────
+  // We only write when loadedRef is set (i.e. a day has been loaded) so the
+  // initial empty state on remount never overwrites a real draft.
   useEffect(() => {
-    if (!workoutDraftKey) return;
-    try { localStorage.setItem(workoutDraftKey, JSON.stringify({ v: 2, exerciseData, sessionNotes, equipmentDetails, exerciseNotes, substitutions })); } catch {}
-  }, [workoutDraftKey, exerciseData, sessionNotes, equipmentDetails, exerciseNotes, substitutions]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!loadedRef.current) return; // not yet loaded — don't write
+    const [date, day] = loadedRef.current.split(':');
+    writeDraft(date, day);
+  }, [exerciseData, sessionNotes, equipmentDetails, exerciseNotes, substitutions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sub picker modal state
   const [subPicker, setSubPicker] = useState<{ originalName: string } | null>(null);
@@ -1789,6 +1811,9 @@ function WorkoutLogTab() {
 
   const saveMutation = trpc.workoutSessions.save.useMutation({
     onSuccess: () => {
+      // Clear draft and reset loadedRef so the re-load effect picks up the saved session
+      if (selectedDay) clearDraft(sessionDate, selectedDay);
+      loadedRef.current = null;
       utils.workoutSessions.list.invalidate();
       utils.dailyLog.list.invalidate();
       setSaving(false);
@@ -1809,41 +1834,30 @@ function WorkoutLogTab() {
     onError: () => { setDeleting(null); toast.error("Failed to delete."); },
   });
 
-  // When user picks a day (or on remount), load data using this priority:
-  //   1. In-progress draft in localStorage (always wins — user's unsaved work)
-  //   2. Saved session from server
-  //   3. Blank sets from program definition
-  function selectDay(label: string) {
-    setSelectedDay(label);
+  // ── Load data for a day ──────────────────────────────────────────────────────
+  // Priority: draft > saved session > blank from program
+  // Called when the user picks a day, changes date, or on remount.
+  function loadDay(date: string, label: string) {
     const dayDef = days.find(d => d.label === label);
 
-    // Priority 1: draft
-    const draftKey = `draft:workout:${sessionDate}:${label}`;
-    try {
-      const stored = localStorage.getItem(draftKey);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if ((parsed.v ?? 1) >= 2) {
-          const migratedData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
-          for (const [k, sets] of Object.entries(parsed.exerciseData ?? {})) {
-            migratedData[k] = (sets as any[]).map(s => ({ ...s, completed: s.completed ?? (s.weight !== "" || s.reps !== "") }));
-          }
-          setExerciseData(migratedData);
-          setSessionNotes(parsed.sessionNotes ?? "");
-          setEquipmentDetails(parsed.equipmentDetails ?? {});
-          setExerciseNotes(parsed.exerciseNotes ?? {});
-          setSubstitutions(parsed.substitutions ?? {});
-          setCollapsedExercisesRaw(loadCollapsed(sessionDate, label));
-          return;
-        } else {
-          // Stale draft — discard
-          localStorage.removeItem(draftKey);
-        }
+    // Priority 1: draft (always wins — user's unsaved work)
+    const draft = readDraft(date, label);
+    if (draft) {
+      const migratedData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
+      for (const [k, sets] of Object.entries(draft.exerciseData ?? {})) {
+        migratedData[k] = (sets as any[]).map((s: any) => ({ ...s, completed: s.completed ?? (s.weight !== '' || s.reps !== '') }));
       }
-    } catch {}
+      setExerciseData(migratedData);
+      setSessionNotes(draft.sessionNotes ?? '');
+      setEquipmentDetails(draft.equipmentDetails ?? {});
+      setExerciseNotes(draft.exerciseNotes ?? {});
+      setSubstitutions(draft.substitutions ?? {});
+      setCollapsedExercisesRaw(loadCollapsed(date, label));
+      return;
+    }
 
     // Priority 2: saved session from server
-    const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === sessionDate && s.dayLabel === label);
+    const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === date && s.dayLabel === label);
     if (existing) {
       const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
       const eqData: Record<string, string> = {};
@@ -1852,9 +1866,9 @@ function WorkoutLogTab() {
       for (const ex of (existing.exercises as any[])) {
         if (ex.substitutedFor) subData[ex.substitutedFor] = ex.name;
         exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
-          weight: s.weight != null ? String(s.weight) : "",
-          reps: s.reps != null ? String(s.reps) : "",
-          notes: s.notes ?? "",
+          weight: s.weight != null ? String(s.weight) : '',
+          reps: s.reps != null ? String(s.reps) : '',
+          notes: s.notes ?? '',
           completed: s.completed ?? (s.weight != null || s.reps != null),
         }));
         if (ex.equipmentDetails) eqData[ex.name] = ex.equipmentDetails;
@@ -1864,14 +1878,14 @@ function WorkoutLogTab() {
       setEquipmentDetails(eqData);
       setExerciseNotes(enData);
       setSubstitutions(subData);
-      setSessionNotes((existing.notes as string) ?? "");
-      const persisted = loadCollapsed(sessionDate, label);
+      setSessionNotes((existing.notes as string) ?? '');
+      const persisted = loadCollapsed(date, label);
       const defaultCollapsed: Record<string, boolean> = {};
       for (const ex of (existing.exercises as any[])) {
         defaultCollapsed[ex.name] = persisted[ex.name] !== undefined ? persisted[ex.name] : true;
       }
       setCollapsedExercisesRaw(defaultCollapsed);
-      saveCollapsed(sessionDate, label, defaultCollapsed);
+      saveCollapsed(date, label, defaultCollapsed);
       return;
     }
 
@@ -1879,27 +1893,31 @@ function WorkoutLogTab() {
     const blankEx: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
     for (const ex of (dayDef?.exercises ?? [])) {
       const setCount = Math.max(1, parseInt(String(ex.sets ?? 1), 10) || 1);
-      blankEx[ex.name] = Array.from({ length: setCount }, () => ({ weight: "", reps: "", notes: "", completed: false }));
+      blankEx[ex.name] = Array.from({ length: setCount }, () => ({ weight: '', reps: '', notes: '', completed: false }));
     }
     setExerciseData(blankEx);
-    setSessionNotes("");
+    setSessionNotes('');
     setEquipmentDetails({});
     setExerciseNotes({});
     setSubstitutions({});
-    setCollapsedExercisesRaw(loadCollapsed(sessionDate, label));
+    setCollapsedExercisesRaw(loadCollapsed(date, label));
   }
 
-  // Re-load only when the user changes the date or selects a different day.
-  // We also run once when sessions first arrive (sessions.length goes from 0 to >0)
-  // so that a freshly-opened tab can show saved sessions. After that first load,
-  // the combo key stays stable and won't re-run even if sessions refresh.
-  const lastLoadedRef = useRef<string | null>(null);
+  // Called when the user taps a day button
+  function selectDay(label: string) {
+    setSelectedDay(label);
+    loadedRef.current = null; // force re-load for the new day
+  }
+
+  // ── Re-load effect ────────────────────────────────────────────────────────────
+  // Runs when: sessions finish loading, date changes, or selectedDay changes.
+  // Uses loadedRef to run exactly once per date+day combo (reset on save or day change).
   useEffect(() => {
-    if (!selectedDay || !sessionsLoaded) return; // wait for sessions query to complete
+    if (!selectedDay || !sessionsLoaded) return;
     const combo = `${sessionDate}:${selectedDay}`;
-    if (lastLoadedRef.current === combo) return; // already loaded this date+day
-    lastLoadedRef.current = combo;
-    selectDay(selectedDay);
+    if (loadedRef.current === combo) return;
+    loadedRef.current = combo;
+    loadDay(sessionDate, selectedDay);
   }, [sessionDate, selectedDay, sessionsLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function setSet(exName: string, idx: number, field: "weight" | "reps" | "notes", val: string) {
@@ -1958,7 +1976,7 @@ function WorkoutLogTab() {
       };
     });
     saveMutation.mutate({ sessionDate, dayLabel: selectedDay, exercises, notes: sessionNotes || null });
-    clearWorkoutDraft();
+    // Draft is cleared in saveMutation.onSuccess once the server confirms the save
   }
 
   const inputCls = "bg-secondary border border-border rounded-lg px-2 py-3 text-base text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary w-full";
@@ -2384,7 +2402,17 @@ function WorkoutLogTab() {
 
 // ─── Combined Training Tab ───────────────────────────────────────────────────
 function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program" | "log" }) {
-  const [sub, setSub] = useState<"program" | "log">(defaultSub);
+  // Restore the last-used sub-tab so navigating away and back lands on the same view
+  const [sub, setSub] = useState<"program" | "log">(() => {
+    try {
+      const stored = sessionStorage.getItem('trainingTab:sub') as "program" | "log" | null;
+      return stored ?? defaultSub;
+    } catch { return defaultSub; }
+  });
+  // Persist whenever the user switches between Program and Log
+  useEffect(() => {
+    try { sessionStorage.setItem('trainingTab:sub', sub); } catch {}
+  }, [sub]);
   return (
     <div>
       <div className="flex gap-1 mb-6 bg-secondary rounded-lg p-1 w-fit">
