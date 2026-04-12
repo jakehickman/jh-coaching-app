@@ -156,9 +156,10 @@ function TrainingTab() {
 // ─── WorkoutLogTab ────────────────────────────────────────────────────────────────────────────────
 function WorkoutLogTab() {
   const { viewAsUserId } = useViewAs();
-  const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
-  const { data: programAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const { data: programOwn, isSuccess: programLoadedOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: programAdmin, isSuccess: programLoadedAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const program = viewAsUserId ? programAdmin : programOwn;
+  const programLoaded = viewAsUserId ? programLoadedAdmin : programLoadedOwn;
   const { data: sessionsOwn = [], refetch: refetchOwn, isSuccess: sessionsLoadedOwn } = trpc.workoutSessions.list.useQuery(undefined, { enabled: !viewAsUserId });
   const { data: sessionsAdmin = [], refetch: refetchAdmin, isSuccess: sessionsLoadedAdmin } = trpc.workoutSessions.listForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const sessions = viewAsUserId ? sessionsAdmin : sessionsOwn;
@@ -412,12 +413,12 @@ function WorkoutLogTab() {
   }
 
   useEffect(() => {
-    if (!selectedDay || !sessionsLoaded) return;
+    if (!selectedDay || !sessionsLoaded || !programLoaded) return;
     const combo = `${sessionDate}:${selectedDay}`;
     if (loadedRef.current === combo) return;
     loadedRef.current = combo;
     loadDay(sessionDate, selectedDay);
-  }, [sessionDate, selectedDay, sessionsLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sessionDate, selectedDay, sessionsLoaded, programLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function setSet(exName: string, idx: number, field: "weight" | "reps" | "notes", val: string) {
     setExerciseData(prev => {
