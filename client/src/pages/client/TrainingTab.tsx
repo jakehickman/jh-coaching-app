@@ -156,10 +156,9 @@ function TrainingTab() {
 // ─── WorkoutLogTab ────────────────────────────────────────────────────────────────────────────────
 function WorkoutLogTab() {
   const { viewAsUserId } = useViewAs();
-  const { data: programOwn, isSuccess: programLoadedOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
-  const { data: programAdmin, isSuccess: programLoadedAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: programAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const program = viewAsUserId ? programAdmin : programOwn;
-  const programLoaded = viewAsUserId ? programLoadedAdmin : programLoadedOwn;
   const { data: sessionsOwn = [], refetch: refetchOwn, isSuccess: sessionsLoadedOwn } = trpc.workoutSessions.list.useQuery(undefined, { enabled: !viewAsUserId });
   const { data: sessionsAdmin = [], refetch: refetchAdmin, isSuccess: sessionsLoadedAdmin } = trpc.workoutSessions.listForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const sessions = viewAsUserId ? sessionsAdmin : sessionsOwn;
@@ -229,9 +228,6 @@ function WorkoutLogTab() {
   }
 
   const loadedRef = useRef<string | null>(null);
-  // Reset the load guard whenever the viewed user changes so loadDay
-  // always re-runs with the correct client's program data.
-  useEffect(() => { loadedRef.current = null; }, [viewAsUserId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
   const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>({});
@@ -416,12 +412,12 @@ function WorkoutLogTab() {
   }
 
   useEffect(() => {
-    if (!selectedDay || !sessionsLoaded || !programLoaded) return;
+    if (!selectedDay || !sessionsLoaded) return;
     const combo = `${sessionDate}:${selectedDay}`;
     if (loadedRef.current === combo) return;
     loadedRef.current = combo;
     loadDay(sessionDate, selectedDay);
-  }, [sessionDate, selectedDay, sessionsLoaded, programLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sessionDate, selectedDay, sessionsLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function setSet(exName: string, idx: number, field: "weight" | "reps" | "notes", val: string) {
     setExerciseData(prev => {
