@@ -2061,7 +2061,7 @@ function WorkoutLogTab() {
                   </div>
                   {/* COMPLETE label — shown on collapsed cards where all sets are done */}
                   {isCollapsed && sets.length > 0 && sets.every(s => s.completed) && (
-                    <p className="text-xs font-semibold tracking-widest text-green-500 text-center pt-0 pb-1">COMPLETE</p>
+                    <p className="text-xs font-semibold tracking-widest text-green-500 text-left pt-0 pb-1">COMPLETE</p>
                   )}
                   {/* Collapsible body */}
                   {!isCollapsed && (<>
