@@ -86,6 +86,8 @@ export default function ExerciseLibrarySection() {
 
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<ExerciseRow | null>(null);
+  // String versions of muscle group values so dot-decimal and backspace work correctly
+  const [muscleStrings, setMuscleStrings] = useState<Record<string, string>>({});
   const [isNew, setIsNew] = useState(false);
 
   const filtered = exercises.filter((e) =>
@@ -94,11 +96,17 @@ export default function ExerciseLibrarySection() {
 
   function startNew() {
     setEditing({ ...EMPTY_EXERCISE });
+    const strings: Record<string, string> = {};
+    MUSCLE_GROUPS.forEach(mg => { strings[mg.key] = "0"; });
+    setMuscleStrings(strings);
     setIsNew(true);
   }
 
   function startEdit(ex: ExerciseRow) {
     setEditing({ ...ex });
+    const strings: Record<string, string> = {};
+    MUSCLE_GROUPS.forEach(mg => { strings[mg.key] = String((ex as any)[mg.key] ?? 0); });
+    setMuscleStrings(strings);
     setIsNew(false);
   }
 
@@ -195,21 +203,28 @@ export default function ExerciseLibrarySection() {
                     {mg.label}
                   </label>
                   <input
-                    type="number"
-                    step="0.25"
-                    min="0"
-                    max="2"
-                    value={(editing as any)[mg.key] ?? 0}
-                    onChange={(e) =>
-                      setEditing((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              [mg.key]: parseFloat(e.target.value) || 0,
-                            }
-                          : prev
-                      )
-                    }
+                    type="text"
+                    inputMode="decimal"
+                    value={muscleStrings[mg.key] ?? String((editing as any)[mg.key] ?? 0)}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      // Allow empty, digits, and a single dot
+                      if (!/^\d*\.?\d*$/.test(raw)) return;
+                      setMuscleStrings(prev => ({ ...prev, [mg.key]: raw }));
+                      const num = parseFloat(raw);
+                      if (!isNaN(num)) {
+                        setEditing(prev => prev ? { ...prev, [mg.key]: Math.min(2, Math.max(0, num)) } : prev);
+                      } else if (raw === "" || raw === ".") {
+                        setEditing(prev => prev ? { ...prev, [mg.key]: 0 } : prev);
+                      }
+                    }}
+                    onBlur={() => {
+                      // Normalise on blur: empty → "0"
+                      const num = parseFloat(muscleStrings[mg.key] ?? "");
+                      const clamped = isNaN(num) ? 0 : Math.min(2, Math.max(0, num));
+                      setMuscleStrings(prev => ({ ...prev, [mg.key]: String(clamped) }));
+                      setEditing(prev => prev ? { ...prev, [mg.key]: clamped } : prev);
+                    }}
                     className="w-full bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>

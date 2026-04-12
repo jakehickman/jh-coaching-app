@@ -160,7 +160,6 @@
 - [x] Weekly Check-in: client Check-ins tab with instructions, form, and submission history
 - [x] Weekly Check-in: check-in form (diet adherence, guided prompts, text responses)
 - [x] Weekly Check-in: coach view of submitted check-ins in Client Progress tab
-- [ ] Weekly Check-in: push notification on assigned check-in day (deferred — requires native push setup)
 - [x] Step Goal: add stepGoal field to client_profiles schema
 - [x] Step Goal: coach can assign daily step goal per client
 - [x] Step Goal: step count field in client Daily Log
@@ -347,3 +346,6 @@
 - [x] Coach check-in history: redesign card to question/answer per-line layout
 - [x] Coach shell: wider sidebar (240px), full-width content area, desktop-first breakpoints
 - [x] Coach Client Progress: two-column layout (metrics left, charts/details right) — already done in prior session
+
+## Bug Fixes
+- [x] Exercise Library: fix muscle group inputs — dot decimal separator not working, can't backspace 0 to type a new value
