@@ -354,6 +354,11 @@ export default function GettingStarted() {
             <Section id="app-walkthrough" number="3" title="App Walkthrough">
               <Body>Everything you need is inside the app. Before you get started, take a few minutes to look through each tab so you know where everything is.</Body>
               <Body>The main tabs you will be using are Home, Daily Log, Meal Plan, Training, and Check-in.</Body>
+              <Body>I also recommend adding the app to your home screen so it is easier to access day to day.</Body>
+              <BulletList items={[
+                "On iPhone / Safari: tap the Share button, then scroll down and tap Add to Home Screen",
+                "On Android / Chrome: tap the menu in the top right, then tap Add to Home screen",
+              ]} />
 
               <SubSection title="3.1 Home">
                 <Body>The Home tab gives you a quick overview of your progress and adherence. Here you can see your weekly summary, average weight, training adherence, off-plan meals, average daily steps, weight trend, current habits, and the Getting Started guide.</Body>
