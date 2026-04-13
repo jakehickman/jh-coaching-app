@@ -630,10 +630,10 @@ export function ProgressHistoryTable({
                       if (diff === 0) return null;
                       const isDown = diff < 0;
                       return (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${
                           isDown ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
                         }`}>
-                          {isDown ? <ArrowDown size={9} /> : <ArrowUp size={9} />}
+                          {isDown ? <ArrowDown size={11} /> : <ArrowUp size={11} />}
                           {diff > 0 ? '+' : ''}{diff} cm
                         </span>
                       );
@@ -653,10 +653,10 @@ export function ProgressHistoryTable({
                       if (diff === 0) return null;
                       const isDown = diff < 0;
                       return (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${
                           isDown ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
                         }`}>
-                          {isDown ? <ArrowDown size={9} /> : <ArrowUp size={9} />}
+                          {isDown ? <ArrowDown size={11} /> : <ArrowUp size={11} />}
                           {diff > 0 ? '+' : ''}{diff} mm
                         </span>
                       );
