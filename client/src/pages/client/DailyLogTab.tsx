@@ -306,8 +306,10 @@ export default function DailyLogTab() {
     return v.toISOString().slice(0, 10);
   };
   const todaysSessions = workoutSessions.filter(s => toDateStr(s.sessionDate as Date | string) === date);
-  const autoTrained = todaysSessions.length > 0;
-  const autoTrainingType = todaysSessions.map(s => s.dayLabel).filter(Boolean).join(", ") || undefined;
+  // Never auto-populate training from workout sessions when in clone/viewAs mode — prevents
+  // the client's sessions from leaking into the coach's own log when switching views.
+  const autoTrained = !viewAsUserId && todaysSessions.length > 0;
+  const autoTrainingType = !viewAsUserId ? (todaysSessions.map(s => s.dayLabel).filter(Boolean).join(", ") || undefined) : undefined;
 
   const setDate = (newDate: string) => {
     setDateRaw(newDate);
