@@ -179,7 +179,7 @@ function MeasurementsTab({ measurements }: { measurements: any[] }) {
                         <span className="text-xs text-muted-foreground">Waist: <span className="text-foreground font-semibold">{m.waist} cm</span></span>
                       )}
                       {total != null && (
-                        <span className="text-xs text-muted-foreground">Total: <span className="text-foreground font-semibold">{total} mm</span></span>
+                        <span className="text-xs text-muted-foreground">Skinfolds: <span className="text-foreground font-semibold">{total} mm</span></span>
                       )}
                     </div>
                     {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
