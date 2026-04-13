@@ -6,6 +6,78 @@ import { Card } from "./shared";
 import type { MuscleKey } from "@shared/types";
 import { useConfirm } from "@/components/ConfirmDialog";
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Convert any YouTube URL to an embed URL, or return null if not YouTube. */
+function toYouTubeEmbed(url: string): string | null {
+  try {
+    const u = new URL(url);
+    let videoId: string | null = null;
+    if (u.hostname === "youtu.be") {
+      videoId = u.pathname.slice(1).split("?")[0];
+    } else if (u.hostname.includes("youtube.com")) {
+      videoId = u.searchParams.get("v");
+      if (!videoId) {
+        // Handle /embed/ID and /shorts/ID paths
+        const m = u.pathname.match(/\/(?:embed|shorts)\/([^/?]+)/);
+        if (m) videoId = m[1];
+      }
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` : null;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Video Modal ─────────────────────────────────────────────────────────────
+
+function VideoModal({ name, url, onClose }: { name: string; url: string; onClose: () => void }) {
+  const embedUrl = toYouTubeEmbed(url);
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-3xl mx-4 bg-card rounded-xl overflow-hidden shadow-2xl border border-border"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <p className="text-sm font-semibold text-foreground truncate pr-4">{name}</p>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex-shrink-0">
+            <X size={18} />
+          </button>
+        </div>
+        {/* Player */}
+        {embedUrl ? (
+          <div className="relative" style={{ paddingTop: "56.25%" }}>
+            <iframe
+              src={embedUrl}
+              title={name}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="absolute inset-0 w-full h-full"
+            />
+          </div>
+        ) : (
+          <div className="p-6 text-center">
+            <p className="text-sm text-muted-foreground mb-3">Not a YouTube URL — opening in new tab.</p>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline text-sm"
+            >
+              {url}
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Constants & types ───────────────────────────────────────────────────────
 
 export const MUSCLE_GROUPS: { key: MuscleKey; label: string }[] = [
@@ -94,6 +166,7 @@ export default function ExerciseLibrarySection() {
   // String versions of muscle group values so dot-decimal and backspace work correctly
   const [muscleStrings, setMuscleStrings] = useState<Record<string, string>>({});
   const [isNew, setIsNew] = useState(false);
+  const [videoPreview, setVideoPreview] = useState<{ name: string; url: string } | null>(null);
 
   const filtered = exercises.filter((e) =>
     e.name.toLowerCase().includes(search.toLowerCase())
@@ -305,10 +378,14 @@ export default function ExerciseLibrarySection() {
                     <div className="flex items-center gap-2">
                       <span>{ex.name}</span>
                       {(ex as any).videoUrl && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-red-500/20 text-red-400">
+                        <button
+                          onClick={() => setVideoPreview({ name: ex.name, url: (ex as any).videoUrl })}
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-colors"
+                          title="Play demo video"
+                        >
                           <Play size={8} />
                           Video
-                        </span>
+                        </button>
                       )}
                     </div>
                   </td>
@@ -334,6 +411,15 @@ export default function ExerciseLibrarySection() {
                   })}
                   <td className="px-3 py-2.5 text-center">
                     <div className="flex items-center justify-center gap-1">
+                      {(ex as any).videoUrl && (
+                        <button
+                          onClick={() => setVideoPreview({ name: ex.name, url: (ex as any).videoUrl })}
+                          className="p-2 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          title="Play demo video"
+                        >
+                          <Play size={16} />
+                        </button>
+                      )}
                       <button
                         onClick={() => startEdit(ex as unknown as ExerciseRow)}
                         className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
@@ -367,6 +453,13 @@ export default function ExerciseLibrarySection() {
         set)
       </p>
       {ConfirmDialogNode}
+      {videoPreview && (
+        <VideoModal
+          name={videoPreview.name}
+          url={videoPreview.url}
+          onClose={() => setVideoPreview(null)}
+        />
+      )}
     </div>
   );
 }
