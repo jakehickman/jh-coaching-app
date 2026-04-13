@@ -327,6 +327,8 @@ Your waist measurement should be taken on your check-in day, first thing in the 
 
 Use a tape measure with automatic tightness.
 
+<!-- IMAGE src="https://d2xsxph8kpxj0f.cloudfront.net/310519663515200499/HZf6zqYa94nKHY3YxXLHa5/MeasuringTape-Edited_ad441809.png" alt="Automatic tape measure" -->
+
 To take it properly:
 
 - Fully exhale
