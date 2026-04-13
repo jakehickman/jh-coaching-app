@@ -11,7 +11,7 @@ import rawContent from "./getting-started-content.md?raw";
 type TextNode = { type: "text"; text: string };
 type BulletNode = { type: "bullets"; items: string[] };
 type CalloutNode = { type: "callout"; text: string };
-type ImageNode = { type: "image"; src: string; alt: string };
+type ImageNode = { type: "image"; src: string; alt: string; width?: string };
 type WhatsAppNode = { type: "whatsapp"; href: string; label: string };
 type SupplementsNode = { type: "supplements"; items: { name: string; desc: string; use: string }[] };
 type DataLogNode = { type: "datalog"; items: { label: string; detail: string }[] };
@@ -99,10 +99,10 @@ function parseContent(md: string): Section[] {
     }
 
     // IMAGE directive
-    const imgMatch = line.match(/<!--\s*IMAGE\s+src="([^"]+)"\s+alt="([^"]+)"\s*-->/);
+    const imgMatch = line.match(/<!--\s*IMAGE\s+src="([^"]+)"\s+alt="([^"]+)"(?:\s+width="([^"]+)")?\s*-->/);
     if (imgMatch) {
       flushBullets(currentNodes());
-      currentNodes().push({ type: "image", src: imgMatch[1], alt: imgMatch[2] });
+      currentNodes().push({ type: "image", src: imgMatch[1], alt: imgMatch[2], width: imgMatch[3] });
       i++;
       continue;
     }
@@ -269,7 +269,7 @@ function renderNode(node: ContentNode, key: number) {
     case "image":
       return (
         <div key={key} className="mt-4">
-          <img src={node.src} alt={node.alt} className="w-full max-w-xs rounded-lg" />
+          <img src={node.src} alt={node.alt} className={`w-full rounded-lg ${node.width ?? "max-w-xs"}`} />
         </div>
       );
     case "whatsapp":

@@ -347,6 +347,8 @@ You will need to take:
 - Side
 - Back
 
+<!-- IMAGE src="https://d2xsxph8kpxj0f.cloudfront.net/310519663515200499/HZf6zqYa94nKHY3YxXLHa5/progress-photos_1be37503.png" alt="Progress photo examples: front, side and back" width="max-w-2xl" -->
+
 Make sure:
 
 - Your full body is visible from head to toe
