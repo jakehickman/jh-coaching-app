@@ -306,7 +306,13 @@ export default function DailyLogTab() {
     return v.toISOString().slice(0, 10);
   };
   const todaysSessions = workoutSessions.filter(s => toDateStr(s.sessionDate as Date | string) === date);
-  const autoTrained = todaysSessions.length > 0;
+  // Only count training as completed if all sets in the session are marked complete
+  const autoTrained = todaysSessions.length > 0 && todaysSessions.every(session =>
+    ((session.exercises as any[]) ?? []).every(ex =>
+      ((ex.sets as any[]) ?? []).length > 0 &&
+      ((ex.sets as any[]) ?? []).every((s: any) => s.completed)
+    )
+  );
   const autoTrainingType = todaysSessions.map(s => s.dayLabel).filter(Boolean).join(", ") || undefined;
 
   const setDate = (newDate: string) => {
