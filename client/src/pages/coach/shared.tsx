@@ -583,7 +583,7 @@ export function ProgressHistoryTable({
           const pctUp = row.pctChange != null && row.pctChange > 0;
           const pctColor = row.pctChange == null ? 'text-muted-foreground' : pctDown ? 'text-green-400' : pctUp ? 'text-red-400' : 'text-muted-foreground';
           const pctBg = row.pctChange == null ? 'bg-secondary' : pctDown ? 'bg-green-500/15' : pctUp ? 'bg-red-500/15' : 'bg-secondary';
-          const pctLabel = row.pctChange != null ? `${row.pctChange > 0 ? '+' : ''}${row.pctChange}%` : null;
+          const pctLabel = row.pctChange != null ? `${row.pctChange > 0 ? '+' : ''}${row.pctChange.toFixed(1)}%` : null;
           return (
             <div
               key={i}
