@@ -694,9 +694,50 @@ export async function saveWorkoutSession(data: {
 export async function deleteWorkoutSession(id: number, userId: number) {
   const db = await getDb();
   if (!db) return;
+
+  // Fetch the session before deleting so we know its date
+  const [session] = await db
+    .select({ sessionDate: workoutSessions.sessionDate, exercises: workoutSessions.exercises })
+    .from(workoutSessions)
+    .where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, userId)))
+    .limit(1);
+
   await db
     .delete(workoutSessions)
     .where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, userId)));
+
+  // After deletion, check if any remaining sessions for that date are fully complete.
+  // If none are, revert trainingCompleted on the daily log for that date.
+  if (session?.sessionDate) {
+    const rawDate = session.sessionDate as unknown;
+    const dateStr = typeof rawDate === 'string'
+      ? rawDate.slice(0, 10)
+      : rawDate instanceof Date
+        ? rawDate.toISOString().slice(0, 10)
+        : String(rawDate).slice(0, 10);
+
+    const remaining = await db
+      .select({ exercises: workoutSessions.exercises })
+      .from(workoutSessions)
+      .where(
+        and(
+          eq(workoutSessions.userId, userId),
+          sql`DATE(${workoutSessions.sessionDate}) = ${dateStr}`
+        )
+      );
+
+    const anyComplete = remaining.some(s => {
+      const exs: any[] = Array.isArray(s.exercises) ? s.exercises : [];
+      return exs.length > 0 && exs.every(ex => {
+        const sets: any[] = Array.isArray(ex.sets) ? ex.sets : [];
+        return sets.length > 0 && sets.every(set => set.completed);
+      });
+    });
+
+    if (!anyComplete) {
+      await upsertDailyLog({ userId, logDate: dateStr, trainingCompleted: false });
+    }
+  }
 }
 
 // ── Onboarding submissions ────────────────────────────────────────────────────
