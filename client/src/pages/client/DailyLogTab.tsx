@@ -55,7 +55,7 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
         const isExpanded = expandedId === iso;
         const hasData = !!log;
         const trained = log ? isTrained(log.trainingCompleted) : false;
-        const sessionLabel = log?.trainingType && log.trainingType !== 'Off'
+        const sessionLabel = trained && log?.trainingType && log.trainingType !== 'Off'
           ? log.trainingType
           : (trained ? 'Training' : 'Rest');
         return (
