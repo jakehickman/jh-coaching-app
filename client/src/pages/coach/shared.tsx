@@ -462,21 +462,42 @@ export function ProgressHistoryTable({
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  // ── Group into check-in-day-aligned weeks (Approach 2) ──────────────────
-  // Each period ENDS on the client's check-in day and STARTS the day after.
-  // This guarantees a full 7-day period (including check-in day measurements)
-  // is always visible when reviewing after a check-in submission.
-  // Default: check-in day = Monday → week starts Tuesday (2), ends Monday.
-  const checkInDow = checkInDay ? (DAY_NAME_TO_DOW[checkInDay.toLowerCase()] ?? 1) : 1;
-  const weekStartDow = (checkInDow + 1) % 7;
+  // ── Group into Baseline + Week N periods ──────────────────────────────────
+  // Period 0 (Baseline): from start date up to and including the first
+  //   occurrence of the check-in day on or after the start date.
+  // Period N (Week N): starts the day after the previous check-in day,
+  //   ends on the next check-in day (always 7 days once rolling).
+  // Default check-in day: Wednesday (3). Falls back to Wednesday if unset.
+  const checkInDow = checkInDay ? (DAY_NAME_TO_DOW[checkInDay.toLowerCase()] ?? 3) : 3;
+
+  // Find the first check-in day on or after firstDate
+  const firstDateMs = new Date(firstDate + "T00:00:00").getTime();
+  let firstCheckInMs = firstDateMs;
+  while (new Date(firstCheckInMs).getDay() !== checkInDow) {
+    firstCheckInMs += 86400000;
+  }
   const weeks: string[][] = [];
+  const weekLabels: string[] = [];
   let currentWeek: string[] = [];
+  let weekNum = 0; // 0 = baseline
+  let nextCheckInMs = firstCheckInMs;
+
   for (const iso of days) {
-    const dow = new Date(iso + "T00:00:00").getDay();
-    if (dow === weekStartDow && currentWeek.length > 0) { weeks.push(currentWeek); currentWeek = []; }
+    const dayMs = new Date(iso + "T00:00:00").getTime();
+    // When we pass the boundary (day after current check-in), start a new period
+    if (dayMs > nextCheckInMs && currentWeek.length > 0) {
+      weeks.push(currentWeek);
+      weekLabels.push(weekNum === 0 ? "Baseline" : `Week ${weekNum}`);
+      currentWeek = [];
+      weekNum++;
+      nextCheckInMs += 7 * 86400000;
+    }
     currentWeek.push(iso);
   }
-  if (currentWeek.length > 0) weeks.push(currentWeek);
+  if (currentWeek.length > 0) {
+    weeks.push(currentWeek);
+    weekLabels.push(weekNum === 0 ? "Baseline" : `Week ${weekNum}`);
+  }
 
   // ── Compute per-week stats ──────────────────────────────────────────────────
   function weekAvg(wkDays: string[]): number | null {
@@ -504,7 +525,8 @@ export function ProgressHistoryTable({
 
   // Build rows oldest→newest for chart, newest→oldest for table display
   type WeekRow = {
-    label: string;
+    label: string;       // e.g. "Baseline" or "Week 1"
+    dateRange: string;   // e.g. "1 Jan – 7 Jan"
     avg: number | null;
     entries: number;
     waist: number | null;
@@ -525,7 +547,8 @@ export function ProgressHistoryTable({
     const skinfoldSites = [umbAvg, supAvg, calfAvg, thighAvg].filter(v => v != null) as number[];
     const skinfold = skinfoldSites.length > 0 ? parseFloat(skinfoldSites.reduce((a, b) => a + b, 0).toFixed(1)) : null;
     return {
-      label: fmtWeekLabel(wkDays),
+      label: weekLabels[i],
+      dateRange: fmtWeekLabel(wkDays),
       avg,
       entries: weekEntries(wkDays),
       waist: m?.waist ?? null,
@@ -571,8 +594,11 @@ export function ProgressHistoryTable({
               {/* Week header */}
               <div className="flex items-center justify-between px-4 pt-3 pb-2">
                 <div className="flex items-center gap-2">
-                  {isFirst && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold uppercase tracking-wide">Latest</span>}
-                  <p className={`text-sm font-semibold ${isFirst ? 'text-foreground' : 'text-muted-foreground'}`}>{row.label}</p>
+                  {row.label === 'Baseline'
+                    ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-semibold uppercase tracking-wide">Baseline</span>
+                    : <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${isFirst ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>{row.label}</span>
+                  }
+                  <p className={`text-sm ${isFirst ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>{row.dateRange}</p>
                 </div>
                 <div className="flex items-center gap-2">
                 </div>
