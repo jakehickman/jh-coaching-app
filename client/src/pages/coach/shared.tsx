@@ -462,27 +462,18 @@ export function ProgressHistoryTable({
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  // ── Group into start-date-anchored 7-day periods ──────────────────────────
-  // The first period always begins on the client's start date (or the first
-  // date with data). Each subsequent period is exactly 7 days later.
-  // This ensures the first week is never a partial period and every period
-  // aligns with the client's programme week regardless of day-of-week.
-  const anchorDate = firstDate; // ISO string: the first day of period 1
-  const anchorMs = new Date(anchorDate + "T00:00:00").getTime();
+  // ── Group into check-in-day-aligned weeks (Approach 2) ──────────────────
+  // Each period ENDS on the client's check-in day and STARTS the day after.
+  // This guarantees a full 7-day period (including check-in day measurements)
+  // is always visible when reviewing after a check-in submission.
+  // Default: check-in day = Monday → week starts Tuesday (2), ends Monday.
+  const checkInDow = checkInDay ? (DAY_NAME_TO_DOW[checkInDay.toLowerCase()] ?? 1) : 1;
+  const weekStartDow = (checkInDow + 1) % 7;
   const weeks: string[][] = [];
   let currentWeek: string[] = [];
-  let currentPeriodStart = anchorMs;
   for (const iso of days) {
-    const dayMs = new Date(iso + "T00:00:00").getTime();
-    // Start a new 7-day bucket when we've moved past the current period
-    if (dayMs >= currentPeriodStart + 7 * 86400000 && currentWeek.length > 0) {
-      weeks.push(currentWeek);
-      currentWeek = [];
-      // Advance anchor by the correct number of 7-day steps
-      while (dayMs >= currentPeriodStart + 7 * 86400000) {
-        currentPeriodStart += 7 * 86400000;
-      }
-    }
+    const dow = new Date(iso + "T00:00:00").getDay();
+    if (dow === weekStartDow && currentWeek.length > 0) { weeks.push(currentWeek); currentWeek = []; }
     currentWeek.push(iso);
   }
   if (currentWeek.length > 0) weeks.push(currentWeek);
