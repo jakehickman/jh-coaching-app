@@ -1003,13 +1003,16 @@ export async function deleteCheckIn(id: number): Promise<void> {
 export async function updateClientProfileExtended(userId: number, data: {
   checkInDay?: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | null;
   stepGoal?: number | null;
-}) {
+}, coachId?: number) {
   const db = await getDb();
   if (!db) return;
   const existing = await db.select().from(clientProfiles).where(eq(clientProfiles.userId, userId)).limit(1);
   if (existing.length > 0) {
-    await db.update(clientProfiles).set(data as any).where(eq(clientProfiles.userId, userId));
+    // Also backfill coachId if it's missing
+    const updateData: any = { ...data };
+    if (coachId !== undefined && !existing[0].coachId) updateData.coachId = coachId;
+    await db.update(clientProfiles).set(updateData).where(eq(clientProfiles.userId, userId));
   } else {
-    await db.insert(clientProfiles).values({ userId, ...data } as any);
+    await db.insert(clientProfiles).values({ userId, coachId, ...data } as any);
   }
 }

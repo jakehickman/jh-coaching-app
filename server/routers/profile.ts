@@ -31,5 +31,5 @@ export const profileRouter = router({
         notes: z.string().nullable().optional(),
       })
     )
-    .mutation(({ input }) => db.upsertClientProfile(input)),
+    .mutation(({ ctx, input }) => db.upsertClientProfile({ coachId: ctx.user.id, ...input })),
 });
