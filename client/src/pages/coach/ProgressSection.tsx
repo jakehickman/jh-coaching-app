@@ -883,6 +883,7 @@ export default function ProgressSection() {
             logs={allLogs}
             measurements={measurements ?? []}
             startDate={clientStartDate}
+            checkInDay={(clientProfile as any)?.checkInDay ?? null}
           />
 
           <CoachHabitsPanel clientId={selectedUserId!} />

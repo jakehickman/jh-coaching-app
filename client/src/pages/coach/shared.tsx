@@ -407,14 +407,22 @@ export function MuscleGroupSection({ group, children, globalToggle }: { group: s
 }
 
 // ─── ProgressHistoryTable ────────────────────────────────────────────────────
+// Map day name to JS getDay() index (0=Sun, 1=Mon, ..., 6=Sat)
+const DAY_NAME_TO_DOW: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+  thursday: 4, friday: 5, saturday: 6,
+};
+
 export function ProgressHistoryTable({
   logs,
   measurements,
   startDate,
+  checkInDay,
 }: {
   logs: DailyLogRow[];
   measurements: any[];
   startDate?: string | null;
+  checkInDay?: string | null;
 }) {
   function siteAvg(vals: (number | null | undefined)[]): number | null {
     const nums = vals.filter((v): v is number => v != null);
@@ -454,12 +462,14 @@ export function ProgressHistoryTable({
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  // ── Group into Mon-Sun weeks ────────────────────────────────────────────────
+  // ── Group into check-in-day-aligned weeks ───────────────────────────────────
+  // Default to Monday (1) if no checkInDay set
+  const weekStartDow = checkInDay ? (DAY_NAME_TO_DOW[checkInDay.toLowerCase()] ?? 1) : 1;
   const weeks: string[][] = [];
   let currentWeek: string[] = [];
   for (const iso of days) {
     const dow = new Date(iso + "T00:00:00").getDay();
-    if (dow === 1 && currentWeek.length > 0) { weeks.push(currentWeek); currentWeek = []; }
+    if (dow === weekStartDow && currentWeek.length > 0) { weeks.push(currentWeek); currentWeek = []; }
     currentWeek.push(iso);
   }
   if (currentWeek.length > 0) weeks.push(currentWeek);
