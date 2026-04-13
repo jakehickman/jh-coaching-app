@@ -73,8 +73,18 @@ export default function CheckInsSection() {
   const isOverdue = (clientId: number): boolean =>
     (overdueList as any[]).some((o: any) => o.clientId === clientId);
 
+  // Helper: does this client's check-in day match today (local time)?
+  const todayDayNameLocal = [
+    "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
+  ][new Date().getDay()];
+  const isCheckInToday = (clientId: number): boolean => {
+    const p = (clientProfiles as any[]).find((x: any) => x.userId === clientId);
+    return !!(p?.checkInDay && p.checkInDay === todayDayNameLocal);
+  };
+
   const sortBucket = (ci: any, reviewed: boolean, id: number): number => {
     if (isOverdue(id)) return 0; // overdue = highest priority
+    if (isCheckInToday(id)) return 1; // today's check-in day (green pill)
     if (!reviewed && ci) {
       const submittedUtc = new Date(
         Date.UTC(
@@ -83,10 +93,10 @@ export default function CheckInsSection() {
           new Date(ci.submittedAt).getUTCDate()
         )
       );
-      if (submittedUtc >= mondayUtc) return 1; // unreviewed this week
+      if (submittedUtc >= mondayUtc) return 2; // unreviewed this week
     }
-    if (!ci) return 2; // no check-ins yet
-    return 3; // reviewed / complete
+    if (!ci) return 3; // no check-ins yet
+    return 4; // reviewed / complete
   };
 
   const sortedClients = [...clients].sort((a, b) => {
