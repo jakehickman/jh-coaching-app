@@ -463,8 +463,11 @@ export function ProgressHistoryTable({
   }
 
   // ── Group into check-in-day-aligned weeks ───────────────────────────────────
-  // Default to Monday (1) if no checkInDay set
-  const weekStartDow = checkInDay ? (DAY_NAME_TO_DOW[checkInDay.toLowerCase()] ?? 1) : 1;
+  // Week starts the day AFTER the check-in day so that measurements taken on
+  // check-in day are captured in the period being reviewed, not the new one.
+  // Default: check-in day = Monday → week starts Tuesday (2)
+  const checkInDow = checkInDay ? (DAY_NAME_TO_DOW[checkInDay.toLowerCase()] ?? 1) : 1;
+  const weekStartDow = (checkInDow + 1) % 7;
   const weeks: string[][] = [];
   let currentWeek: string[] = [];
   for (const iso of days) {
