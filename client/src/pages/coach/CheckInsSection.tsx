@@ -74,7 +74,7 @@ export default function CheckInsSection() {
     (overdueList as any[]).some((o: any) => o.clientId === clientId);
 
   // Helper: does this client's pill show green today?
-  // Matches the pill logic: check-in day === today AND today is not their start date.
+  // Matches the pill logic: check-in day === today AND today is on or after their start date (not in the future, not their literal start date).
   const todayDayNameLocal = [
     "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
   ][new Date().getDay()];
@@ -88,7 +88,9 @@ export default function CheckInsSection() {
     const clientStart = p?.startDate
       ? (typeof p.startDate === "string" ? p.startDate.slice(0, 10) : new Date(p.startDate).toISOString().slice(0, 10))
       : null;
-    return clientStart !== todayIsoLocal; // exclude clients whose start date is today
+    // Exclude if start date is today (first day) or in the future
+    if (!clientStart || clientStart >= todayIsoLocal) return false;
+    return true;
   };
 
   const sortBucket = (ci: any, reviewed: boolean, id: number): number => {
@@ -243,7 +245,8 @@ export default function CheckInsSection() {
                           : new Date(p.startDate).toISOString().slice(0, 10)
                         : null;
                       const isStartDay = clientStart === todayIsoLocal;
-                      const isToday = day === todayDayName && !isStartDay;
+                      const isFutureStart = !!clientStart && clientStart > todayIsoLocal;
+                      const isToday = day === todayDayName && !isStartDay && !isFutureStart;
                       const overdue = isOverdue(client.id);
                       const pillClass = overdue
                         ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
