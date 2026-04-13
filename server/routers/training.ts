@@ -104,6 +104,7 @@ export const exerciseLibraryRouter = router({
         quads: z.number().optional(),
         hams: z.number().optional(),
         glutes: z.number().optional(),
+        gluteMed: z.number().optional(),
         calves: z.number().optional(),
         abs: z.number().optional(),
         customGroups: z.any().optional(),

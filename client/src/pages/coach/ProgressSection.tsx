@@ -203,7 +203,7 @@ const MUSCLE_LABELS: Record<string, string> = {
   chest: 'Chest', frontDelts: 'Front Delts', sideDelts: 'Side Delts',
   triceps: 'Triceps', lats: 'Lats', upperBack: 'Upper Back',
   rearDelts: 'Rear Delts', biceps: 'Biceps', quads: 'Quads',
-  hams: 'Hamstrings', glutes: 'Glutes', calves: 'Calves', abs: 'Abs',
+  hams: 'Hamstrings', glutes: 'Glute Max', gluteMed: 'Glute Med', calves: 'Calves', abs: 'Abs',
 };
 const MUSCLE_KEYS = Object.keys(MUSCLE_LABELS);
 

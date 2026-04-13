@@ -270,6 +270,7 @@ export const exerciseLibrary = mysqlTable("exercise_library", {
   quads: float("quads").default(0),
   hams: float("hams").default(0),
   glutes: float("glutes").default(0),
+  gluteMed: float("gluteMed").default(0),
   calves: float("calves").default(0),
   abs: float("abs").default(0),
   // Extra custom muscle groups stored as JSON: [{name, value}]

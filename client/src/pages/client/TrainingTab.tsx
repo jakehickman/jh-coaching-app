@@ -283,7 +283,7 @@ function WorkoutLogTab() {
   const [subPicker, setSubPicker] = useState<{ originalName: string } | null>(null);
   const [subSearch, setSubSearch] = useState("");
 
-  const MUSCLE_KEYS = ["chest","frontDelts","sideDelts","triceps","lats","upperBack","rearDelts","biceps","quads","hams","glutes","calves","abs"] as const;
+  const MUSCLE_KEYS = ["chest","frontDelts","sideDelts","triceps","lats","upperBack","rearDelts","biceps","quads","hams","glutes","gluteMed","calves","abs"] as const;
   function muscleScore(a: any, b: any): number {
     return MUSCLE_KEYS.reduce((sum, k) => sum + (a[k] ?? 0) * (b[k] ?? 0), 0);
   }
@@ -738,7 +738,7 @@ function WorkoutLogTab() {
                   const primaryMuscle = ([
                     ["chest","Chest"],["frontDelts","Front Delts"],["sideDelts","Side Delts"],["triceps","Triceps"],
                     ["lats","Lats"],["upperBack","Upper Back"],["rearDelts","Rear Delts"],["biceps","Biceps"],
-                    ["quads","Quads"],["hams","Hamstrings"],["glutes","Glutes"],["calves","Calves"],["abs","Abs"]
+                    ["quads","Quads"],["hams","Hamstrings"],["glutes","Glute Max"],["gluteMed","Glute Med"],["calves","Calves"],["abs","Abs"]
                   ] as [string, string][]).reduce<[number, string]>((best, [k, label]) =>
                     (e[k] ?? 0) > best[0] ? [(e[k] ?? 0) as number, label] : best, [0, ""]
                   )[1];

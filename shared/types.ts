@@ -19,5 +19,6 @@ export type MuscleKey =
   | "quads"
   | "hams"
   | "glutes"
+  | "gluteMed"
   | "calves"
   | "abs";

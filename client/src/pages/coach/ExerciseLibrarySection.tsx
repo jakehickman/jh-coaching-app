@@ -19,7 +19,8 @@ export const MUSCLE_GROUPS: { key: MuscleKey; label: string }[] = [
   { key: "biceps", label: "Biceps" },
   { key: "quads", label: "Quads" },
   { key: "hams", label: "Hams" },
-  { key: "glutes", label: "Glutes" },
+  { key: "glutes", label: "Glute Max" },
+  { key: "gluteMed", label: "Glute Med" },
   { key: "calves", label: "Calves" },
   { key: "abs", label: "Abs" },
 ];
@@ -38,6 +39,7 @@ type ExerciseRow = {
   quads: number;
   hams: number;
   glutes: number;
+  gluteMed: number;
   calves: number;
   abs: number;
   videoUrl?: string;
@@ -56,6 +58,7 @@ const EMPTY_EXERCISE: ExerciseRow = {
   quads: 0,
   hams: 0,
   glutes: 0,
+  gluteMed: 0,
   calves: 0,
   abs: 0,
   videoUrl: "",
@@ -332,7 +335,7 @@ export default function ExerciseLibrarySection() {
                   <td className="px-3 py-2.5 text-center">
                     <div className="flex items-center justify-center gap-1">
                       <button
-                        onClick={() => startEdit(ex as ExerciseRow)}
+                        onClick={() => startEdit(ex as unknown as ExerciseRow)}
                         className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                       >
                         <Pencil size={16} />
