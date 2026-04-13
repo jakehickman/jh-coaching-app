@@ -479,7 +479,7 @@ export function ProgressHistoryTable({
   const weeks: string[][] = [];
   const weekLabels: string[] = [];
   let currentWeek: string[] = [];
-  let weekNum = 0; // 0 = baseline
+  let weekNum = 1; // starts at 1
   let nextCheckInMs = firstCheckInMs;
 
   for (const iso of days) {
@@ -487,7 +487,7 @@ export function ProgressHistoryTable({
     // When we pass the boundary (day after current check-in), start a new period
     if (dayMs > nextCheckInMs && currentWeek.length > 0) {
       weeks.push(currentWeek);
-      weekLabels.push(weekNum === 0 ? "Baseline" : `Week ${weekNum}`);
+      weekLabels.push(`Week ${weekNum}`);
       currentWeek = [];
       weekNum++;
       nextCheckInMs += 7 * 86400000;
@@ -496,7 +496,7 @@ export function ProgressHistoryTable({
   }
   if (currentWeek.length > 0) {
     weeks.push(currentWeek);
-    weekLabels.push(weekNum === 0 ? "Baseline" : `Week ${weekNum}`);
+    weekLabels.push(`Week ${weekNum}`);
   }
 
   // ── Compute per-week stats ──────────────────────────────────────────────────
@@ -594,10 +594,7 @@ export function ProgressHistoryTable({
               {/* Week header */}
               <div className="flex items-center justify-between px-4 pt-3 pb-2">
                 <div className="flex items-center gap-2">
-                  {row.label === 'Baseline'
-                    ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-semibold uppercase tracking-wide">Baseline</span>
-                    : <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${isFirst ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>{row.label}</span>
-                  }
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${isFirst ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>{row.label}</span>
                   <p className={`text-sm ${isFirst ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>{row.dateRange}</p>
                 </div>
                 <div className="flex items-center gap-2">
