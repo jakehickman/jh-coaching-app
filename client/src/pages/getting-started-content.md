@@ -178,6 +178,18 @@ There is no right or wrong choice here.
 
 If you are meal prepping, I recommend preparing meals no more than 3 days in advance for freshness.
 
+## 5.7 Treat Allowance
+
+You may have a treat allowance built into your plan.
+
+This is a set number of calories per day that can be used on foods of your choice. In some cases, this may differ between training days and rest days.
+
+The main rule is simple: whatever you choose needs to fit within that allowance.
+
+It can also be saved across days, but it is not mandatory to use. In general, progress will usually be faster without it, so use it honestly and sensibly.
+
+If eating two squares of dark chocolate means you can't resist eating the whole block, you're better off without it.
+
 <!-- SECTION id="supplements" number="6" title="Supplements" -->
 
 Supplements can be useful, but they are there to support the basics. Your training, nutrition, sleep, and consistency matter far more.
