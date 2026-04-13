@@ -269,7 +269,7 @@ function renderNode(node: ContentNode, key: number) {
     case "image":
       return (
         <div key={key} className="mt-4">
-          <img src={node.src} alt={node.alt} className="w-full max-w-md rounded-lg" />
+          <img src={node.src} alt={node.alt} className="w-full max-w-xs rounded-lg" />
         </div>
       );
     case "whatsapp":
