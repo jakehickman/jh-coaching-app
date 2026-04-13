@@ -214,7 +214,15 @@ export default function OverviewTab() {
 
   const checkInDay = (profile as any)?.checkInDay as string | null | undefined;
   const todayDayName = new Date().toLocaleDateString('en-AU', { weekday: 'long' }).toLowerCase();
-  const isCheckInDay = !!checkInDay && todayDayName === checkInDay;
+  const startedWithin7Days = (() => {
+    const startDate = (profile as any)?.startDate;
+    if (!startDate) return false;
+    const start = new Date(startDate);
+    const today = new Date();
+    const diffMs = today.getTime() - start.getTime();
+    return diffMs >= 0 && diffMs < 7 * 24 * 60 * 60 * 1000;
+  })();
+  const isCheckInDay = !!checkInDay && todayDayName === checkInDay && !startedWithin7Days;
   const getMondayStr = () => {
     const d = new Date();
     const day = d.getDay();
