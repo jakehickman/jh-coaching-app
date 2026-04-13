@@ -537,7 +537,7 @@ export function ProgressHistoryTable({
     const avg = weekAvg(wkDays);
     const prevAvg = i > 0 ? weekAvg(weeks[i - 1]) : null;
     const pctChange = avg != null && prevAvg != null && prevAvg !== 0
-      ? parseFloat(((avg - prevAvg) / prevAvg * 100).toFixed(2))
+      ? parseFloat(((avg - prevAvg) / prevAvg * 100).toFixed(1))
       : null;
     const m = weekMeas(wkDays);
     const umbAvg = m ? siteAvg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]) : null;
@@ -606,11 +606,11 @@ export function ProgressHistoryTable({
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Avg Weight</p>
                   <div className="flex items-center gap-1.5">
                     <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
-                      {row.avg != null ? `${row.avg} kg` : <span className="text-muted-foreground text-sm">—</span>}
+                      {row.avg != null ? `${row.avg.toFixed(1)} kg` : <span className="text-muted-foreground text-sm">—</span>}
                     </p>
                     {pctLabel && (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${pctColor} ${pctBg}`}>
-                        {pctDown ? <ArrowDown size={9} /> : pctUp ? <ArrowUp size={9} /> : <Minus size={9} />}
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${pctColor} ${pctBg}`}>
+                        {pctDown ? <ArrowDown size={11} /> : pctUp ? <ArrowUp size={11} /> : <Minus size={11} />}
                         {pctLabel}
                       </span>
                     )}
