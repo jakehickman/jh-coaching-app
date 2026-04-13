@@ -171,10 +171,12 @@ function MealPlanTab() {
             <Card className="border-pink-500/20 bg-pink-500/5">
               <div className="flex items-center gap-2 mb-1">
                 <Candy size={14} className="text-pink-400" />
-                <p className="text-[10px] text-pink-400 uppercase tracking-wider font-semibold">Daily Treat Allowance</p>
+                <p className="text-[10px] text-pink-400 uppercase tracking-wider font-semibold">
+                  {dayType === "training" ? "Training Day" : "Rest Day"} Treat Allowance
+                </p>
               </div>
               <p className="text-sm text-foreground">
-                You have <span className="font-bold text-pink-400">{treatAllowanceKcal} kcal</span> per day to spend on whatever treat you like.
+                You have <span className="font-bold text-pink-400">{treatAllowanceKcal} kcal</span> to spend on whatever you like.
               </p>
             </Card>
           )}
