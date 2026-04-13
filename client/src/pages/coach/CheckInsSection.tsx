@@ -73,13 +73,22 @@ export default function CheckInsSection() {
   const isOverdue = (clientId: number): boolean =>
     (overdueList as any[]).some((o: any) => o.clientId === clientId);
 
-  // Helper: does this client's check-in day match today (local time)?
+  // Helper: does this client's pill show green today?
+  // Matches the pill logic: check-in day === today AND today is not their start date.
   const todayDayNameLocal = [
     "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
   ][new Date().getDay()];
+  const todayIsoLocal = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
   const isCheckInToday = (clientId: number): boolean => {
     const p = (clientProfiles as any[]).find((x: any) => x.userId === clientId);
-    return !!(p?.checkInDay && p.checkInDay === todayDayNameLocal);
+    if (!p?.checkInDay || p.checkInDay !== todayDayNameLocal) return false;
+    const clientStart = p?.startDate
+      ? (typeof p.startDate === "string" ? p.startDate.slice(0, 10) : new Date(p.startDate).toISOString().slice(0, 10))
+      : null;
+    return clientStart !== todayIsoLocal; // exclude clients whose start date is today
   };
 
   const sortBucket = (ci: any, reviewed: boolean, id: number): number => {
