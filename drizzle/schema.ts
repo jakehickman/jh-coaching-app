@@ -91,7 +91,6 @@ export const clientProfiles = mysqlTable("client_profiles", {
   notes: text("notes"),
   checkInDay: mysqlEnum("checkInDay", ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]),
   stepGoal: int("stepGoal"), // daily step goal
-  treatAllowanceKcal: int("treatAllowanceKcal"), // daily treat allowance in kcal
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -163,11 +162,11 @@ export const mealPlans = mysqlTable("meal_plans", {
   totalCalories: int("totalCalories"),
   totalProtein: int("totalProtein"),
   totalCarbs: int("totalCarbs"),
-  totalFat: int("totalFat"),
+   totalFat: int("totalFat"),
+  treatAllowanceKcal: int("treatAllowanceKcal"), // daily treat allowance in kcal (per day type)
   notes: text("notes"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
 export type MealPlan = typeof mealPlans.$inferSelect;
 
 // Shopping list items

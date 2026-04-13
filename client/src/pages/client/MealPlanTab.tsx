@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useMemo } from "react";
-import { Check, Candy } from "lucide-react";
+import { Check, Candy } from "lucide-react"; // Candy used for treat allowance card
 import { SectionLabel, Card } from "./shared";
 import { useViewAs } from "@/contexts/ViewAsContext";
 
@@ -14,10 +14,7 @@ function MealPlanTab() {
   const { data: planAdmin } = trpc.mealPlan.getForClient.useQuery({ userId: viewAsUserId!, dayType }, { enabled: !!viewAsUserId });
   const plan = viewAsUserId ? planAdmin : planOwn;
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
-  const { data: profileOwn } = trpc.profile.get.useQuery(undefined, { enabled: !viewAsUserId });
-  const { data: profileAdmin } = trpc.profile.getById.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
-  const profile = viewAsUserId ? profileAdmin : profileOwn;
-  const treatAllowanceKcal = (profile as any)?.treatAllowanceKcal as number | null | undefined;
+  const treatAllowanceKcal = (plan as any)?.treatAllowanceKcal as number | null | undefined;
 
   const meals = (plan?.meals as any[]) ?? [];
 

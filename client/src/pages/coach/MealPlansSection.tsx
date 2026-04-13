@@ -177,18 +177,8 @@ export default function MealPlansSection() {
   const [meals, setMeals] = useState<any[]>([]);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
-  // Treat allowance — per-client setting, not per meal plan day
-  const { data: clientProfile, refetch: refetchProfile } = trpc.profile.getById.useQuery(
-    { userId: selectedUserId! },
-    { enabled: !!selectedUserId }
-  );
+  // Treat allowance — per day type, loaded from meal plan
   const [treatAllowance, setTreatAllowance] = useState("");
-  const updateClientConfig = trpc.clientConfig.update.useMutation({
-    onSuccess: () => { refetchProfile(); },
-  });
-  useEffect(() => {
-    setTreatAllowance((clientProfile as any)?.treatAllowanceKcal?.toString() ?? "");
-  }, [clientProfile, selectedUserId]);
 
   // Snapshot of the last server-saved state — used to detect genuine changes
   const mealSavedSnapshot = useRef<{ planNotes: string; meals: any[] } | null>(null);
@@ -214,6 +204,7 @@ export default function MealPlansSection() {
     const serverMeals = (plan?.meals as any[]) ?? [];
     setPlanNotes(serverNotes);
     setMeals(serverMeals);
+    setTreatAllowance((plan as any)?.treatAllowanceKcal?.toString() ?? "");
     mealSavedSnapshot.current = { planNotes: serverNotes, meals: serverMeals };
     // Clear any stale draft for this key since we just loaded fresh server data
     const draftKey = `draft:mealPlan:${mealLoadKey}`;
@@ -266,6 +257,7 @@ export default function MealPlansSection() {
       totalCarbs: dailyTotals.carbs ? Math.round(dailyTotals.carbs) : undefined,
       totalFat: dailyTotals.fat ? Math.round(dailyTotals.fat) : undefined,
       notes: planNotes || null,
+      treatAllowanceKcal: treatAllowance ? parseInt(treatAllowance) : null,
     });
   };
 
@@ -515,13 +507,9 @@ export default function MealPlansSection() {
             <button
               onClick={() => {
                 if (!selectedUserId) return;
-                updateClientConfig.mutate({
-                  userId: selectedUserId,
-                  treatAllowanceKcal: treatAllowance ? parseInt(treatAllowance) : null,
-                });
-                toast.success("Treat allowance saved");
+                doSave();
               }}
-              disabled={updateClientConfig.isPending}
+              disabled={upsert.isPending}
               className="px-3 py-2 bg-secondary border border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors disabled:opacity-50 whitespace-nowrap"
             >
               Save

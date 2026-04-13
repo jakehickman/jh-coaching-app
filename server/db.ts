@@ -335,6 +335,7 @@ export async function upsertMealPlan(data: {
   totalProtein?: number;
   totalCarbs?: number;
   totalFat?: number;
+  treatAllowanceKcal?: number | null;
   notes?: string | null;
 }) {
   const db = await getDb();
@@ -1003,7 +1004,6 @@ export async function deleteCheckIn(id: number): Promise<void> {
 export async function updateClientProfileExtended(userId: number, data: {
   checkInDay?: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | null;
   stepGoal?: number | null;
-  treatAllowanceKcal?: number | null;
 }, coachId?: number) {
   const db = await getDb();
   if (!db) return;

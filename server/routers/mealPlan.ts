@@ -20,6 +20,7 @@ export const mealPlanRouter = router({
         totalProtein: z.number().optional(),
         totalCarbs: z.number().optional(),
         totalFat: z.number().optional(),
+        treatAllowanceKcal: z.number().int().min(0).nullable().optional(),
         notes: z.string().nullable().optional(),
       })
     )
