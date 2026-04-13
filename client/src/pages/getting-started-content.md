@@ -355,7 +355,7 @@ Make sure:
 - The lighting is good
 - You use the same conditions each week
 - You are in a relaxed pose
-- You use a tripod, not mirror selfies
+- You use a tripod (no mirror selfies)
 
 Please send your progress photos to me on WhatsApp.
 
