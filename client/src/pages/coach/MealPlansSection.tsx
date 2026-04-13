@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, ArrowUp, ArrowDown, Check } from "lucide-react";
+import { Plus, Trash2, Save, ArrowUp, ArrowDown, Check, Candy } from "lucide-react";
 import { Card, SectionLabel, ClientCombobox, useClientSelector } from "./shared";
 
 function FoodCombobox({
@@ -176,6 +176,19 @@ export default function MealPlansSection() {
   const [planNotes, setPlanNotes] = useState("");
   const [meals, setMeals] = useState<any[]>([]);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
+  // Treat allowance — per-client setting, not per meal plan day
+  const { data: clientProfile, refetch: refetchProfile } = trpc.profile.getById.useQuery(
+    { userId: selectedUserId! },
+    { enabled: !!selectedUserId }
+  );
+  const [treatAllowance, setTreatAllowance] = useState("");
+  const updateClientConfig = trpc.clientConfig.update.useMutation({
+    onSuccess: () => { refetchProfile(); },
+  });
+  useEffect(() => {
+    setTreatAllowance((clientProfile as any)?.treatAllowanceKcal?.toString() ?? "");
+  }, [clientProfile, selectedUserId]);
 
   // Snapshot of the last server-saved state — used to detect genuine changes
   const mealSavedSnapshot = useRef<{ planNotes: string; meals: any[] } | null>(null);
@@ -481,6 +494,38 @@ export default function MealPlansSection() {
             <label className="text-xs text-muted-foreground block mb-1">Notes</label>
             <textarea value={planNotes} onChange={e => setPlanNotes(e.target.value)} rows={2}
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+          </div>
+
+          {/* Treat allowance */}
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                <Candy size={12} className="text-pink-400" />
+                Daily Treat Allowance (kcal)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={treatAllowance}
+                onChange={e => setTreatAllowance(e.target.value)}
+                placeholder="e.g. 200"
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <button
+              onClick={() => {
+                if (!selectedUserId) return;
+                updateClientConfig.mutate({
+                  userId: selectedUserId,
+                  treatAllowanceKcal: treatAllowance ? parseInt(treatAllowance) : null,
+                });
+                toast.success("Treat allowance saved");
+              }}
+              disabled={updateClientConfig.isPending}
+              className="px-3 py-2 bg-secondary border border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              Save
+            </button>
           </div>
 
           <div className="space-y-1.5">

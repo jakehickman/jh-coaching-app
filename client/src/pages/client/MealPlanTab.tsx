@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useMemo } from "react";
-import { Check } from "lucide-react";
+import { Check, Candy } from "lucide-react";
 import { SectionLabel, Card } from "./shared";
 import { useViewAs } from "@/contexts/ViewAsContext";
 
@@ -14,6 +14,10 @@ function MealPlanTab() {
   const { data: planAdmin } = trpc.mealPlan.getForClient.useQuery({ userId: viewAsUserId!, dayType }, { enabled: !!viewAsUserId });
   const plan = viewAsUserId ? planAdmin : planOwn;
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
+  const { data: profileOwn } = trpc.profile.get.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: profileAdmin } = trpc.profile.getById.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const profile = viewAsUserId ? profileAdmin : profileOwn;
+  const treatAllowanceKcal = (profile as any)?.treatAllowanceKcal as number | null | undefined;
 
   const meals = (plan?.meals as any[]) ?? [];
 
@@ -163,6 +167,18 @@ function MealPlanTab() {
             <Card>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Coach Notes</p>
               <p className="text-sm text-foreground">{plan.notes}</p>
+            </Card>
+          )}
+
+          {!!treatAllowanceKcal && (
+            <Card className="border-pink-500/20 bg-pink-500/5">
+              <div className="flex items-center gap-2 mb-1">
+                <Candy size={14} className="text-pink-400" />
+                <p className="text-[10px] text-pink-400 uppercase tracking-wider font-semibold">Daily Treat Allowance</p>
+              </div>
+              <p className="text-sm text-foreground">
+                You have <span className="font-bold text-pink-400">{treatAllowanceKcal} kcal</span> per day to spend on whatever treat you like.
+              </p>
             </Card>
           )}
         </div>
