@@ -4,15 +4,264 @@ import { toast } from "sonner";
 import { localToday, fmtDate, toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { pctChange as pctChangeNum } from "@/lib/stats";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler } from "lucide-react";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
   MeasurementsCard, MuscleGroupSection, DailyLogRow, ProgressHistoryTable
 } from "./shared";
 import { CoachHabitsPanel } from "./HabitsSection";
+
+// ─── Measurements Tab ────────────────────────────────────────────────────────
+function MeasurementsTab({ measurements }: { measurements: any[] }) {
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const sorted = [...measurements].sort((a, b) =>
+    toLocalDateStr(b.measureDate).localeCompare(toLocalDateStr(a.measureDate))
+  );
+
+  function avg(vals: (number | null | undefined)[]): number | null {
+    const nums = vals.filter((v): v is number => v != null);
+    return nums.length ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
+  }
+
+  const SITES = [
+    { key: 'umbilical', label: 'Umbilical' },
+    { key: 'suprailiac', label: 'Suprailiac' },
+    { key: 'calf',       label: 'Calf' },
+    { key: 'thigh',      label: 'Thigh' },
+  ] as const;
+
+  function siteAvg(m: any, site: string): number | null {
+    return avg([m[`${site}1`], m[`${site}2`], m[`${site}3`], m[`${site}4`], m[`${site}5`]]);
+  }
+
+  function totalSkinfold(m: any): number | null {
+    const vals = SITES.map(s => siteAvg(m, s.key)).filter((v): v is number => v != null);
+    return vals.length > 0 ? parseFloat(vals.reduce((a, b) => a + b, 0).toFixed(1)) : null;
+  }
+
+  function fmtDate(iso: string) {
+    const [y, m, d] = iso.split('-');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+  }
+
+  function diffBadge(curr: number | null, prev: number | null, invertGood = false) {
+    if (curr == null || prev == null) return null;
+    const d = parseFloat((curr - prev).toFixed(1));
+    if (d === 0) return null;
+    const isGood = invertGood ? d > 0 : d < 0;
+    return (
+      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+        isGood ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+      }`}>
+        {d > 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
+        {d > 0 ? '+' : ''}{d} mm
+      </span>
+    );
+  }
+
+  function waistDiffBadge(curr: number | null, prev: number | null) {
+    if (curr == null || prev == null) return null;
+    const d = parseFloat((curr - prev).toFixed(1));
+    if (d === 0) return null;
+    const isGood = d < 0;
+    return (
+      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+        isGood ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+      }`}>
+        {d > 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
+        {d > 0 ? '+' : ''}{d} cm
+      </span>
+    );
+  }
+
+  // Build trend data (oldest first) for the chart
+  const trendData = [...sorted].reverse().map(m => {
+    const iso = toLocalDateStr(m.measureDate);
+    const [, mo, d] = iso.split('-');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return {
+      date: `${parseInt(d)} ${months[parseInt(mo)-1]}`,
+      total: totalSkinfold(m),
+      waist: m.waist ?? null,
+      umbilical: siteAvg(m, 'umbilical'),
+      suprailiac: siteAvg(m, 'suprailiac'),
+      calf: siteAvg(m, 'calf'),
+      thigh: siteAvg(m, 'thigh'),
+    };
+  });
+
+  if (sorted.length === 0) {
+    return (
+      <div className="bg-card border border-border rounded-xl p-8 text-center">
+        <Ruler className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground">No measurements recorded yet.</p>
+      </div>
+    );
+  }
+
+  const SITE_COLORS: Record<string, string> = {
+    umbilical: '#22c55e',
+    suprailiac: '#3b82f6',
+    calf: '#f59e0b',
+    thigh: '#a855f7',
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Site-by-site trend chart */}
+      {trendData.length > 1 && (
+        <div>
+          <SectionLabel>Skinfold Trend (mm per site)</SectionLabel>
+          <div className="bg-card border border-border rounded-xl p-4">
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={trendData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                <XAxis dataKey="date" tick={{ fill: '#666', fontSize: 10 }} interval="preserveStartEnd" />
+                <YAxis tick={{ fill: '#666', fontSize: 10 }} width={30} />
+                <Tooltip
+                  contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 8 }}
+                  labelStyle={{ color: '#fff' }}
+                  formatter={(v: number, name: string) => [`${v} mm`, name.charAt(0).toUpperCase() + name.slice(1)]}
+                />
+                {SITES.map(s => (
+                  <Area key={s.key} type="monotone" dataKey={s.key} stroke={SITE_COLORS[s.key]}
+                    fill={SITE_COLORS[s.key] + '22'} strokeWidth={2} dot={{ r: 3, fill: SITE_COLORS[s.key] }}
+                    connectNulls />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+            {/* Legend */}
+            <div className="flex flex-wrap gap-4 mt-3 justify-center">
+              {SITES.map(s => (
+                <div key={s.key} className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full" style={{ background: SITE_COLORS[s.key] }} />
+                  <span className="text-[11px] text-muted-foreground">{s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Session cards */}
+      <div>
+        <SectionLabel>All Measurement Sessions</SectionLabel>
+        <div className="space-y-2">
+          {sorted.map((m, i) => {
+            const iso = toLocalDateStr(m.measureDate);
+            const prev = sorted[i + 1] ?? null;
+            const isExpanded = expandedId === m.id;
+            const total = totalSkinfold(m);
+            const prevTotal = prev ? totalSkinfold(prev) : null;
+            const isLatest = i === 0;
+
+            return (
+              <div key={m.id} className={`rounded-xl border transition-colors ${
+                isLatest ? 'border-primary/30 bg-primary/5' : 'border-border bg-card'
+              }`}>
+                {/* Summary row */}
+                <button
+                  onClick={() => setExpandedId(isExpanded ? null : m.id)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/20 transition-colors rounded-xl"
+                >
+                  <div className="flex items-center gap-3">
+                    {isLatest && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold uppercase tracking-wide">Latest</span>}
+                    <p className={`text-sm font-semibold ${isLatest ? 'text-foreground' : 'text-muted-foreground'}`}>{fmtDate(iso)}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-right">
+                      {m.waist != null && (
+                        <span className="text-xs text-muted-foreground">Waist: <span className="text-foreground font-semibold">{m.waist} cm</span></span>
+                      )}
+                      {total != null && (
+                        <span className="text-xs text-muted-foreground">Total: <span className="text-foreground font-semibold">{total} mm</span></span>
+                      )}
+                    </div>
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                  </div>
+                </button>
+
+                {/* Expanded detail */}
+                {isExpanded && (
+                  <div className="px-4 pb-4 border-t border-border">
+                    {/* Waist */}
+                    <div className="pt-3 pb-2">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">Waist Circumference</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-foreground">{m.waist != null ? `${m.waist} cm` : '—'}</span>
+                        {waistDiffBadge(m.waist ?? null, prev?.waist ?? null)}
+                      </div>
+                    </div>
+
+                    {/* Skinfold sites */}
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      {SITES.map(s => {
+                        const readings = [m[`${s.key}1`], m[`${s.key}2`], m[`${s.key}3`], m[`${s.key}4`], m[`${s.key}5`]];
+                        const hasAny = readings.some(v => v != null);
+                        const sAvg = siteAvg(m, s.key);
+                        const prevAvg = prev ? siteAvg(prev, s.key) : null;
+                        return (
+                          <div key={s.key} className="bg-secondary rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{s.label}</p>
+                              <div className="flex items-center gap-1.5">
+                                {sAvg != null && <span className="text-sm font-bold text-foreground">{sAvg} mm</span>}
+                                {diffBadge(sAvg, prevAvg)}
+                              </div>
+                            </div>
+                            {hasAny ? (
+                              <div className="flex gap-1.5 flex-wrap">
+                                {readings.map((v, ri) => (
+                                  <span key={ri} className={`text-[11px] px-2 py-0.5 rounded font-mono ${
+                                    v != null ? 'bg-card text-foreground' : 'bg-card/50 text-muted-foreground'
+                                  }`}>
+                                    {v != null ? `${v}` : '—'}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground italic">No readings</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Total skinfold summary */}
+                    <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Skinfold</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base font-bold text-foreground">{total != null ? `${total} mm` : '—'}</span>
+                        {total != null && prevTotal != null && (() => {
+                          const d = parseFloat((total - prevTotal).toFixed(1));
+                          if (d === 0) return null;
+                          const isGood = d < 0;
+                          return (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                              isGood ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+                            }`}>
+                              {d > 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
+                              {d > 0 ? '+' : ''}{d} mm vs prev
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDays?: string[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -800,6 +1049,7 @@ export default function ProgressSection() {
           <Tabs defaultValue="overview" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="measurements">Measurements</TabsTrigger>
             <TabsTrigger value="sessions">Training</TabsTrigger>
             <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
             <TabsTrigger value="notes">Coaching Notes</TabsTrigger>
@@ -892,6 +1142,10 @@ export default function ProgressSection() {
             <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
           )}
           </div>
+          </TabsContent>
+
+          <TabsContent value="measurements">
+            <MeasurementsTab measurements={measurements ?? []} />
           </TabsContent>
 
           <TabsContent value="exercise">

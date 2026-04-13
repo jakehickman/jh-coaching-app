@@ -594,8 +594,7 @@ export function ProgressHistoryTable({
               {/* Week header */}
               <div className="flex items-center justify-between px-4 pt-3 pb-2">
                 <div className="flex items-center gap-2">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${isFirst ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>{row.label}</span>
-                  <p className={`text-sm ${isFirst ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>{row.dateRange}</p>
+                  <p className={`text-sm font-semibold ${isFirst ? 'text-foreground' : 'text-muted-foreground'}`}>{row.dateRange}</p>
                 </div>
                 <div className="flex items-center gap-2">
                 </div>
@@ -616,6 +615,7 @@ export function ProgressHistoryTable({
                       </span>
                     )}
                   </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{row.entries} {row.entries === 1 ? 'entry' : 'entries'}</p>
                 </div>
                 <div className="bg-card px-3 py-2.5">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist Circumference</p>
