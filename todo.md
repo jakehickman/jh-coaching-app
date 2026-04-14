@@ -379,3 +379,4 @@
 - [x] Coach Exercise Progress tab: hide machine preset subtext under weight×reps when exercise has multiple presets (filter already shows which machine)
 - [x] Coach Exercise Progress tab: condense history rows to single line (date · weight×reps · settings)
 - [x] Fix check-in tomorrow banner suppressed by startedWithin7Days guard (changed to only suppress on actual start date)
+- [x] Exercise Progress: up/down arrow should also trigger when reps change with same weight

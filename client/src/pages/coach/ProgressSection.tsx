@@ -719,8 +719,12 @@ function ExerciseProgressTab({
                       const w = entry.topSet?.weight ?? null;
                       const r = entry.topSet?.reps ?? null;
                       const pw = prevEntry?.topSet?.weight ?? null;
+                      const pr = prevEntry?.topSet?.reps ?? null;
                       const wUp = w != null && pw != null && w > pw;
                       const wDown = w != null && pw != null && w < pw;
+                      // When weight is equal, compare reps
+                      const rUp = !wUp && !wDown && w != null && pw != null && w === pw && r != null && pr != null && r > pr;
+                      const rDown = !wUp && !wDown && w != null && pw != null && w === pw && r != null && pr != null && r < pr;
                       // Build right-side detail string
                       const weightStr = w != null ? `${w} kg` : '—';
                       const repsStr = r != null ? ` × ${r}` : '';
@@ -748,8 +752,8 @@ function ExerciseProgressTab({
                           )}
                           {/* Trend arrow */}
                           <div className="w-4 flex justify-end flex-shrink-0">
-                            {wUp && <ArrowUp className="w-3 h-3 text-green-400" />}
-                            {wDown && <ArrowDown className="w-3 h-3 text-red-400" />}
+                            {(wUp || rUp) && <ArrowUp className="w-3 h-3 text-green-400" />}
+                            {(wDown || rDown) && <ArrowDown className="w-3 h-3 text-red-400" />}
                           </div>
                         </div>
                       );
