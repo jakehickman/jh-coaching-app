@@ -1,7 +1,8 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Tag } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Tag, History } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { SectionLabel, Card, DateInput } from "./shared";
@@ -171,6 +172,7 @@ function WorkoutLogTab() {
     (exerciseLib as any[]).filter((e: any) => e.videoUrl).map((e: any) => [e.name, e.videoUrl as string])
   );
   const [videoModal, setVideoModal] = useState<{ name: string; embedUrl: string } | null>(null);
+  const [historySheet, setHistorySheet] = useState<string | null>(null); // exercise name
 
   const today = (() => {
     const d = new Date();
@@ -569,8 +571,21 @@ function WorkoutLogTab() {
                           )}
                         </p>
                       )}
+                      {(() => {
+                        const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;
+                        return prevNote ? (
+                          <p className="text-xs text-muted-foreground/70 italic mt-0.5">↳ {prevNote}</p>
+                        ) : null;
+                      })()}
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={e => { e.stopPropagation(); setHistorySheet(displayName); }}
+                        title="Exercise history"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <History size={13} />
+                      </button>
                       <button
                         onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
                         title="Equipment details"
@@ -795,6 +810,57 @@ function WorkoutLogTab() {
           </div>
         );
       })()}
+
+      {/* Exercise history sheet */}
+      <Sheet open={!!historySheet} onOpenChange={open => { if (!open) setHistorySheet(null); }}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
+          <SheetHeader className="pb-2">
+            <SheetTitle className="text-base">{historySheet} — History</SheetTitle>
+          </SheetHeader>
+          {(() => {
+            if (!historySheet) return null;
+            const exName = historySheet;
+            const pastSessions = [...sessions]
+              .filter(s => (s.exercises as any[]).some((e: any) => e.name === exName))
+              .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)));
+            if (pastSessions.length === 0) return (
+              <p className="text-sm text-muted-foreground text-center py-8">No history yet for this exercise.</p>
+            );
+            return (
+              <div className="space-y-3 pb-4">
+                {pastSessions.map(s => {
+                  const exEntry = (s.exercises as any[]).find((e: any) => e.name === exName);
+                  if (!exEntry) return null;
+                  const completedSets = (exEntry.sets ?? []).filter((st: any) => st.weight != null || st.reps != null);
+                  const dateStr = (() => { const d = new Date(toLocalDateStr(s.sessionDate) + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); })();
+                  return (
+                    <div key={s.id} className="bg-secondary rounded-xl px-4 py-3 space-y-1.5">
+                      <p className="text-xs font-semibold text-foreground">{dateStr}</p>
+                      {exEntry.equipmentDetails && (
+                        <p className="text-xs text-muted-foreground"><span className="text-foreground/60">Equipment:</span> {exEntry.equipmentDetails}</p>
+                      )}
+                      {completedSets.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {completedSets.map((st: any, idx: number) => (
+                            <span key={idx} className="text-xs bg-card border border-border rounded-lg px-2 py-1 text-foreground">
+                              {st.weight != null ? `${st.weight}kg` : '—'} × {st.reps != null ? st.reps : '—'}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">No sets recorded</p>
+                      )}
+                      {exEntry.exerciseNotes && (
+                        <p className="text-xs text-muted-foreground italic mt-1">📝 {exEntry.exerciseNotes}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
 
       {/* Video modal */}
       {videoModal && (
