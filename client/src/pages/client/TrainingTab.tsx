@@ -543,7 +543,7 @@ function WorkoutLogTab() {
                     onClick={() => toggleExerciseCollapse(displayName)}
                     className="w-full mb-3 text-left cursor-pointer"
                   >
-                    {/* Row 1: exercise name + Demo pill */}
+                    {/* Row 1: exercise name + Demo pill + chevron */}
                     <div className="flex items-center gap-2 mb-1.5">
                       <p className="text-base font-semibold text-foreground flex-1">{displayName}</p>
                       {subName && (
@@ -558,6 +558,7 @@ function WorkoutLogTab() {
                           <Play size={10} fill="currentColor" /> Demo
                         </button>
                       )}
+                      <ChevronDown size={16} className={`text-muted-foreground transition-transform flex-shrink-0 ${isCollapsed ? '' : 'rotate-180'}`} />
                     </div>
                     {/* Row 2: meta info (left) + icon buttons (right) */}
                     <div className="flex items-end justify-between gap-2">
@@ -566,7 +567,7 @@ function WorkoutLogTab() {
                           <p className="text-[10px] text-muted-foreground">Substituting: {ex.name}</p>
                         )}
                         {ex.notes && !subName && <p className="text-xs text-muted-foreground">{ex.notes}</p>}
-                        <p className="text-xs text-muted-foreground">{ex.sets} sets × {ex.reps}</p>
+                        <p className="text-sm font-medium text-foreground/80">{ex.sets} sets × {ex.reps}</p>
                         {prevSets.length > 0 && (
                           <p className="text-xs text-primary/80 mt-0.5">
                             Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
@@ -590,24 +591,31 @@ function WorkoutLogTab() {
                         >
                           <History size={15} />
                         </button>
-                        <button
-                          onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
-                          title="Equipment details"
-                          className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-                            hasEquipment
-                              ? "bg-primary/15 text-primary"
-                              : "bg-secondary text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          <Tag size={15} />
-                        </button>
+                        {hasEquipment && (
+                          <button
+                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
+                            title="Equipment details"
+                            className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/15 text-primary transition-colors"
+                          >
+                            <Tag size={15} />
+                          </button>
+                        )}
+                        {!hasEquipment && (
+                          <button
+                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
+                            title="Add equipment details"
+                            className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                          >
+                            <Tag size={15} />
+                          </button>
+                        )}
                         <button
                           onClick={e => { e.stopPropagation(); setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
-                          className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors bg-secondary px-2.5 py-2 rounded-lg"
+                          title="Substitute exercise"
+                          className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <Shuffle size={13} /> Sub
+                          <Shuffle size={15} />
                         </button>
-                        <ChevronDown size={16} className={`text-muted-foreground transition-transform ${isCollapsed ? '' : 'rotate-180'}`} />
                       </div>
                     </div>
                   </div>
