@@ -591,24 +591,7 @@ function WorkoutLogTab() {
                         >
                           <History size={15} />
                         </button>
-                        {hasEquipment && (
-                          <button
-                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
-                            title="Equipment details"
-                            className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/15 text-primary transition-colors"
-                          >
-                            <Tag size={15} />
-                          </button>
-                        )}
-                        {!hasEquipment && (
-                          <button
-                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
-                            title="Add equipment details"
-                            className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-                          >
-                            <Tag size={15} />
-                          </button>
-                        )}
+
                         <button
                           onClick={e => { e.stopPropagation(); setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
                           title="Substitute exercise"
@@ -625,18 +608,15 @@ function WorkoutLogTab() {
                   )}
 
                   {!isCollapsed && (<>
-                    {isEquipmentOpen && (
-                      <div className="mb-3 -mt-1">
-                        <input
-                          type="text"
-                          value={equipmentDetails[displayName] ?? ""}
-                          onChange={e => setEquipmentDetails(prev => ({ ...prev, [displayName]: e.target.value }))}
-                          autoFocus={!hasEquipment}
-                          className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                        />
-                        <p className="text-[10px] text-muted-foreground mt-1">Equipment details</p>
-                      </div>
-                    )}
+                    <div className="mb-3 -mt-1">
+                      <input
+                        type="text"
+                        placeholder="Equipment & settings (e.g. T&V Fitness — seat 4)"
+                        value={equipmentDetails[displayName] ?? ""}
+                        onChange={e => setEquipmentDetails(prev => ({ ...prev, [displayName]: e.target.value }))}
+                        className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
 
                     {sets.length > 0 && (
                       <div className="mb-2">
