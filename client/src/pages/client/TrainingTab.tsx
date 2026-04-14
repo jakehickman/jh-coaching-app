@@ -202,6 +202,10 @@ function WorkoutLogTab() {
   // ── Form state ────────────────────────────────────────────────────────────
   const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({});
   const [equipmentDetails, setEquipmentDetails] = useState<Record<string, string>>({});
+  const [machinePreset, setMachinePreset] = useState<Record<string, string>>({}); // exerciseName -> preset name
+  const [machineSettings, setMachineSettings] = useState<Record<string, string>>({}); // exerciseName -> settings
+  const [newPresetInput, setNewPresetInput] = useState<Record<string, string>>({}); // exerciseName -> new preset being typed
+  const [historyExercise, setHistoryExercise] = useState<string | null>(null); // for preset list query
   const [exerciseNotes, setExerciseNotes] = useState<Record<string, string>>({});
   const [sessionNotes, setSessionNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -222,7 +226,7 @@ function WorkoutLogTab() {
   }
 
   function writeDraft(date: string, day: string) {
-    try { localStorage.setItem(draftKey(date, day), JSON.stringify({ v: 2, exerciseData, sessionNotes, equipmentDetails, exerciseNotes, substitutions })); } catch {}
+    try { localStorage.setItem(draftKey(date, day), JSON.stringify({ v: 2, exerciseData, sessionNotes, equipmentDetails, machinePreset, machineSettings, exerciseNotes, substitutions })); } catch {}
   }
 
   function clearDraft(date: string, day: string) {
@@ -232,6 +236,7 @@ function WorkoutLogTab() {
   const loadedRef = useRef<string | null>(null);
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
+  const [prevNoteOpen, setPrevNoteOpen] = useState<Record<string, boolean>>({});
   const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>({});
 
   function getCollapseKey(date: string, dayLabel: string) {
@@ -315,6 +320,16 @@ function WorkoutLogTab() {
     setSubSearch("");
   }
 
+  // ── Equipment presets ─────────────────────────────────────────────────────
+  const [presetQueryExercise, setPresetQueryExercise] = useState<string | null>(null);
+  const { data: presetList = [], refetch: refetchPresets } = trpc.equipmentPresets.list.useQuery(
+    { exerciseName: presetQueryExercise! },
+    { enabled: !!presetQueryExercise }
+  );
+  const upsertPresetMutation = trpc.equipmentPresets.upsert.useMutation({
+    onSuccess: () => refetchPresets(),
+  });
+
   const dailyLogMutation = trpc.dailyLog.upsert.useMutation();
 
   const saveMutation = trpc.workoutSessions.save.useMutation({
@@ -353,6 +368,8 @@ function WorkoutLogTab() {
       setExerciseData(migratedData);
       setSessionNotes(draft.sessionNotes ?? '');
       setEquipmentDetails(draft.equipmentDetails ?? {});
+      setMachinePreset(draft.machinePreset ?? {});
+      setMachineSettings(draft.machineSettings ?? {});
       setExerciseNotes(draft.exerciseNotes ?? {});
       setSubstitutions(draft.substitutions ?? {});
       const persisted = loadCollapsed(date, label);
@@ -369,6 +386,8 @@ function WorkoutLogTab() {
     if (existing) {
       const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
       const eqData: Record<string, string> = {};
+      const mpData: Record<string, string> = {};
+      const msData: Record<string, string> = {};
       const enData: Record<string, string> = {};
       const subData: Record<string, string> = {};
       for (const ex of (existing.exercises as any[])) {
@@ -380,10 +399,14 @@ function WorkoutLogTab() {
           completed: s.completed ?? (s.weight != null || s.reps != null),
         }));
         if (ex.equipmentDetails) eqData[ex.name] = ex.equipmentDetails;
+        if (ex.machinePreset) mpData[ex.name] = ex.machinePreset;
+        if (ex.machineSettings) msData[ex.name] = ex.machineSettings;
         if (ex.exerciseNotes) enData[ex.name] = ex.exerciseNotes;
       }
       setExerciseData(exData);
       setEquipmentDetails(eqData);
+      setMachinePreset(mpData);
+      setMachineSettings(msData);
       setExerciseNotes(enData);
       setSubstitutions(subData);
       setSessionNotes((existing.notes as string) ?? '');
@@ -409,14 +432,20 @@ function WorkoutLogTab() {
       .filter(s => s.dayLabel === label && toLocalDateStr(s.sessionDate) < date)
       .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)))[0];
     const prefillEquipment: Record<string, string> = {};
+    const prefillMachinePreset: Record<string, string> = {};
+    const prefillMachineSettings: Record<string, string> = {};
     if (prevForDay) {
       for (const ex of (prevForDay.exercises as any[])) {
         if (ex.equipmentDetails) prefillEquipment[ex.name] = ex.equipmentDetails;
+        if (ex.machinePreset) prefillMachinePreset[ex.name] = ex.machinePreset;
+        if (ex.machineSettings) prefillMachineSettings[ex.name] = ex.machineSettings;
       }
     }
     setExerciseData(blankEx);
     setSessionNotes('');
     setEquipmentDetails(prefillEquipment);
+    setMachinePreset(prefillMachinePreset);
+    setMachineSettings(prefillMachineSettings);
     setExerciseNotes({});
     setSubstitutions({});
     setCollapsedExercisesRaw(loadCollapsed(date, label));
@@ -480,6 +509,8 @@ function WorkoutLogTab() {
         name: nameToUse,
         substitutedFor: subName ? ex.name : undefined,
         equipmentDetails: equipmentDetails[nameToUse] || null,
+        machinePreset: machinePreset[nameToUse] || null,
+        machineSettings: machineSettings[nameToUse] || null,
         exerciseNotes: exerciseNotes[nameToUse] || null,
         sets: (exerciseData[nameToUse] ?? []).map(s => ({
           weight: s.weight !== "" ? parseFloat(s.weight) : null,
@@ -531,11 +562,12 @@ function WorkoutLogTab() {
           .filter(s => s.dayLabel === selectedDay && toLocalDateStr(s.sessionDate) < sessionDate)
           .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)))[0];
         const prevExMap: Record<string, Array<{ weight: number | null; reps: number | null }>> = {};
-        const prevEquipmentMap: Record<string, string> = {};
+        const prevMachinePresetMap: Record<string, string> = {};
         if (prevSession) {
           for (const ex of (prevSession.exercises as any[])) {
             prevExMap[ex.name] = (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null);
-            if (ex.equipmentDetails) prevEquipmentMap[ex.name] = ex.equipmentDetails;
+            if (ex.machinePreset) prevMachinePresetMap[ex.name] = ex.machinePreset;
+            else if (ex.equipmentDetails) prevMachinePresetMap[ex.name] = ex.equipmentDetails; // legacy fallback
           }
         }
 
@@ -549,9 +581,10 @@ function WorkoutLogTab() {
               const prevSets = prevExMap[displayName] ?? prevExMap[ex.name] ?? [];
               const exVideoUrl = videoMap[displayName] ?? videoMap[ex.name];
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
-              const hasEquipment = !!(equipmentDetails[displayName]?.trim());
-              // Field is open if: has text (always show) OR explicitly opened via button
-              // Once text is cleared, close it
+              const currentPreset = machinePreset[displayName] ?? "";
+              const currentSettings = machineSettings[displayName] ?? "";
+              const hasEquipment = !!(equipmentDetails[displayName]?.trim()) || !!currentPreset;
+              // Field is open if: has preset/text (always show) OR explicitly opened via button
               const isEquipmentOpen = hasEquipment || (!!equipmentOpen[displayName] && !isCollapsed);
               return (
                 <Card key={i}>
@@ -589,16 +622,28 @@ function WorkoutLogTab() {
                         {prevSets.length > 0 && (
                           <p className="text-xs text-primary/80 mt-0.5">
                             Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
-                            {(prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]) && (
-                              <span className="text-muted-foreground/60 ml-1">· {prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]}</span>
+                            {(prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]) && (
+                              <span className="text-muted-foreground/60 ml-1">· {prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]}</span>
                             )}
                           </p>
                         )}
                         {(() => {
                           const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;
-                          return prevNote ? (
-                            <p className="text-xs text-muted-foreground/70 italic mt-0.5 line-clamp-1">↳ {prevNote}</p>
-                          ) : null;
+                          if (!prevNote) return null;
+                          const isNoteOpen = !!prevNoteOpen[displayName];
+                          return (
+                            <>
+                              <button
+                                onClick={e => { e.stopPropagation(); setPrevNoteOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
+                                className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                Note {isNoteOpen ? '↑' : '↓'}
+                              </button>
+                              {isNoteOpen && (
+                                <p className="text-xs text-muted-foreground/70 italic mt-0.5">{prevNote}</p>
+                              )}
+                            </>
+                          );
                         })()}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -615,8 +660,9 @@ function WorkoutLogTab() {
                             onClick={e => {
                               e.stopPropagation();
                               setEquipmentOpen(prev => ({ ...prev, [displayName]: true }));
+                              setPresetQueryExercise(displayName);
                             }}
-                            title="Add equipment details"
+                            title="Add machine"
                             className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors bg-secondary text-muted-foreground hover:text-foreground"
                           >
                             <Tag size={15} />
@@ -641,22 +687,87 @@ function WorkoutLogTab() {
                   )}
 
                   {!isCollapsed && (<>
-                    {isEquipmentOpen && (
-                      <div className="mb-3 -mt-1">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Equipment Details</p>
-                        <input
-                          type="text"
-                          value={equipmentDetails[displayName] ?? ""}
-                          onChange={e => setEquipmentDetails(prev => ({ ...prev, [displayName]: e.target.value }))}
-                          onBlur={() => {
-                            if (!equipmentDetails[displayName]?.trim()) {
-                              setEquipmentOpen(prev => ({ ...prev, [displayName]: false }));
-                            }
-                          }}
-                          className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                        />
-                      </div>
-                    )}
+                    {isEquipmentOpen && (() => {
+                      // Load presets for this exercise when section is open
+                      if (presetQueryExercise !== displayName) setPresetQueryExercise(displayName);
+                      const isAddingNew = newPresetInput[displayName] !== undefined;
+                      return (
+                        <div className="mb-3 -mt-1 space-y-2">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Machine</p>
+                          {/* Preset selector */}
+                          {!isAddingNew ? (
+                            <div className="flex gap-2">
+                              <select
+                                value={currentPreset}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  if (val === "__new__") {
+                                    setNewPresetInput(prev => ({ ...prev, [displayName]: "" }));
+                                  } else {
+                                    setMachinePreset(prev => ({ ...prev, [displayName]: val }));
+                                    // Auto-fill settings from preset's lastSettings
+                                    const preset = (presetList as any[]).find((p: any) => p.presetName === val);
+                                    if (preset?.lastSettings) setMachineSettings(prev => ({ ...prev, [displayName]: preset.lastSettings }));
+                                  }
+                                }}
+                                className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              >
+                                <option value="">Select machine…</option>
+                                {(presetList as any[]).map((p: any) => (
+                                  <option key={p.id} value={p.presetName}>{p.presetName}</option>
+                                ))}
+                                <option value="__new__">+ Add new machine</option>
+                              </select>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={newPresetInput[displayName] ?? ""}
+                                onChange={e => setNewPresetInput(prev => ({ ...prev, [displayName]: e.target.value }))}
+                                placeholder="e.g. Prime Pin Loaded"
+                                className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                              <button
+                                onClick={() => {
+                                  const name = (newPresetInput[displayName] ?? "").trim();
+                                  if (!name) return;
+                                  setMachinePreset(prev => ({ ...prev, [displayName]: name }));
+                                  setMachineSettings(prev => ({ ...prev, [displayName]: "" }));
+                                  upsertPresetMutation.mutate({ exerciseName: displayName, presetName: name });
+                                  setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; });
+                                }}
+                                className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
+                              >Save</button>
+                              <button
+                                onClick={() => setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; })}
+                                className="px-3 py-2 bg-secondary text-muted-foreground rounded-lg text-sm"
+                              >Cancel</button>
+                            </div>
+                          )}
+                          {/* Settings field — only shown when a preset is selected */}
+                          {currentPreset && (
+                            <>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Settings</p>
+                              <input
+                                type="text"
+                                value={currentSettings}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setMachineSettings(prev => ({ ...prev, [displayName]: val }));
+                                }}
+                                onBlur={e => {
+                                  // Persist settings to preset on blur (not every keystroke)
+                                  upsertPresetMutation.mutate({ exerciseName: displayName, presetName: currentPreset, lastSettings: e.target.value });
+                                }}
+                                placeholder="e.g. Seat 4, pad 2"
+                                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {sets.length > 0 && (
                       <div className="mb-2">
@@ -868,8 +979,11 @@ function WorkoutLogTab() {
                   return (
                     <div key={s.id} className="bg-secondary rounded-xl px-4 py-3 space-y-1.5">
                       <p className="text-xs font-semibold text-foreground">{dateStr}</p>
-                      {exEntry.equipmentDetails && (
-                        <p className="text-xs text-muted-foreground"><span className="text-foreground/60">Equipment:</span> {exEntry.equipmentDetails}</p>
+                      {(exEntry.machinePreset || exEntry.equipmentDetails) && (
+                        <p className="text-xs text-muted-foreground"><span className="text-foreground/60">Machine:</span> {exEntry.machinePreset ?? exEntry.equipmentDetails}</p>
+                      )}
+                      {exEntry.machineSettings && (
+                        <p className="text-xs text-muted-foreground"><span className="text-foreground/60">Settings:</span> {exEntry.machineSettings}</p>
                       )}
                       {completedSets.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5 mt-1">

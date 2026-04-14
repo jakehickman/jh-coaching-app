@@ -356,3 +356,13 @@
 - [x] Fix: viewAs tab navigation drops viewAs URL params when switching tabs (reverts to own client view)
 - [x] Fix: viewAs shows coach's own cached data instead of client's data — fixed by clearing query cache on viewAsUserId change
 - [x] Fix: viewAs Daily Log form shows coach's own data from sessionStorage/localStorage drafts — fixed by skipping all draft loading in viewAs mode
+
+## Equipment Presets
+- [x] Add equipment_presets table to schema (userId, exerciseName, presetName)
+- [x] Generate and apply migration SQL for equipment_presets
+- [x] Add tRPC procedures: getEquipmentPresets, saveEquipmentPreset, deleteEquipmentPreset
+- [x] Update WorkoutExercise interface: split equipmentDetails into machinePreset + machineSettings
+- [x] Update TrainingTab: equipment field becomes preset dropdown with save option + separate settings field
+- [x] Update history sheet to show machine preset and settings per session
+- [x] Shorten "Off Plan Meal" pill label in recent logs to "Off plan"
+- [x] Replace prev note inline subtext with tappable "Note" chip in exercise cards

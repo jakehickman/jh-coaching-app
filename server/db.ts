@@ -25,8 +25,10 @@ import {
   checkInSubmissions,
   CheckInSubmission,
   InsertCheckInSubmission,
+  equipmentPresets,
+  EquipmentPreset,
+  WorkoutExercise,
 } from "../drizzle/schema";
-import type { WorkoutExercise } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1016,4 +1018,41 @@ export async function updateClientProfileExtended(userId: number, data: {
   } else {
     await db.insert(clientProfiles).values({ userId, coachId, ...data } as any);
   }
+}
+
+// ─── Equipment Presets ────────────────────────────────────────────────────────
+
+export async function getEquipmentPresets(userId: number, exerciseName: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(equipmentPresets)
+    .where(and(eq(equipmentPresets.userId, userId), eq(equipmentPresets.exerciseName, exerciseName)))
+    .orderBy(equipmentPresets.presetName);
+}
+
+export async function upsertEquipmentPreset(userId: number, exerciseName: string, presetName: string, lastSettings?: string | null) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db
+    .select()
+    .from(equipmentPresets)
+    .where(and(eq(equipmentPresets.userId, userId), eq(equipmentPresets.exerciseName, exerciseName), eq(equipmentPresets.presetName, presetName)))
+    .limit(1);
+  if (existing.length > 0) {
+    if (lastSettings !== undefined) {
+      await db.update(equipmentPresets)
+        .set({ lastSettings: lastSettings ?? null })
+        .where(eq(equipmentPresets.id, existing[0].id));
+    }
+  } else {
+    await db.insert(equipmentPresets).values({ userId, exerciseName, presetName, lastSettings: lastSettings ?? null });
+  }
+}
+
+export async function deleteEquipmentPreset(userId: number, id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(equipmentPresets).where(and(eq(equipmentPresets.id, id), eq(equipmentPresets.userId, userId)));
 }

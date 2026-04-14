@@ -66,6 +66,8 @@ export const workoutSessionsRouter = router({
             name: z.string(),
             substitutedFor: z.string().nullable().optional(),
             equipmentDetails: z.string().nullable().optional(),
+            machinePreset: z.string().nullable().optional(),
+            machineSettings: z.string().nullable().optional(),
             exerciseNotes: z.string().nullable().optional(),
             sets: z.array(
               z.object({
@@ -84,6 +86,18 @@ export const workoutSessionsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(({ ctx, input }) => db.deleteWorkoutSession(input.id, ctx.user.id)),
+});
+
+export const equipmentPresetsRouter = router({
+  list: protectedProcedure
+    .input(z.object({ exerciseName: z.string() }))
+    .query(({ ctx, input }) => db.getEquipmentPresets(ctx.user.id, input.exerciseName)),
+  upsert: protectedProcedure
+    .input(z.object({ exerciseName: z.string(), presetName: z.string(), lastSettings: z.string().nullable().optional() }))
+    .mutation(({ ctx, input }) => db.upsertEquipmentPreset(ctx.user.id, input.exerciseName, input.presetName, input.lastSettings)),
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ ctx, input }) => db.deleteEquipmentPreset(ctx.user.id, input.id)),
 });
 
 export const exerciseLibraryRouter = router({

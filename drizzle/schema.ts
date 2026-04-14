@@ -55,7 +55,9 @@ export interface WorkoutExercise {
   name: string;
   libraryId?: number;
   substitutedFor?: string | null;
-  equipmentDetails?: string | null;
+  equipmentDetails?: string | null; // legacy field, kept for backward compat
+  machinePreset?: string | null;    // saved machine preset name e.g. "Prime Pin Loaded"
+  machineSettings?: string | null;  // session-specific settings e.g. "Seat 4, pad 2"
   exerciseNotes?: string | null;
   sets: WorkoutSet[];
 }
@@ -454,3 +456,17 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
 
 export type CheckInSubmission = typeof checkInSubmissions.$inferSelect;
 export type InsertCheckInSubmission = typeof checkInSubmissions.$inferInsert;
+
+// Equipment presets — per user per exercise, saved machine names + last-used settings
+export const equipmentPresets = mysqlTable("equipment_presets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  exerciseName: varchar("exerciseName", { length: 128 }).notNull(),
+  presetName: varchar("presetName", { length: 256 }).notNull(), // e.g. "Prime Pin Loaded"
+  lastSettings: varchar("lastSettings", { length: 512 }),       // e.g. "Seat 4, pad 2" — auto-updated per session
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EquipmentPreset = typeof equipmentPresets.$inferSelect;
+export type InsertEquipmentPreset = typeof equipmentPresets.$inferInsert;

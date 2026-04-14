@@ -4,7 +4,7 @@ export { usersRouter } from "./users";
 export { dailyLogRouter } from "./dailyLog";
 export { measurementsRouter } from "./measurements";
 export { mealPlanRouter, shoppingRouter } from "./mealPlan";
-export { trainingRouter, mesoRouter, workoutSessionsRouter, exerciseLibraryRouter } from "./training";
+export { trainingRouter, mesoRouter, workoutSessionsRouter, exerciseLibraryRouter, equipmentPresetsRouter } from "./training";
 export { checkInRouter } from "./checkIns";
 export { habitsRouter } from "./habits";
 export { timelineRouter, notesRouter, nutritionFoodsRouter, onboardingRouter, clientConfigRouter } from "./misc";
