@@ -543,11 +543,20 @@ function WorkoutLogTab() {
                     onClick={() => toggleExerciseCollapse(displayName)}
                     className="w-full mb-3 text-left cursor-pointer"
                   >
-                    {/* Row 1: exercise name full width */}
+                    {/* Row 1: exercise name + demo button */}
                     <div className="flex items-center gap-2 mb-1">
                       <p className="text-base font-semibold text-foreground flex-1">{displayName}</p>
                       {subName && (
                         <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">SUB</span>
+                      )}
+                      {exEmbedUrl && (
+                        <button
+                          onClick={e => { e.stopPropagation(); setVideoModal({ name: displayName, embedUrl: exEmbedUrl }); }}
+                          title="Demo video"
+                          className="flex items-center gap-1 text-[10px] font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-400/10 px-1.5 py-0.5 rounded flex-shrink-0"
+                        >
+                          <Play size={10} fill="currentColor" /> Demo
+                        </button>
                       )}
                     </div>
                     {/* Sub-labels */}
@@ -572,15 +581,6 @@ function WorkoutLogTab() {
                     })()}
                     {/* Row 2: action buttons aligned right */}
                     <div className="flex items-center justify-end gap-1.5 mt-2">
-                      {exEmbedUrl && (
-                        <button
-                          onClick={e => { e.stopPropagation(); setVideoModal({ name: displayName, embedUrl: exEmbedUrl }); }}
-                          title="Demo video"
-                          className="flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:text-red-300 transition-colors"
-                        >
-                          <Play size={13} fill="currentColor" />
-                        </button>
-                      )}
                       <button
                         onClick={e => { e.stopPropagation(); setHistorySheet(displayName); }}
                         title="Exercise history"
