@@ -586,26 +586,26 @@ function WorkoutLogTab() {
                         <button
                           onClick={e => { e.stopPropagation(); setHistorySheet(displayName); }}
                           title="Exercise history"
-                          className="flex items-center justify-center w-8 h-8 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                          className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <History size={13} />
+                          <History size={15} />
                         </button>
                         <button
                           onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
                           title="Equipment details"
-                          className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                          className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
                             hasEquipment
                               ? "bg-primary/15 text-primary"
                               : "bg-secondary text-muted-foreground hover:text-foreground"
                           }`}
                         >
-                          <Tag size={13} />
+                          <Tag size={15} />
                         </button>
                         <button
                           onClick={e => { e.stopPropagation(); setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
-                          className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors bg-secondary px-2 py-1.5 rounded-lg"
+                          className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors bg-secondary px-2.5 py-2 rounded-lg"
                         >
-                          <Shuffle size={11} /> Sub
+                          <Shuffle size={13} /> Sub
                         </button>
                         <ChevronDown size={16} className={`text-muted-foreground transition-transform ${isCollapsed ? '' : 'rotate-180'}`} />
                       </div>
