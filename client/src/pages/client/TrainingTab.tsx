@@ -581,9 +581,6 @@ function WorkoutLogTab() {
                         {prevSets.length > 0 && (
                           <p className="text-xs text-primary/80 mt-0.5">
                             Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
-                            {(prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]) && (
-                              <span className="text-muted-foreground/60 ml-1">· {prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]}</span>
-                            )}
                           </p>
                         )}
                         {(() => {
