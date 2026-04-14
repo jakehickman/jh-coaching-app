@@ -154,6 +154,93 @@ function TrainingTab() {
   );
 }
 
+// ─── PresetSelector ─────────────────────────────────────────────────────────────────────────────
+interface PresetSelectorProps {
+  exerciseName: string;
+  currentPreset: string;
+  currentSettings: string;
+  isAddingNew: boolean;
+  newPresetValue: string;
+  onSelectPreset: (presetName: string, lastSettings: string | null) => void;
+  onStartAddNew: () => void;
+  onNewPresetChange: (val: string) => void;
+  onSaveNewPreset: (name: string) => void;
+  onCancelAddNew: () => void;
+  onSettingsChange: (val: string) => void;
+  onSettingsBlur: (val: string) => void;
+}
+
+function PresetSelector({
+  exerciseName, currentPreset, currentSettings, isAddingNew, newPresetValue,
+  onSelectPreset, onStartAddNew, onNewPresetChange, onSaveNewPreset, onCancelAddNew,
+  onSettingsChange, onSettingsBlur,
+}: PresetSelectorProps) {
+  const { data: presetList = [] } = trpc.equipmentPresets.list.useQuery(
+    { exerciseName },
+    { staleTime: 30_000 }
+  );
+
+  return (
+    <div className="mb-3 -mt-1 space-y-2">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Machine</p>
+      {!isAddingNew ? (
+        <div className="flex gap-2">
+          <select
+            value={currentPreset}
+            onChange={e => {
+              const val = e.target.value;
+              if (val === "__new__") {
+                onStartAddNew();
+              } else {
+                const preset = (presetList as any[]).find((p: any) => p.presetName === val);
+                onSelectPreset(val, preset?.lastSettings ?? null);
+              }
+            }}
+            className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="">Select machine…</option>
+            {(presetList as any[]).map((p: any) => (
+              <option key={p.id} value={p.presetName}>{p.presetName}</option>
+            ))}
+            <option value="__new__">+ Add new machine</option>
+          </select>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newPresetValue}
+            onChange={e => onNewPresetChange(e.target.value)}
+            placeholder="e.g. Prime Pin Loaded"
+            className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <button
+            onClick={() => { const name = newPresetValue.trim(); if (name) onSaveNewPreset(name); }}
+            className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
+          >Save</button>
+          <button
+            onClick={onCancelAddNew}
+            className="px-3 py-2 bg-secondary text-muted-foreground rounded-lg text-sm"
+          >Cancel</button>
+        </div>
+      )}
+      {currentPreset && (
+        <>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Settings</p>
+          <input
+            type="text"
+            value={currentSettings}
+            onChange={e => onSettingsChange(e.target.value)}
+            onBlur={e => onSettingsBlur(e.target.value)}
+            placeholder="e.g. Seat 4, pad 2"
+            className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── WorkoutLogTab ────────────────────────────────────────────────────────────────────────────────
 function WorkoutLogTab() {
   const { viewAsUserId } = useViewAs();
@@ -205,7 +292,6 @@ function WorkoutLogTab() {
   const [machinePreset, setMachinePreset] = useState<Record<string, string>>({}); // exerciseName -> preset name
   const [machineSettings, setMachineSettings] = useState<Record<string, string>>({}); // exerciseName -> settings
   const [newPresetInput, setNewPresetInput] = useState<Record<string, string>>({}); // exerciseName -> new preset being typed
-  const [historyExercise, setHistoryExercise] = useState<string | null>(null); // for preset list query
   const [exerciseNotes, setExerciseNotes] = useState<Record<string, string>>({});
   const [sessionNotes, setSessionNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -320,18 +406,10 @@ function WorkoutLogTab() {
     setSubSearch("");
   }
 
-  // ── Equipment presets ─────────────────────────────────────────────────────
-  const [presetQueryExercise, setPresetQueryExercise] = useState<string | null>(null);
-  const { data: presetList = [], refetch: refetchPresets } = trpc.equipmentPresets.list.useQuery(
-    { exerciseName: presetQueryExercise! },
-    { enabled: !!presetQueryExercise }
-  );
-  const upsertPresetMutation = trpc.equipmentPresets.upsert.useMutation({
-    onSuccess: () => refetchPresets(),
-  });
-
+  // ── Equipment presets ────────────────────────────────────────────────────────────────────────────────
+  // PresetSelector sub-component handles its own per-exercise query; only need the upsert mutation here
+  const upsertPresetMutation = trpc.equipmentPresets.upsert.useMutation();
   const dailyLogMutation = trpc.dailyLog.upsert.useMutation();
-
   const saveMutation = trpc.workoutSessions.save.useMutation({
     onSuccess: () => {
       if (selectedDay) clearDraft(sessionDate, selectedDay);
@@ -660,7 +738,6 @@ function WorkoutLogTab() {
                             onClick={e => {
                               e.stopPropagation();
                               setEquipmentOpen(prev => ({ ...prev, [displayName]: true }));
-                              setPresetQueryExercise(displayName);
                             }}
                             title="Add machine"
                             className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors bg-secondary text-muted-foreground hover:text-foreground"
@@ -687,87 +764,30 @@ function WorkoutLogTab() {
                   )}
 
                   {!isCollapsed && (<>
-                    {isEquipmentOpen && (() => {
-                      // Load presets for this exercise when section is open
-                      if (presetQueryExercise !== displayName) setPresetQueryExercise(displayName);
-                      const isAddingNew = newPresetInput[displayName] !== undefined;
-                      return (
-                        <div className="mb-3 -mt-1 space-y-2">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Machine</p>
-                          {/* Preset selector */}
-                          {!isAddingNew ? (
-                            <div className="flex gap-2">
-                              <select
-                                value={currentPreset}
-                                onChange={e => {
-                                  const val = e.target.value;
-                                  if (val === "__new__") {
-                                    setNewPresetInput(prev => ({ ...prev, [displayName]: "" }));
-                                  } else {
-                                    setMachinePreset(prev => ({ ...prev, [displayName]: val }));
-                                    // Auto-fill settings from preset's lastSettings
-                                    const preset = (presetList as any[]).find((p: any) => p.presetName === val);
-                                    if (preset?.lastSettings) setMachineSettings(prev => ({ ...prev, [displayName]: preset.lastSettings }));
-                                  }
-                                }}
-                                className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                              >
-                                <option value="">Select machine…</option>
-                                {(presetList as any[]).map((p: any) => (
-                                  <option key={p.id} value={p.presetName}>{p.presetName}</option>
-                                ))}
-                                <option value="__new__">+ Add new machine</option>
-                              </select>
-                            </div>
-                          ) : (
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={newPresetInput[displayName] ?? ""}
-                                onChange={e => setNewPresetInput(prev => ({ ...prev, [displayName]: e.target.value }))}
-                                placeholder="e.g. Prime Pin Loaded"
-                                className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                              <button
-                                onClick={() => {
-                                  const name = (newPresetInput[displayName] ?? "").trim();
-                                  if (!name) return;
-                                  setMachinePreset(prev => ({ ...prev, [displayName]: name }));
-                                  setMachineSettings(prev => ({ ...prev, [displayName]: "" }));
-                                  upsertPresetMutation.mutate({ exerciseName: displayName, presetName: name });
-                                  setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; });
-                                }}
-                                className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
-                              >Save</button>
-                              <button
-                                onClick={() => setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; })}
-                                className="px-3 py-2 bg-secondary text-muted-foreground rounded-lg text-sm"
-                              >Cancel</button>
-                            </div>
-                          )}
-                          {/* Settings field — only shown when a preset is selected */}
-                          {currentPreset && (
-                            <>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Settings</p>
-                              <input
-                                type="text"
-                                value={currentSettings}
-                                onChange={e => {
-                                  const val = e.target.value;
-                                  setMachineSettings(prev => ({ ...prev, [displayName]: val }));
-                                }}
-                                onBlur={e => {
-                                  // Persist settings to preset on blur (not every keystroke)
-                                  upsertPresetMutation.mutate({ exerciseName: displayName, presetName: currentPreset, lastSettings: e.target.value });
-                                }}
-                                placeholder="e.g. Seat 4, pad 2"
-                                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                            </>
-                          )}
-                        </div>
-                      );
-                    })()}
+                    {isEquipmentOpen && (
+                      <PresetSelector
+                        exerciseName={displayName}
+                        currentPreset={currentPreset}
+                        currentSettings={currentSettings}
+                        isAddingNew={newPresetInput[displayName] !== undefined}
+                        newPresetValue={newPresetInput[displayName] ?? ""}
+                        onSelectPreset={(presetName, lastSettings) => {
+                          setMachinePreset(prev => ({ ...prev, [displayName]: presetName }));
+                          if (lastSettings != null) setMachineSettings(prev => ({ ...prev, [displayName]: lastSettings }));
+                        }}
+                        onStartAddNew={() => setNewPresetInput(prev => ({ ...prev, [displayName]: "" }))}
+                        onNewPresetChange={val => setNewPresetInput(prev => ({ ...prev, [displayName]: val }))}
+                        onSaveNewPreset={name => {
+                          setMachinePreset(prev => ({ ...prev, [displayName]: name }));
+                          setMachineSettings(prev => ({ ...prev, [displayName]: "" }));
+                          upsertPresetMutation.mutate({ exerciseName: displayName, presetName: name });
+                          setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; });
+                        }}
+                        onCancelAddNew={() => setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; })}
+                        onSettingsChange={val => setMachineSettings(prev => ({ ...prev, [displayName]: val }))}
+                        onSettingsBlur={val => upsertPresetMutation.mutate({ exerciseName: displayName, presetName: currentPreset, lastSettings: val })}
+                      />
+                    )}
 
                     {sets.length > 0 && (
                       <div className="mb-2">
