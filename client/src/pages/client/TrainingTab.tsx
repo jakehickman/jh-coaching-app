@@ -1042,7 +1042,7 @@ function WorkoutLogTab() {
                     <div key={s.id} className="bg-secondary rounded-xl px-4 py-3 space-y-1.5">
                       <p className="text-xs font-semibold text-foreground">{dateStr}</p>
                       {(exEntry.machinePreset || exEntry.equipmentDetails) && (
-                        <p className="text-xs text-muted-foreground"><span className="text-foreground/60">Machine:</span> {exEntry.machinePreset ?? exEntry.equipmentDetails}</p>
+                        <p className="text-xs text-muted-foreground">{exEntry.machinePreset ?? exEntry.equipmentDetails}</p>
                       )}
                       {exEntry.machineSettings && (
                         <p className="text-xs text-muted-foreground"><span className="text-foreground/60">Settings:</span> {exEntry.machineSettings}</p>

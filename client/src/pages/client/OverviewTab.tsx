@@ -223,6 +223,12 @@ export default function OverviewTab() {
     return diffMs >= 0 && diffMs < 7 * 24 * 60 * 60 * 1000;
   })();
   const isCheckInDay = !!checkInDay && todayDayName === checkInDay && !startedWithin7Days;
+  const tomorrowDayName = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toLocaleDateString('en-AU', { weekday: 'long' }).toLowerCase();
+  })();
+  const isCheckInTomorrow = !!checkInDay && tomorrowDayName === checkInDay && !startedWithin7Days;
   const getMondayStr = () => {
     const d = new Date();
     const day = d.getDay();
@@ -250,6 +256,15 @@ export default function OverviewTab() {
           <div>
             <p className="text-sm font-semibold text-primary">Today is your check-in day</p>
             <p className="text-xs text-muted-foreground mt-0.5">Head to the Check-in tab to submit your weekly check-in.</p>
+          </div>
+        </div>
+      )}
+      {!isCheckInDay && isCheckInTomorrow && (
+        <div className="bg-secondary border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+          <span className="text-xl">🔔</span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Check-in is tomorrow</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Get your measurements and progress photos ready.</p>
           </div>
         </div>
       )}

@@ -370,3 +370,5 @@
 - [x] PresetSelector: add delete button per saved preset
 - [x] PresetSelector: fix new preset not appearing until page refresh (cache invalidation bug)
 - [x] Auto-open machine section and pre-select last-used preset/settings when exercise loads
+- [x] Add "Check-in tomorrow" reminder banner on client dashboard (shows day before scheduled check-in day)
+- [x] Exercise history: remove "Machine:" label, just show the preset name directly
