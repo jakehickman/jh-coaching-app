@@ -535,8 +535,11 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                               </span>
                             )}
                           </div>
-                          {ex.equipmentDetails && (
-                            <p className="text-[11px] text-muted-foreground/60 mt-0.5">{ex.equipmentDetails}</p>
+                          {(ex.machinePreset || ex.equipmentDetails) && (
+                            <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                              {ex.machinePreset ?? ex.equipmentDetails}
+                              {ex.machineSettings && <span className="ml-1 opacity-70">· {ex.machineSettings}</span>}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -588,7 +591,7 @@ function ExerciseProgressTab({
   }
 
   // Build per-exercise history (chronological)
-  const exerciseHistory: Record<string, Array<{ date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }>; substitutedFor?: string; equipmentDetails?: string }>> = {};
+  const exerciseHistory: Record<string, Array<{ date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }>; substitutedFor?: string; equipmentDetails?: string; machinePreset?: string; machineSettings?: string }>> = {};
   for (const session of [...workoutSessions].reverse()) {
     const dateStr = toLocalDateStr(session.sessionDate);
     for (const ex of (session.exercises as any[])) {
@@ -602,7 +605,7 @@ function ExerciseProgressTab({
         if (sw === bw && (s.reps ?? 0) > (best.reps ?? 0)) return s;
         return best;
       }, null);
-      exerciseHistory[ex.name].push({ date: dateStr, topSet, allSets: sets, substitutedFor: ex.substitutedFor ?? undefined, equipmentDetails: ex.equipmentDetails ?? undefined });
+      exerciseHistory[ex.name].push({ date: dateStr, topSet, allSets: sets, substitutedFor: ex.substitutedFor ?? undefined, equipmentDetails: ex.equipmentDetails ?? undefined, machinePreset: ex.machinePreset ?? undefined, machineSettings: ex.machineSettings ?? undefined });
     }
   }
 
@@ -711,8 +714,11 @@ function ExerciseProgressTab({
                               {w != null ? `${w} kg` : '—'}
                               {r != null ? ` × ${r}` : ''}
                             </p>
-                            {entry.equipmentDetails && (
-                              <p className="text-[10px] text-muted-foreground/60 mt-0.5">{entry.equipmentDetails}</p>
+                            {(entry.machinePreset || entry.equipmentDetails) && (
+                              <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                                {entry.machinePreset ?? entry.equipmentDetails}
+                                {entry.machineSettings && <span className="ml-1 opacity-70">· {entry.machineSettings}</span>}
+                              </p>
                             )}
                           </div>
                           <div className="w-5 flex justify-end flex-shrink-0">
