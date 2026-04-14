@@ -603,7 +603,15 @@ function WorkoutLogTab() {
                         </button>
 
                         <button
-                          onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (isCollapsed) {
+                              setCollapsedExercisesRaw((prev: Record<string, boolean>) => ({ ...prev, [displayName]: false }));
+                              setEquipmentOpen(prev => ({ ...prev, [displayName]: true }));
+                            } else {
+                              setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] }));
+                            }
+                          }}
                           title="Equipment details"
                           className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
                             hasEquipment
