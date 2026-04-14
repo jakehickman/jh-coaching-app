@@ -549,14 +549,7 @@ function WorkoutLogTab() {
                         {subName && (
                           <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded">SUB</span>
                         )}
-                        {exEmbedUrl && (
-                          <button
-                            onClick={e => { e.stopPropagation(); setVideoModal({ name: displayName, embedUrl: exEmbedUrl }); }}
-                            className="flex items-center gap-1 text-[10px] font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-400/10 px-1.5 py-0.5 rounded"
-                          >
-                            <Play size={10} fill="currentColor" /> Demo
-                          </button>
-                        )}
+
                       </div>
                       {subName && (
                         <p className="text-[10px] text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
@@ -579,6 +572,15 @@ function WorkoutLogTab() {
                       })()}
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {exEmbedUrl && (
+                        <button
+                          onClick={e => { e.stopPropagation(); setVideoModal({ name: displayName, embedUrl: exEmbedUrl }); }}
+                          title="Demo video"
+                          className="flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          <Play size={13} fill="currentColor" />
+                        </button>
+                      )}
                       <button
                         onClick={e => { e.stopPropagation(); setHistorySheet(displayName); }}
                         title="Exercise history"
