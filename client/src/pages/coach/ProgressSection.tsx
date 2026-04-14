@@ -728,8 +728,7 @@ function ExerciseProgressTab({
                       const presetStr = presets.length <= 1 && (entry.machinePreset || entry.equipmentDetails)
                         ? (entry.machinePreset ?? entry.equipmentDetails)
                         : null;
-                      const settingsStr = entry.machineSettings ?? null;
-                      const detailParts = [presetStr, settingsStr].filter(Boolean).join(' · ');
+                      const detailParts = presetStr ?? '';
                       return (
                         <div
                           key={i}
