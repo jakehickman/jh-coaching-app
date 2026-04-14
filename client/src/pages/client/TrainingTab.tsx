@@ -554,10 +554,15 @@ function WorkoutLogTab() {
                     className="w-full mb-3 text-left cursor-pointer"
                   >
                     {/* Row 1: exercise name + Demo pill + chevron */}
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <p className="text-base font-semibold text-foreground flex-1">{displayName}</p>
+                    <div className="flex items-start gap-2 mb-1.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-semibold text-foreground">{displayName}</p>
+                        {subName && (
+                          <p className="text-xs text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
+                        )}
+                      </div>
                       {subName && (
-                        <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">SUB</span>
+                        <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">SUB</span>
                       )}
                       {exEmbedUrl && (
                         <button
@@ -573,9 +578,6 @@ function WorkoutLogTab() {
                     {/* Row 2: meta info (left) + icon buttons (right) */}
                     <div className="flex items-end justify-between gap-2">
                       <div className="min-w-0">
-                        {subName && (
-                          <p className="text-xs text-muted-foreground">Substituting: {ex.name}</p>
-                        )}
                         {ex.notes && !subName && <p className="text-xs text-muted-foreground">{ex.notes}</p>}
                         <p className="text-sm font-medium text-foreground/80">{ex.sets} sets × {ex.reps}</p>
                         {prevSets.length > 0 && (
