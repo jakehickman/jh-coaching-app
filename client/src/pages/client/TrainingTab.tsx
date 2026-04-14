@@ -400,9 +400,19 @@ function WorkoutLogTab() {
       const setCount = Math.max(1, parseInt(String(ex.sets ?? 1), 10) || 1);
       blankEx[ex.name] = Array.from({ length: setCount }, () => ({ weight: '', reps: '', notes: '', completed: false }));
     }
+    // Pre-populate equipment details from the most recent previous session for this day
+    const prevForDay = [...sessions]
+      .filter(s => s.dayLabel === label && toLocalDateStr(s.sessionDate) < date)
+      .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)))[0];
+    const prefillEquipment: Record<string, string> = {};
+    if (prevForDay) {
+      for (const ex of (prevForDay.exercises as any[])) {
+        if (ex.equipmentDetails) prefillEquipment[ex.name] = ex.equipmentDetails;
+      }
+    }
     setExerciseData(blankEx);
     setSessionNotes('');
-    setEquipmentDetails({});
+    setEquipmentDetails(prefillEquipment);
     setExerciseNotes({});
     setSubstitutions({});
     setCollapsedExercisesRaw(loadCollapsed(date, label));
