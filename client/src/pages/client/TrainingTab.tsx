@@ -604,13 +604,13 @@ function WorkoutLogTab() {
                           <History size={15} />
                         </button>
 
-                        {!isCollapsed && (
+                        {!isCollapsed && !hasEquipment && (
                           <button
                             onClick={e => {
                               e.stopPropagation();
-                              setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] }));
+                              setEquipmentOpen(prev => ({ ...prev, [displayName]: true }));
                             }}
-                            title="Equipment details"
+                            title="Add equipment details"
                             className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors bg-secondary text-muted-foreground hover:text-foreground"
                           >
                             <Tag size={15} />
