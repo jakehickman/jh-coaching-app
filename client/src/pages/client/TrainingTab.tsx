@@ -289,7 +289,6 @@ function WorkoutLogTab() {
   const refetch = viewAsUserId ? refetchAdmin : refetchOwn;
   const sessionsLoaded = viewAsUserId ? sessionsLoadedAdmin : sessionsLoadedOwn;
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
-  const { data: allPresets = [] } = trpc.equipmentPresets.listAll.useQuery(undefined, { enabled: !viewAsUserId, staleTime: 60_000 });
   const utils = trpc.useUtils();
 
   const videoMap: Record<string, string> = Object.fromEntries(
@@ -553,21 +552,6 @@ function WorkoutLogTab() {
         if (ex.equipmentDetails) prefillEquipment[ex.name] = ex.equipmentDetails;
         if (ex.machinePreset) prefillMachinePreset[ex.name] = ex.machinePreset;
         if (ex.machineSettings) prefillMachineSettings[ex.name] = ex.machineSettings;
-      }
-    }
-    // For any exercise that still has no preset from the previous session,
-    // fall back to the most-recently-used preset from the equipment_presets table.
-    // This ensures the machine section auto-opens even on the very first session.
-    for (const ex of (dayDef?.exercises ?? [])) {
-      if (!prefillMachinePreset[ex.name]) {
-        // Find the most recently used preset for this exercise (by id desc)
-        const candidates = (allPresets as any[]).filter((p: any) => p.exerciseName === ex.name);
-        if (candidates.length > 0) {
-          // Sort by id descending to get most recently added/used
-          const latest = candidates.sort((a: any, b: any) => b.id - a.id)[0];
-          prefillMachinePreset[ex.name] = latest.presetName;
-          if (latest.lastSettings) prefillMachineSettings[ex.name] = latest.lastSettings;
-        }
       }
     }
     setExerciseData(blankEx);
