@@ -1032,6 +1032,16 @@ export async function getEquipmentPresets(userId: number, exerciseName: string) 
     .orderBy(equipmentPresets.presetName);
 }
 
+export async function getAllEquipmentPresets(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(equipmentPresets)
+    .where(eq(equipmentPresets.userId, userId))
+    .orderBy(equipmentPresets.exerciseName, equipmentPresets.presetName);
+}
+
 export async function upsertEquipmentPreset(userId: number, exerciseName: string, presetName: string, lastSettings?: string | null) {
   const db = await getDb();
   if (!db) return;

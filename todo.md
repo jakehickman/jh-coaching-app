@@ -369,3 +369,4 @@
 - [x] PresetSelector: remove placeholder text from Machine select and Settings input
 - [x] PresetSelector: add delete button per saved preset
 - [x] PresetSelector: fix new preset not appearing until page refresh (cache invalidation bug)
+- [x] Auto-open machine section and pre-select last-used preset/settings when exercise loads

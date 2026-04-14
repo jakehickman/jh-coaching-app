@@ -92,6 +92,8 @@ export const equipmentPresetsRouter = router({
   list: protectedProcedure
     .input(z.object({ exerciseName: z.string() }))
     .query(({ ctx, input }) => db.getEquipmentPresets(ctx.user.id, input.exerciseName)),
+  listAll: protectedProcedure
+    .query(({ ctx }) => db.getAllEquipmentPresets(ctx.user.id)),
   upsert: protectedProcedure
     .input(z.object({ exerciseName: z.string(), presetName: z.string(), lastSettings: z.string().nullable().optional() }))
     .mutation(({ ctx, input }) => db.upsertEquipmentPreset(ctx.user.id, input.exerciseName, input.presetName, input.lastSettings)),
