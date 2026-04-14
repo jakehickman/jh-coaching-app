@@ -709,7 +709,7 @@ function ExerciseProgressTab({
                     </div>
                   )}
 
-                  {/* Session history table */}
+                  {/* Session history — single line per session */}
                   <div className="space-y-0">
                     {last5.map((entry, i) => {
                       const [y, m, d] = entry.date.split('-');
@@ -719,37 +719,36 @@ function ExerciseProgressTab({
                       const w = entry.topSet?.weight ?? null;
                       const r = entry.topSet?.reps ?? null;
                       const pw = prevEntry?.topSet?.weight ?? null;
-                      const pr = prevEntry?.topSet?.reps ?? null;
                       const wUp = w != null && pw != null && w > pw;
                       const wDown = w != null && pw != null && w < pw;
+                      // Build right-side detail string
+                      const weightStr = w != null ? `${w} kg` : '—';
+                      const repsStr = r != null ? ` × ${r}` : '';
+                      // Show preset name only when single-preset (multi-preset uses filter above)
+                      const presetStr = presets.length <= 1 && (entry.machinePreset || entry.equipmentDetails)
+                        ? (entry.machinePreset ?? entry.equipmentDetails)
+                        : null;
+                      const settingsStr = entry.machineSettings ?? null;
+                      const detailParts = [presetStr, settingsStr].filter(Boolean).join(' · ');
                       return (
                         <div
                           key={i}
-                          className={`flex items-center justify-between py-1.5 ${
-                            i > 0 ? 'border-t border-border/50' : ''
-                          } ${isLatest ? 'opacity-100' : 'opacity-60'}`}
+                          className={`flex items-center gap-2 py-1 ${
+                            i > 0 ? 'border-t border-border/40' : ''
+                          } ${isLatest ? 'opacity-100' : 'opacity-50'}`}
                         >
-                          <div className="w-20 flex-shrink-0">
-                            <p className="text-xs text-muted-foreground">{dateLabel}</p>
-                            {entry.substitutedFor && (
-                              <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded">SUB</span>
-                            )}
-                          </div>
-                          <div className="flex-1 text-right">
-                            <p className={`text-xs font-medium ${
-                              isLatest ? 'text-foreground' : 'text-muted-foreground'
-                            }`}>
-                              {w != null ? `${w} kg` : '—'}
-                              {r != null ? ` × ${r}` : ''}
-                            </p>
-                            {(entry.machinePreset || entry.equipmentDetails) && (
-                              <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                                {entry.machinePreset ?? entry.equipmentDetails}
-                                {entry.machineSettings && <span className="ml-1 opacity-70">· {entry.machineSettings}</span>}
-                              </p>
-                            )}
-                          </div>
-                          <div className="w-5 flex justify-end flex-shrink-0">
+                          {/* Date */}
+                          <span className="text-xs text-muted-foreground w-[72px] flex-shrink-0">{dateLabel}</span>
+                          {/* Weight × reps */}
+                          <span className={`text-xs font-semibold flex-shrink-0 ${
+                            isLatest ? 'text-foreground' : 'text-muted-foreground'
+                          }`}>{weightStr}{repsStr}</span>
+                          {/* Machine / settings detail */}
+                          {detailParts && (
+                            <span className="text-[10px] text-muted-foreground/60 truncate flex-1">{detailParts}</span>
+                          )}
+                          {/* Trend arrow */}
+                          <div className="w-4 flex justify-end flex-shrink-0">
                             {wUp && <ArrowUp className="w-3 h-3 text-green-400" />}
                             {wDown && <ArrowDown className="w-3 h-3 text-red-400" />}
                           </div>

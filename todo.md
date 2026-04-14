@@ -375,3 +375,6 @@
 - [x] Coach Training tab: update exercise display to show machinePreset + machineSettings (fallback to equipmentDetails)
 - [x] Coach Exercise Progress tab: update history type and display to show machinePreset + machineSettings
 - [x] Coach Exercise Progress tab: add machine preset filter to exercise history cards (filter sessions by machine when multiple presets exist)
+- [x] Coach Exercise Progress tab: remove SUB badge from history rows
+- [x] Coach Exercise Progress tab: hide machine preset subtext under weight×reps when exercise has multiple presets (filter already shows which machine)
+- [x] Coach Exercise Progress tab: condense history rows to single line (date · weight×reps · settings)
