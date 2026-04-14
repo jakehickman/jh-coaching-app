@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Tag, History } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
@@ -777,7 +777,7 @@ function WorkoutLogTab() {
                             title="Add machine"
                             className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors bg-secondary text-muted-foreground hover:text-foreground"
                           >
-                            <Tag size={15} />
+                            <Settings size={15} />
                           </button>
                         )}
 

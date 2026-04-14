@@ -380,3 +380,4 @@
 - [x] Coach Exercise Progress tab: condense history rows to single line (date · weight×reps · settings)
 - [x] Fix check-in tomorrow banner suppressed by startedWithin7Days guard (changed to only suppress on actual start date)
 - [x] Exercise Progress: up/down arrow should also trigger when reps change with same weight
+- [x] Replace Tag icon with Settings/Gear icon on machine preset button in exercise cards
