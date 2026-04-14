@@ -366,3 +366,6 @@
 - [x] Update history sheet to show machine preset and settings per session
 - [x] Shorten "Off Plan Meal" pill label in recent logs to "Off plan"
 - [x] Replace prev note inline subtext with tappable "Note" chip in exercise cards
+- [x] PresetSelector: remove placeholder text from Machine select and Settings input
+- [x] PresetSelector: add delete button per saved preset
+- [x] PresetSelector: fix new preset not appearing until page refresh (cache invalidation bug)

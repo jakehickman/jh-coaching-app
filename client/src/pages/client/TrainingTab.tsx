@@ -168,42 +168,79 @@ interface PresetSelectorProps {
   onCancelAddNew: () => void;
   onSettingsChange: (val: string) => void;
   onSettingsBlur: (val: string) => void;
+  onDeletePreset: (id: number, presetName: string) => void;
 }
 
 function PresetSelector({
   exerciseName, currentPreset, currentSettings, isAddingNew, newPresetValue,
   onSelectPreset, onStartAddNew, onNewPresetChange, onSaveNewPreset, onCancelAddNew,
-  onSettingsChange, onSettingsBlur,
+  onSettingsChange, onSettingsBlur, onDeletePreset,
 }: PresetSelectorProps) {
+  const utils = trpc.useUtils();
   const { data: presetList = [] } = trpc.equipmentPresets.list.useQuery(
     { exerciseName },
     { staleTime: 30_000 }
   );
+  const upsertMutation = trpc.equipmentPresets.upsert.useMutation({
+    onSuccess: () => utils.equipmentPresets.list.invalidate({ exerciseName }),
+  });
+  const deleteMutation = trpc.equipmentPresets.delete.useMutation({
+    onSuccess: () => utils.equipmentPresets.list.invalidate({ exerciseName }),
+  });
+
+  // Expose upsert so parent can call it via onSaveNewPreset / onSettingsBlur
+  // We intercept those callbacks here and call the mutation directly
+  const handleSaveNewPreset = (name: string) => {
+    upsertMutation.mutate({ exerciseName, presetName: name });
+    onSaveNewPreset(name);
+  };
+  const handleSettingsBlur = (val: string) => {
+    if (currentPreset) upsertMutation.mutate({ exerciseName, presetName: currentPreset, lastSettings: val });
+    onSettingsBlur(val);
+  };
+
+  const selectedPresetObj = (presetList as any[]).find((p: any) => p.presetName === currentPreset);
 
   return (
     <div className="mb-3 -mt-1 space-y-2">
       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Machine</p>
       {!isAddingNew ? (
-        <div className="flex gap-2">
-          <select
-            value={currentPreset}
-            onChange={e => {
-              const val = e.target.value;
-              if (val === "__new__") {
-                onStartAddNew();
-              } else {
-                const preset = (presetList as any[]).find((p: any) => p.presetName === val);
-                onSelectPreset(val, preset?.lastSettings ?? null);
-              }
-            }}
-            className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            <option value="">Select machine…</option>
-            {(presetList as any[]).map((p: any) => (
-              <option key={p.id} value={p.presetName}>{p.presetName}</option>
-            ))}
-            <option value="__new__">+ Add new machine</option>
-          </select>
+        <div className="space-y-1.5">
+          <div className="flex gap-2">
+            <select
+              value={currentPreset}
+              onChange={e => {
+                const val = e.target.value;
+                if (val === "__new__") {
+                  onStartAddNew();
+                } else {
+                  const preset = (presetList as any[]).find((p: any) => p.presetName === val);
+                  onSelectPreset(val, preset?.lastSettings ?? null);
+                }
+              }}
+              className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">Select machine…</option>
+              {(presetList as any[]).map((p: any) => (
+                <option key={p.id} value={p.presetName}>{p.presetName}</option>
+              ))}
+              <option value="__new__">+ Add new machine</option>
+            </select>
+            {selectedPresetObj && (
+              <button
+                onClick={() => {
+                  if (confirm(`Delete "${selectedPresetObj.presetName}"?`)) {
+                    onDeletePreset(selectedPresetObj.id, selectedPresetObj.presetName);
+                    deleteMutation.mutate({ id: selectedPresetObj.id });
+                  }
+                }}
+                title="Delete this machine preset"
+                className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-red-400 transition-colors flex-shrink-0"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="flex gap-2">
@@ -211,11 +248,11 @@ function PresetSelector({
             type="text"
             value={newPresetValue}
             onChange={e => onNewPresetChange(e.target.value)}
-            placeholder="e.g. Prime Pin Loaded"
+            autoFocus
             className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <button
-            onClick={() => { const name = newPresetValue.trim(); if (name) onSaveNewPreset(name); }}
+            onClick={() => { const name = newPresetValue.trim(); if (name) handleSaveNewPreset(name); }}
             className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
           >Save</button>
           <button
@@ -231,8 +268,7 @@ function PresetSelector({
             type="text"
             value={currentSettings}
             onChange={e => onSettingsChange(e.target.value)}
-            onBlur={e => onSettingsBlur(e.target.value)}
-            placeholder="e.g. Seat 4, pad 2"
+            onBlur={e => handleSettingsBlur(e.target.value)}
             className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </>
@@ -407,8 +443,7 @@ function WorkoutLogTab() {
   }
 
   // ── Equipment presets ────────────────────────────────────────────────────────────────────────────────
-  // PresetSelector sub-component handles its own per-exercise query; only need the upsert mutation here
-  const upsertPresetMutation = trpc.equipmentPresets.upsert.useMutation();
+  // PresetSelector sub-component handles all preset mutations internally
   const dailyLogMutation = trpc.dailyLog.upsert.useMutation();
   const saveMutation = trpc.workoutSessions.save.useMutation({
     onSuccess: () => {
@@ -778,14 +813,21 @@ function WorkoutLogTab() {
                         onStartAddNew={() => setNewPresetInput(prev => ({ ...prev, [displayName]: "" }))}
                         onNewPresetChange={val => setNewPresetInput(prev => ({ ...prev, [displayName]: val }))}
                         onSaveNewPreset={name => {
+                          // upsert is called inside PresetSelector; here we just update local state
                           setMachinePreset(prev => ({ ...prev, [displayName]: name }));
                           setMachineSettings(prev => ({ ...prev, [displayName]: "" }));
-                          upsertPresetMutation.mutate({ exerciseName: displayName, presetName: name });
                           setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; });
                         }}
                         onCancelAddNew={() => setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; })}
                         onSettingsChange={val => setMachineSettings(prev => ({ ...prev, [displayName]: val }))}
-                        onSettingsBlur={val => upsertPresetMutation.mutate({ exerciseName: displayName, presetName: currentPreset, lastSettings: val })}
+                        onSettingsBlur={_val => { /* upsert handled inside PresetSelector */ }}
+                        onDeletePreset={(_id, presetName) => {
+                          // If the deleted preset was selected, clear it
+                          if (machinePreset[displayName] === presetName) {
+                            setMachinePreset(prev => { const n = { ...prev }; delete n[displayName]; return n; });
+                            setMachineSettings(prev => { const n = { ...prev }; delete n[displayName]; return n; });
+                          }
+                        }}
                       />
                     )}
 
