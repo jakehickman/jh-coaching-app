@@ -541,36 +541,37 @@ function WorkoutLogTab() {
                 <Card key={i}>
                   <div
                     onClick={() => toggleExerciseCollapse(displayName)}
-                    className="w-full flex items-center justify-between gap-2 mb-3 text-left cursor-pointer"
+                    className="w-full mb-3 text-left cursor-pointer"
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <p className="text-base font-semibold text-foreground truncate min-w-0">{displayName}</p>
-                        {subName && (
-                          <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">SUB</span>
-                        )}
-                      </div>
+                    {/* Row 1: exercise name full width */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-base font-semibold text-foreground flex-1">{displayName}</p>
                       {subName && (
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
+                        <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">SUB</span>
                       )}
-                      {ex.notes && !subName && <p className="text-xs text-muted-foreground mt-0.5">{ex.notes}</p>}
-                      <p className="text-xs text-muted-foreground mt-0.5">{ex.sets} sets × {ex.reps}</p>
-                      {prevSets.length > 0 && (
-                        <p className="text-xs text-primary/80 mt-1">
-                          Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
-                          {(prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]) && (
-                            <span className="text-muted-foreground/60 ml-1">· {prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]}</span>
-                          )}
-                        </p>
-                      )}
-                      {(() => {
-                        const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;
-                        return prevNote ? (
-                          <p className="text-xs text-muted-foreground/70 italic mt-0.5">↳ {prevNote}</p>
-                        ) : null;
-                      })()}
                     </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* Sub-labels */}
+                    {subName && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
+                    )}
+                    {ex.notes && !subName && <p className="text-xs text-muted-foreground mt-0.5">{ex.notes}</p>}
+                    <p className="text-xs text-muted-foreground mt-0.5">{ex.sets} sets × {ex.reps}</p>
+                    {prevSets.length > 0 && (
+                      <p className="text-xs text-primary/80 mt-1">
+                        Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
+                        {(prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]) && (
+                          <span className="text-muted-foreground/60 ml-1">· {prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]}</span>
+                        )}
+                      </p>
+                    )}
+                    {(() => {
+                      const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;
+                      return prevNote ? (
+                        <p className="text-xs text-muted-foreground/70 italic mt-0.5">↳ {prevNote}</p>
+                      ) : null;
+                    })()}
+                    {/* Row 2: action buttons aligned right */}
+                    <div className="flex items-center justify-end gap-1.5 mt-2">
                       {exEmbedUrl && (
                         <button
                           onClick={e => { e.stopPropagation(); setVideoModal({ name: displayName, embedUrl: exEmbedUrl }); }}
