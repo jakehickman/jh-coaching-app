@@ -374,3 +374,4 @@
 - [x] Exercise history: remove "Machine:" label, just show the preset name directly
 - [x] Coach Training tab: update exercise display to show machinePreset + machineSettings (fallback to equipmentDetails)
 - [x] Coach Exercise Progress tab: update history type and display to show machinePreset + machineSettings
+- [x] Coach Exercise Progress tab: add machine preset filter to exercise history cards (filter sessions by machine when multiple presets exist)

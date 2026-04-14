@@ -579,6 +579,7 @@ function ExerciseProgressTab({
   exerciseLib: any[];
 }) {
   const [selectedGroup, setSelectedGroup] = useState<string>('All');
+  const [presetFilter, setPresetFilter] = useState<Record<string, string>>({});
 
   // Build lookup: exerciseName -> primary muscle label
   const exToMuscle: Record<string, string> = {};
@@ -659,7 +660,15 @@ function ExerciseProgressTab({
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {visibleExercises.map(name => {
               const history = exerciseHistory[name];
-              const last5 = history.slice(-5).reverse();
+              // Collect unique machine presets for this exercise
+              const presets = Array.from(new Set(
+                history.map(e => e.machinePreset ?? e.equipmentDetails ?? null).filter(Boolean)
+              )) as string[];
+              const activeMachineFilter = presetFilter[name] ?? 'All';
+              const filteredHistory = activeMachineFilter === 'All'
+                ? history
+                : history.filter(e => (e.machinePreset ?? e.equipmentDetails) === activeMachineFilter);
+              const last5 = filteredHistory.slice(-5).reverse();
               const latest = last5[0];
               const prev = last5.length > 1 ? last5[1] : null;
               const latestW = latest?.topSet?.weight ?? null;
@@ -680,6 +689,25 @@ function ExerciseProgressTab({
                     {trend === 'down' && <ArrowDown className="w-4 h-4 text-red-400 flex-shrink-0" />}
                     {trend === 'flat' && <Minus className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
                   </div>
+
+                  {/* Machine preset filter — only shown when multiple presets exist */}
+                  {presets.length > 1 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {['All', ...presets].map(p => (
+                        <button
+                          key={p}
+                          onClick={() => setPresetFilter(prev => ({ ...prev, [name]: p }))}
+                          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                            activeMachineFilter === p
+                              ? 'bg-primary text-primary-foreground border-primary font-medium'
+                              : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Session history table */}
                   <div className="space-y-0">
