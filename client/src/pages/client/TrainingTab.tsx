@@ -574,7 +574,7 @@ function WorkoutLogTab() {
                     <div className="flex items-end justify-between gap-2">
                       <div className="min-w-0">
                         {subName && (
-                          <p className="text-[10px] text-muted-foreground">Substituting: {ex.name}</p>
+                          <p className="text-xs text-muted-foreground">Substituting: {ex.name}</p>
                         )}
                         {ex.notes && !subName && <p className="text-xs text-muted-foreground">{ex.notes}</p>}
                         <p className="text-sm font-medium text-foreground/80">{ex.sets} sets × {ex.reps}</p>
