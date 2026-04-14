@@ -250,6 +250,10 @@ function WorkoutLogTab() {
     setCollapsedExercisesRaw(prev => {
       const next = { ...prev, [exName]: !prev[exName] };
       if (selectedDay) saveCollapsed(sessionDate, selectedDay, next);
+      // Reset equipment open state when collapsing
+      if (!next[exName] === false) {
+        setEquipmentOpen(p => ({ ...p, [exName]: false }));
+      }
       return next;
     });
   }
@@ -546,7 +550,9 @@ function WorkoutLogTab() {
               const exVideoUrl = videoMap[displayName] ?? videoMap[ex.name];
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
               const hasEquipment = !!(equipmentDetails[displayName]?.trim());
-              const isEquipmentOpen = hasEquipment || !!equipmentOpen[displayName];
+              // Field is open if: has text (always show) OR explicitly opened via button
+              // Once text is cleared, close it
+              const isEquipmentOpen = hasEquipment || (!!equipmentOpen[displayName] && !isCollapsed);
               return (
                 <Card key={i}>
                   <div
