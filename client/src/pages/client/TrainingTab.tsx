@@ -581,9 +581,6 @@ function WorkoutLogTab() {
                         {prevSets.length > 0 && (
                           <p className="text-xs text-primary/80 mt-0.5">
                             Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
-                            {(prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]) && (
-                              <span className="text-muted-foreground/60 ml-1">· {prevEquipmentMap[displayName] ?? prevEquipmentMap[ex.name]}</span>
-                            )}
                           </p>
                         )}
                         {(() => {
@@ -603,6 +600,18 @@ function WorkoutLogTab() {
                         </button>
 
                         <button
+                          onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
+                          title="Equipment details"
+                          className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                            hasEquipment
+                              ? 'bg-primary/15 text-primary'
+                              : 'bg-secondary text-muted-foreground/40 hover:text-muted-foreground'
+                          }`}
+                        >
+                          <Tag size={15} />
+                        </button>
+
+                        <button
                           onClick={e => { e.stopPropagation(); setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
                           title="Substitute exercise"
                           className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
@@ -618,15 +627,18 @@ function WorkoutLogTab() {
                   )}
 
                   {!isCollapsed && (<>
-                    <div className="mb-3 -mt-1">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Equipment Details</p>
-                      <input
-                        type="text"
-                        value={equipmentDetails[displayName] ?? ""}
-                        onChange={e => setEquipmentDetails(prev => ({ ...prev, [displayName]: e.target.value }))}
-                        className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
+                    {isEquipmentOpen && (
+                      <div className="mb-3 -mt-1">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Equipment Details</p>
+                        <input
+                          type="text"
+                          autoFocus={!hasEquipment}
+                          value={equipmentDetails[displayName] ?? ""}
+                          onChange={e => setEquipmentDetails(prev => ({ ...prev, [displayName]: e.target.value }))}
+                          className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                      </div>
+                    )}
 
                     {sets.length > 0 && (
                       <div className="mb-2">
