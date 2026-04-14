@@ -544,12 +544,11 @@ function WorkoutLogTab() {
                     className="w-full flex items-center justify-between gap-2 mb-3 text-left cursor-pointer"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-base font-semibold text-foreground">{displayName}</p>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="text-base font-semibold text-foreground truncate min-w-0">{displayName}</p>
                         {subName && (
-                          <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded">SUB</span>
+                          <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">SUB</span>
                         )}
-
                       </div>
                       {subName && (
                         <p className="text-[10px] text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
