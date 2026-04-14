@@ -265,7 +265,7 @@ export default function OverviewTab() {
           <span className="text-xl">🔔</span>
           <div>
             <p className="text-sm font-semibold text-foreground">Check-in is tomorrow</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Get your measurements and progress photos ready.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Get ready to take your measurements and progress photos.</p>
           </div>
         </div>
       )}
