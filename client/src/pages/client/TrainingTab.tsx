@@ -546,7 +546,7 @@ function WorkoutLogTab() {
               const exVideoUrl = videoMap[displayName] ?? videoMap[ex.name];
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
               const hasEquipment = !!(equipmentDetails[displayName]?.trim());
-              const isEquipmentOpen = !!equipmentOpen[displayName];
+              const isEquipmentOpen = hasEquipment || !!equipmentOpen[displayName];
               return (
                 <Card key={i}>
                   <div
