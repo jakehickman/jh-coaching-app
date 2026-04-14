@@ -615,13 +615,13 @@ function WorkoutLogTab() {
                   )}
 
                   {!isCollapsed && (<>
-                    <div className="mb-3 -mt-1">
+                    <div className="mb-3 -mt-1 relative">
+                      <Tag size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
                       <input
                         type="text"
-                        placeholder="Equipment & settings (e.g. T&V Fitness — seat 4)"
                         value={equipmentDetails[displayName] ?? ""}
                         onChange={e => setEquipmentDetails(prev => ({ ...prev, [displayName]: e.target.value }))}
-                        className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="w-full bg-secondary border border-border rounded-lg pl-8 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
 
