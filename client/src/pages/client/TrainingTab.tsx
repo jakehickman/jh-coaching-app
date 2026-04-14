@@ -602,25 +602,22 @@ function WorkoutLogTab() {
                           <History size={15} />
                         </button>
 
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            if (isCollapsed) {
-                              setCollapsedExercisesRaw((prev: Record<string, boolean>) => ({ ...prev, [displayName]: false }));
-                              setEquipmentOpen(prev => ({ ...prev, [displayName]: true }));
-                            } else {
+                        {!isCollapsed && (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
                               setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] }));
-                            }
-                          }}
-                          title="Equipment details"
-                          className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-                            hasEquipment
-                              ? 'bg-primary/15 text-primary'
-                              : 'bg-secondary text-muted-foreground/40 hover:text-muted-foreground'
-                          }`}
-                        >
-                          <Tag size={15} />
-                        </button>
+                            }}
+                            title="Equipment details"
+                            className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                              hasEquipment
+                                ? 'bg-primary/15 text-primary'
+                                : 'bg-secondary text-muted-foreground/40 hover:text-muted-foreground'
+                            }`}
+                          >
+                            <Tag size={15} />
+                          </button>
+                        )}
 
                         {!isCollapsed && (
                           <button
