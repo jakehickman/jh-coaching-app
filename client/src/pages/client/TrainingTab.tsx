@@ -609,11 +609,7 @@ function WorkoutLogTab() {
                               setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] }));
                             }}
                             title="Equipment details"
-                            className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-                              hasEquipment
-                                ? 'bg-primary/15 text-primary'
-                                : 'bg-secondary text-muted-foreground hover:text-foreground'
-                            }`}
+                            className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors bg-secondary text-muted-foreground hover:text-foreground"
                           >
                             <Tag size={15} />
                           </button>
