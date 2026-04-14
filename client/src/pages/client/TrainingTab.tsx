@@ -766,7 +766,6 @@ function WorkoutLogTab() {
                   onChange={e => setSubSearch(e.target.value)}
                   placeholder="Search exercises..."
                   className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  autoFocus
                 />
               </div>
               <div className="overflow-y-auto flex-1 px-4 pb-4 space-y-1">
