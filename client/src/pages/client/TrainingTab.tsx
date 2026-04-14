@@ -642,6 +642,11 @@ function WorkoutLogTab() {
                           type="text"
                           value={equipmentDetails[displayName] ?? ""}
                           onChange={e => setEquipmentDetails(prev => ({ ...prev, [displayName]: e.target.value }))}
+                          onBlur={() => {
+                            if (!equipmentDetails[displayName]?.trim()) {
+                              setEquipmentOpen(prev => ({ ...prev, [displayName]: false }));
+                            }
+                          }}
                           className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                       </div>
