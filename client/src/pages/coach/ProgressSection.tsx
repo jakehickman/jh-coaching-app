@@ -487,8 +487,8 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
         const dateLabel = `${d}/${m}/${y}`;
         const isOpen = expandedId === session.id;
         const exercises = (session.exercises as any[]) ?? [];
-        const hasNotes = exercises.some((ex: any) => ex.exerciseNotes);
         const sessionNotes = session.notes as string | null;
+        const hasNotes = exercises.some((ex: any) => ex.exerciseNotes) || !!sessionNotes;
 
         return (
           <div key={session.id} className="bg-card border border-border rounded-xl overflow-hidden">
