@@ -331,6 +331,7 @@ function WorkoutLogTab() {
   const [exerciseNotes, setExerciseNotes] = useState<Record<string, string>>({});
   const [sessionNotes, setSessionNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [substitutions, setSubstitutions] = useState<Record<string, string>>({});
 
@@ -454,6 +455,7 @@ function WorkoutLogTab() {
       utils.workoutSessions.list.invalidate();
       utils.dailyLog.list.invalidate();
       setSaving(false);
+      setLastSaved(new Date());
       toast.success("Session saved!");
     },
     onError: () => { setSaving(false); toast.error("Failed to save session."); },
@@ -914,13 +916,20 @@ function WorkoutLogTab() {
             </Card>
 
             {!viewAsUserId && (
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                {saving ? "Saving..." : "Save Session"}
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {saving ? "Saving..." : "Save Session"}
+                </button>
+                {lastSaved && (
+                  <p className="text-center text-xs text-muted-foreground">
+                    Last saved: {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         );
