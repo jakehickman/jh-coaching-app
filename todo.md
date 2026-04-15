@@ -391,3 +391,4 @@
 - [x] Coach Training tab: add amber incomplete indicator on session card header when any exercise has uncompleted sets
 - [x] Progress tab: Show weekly average sleep hours from daily log
 - [x] Progress tab: Show weekly average caffeine intake from daily log (alongside sleep)
+- [x] Recent logs: replace "Off Plan Meal" text with amber Utensils icon

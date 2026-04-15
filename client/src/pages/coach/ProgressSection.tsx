@@ -7,7 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils } from "lucide-react";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
   MeasurementsCard, MuscleGroupSection, DailyLogRow, ProgressHistoryTable
@@ -331,7 +331,10 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                         trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                       }`}>{sessionLabel}</span>
                       {(log.offPlanMeals ?? 0) > 0 ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">{(log.offPlanMeals ?? 0) > 1 ? `${log.offPlanMeals} Off Plan Meals` : 'Off Plan Meal'}</span>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400" title={(log.offPlanMeals ?? 0) > 1 ? `${log.offPlanMeals} off-plan meals` : '1 off-plan meal'}>
+                          <Utensils size={11} />
+                          {(log.offPlanMeals ?? 0) > 1 && <span className="text-[10px] font-medium">{log.offPlanMeals}</span>}
+                        </span>
                       ) : null}
                     </>
                   ) : (
