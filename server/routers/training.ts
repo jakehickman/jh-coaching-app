@@ -75,6 +75,7 @@ export const workoutSessionsRouter = router({
                 reps: z.number().nullable().optional(),
                 notes: z.string().nullable().optional(),
                 completed: z.boolean().optional(),
+                mmcr: z.number().min(1).max(5).nullable().optional(),
               })
             ),
           })

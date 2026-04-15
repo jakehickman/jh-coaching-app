@@ -1,3 +1,4 @@
+import React from "react";
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
@@ -324,6 +325,7 @@ function WorkoutLogTab() {
 
   // ── Form state ────────────────────────────────────────────────────────────
   const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({});
+  const [mmcr, setMmcr] = useState<Record<string, number | null>>({}); // exerciseName -> 1-5 rating (first set only)
   const [equipmentDetails, setEquipmentDetails] = useState<Record<string, string>>({});
   const [machinePreset, setMachinePreset] = useState<Record<string, string>>({}); // exerciseName -> preset name
   const [machineSettings, setMachineSettings] = useState<Record<string, string>>({}); // exerciseName -> settings
@@ -503,6 +505,7 @@ function WorkoutLogTab() {
       const msData: Record<string, string> = {};
       const enData: Record<string, string> = {};
       const subData: Record<string, string> = {};
+      const mmcrData: Record<string, number | null> = {};
       for (const ex of (existing.exercises as any[])) {
         if (ex.substitutedFor) subData[ex.substitutedFor] = ex.name;
         exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
@@ -515,6 +518,9 @@ function WorkoutLogTab() {
         if (ex.machinePreset) mpData[ex.name] = ex.machinePreset;
         if (ex.machineSettings) msData[ex.name] = ex.machineSettings;
         if (ex.exerciseNotes) enData[ex.name] = ex.exerciseNotes;
+        // Load MMCR from first set
+        const firstSet = (ex.sets ?? [])[0];
+        if (firstSet?.mmcr != null) mmcrData[ex.name] = firstSet.mmcr;
       }
       setExerciseData(exData);
       setEquipmentDetails(eqData);
@@ -522,6 +528,7 @@ function WorkoutLogTab() {
       setMachineSettings(msData);
       setExerciseNotes(enData);
       setSubstitutions(subData);
+      setMmcr(mmcrData);
       setSessionNotes((existing.notes as string) ?? '');
       const persisted = loadCollapsed(date, label);
       const defaultCollapsed: Record<string, boolean> = {};
@@ -561,6 +568,7 @@ function WorkoutLogTab() {
     setMachineSettings(prefillMachineSettings);
     setExerciseNotes({});
     setSubstitutions({});
+    setMmcr({});
     setCollapsedExercisesRaw(loadCollapsed(date, label));
   }
 
@@ -623,11 +631,12 @@ function WorkoutLogTab() {
         machinePreset: machinePreset[nameToUse] || null,
         machineSettings: machineSettings[nameToUse] || null,
         exerciseNotes: exerciseNotes[nameToUse] || null,
-        sets: (exerciseData[nameToUse] ?? []).map(s => ({
+        sets: (exerciseData[nameToUse] ?? []).map((s, idx) => ({
           weight: s.weight !== "" ? parseFloat(s.weight) : null,
           reps: s.reps !== "" ? parseInt(s.reps) : null,
           notes: s.notes || null,
           completed: s.completed || s.weight !== "" || s.reps !== "",
+          mmcr: idx === 0 ? (mmcr[nameToUse] ?? null) : null,
         })),
       };
     });
@@ -847,6 +856,29 @@ function WorkoutLogTab() {
                         </div>
                         <div className="space-y-1.5">
                           {sets.map((s, idx) => (
+                            <React.Fragment key={idx}>
+                            {idx === 0 && s.completed && (
+                              <div className="flex items-center gap-2 pl-8 pb-1">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">MMC</p>
+                                <div className="flex gap-1.5">
+                                  {[1,2,3,4,5].map(dot => (
+                                    <button
+                                      key={dot}
+                                      onClick={() => setMmcr(prev => ({ ...prev, [displayName]: prev[displayName] === dot ? null : dot }))}
+                                      className={`w-6 h-6 rounded-full border-2 transition-all ${
+                                        (mmcr[displayName] ?? 0) >= dot
+                                          ? 'bg-primary border-primary'
+                                          : 'border-border hover:border-primary/50'
+                                      }`}
+                                      title={`MMC ${dot}/5`}
+                                    />
+                                  ))}
+                                </div>
+                                {mmcr[displayName] != null && (
+                                  <span className="text-[10px] text-muted-foreground">{mmcr[displayName]}/5</span>
+                                )}
+                              </div>
+                            )}
                             <div key={idx} className="flex items-center gap-2">
                               <button
                                 onClick={() => toggleSetCompleted(displayName, idx)}
@@ -882,7 +914,7 @@ function WorkoutLogTab() {
                                 <div className="w-5 flex-shrink-0" />
                               )}
                             </div>
-                          ))}
+                            </React.Fragment>))}
                         </div>
                       </div>
                     )}

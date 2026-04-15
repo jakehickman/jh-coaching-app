@@ -49,6 +49,7 @@ export interface WorkoutSet {
   reps?: number | null;
   notes?: string | null;
   completed?: boolean;
+  mmcr?: number | null; // Mind Muscle Connection Rating 1-5, first set only
 }
 
 export interface WorkoutExercise {
