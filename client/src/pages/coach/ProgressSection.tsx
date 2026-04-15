@@ -1106,7 +1106,7 @@ export default function ProgressSection() {
               <SectionLabel>7-Day Averages</SectionLabel>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <ProgCard
-                  label="Avg Weight"
+                  label="Weight"
                   value={curAvgWeight != null ? `${curAvgWeight.toFixed(1)} kg` : "—"}
                   sub={weightPct ? `${weightPct} vs prev 7 days` : undefined}
                 />
@@ -1118,44 +1118,38 @@ export default function ProgressSection() {
                     : `${trainedInRotation} sessions completed`}
                 />
                 <ProgCard
-                  label="Off-Plan Meals (7d)"
+                  label="Off-Plan Meals"
                   value={String(offPlanTotal7)}
-                  sub={offPlanTotal7 === 0 ? "All on-plan" : `${cur7.filter(l => (l.offPlanMeals ?? 0) > 0).length} days with off-plan meals`}
+                  sub={offPlanTotal7 === 0 ? "All on-plan" : undefined}
                 />
                 <ProgCard
-                  label="Avg Hunger"
+                  label="Hunger"
                   value={curAvgHunger != null ? `${curAvgHunger.toFixed(1)}/5` : "—"}
                 />
                 <ProgCard
-                  label="Avg Sleep Quality"
+                  label="Sleep Quality"
                   value={curAvgSleep != null ? `${curAvgSleep.toFixed(1)}/5` : "—"}
                 />
                 {curAvgSleepHours != null && (
                   <ProgCard
-                    label="Avg Sleep Hours"
+                    label="Sleep Hours"
                     value={`${curAvgSleepHours.toFixed(1)} hrs`}
                   />
                 )}
                 {curAvgCaffeine != null && (
                   <ProgCard
-                    label="Avg Caffeine"
+                    label="Caffeine"
                     value={`${curAvgCaffeine.toFixed(1)} srv`}
                     sub="1 srv ≈ 80–100 mg"
                   />
                 )}
                 {(curAvgSteps != null || (clientProfile as any)?.stepGoal) && (
                   <ProgCard
-                    label="Avg Steps"
-                    value={(() => {
+                  label="Steps"
+                  value={(() => {
                       const goal = (clientProfile as any)?.stepGoal as number | null;
                       const avg = curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—";
                       return goal ? `${avg} / ${goal.toLocaleString()}` : avg;
-                    })()}
-                    sub={(() => {
-                      const goal = (clientProfile as any)?.stepGoal as number | null;
-                      if (!goal || curAvgSteps == null) return undefined;
-                      const pct = Math.round((curAvgSteps / goal) * 100);
-                      return `${pct}% of goal`;
                     })()}
                   />
                 )}
