@@ -395,3 +395,4 @@
 - [x] Client Daily Log: replace "Off Plan Meal" text badge with amber Utensils icon
 - [x] Coach recent logs: amber Utensils icon already present (coach side was not affected by rollback)
 - [x] Fix training adherence: use ratio-based prescribed count (trainingDays/rotationLen × windowDays) instead of cycle-index mapping (which breaks without an anchor date)
+- [x] Fix: saveWorkoutSession now server-side syncs trainingCompleted=true to daily log (was only happening client-side, unreliably); backfilled Geoff's Apr 14 session

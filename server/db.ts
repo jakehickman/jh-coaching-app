@@ -687,11 +687,17 @@ export async function saveWorkoutSession(data: {
       .update(workoutSessions)
       .set({ exercises: data.exercises, notes: data.notes ?? null, updatedAt: new Date() })
       .where(eq(workoutSessions.id, existing[0].id));
-    return existing[0].id;
   } else {
-    const result = await db.insert(workoutSessions).values(data as any);
-    return (result as any).insertId;
+    await db.insert(workoutSessions).values(data as any);
   }
+  // Always sync trainingCompleted = true to the daily log for this date
+  await upsertDailyLog({
+    userId: data.userId,
+    logDate: data.sessionDate,
+    trainingCompleted: true,
+    trainingType: data.dayLabel,
+  });
+  return existing.length > 0 ? existing[0].id : undefined;
 }
 
 export async function deleteWorkoutSession(id: number, userId: number) {
