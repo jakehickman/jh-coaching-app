@@ -527,9 +527,6 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                   const completedSets = (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null);
                   const firstSet = completedSets.find((s: any) => s.weight != null || s.reps != null) ?? completedSets[0];
                   const machineName = ex.machinePreset ?? ex.equipmentDetails ?? null;
-                  // MMCR is stored on the first set (index 0 of all sets, not just completed)
-                  const rawFirstSet = (ex.sets ?? [])[0];
-                  const mmcrVal: number | null = rawFirstSet?.mmcr ?? null;
                   return (
                     <div key={i} className="flex items-baseline gap-2 flex-wrap">
                       <p className="text-sm font-medium text-foreground shrink-0">{ex.name}</p>
@@ -541,9 +538,6 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                           {firstSet.weight != null ? `${firstSet.weight}kg` : '—'} × {firstSet.reps != null ? firstSet.reps : '—'}
                           <span className="text-muted-foreground/50 ml-1">· {completedSets.length} set{completedSets.length !== 1 ? 's' : ''}</span>
                           {machineName && <span className="text-muted-foreground/40 ml-1">· {machineName}</span>}
-                          {mmcrVal != null && (
-                            <span className="ml-1.5 text-[10px] font-medium text-primary/70">MMC {mmcrVal}/5</span>
-                          )}
                         </span>
                       ) : (
                         <span className="text-xs text-amber-400/70">incomplete</span>
@@ -597,7 +591,7 @@ function ExerciseProgressTab({
   }
 
   // Build per-exercise history (chronological)
-  const exerciseHistory: Record<string, Array<{ date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }>; substitutedFor?: string; equipmentDetails?: string; machinePreset?: string; machineSettings?: string; mmcr?: number | null }>> = {};
+  const exerciseHistory: Record<string, Array<{ date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }>; substitutedFor?: string; equipmentDetails?: string; machinePreset?: string; machineSettings?: string }>> = {};
   for (const session of [...workoutSessions].reverse()) {
     const dateStr = toLocalDateStr(session.sessionDate);
     for (const ex of (session.exercises as any[])) {
@@ -615,10 +609,7 @@ function ExerciseProgressTab({
         if (sw === bw && (s.reps ?? 0) > (best.reps ?? 0)) return s;
         return best;
       }, null);
-      // MMCR is stored on the first raw set (index 0)
-      const rawFirstSet = (ex.sets ?? [])[0];
-      const mmcr: number | null = rawFirstSet?.mmcr ?? null;
-      exerciseHistory[ex.name].push({ date: dateStr, topSet, allSets: sets, substitutedFor: ex.substitutedFor ?? undefined, equipmentDetails: ex.equipmentDetails ?? undefined, machinePreset: ex.machinePreset ?? undefined, machineSettings: ex.machineSettings ?? undefined, mmcr });
+      exerciseHistory[ex.name].push({ date: dateStr, topSet, allSets: sets, substitutedFor: ex.substitutedFor ?? undefined, equipmentDetails: ex.equipmentDetails ?? undefined, machinePreset: ex.machinePreset ?? undefined, machineSettings: ex.machineSettings ?? undefined });
     }
   }
 
@@ -745,7 +736,6 @@ function ExerciseProgressTab({
                         ? (entry.machinePreset ?? entry.equipmentDetails)
                         : null;
                       const detailParts = presetStr ?? '';
-                      const entryMmcr = entry.mmcr ?? null;
                       return (
                         <div
                           key={i}
@@ -760,24 +750,11 @@ function ExerciseProgressTab({
                             isLatest ? 'text-foreground' : 'text-muted-foreground'
                           }`}>{weightStr}{repsStr}</span>
                           {/* Machine / settings detail */}
-                          {detailParts && !entryMmcr && (
+                          {detailParts && (
                             <span className="text-[10px] text-muted-foreground/60 truncate flex-1">{detailParts}</span>
                           )}
-                          {/* MMCR dots */}
-                          {entryMmcr != null && (
-                            <div className="flex gap-0.5 flex-shrink-0">
-                              {[1,2,3,4,5].map(dot => (
-                                <div
-                                  key={dot}
-                                  className={`w-2 h-2 rounded-full ${
-                                    entryMmcr >= dot ? 'bg-primary' : 'bg-border'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          )}
                           {/* Trend arrow */}
-                          <div className="w-4 flex justify-end flex-shrink-0 ml-auto">
+                          <div className="w-4 flex justify-end flex-shrink-0">
                             {(wUp || rUp) && <ArrowUp className="w-3 h-3 text-green-400" />}
                             {(wDown || rDown) && <ArrowDown className="w-3 h-3 text-red-400" />}
                           </div>

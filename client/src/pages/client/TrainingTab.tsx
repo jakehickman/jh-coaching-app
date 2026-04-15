@@ -1,4 +1,3 @@
-import React from "react";
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
@@ -325,7 +324,6 @@ function WorkoutLogTab() {
 
   // ── Form state ────────────────────────────────────────────────────────────
   const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({});
-  const [mmcr, setMmcr] = useState<Record<string, number | null>>({}); // exerciseName -> 1-5 rating (first set only)
   const [equipmentDetails, setEquipmentDetails] = useState<Record<string, string>>({});
   const [machinePreset, setMachinePreset] = useState<Record<string, string>>({}); // exerciseName -> preset name
   const [machineSettings, setMachineSettings] = useState<Record<string, string>>({}); // exerciseName -> settings
@@ -505,7 +503,6 @@ function WorkoutLogTab() {
       const msData: Record<string, string> = {};
       const enData: Record<string, string> = {};
       const subData: Record<string, string> = {};
-      const mmcrData: Record<string, number | null> = {};
       for (const ex of (existing.exercises as any[])) {
         if (ex.substitutedFor) subData[ex.substitutedFor] = ex.name;
         exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
@@ -518,9 +515,6 @@ function WorkoutLogTab() {
         if (ex.machinePreset) mpData[ex.name] = ex.machinePreset;
         if (ex.machineSettings) msData[ex.name] = ex.machineSettings;
         if (ex.exerciseNotes) enData[ex.name] = ex.exerciseNotes;
-        // Load MMCR from first set
-        const firstSet = (ex.sets ?? [])[0];
-        if (firstSet?.mmcr != null) mmcrData[ex.name] = firstSet.mmcr;
       }
       setExerciseData(exData);
       setEquipmentDetails(eqData);
@@ -528,7 +522,6 @@ function WorkoutLogTab() {
       setMachineSettings(msData);
       setExerciseNotes(enData);
       setSubstitutions(subData);
-      setMmcr(mmcrData);
       setSessionNotes((existing.notes as string) ?? '');
       const persisted = loadCollapsed(date, label);
       const defaultCollapsed: Record<string, boolean> = {};
@@ -568,7 +561,6 @@ function WorkoutLogTab() {
     setMachineSettings(prefillMachineSettings);
     setExerciseNotes({});
     setSubstitutions({});
-    setMmcr({});
     setCollapsedExercisesRaw(loadCollapsed(date, label));
   }
 
@@ -631,12 +623,11 @@ function WorkoutLogTab() {
         machinePreset: machinePreset[nameToUse] || null,
         machineSettings: machineSettings[nameToUse] || null,
         exerciseNotes: exerciseNotes[nameToUse] || null,
-        sets: (exerciseData[nameToUse] ?? []).map((s, idx) => ({
+        sets: (exerciseData[nameToUse] ?? []).map(s => ({
           weight: s.weight !== "" ? parseFloat(s.weight) : null,
           reps: s.reps !== "" ? parseInt(s.reps) : null,
           notes: s.notes || null,
           completed: s.completed || s.weight !== "" || s.reps !== "",
-          mmcr: idx === 0 ? (mmcr[nameToUse] ?? null) : null,
         })),
       };
     });
@@ -683,15 +674,11 @@ function WorkoutLogTab() {
           .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)))[0];
         const prevExMap: Record<string, Array<{ weight: number | null; reps: number | null }>> = {};
         const prevMachinePresetMap: Record<string, string> = {};
-        const prevMmcrMap: Record<string, number | null> = {};
         if (prevSession) {
           for (const ex of (prevSession.exercises as any[])) {
             prevExMap[ex.name] = (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null);
             if (ex.machinePreset) prevMachinePresetMap[ex.name] = ex.machinePreset;
             else if (ex.equipmentDetails) prevMachinePresetMap[ex.name] = ex.equipmentDetails; // legacy fallback
-            // MMCR is stored on the first raw set
-            const rawFirst = (ex.sets ?? [])[0];
-            if (rawFirst?.mmcr != null) prevMmcrMap[ex.name] = rawFirst.mmcr;
           }
         }
 
@@ -744,31 +731,12 @@ function WorkoutLogTab() {
                         {ex.notes && !subName && <p className="text-xs text-muted-foreground">{ex.notes}</p>}
                         <p className="text-sm font-medium text-foreground/80">{ex.sets} sets × {ex.reps}</p>
                         {prevSets.length > 0 && (
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <p className="text-xs text-primary/80">
-                              Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
-                              {(prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]) && (
-                                <span className="text-muted-foreground/60 ml-1">· {prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]}</span>
-                              )}
-                            </p>
-                            {(prevMmcrMap[displayName] ?? prevMmcrMap[ex.name]) != null && (
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-muted-foreground/60">MMC</span>
-                                <div className="flex items-center gap-0.5">
-                                {[1,2,3,4,5].map(dot => (
-                                  <div
-                                    key={dot}
-                                    className={`w-2 h-2 rounded-full ${
-                                      (prevMmcrMap[displayName] ?? prevMmcrMap[ex.name])! >= dot
-                                        ? 'bg-primary/70'
-                                        : 'bg-border'
-                                    }`}
-                                  />
-                                ))}
-                                </div>
-                              </div>
+                          <p className="text-xs text-primary/80 mt-0.5">
+                            Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
+                            {(prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]) && (
+                              <span className="text-muted-foreground/60 ml-1">· {prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]}</span>
                             )}
-                          </div>
+                          </p>
                         )}
                         {(() => {
                           const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;
@@ -879,8 +847,7 @@ function WorkoutLogTab() {
                         </div>
                         <div className="space-y-1.5">
                           {sets.map((s, idx) => (
-                            <React.Fragment key={idx}>
-                            <div className="flex items-center gap-2">
+                            <div key={idx} className="flex items-center gap-2">
                               <button
                                 onClick={() => toggleSetCompleted(displayName, idx)}
                                 className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded border-2 transition-colors ${
@@ -891,45 +858,22 @@ function WorkoutLogTab() {
                               >
                                 <Check size={12} />
                               </button>
-                              {/* Set 1 ticked: show MMC dots instead of weight/reps inputs */}
-                              {idx === 0 && s.completed ? (
-                                <div className="flex items-center gap-1.5 flex-1">
-                                  {[1,2,3,4,5].map(dot => (
-                                    <button
-                                      key={dot}
-                                      onClick={() => setMmcr(prev => ({ ...prev, [displayName]: prev[displayName] === dot ? null : dot }))}
-                                      className={`w-6 h-6 rounded-full border-2 transition-all ${
-                                        (mmcr[displayName] ?? 0) >= dot
-                                          ? 'bg-primary border-primary'
-                                          : 'border-border hover:border-primary/50'
-                                      }`}
-                                      title={`MMC ${dot}/5`}
-                                    />
-                                  ))}
-                                  {mmcr[displayName] != null && (
-                                    <span className="text-[10px] text-muted-foreground ml-1">{mmcr[displayName]}/5</span>
-                                  )}
-                                </div>
-                              ) : (
-                                <>
-                                  <div className="flex-1">
-                                    <input
-                                      type="number" inputMode="decimal"
-                                      value={s.weight ?? ""}
-                                      onChange={e => setSet(displayName, idx, "weight", e.target.value)}
-                                      className={inputCls}
-                                    />
-                                  </div>
-                                  <div className="flex-1">
-                                    <input
-                                      type="number" inputMode="numeric"
-                                      value={s.reps ?? ""}
-                                      onChange={e => setSet(displayName, idx, "reps", e.target.value)}
-                                      className={inputCls}
-                                    />
-                                  </div>
-                                </>
-                              )}
+                              <div className="flex-1">
+                                <input
+                                  type="number" inputMode="decimal"
+                                  value={s.weight ?? ""}
+                                  onChange={e => setSet(displayName, idx, "weight", e.target.value)}
+                                  className={inputCls}
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <input
+                                  type="number" inputMode="numeric"
+                                  value={s.reps ?? ""}
+                                  onChange={e => setSet(displayName, idx, "reps", e.target.value)}
+                                  className={inputCls}
+                                />
+                              </div>
                               {sets.length > 1 ? (
                                 <button onClick={() => removeSet(displayName, idx)} className="w-5 flex-shrink-0 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
                                   <Minus size={14} />
@@ -938,30 +882,7 @@ function WorkoutLogTab() {
                                 <div className="w-5 flex-shrink-0" />
                               )}
                             </div>
-                            </React.Fragment>))}
-                          {/* Set 1 weight/reps shown below the MMC row when ticked */}
-                          {sets[0]?.completed && (
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 flex-shrink-0" />
-                              <div className="flex-1">
-                                <input
-                                  type="number" inputMode="decimal"
-                                  value={sets[0].weight ?? ""}
-                                  onChange={e => setSet(displayName, 0, "weight", e.target.value)}
-                                  className={inputCls}
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <input
-                                  type="number" inputMode="numeric"
-                                  value={sets[0].reps ?? ""}
-                                  onChange={e => setSet(displayName, 0, "reps", e.target.value)}
-                                  className={inputCls}
-                                />
-                              </div>
-                              <div className="w-5 flex-shrink-0" />
-                            </div>
-                          )}
+                          ))}
                         </div>
                       </div>
                     )}
