@@ -1145,12 +1145,9 @@ export default function ProgressSection() {
                 )}
                 {(curAvgSteps != null || (clientProfile as any)?.stepGoal) && (
                   <ProgCard
-                  label="Steps"
-                  value={(() => {
-                      const goal = (clientProfile as any)?.stepGoal as number | null;
-                      const avg = curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—";
-                      return goal ? `${avg} / ${goal.toLocaleString()}` : avg;
-                    })()}
+                    label="Steps"
+                    value={curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—"}
+                    sub={(clientProfile as any)?.stepGoal ? `Goal: ${((clientProfile as any).stepGoal as number).toLocaleString()}` : undefined}
                   />
                 )}
               </div>
