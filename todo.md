@@ -392,3 +392,5 @@
 - [x] Progress tab: Show weekly average sleep hours from daily log
 - [x] Progress tab: Show weekly average caffeine intake from daily log (alongside sleep)
 - [x] Recent logs: replace "Off Plan Meal" text with amber Utensils icon
+- [x] Client Daily Log: replace "Off Plan Meal" text badge with amber Utensils icon
+- [x] Coach recent logs: amber Utensils icon already present (coach side was not affected by rollback)

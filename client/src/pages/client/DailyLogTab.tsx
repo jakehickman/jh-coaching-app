@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, Pencil, CheckSquare, Square } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Pencil, CheckSquare, Square, Utensils } from "lucide-react";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr, localToday } from "@/lib/dates";
 import { SectionLabel, Card, DateInput, ScoreInput, DailyLogRow } from "./shared";
@@ -76,7 +76,7 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
                     <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
                       trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>{sessionLabel}</span>
-                    {hasOffPlanMeals(log.offPlanMeals) ? <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400">{(log.offPlanMeals ?? 0) > 1 ? `${log.offPlanMeals} Off Plan Meals` : 'Off Plan Meal'}</span> : null}
+                    {hasOffPlanMeals(log.offPlanMeals) ? <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400" title={`${log.offPlanMeals} off-plan meal${(log.offPlanMeals ?? 0) > 1 ? 's' : ''}`}><Utensils size={11} />{(log.offPlanMeals ?? 0) > 1 ? <span>{log.offPlanMeals}</span> : null}</span> : null}
                   </>
                 ) : (
                   <span className="text-xs text-muted-foreground italic">No entry</span>
