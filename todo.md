@@ -398,3 +398,4 @@
 - [x] Fix: saveWorkoutSession now server-side syncs trainingCompleted=true to daily log (was only happening client-side, unreliably); backfilled Geoff's Apr 14 session
 - [x] Backfill trainingCompleted for all clients with existing workout sessions (Sam, Julie already in sync; Geoff fixed earlier)
 - [x] Fix stale TS errors in server/db.ts (cleared incremental build cache; tsc now clean)
+- [x] Bug: saving daily log overrides trainingCompleted back to rest day — fixed: server-side guard in upsertDailyLog preserves trainingCompleted=true; client form no longer sends trainingCompleted at all (server-controlled)

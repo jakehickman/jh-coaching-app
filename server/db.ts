@@ -255,9 +255,17 @@ export async function upsertDailyLog(data: {
   if (!db) return;
   const existing = await getDailyLogByDate(data.userId, data.logDate);
   if (existing) {
+    // Never overwrite a workout-synced trainingCompleted=true with false from the daily log form.
+    // Only allow trainingCompleted to change if the caller is explicitly setting it to true,
+    // or if the existing value is already false.
+    const updatePayload = { ...data };
+    if (existing.trainingCompleted && updatePayload.trainingCompleted === false) {
+      delete updatePayload.trainingCompleted;
+      delete updatePayload.trainingType;
+    }
     await db
       .update(dailyLogs)
-      .set({ ...data, updatedAt: new Date() } as any)
+      .set({ ...updatePayload, updatedAt: new Date() } as any)
       .where(eq(dailyLogs.id, existing.id));
   } else {
     await db.insert(dailyLogs).values(data as any);

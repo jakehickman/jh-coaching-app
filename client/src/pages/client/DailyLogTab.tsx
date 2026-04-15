@@ -383,8 +383,8 @@ export default function DailyLogTab() {
       weight: form.weight ? parseFloat(form.weight) : undefined,
       sleepHours: form.sleepHours ? parseFloat(form.sleepHours) : undefined,
       caffeineServings: form.caffeineServings ? parseFloat(form.caffeineServings) : undefined,
-      trainingCompleted: form.trainingCompleted,
-      trainingType: form.trainingType || undefined,
+      // trainingCompleted and trainingType are server-controlled (set by workout session sync)
+      // Do not send from the form to avoid overriding the synced value
       stepsCount: form.stepsCount ? parseInt(form.stepsCount) : undefined,
       sleepQuality: form.sleepQuality ?? undefined,
       hungerLevel: form.hungerLevel ?? undefined,
