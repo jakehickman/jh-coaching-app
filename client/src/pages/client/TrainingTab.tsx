@@ -581,9 +581,7 @@ function WorkoutLogTab() {
     setExerciseData(prev => {
       const sets = [...(prev[exName] ?? [{ weight: "", reps: "", notes: "", completed: false }])];
       const updated = { ...sets[idx], [field]: val };
-      if ((field === "weight" || field === "reps") && val !== "") {
-        updated.completed = true;
-      }
+      // Do NOT auto-complete on type — user must tap the tick button
       sets[idx] = updated;
       return { ...prev, [exName]: sets };
     });
@@ -700,7 +698,7 @@ function WorkoutLogTab() {
               // Field is open if: has preset/text (always show) OR explicitly opened via button
               const isEquipmentOpen = hasEquipment || (!!equipmentOpen[displayName] && !isCollapsed);
               return (
-                <Card key={i}>
+                <Card key={displayName}>
                   <div
                     onClick={() => toggleExerciseCollapse(displayName)}
                     className="w-full mb-3 text-left cursor-pointer"

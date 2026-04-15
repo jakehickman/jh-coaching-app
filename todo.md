@@ -381,3 +381,5 @@
 - [x] Fix check-in tomorrow banner suppressed by startedWithin7Days guard (changed to only suppress on actual start date)
 - [x] Exercise Progress: up/down arrow should also trigger when reps change with same weight
 - [x] Replace Tag icon with Settings/Gear icon on machine preset button in exercise cards
+- [x] Fix exercise card key={i} to key={displayName} to prevent weight cross-population between exercises
+- [x] Remove auto-complete-on-type: sets only mark complete via tick button (Option A)
