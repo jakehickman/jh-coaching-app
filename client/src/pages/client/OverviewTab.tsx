@@ -191,9 +191,11 @@ export default function OverviewTab() {
     windowDays.push(`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`);
     cursor.setDate(cursor.getDate() + 1);
   }
-  const prescribedDays = schedule.length > 0
-    ? windowDays.filter((_, i) => schedule[i % rotationLength] !== 'Off').length
-    : windowDays.length;
+  // Ratio-based prescribed count — avoids cycle-index anchor bug
+  const trainingDaysInSchedule = schedule.length > 0
+    ? schedule.filter(s => s && s.toLowerCase() !== 'off').length
+    : rotationLength;
+  const prescribedDays = Math.max(1, Math.round(windowDays.length * (trainingDaysInSchedule / rotationLength)));
   const trainedInRotation = allLogs.filter(l => {
     const d = toLocalDateStr(l.logDate);
     return d >= effectiveWindowStart && d <= today && l.trainingCompleted;

@@ -999,7 +999,7 @@ export default function ProgressSection() {
   const prevMealAdherence = Math.round((prevOnPlan / 7) * 100);
   const offPlanTotal7 = cur7.reduce((sum, l) => sum + (l.offPlanMeals ?? 0), 0);
 
-  // ── Training adherence: calendar-day window vs rotation length, clamped to startDate ──
+  // ── Training adherence: ratio-based prescribed count (avoids cycle-index anchor bug) ──
   const schedule = (trainingProgram?.schedule as string[] | null) ?? null;
   const programDays = (trainingProgram?.days as any[] | null) ?? null;
   const rotationLen = schedule?.length ?? programDays?.length ?? 7;
@@ -1016,12 +1016,14 @@ export default function ProgressSection() {
     rotWindowDays.push(`${rotCursor.getFullYear()}-${String(rotCursor.getMonth()+1).padStart(2,'0')}-${String(rotCursor.getDate()).padStart(2,'0')}`);
     rotCursor.setDate(rotCursor.getDate() + 1);
   }
-  // Count prescribed days in the clamped window using rotation cycle
-  const prescribedPerRotation = schedule
-    ? rotWindowDays.filter((_, i) => schedule[i % rotationLen] && schedule[i % rotationLen].toLowerCase() !== 'off').length
+  // Count training days in the schedule (ratio approach — no anchor date needed)
+  const trainingDaysInSchedule = schedule
+    ? schedule.filter(s => s && s.toLowerCase() !== 'off').length
     : programDays
-      ? rotWindowDays.filter((_, i) => !String((programDays[i % programDays.length]?.name ?? programDays[i % programDays.length]?.label ?? '')).toLowerCase().includes('off')).length
-      : rotWindowDays.length;
+      ? programDays.filter(d => !String(d?.name ?? d?.label ?? '').toLowerCase().includes('off')).length
+      : rotationLen;
+  // Prescribed = windowDays × (trainingDaysInSchedule / rotationLen), rounded, min 1
+  const prescribedPerRotation = Math.max(1, Math.round(rotWindowDays.length * (trainingDaysInSchedule / rotationLen)));
   const rotationLogs = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= effectiveRotationStart && d <= today; });
   const trainedInRotation = rotationLogs.filter(l => l.trainingCompleted).length;
   const trainingAdherence = prescribedPerRotation > 0
