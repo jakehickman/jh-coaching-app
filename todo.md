@@ -396,3 +396,5 @@
 - [x] Coach recent logs: amber Utensils icon already present (coach side was not affected by rollback)
 - [x] Fix training adherence: use ratio-based prescribed count (trainingDays/rotationLen × windowDays) instead of cycle-index mapping (which breaks without an anchor date)
 - [x] Fix: saveWorkoutSession now server-side syncs trainingCompleted=true to daily log (was only happening client-side, unreliably); backfilled Geoff's Apr 14 session
+- [x] Backfill trainingCompleted for all clients with existing workout sessions (Sam, Julie already in sync; Geoff fixed earlier)
+- [x] Fix stale TS errors in server/db.ts (cleared incremental build cache; tsc now clean)
