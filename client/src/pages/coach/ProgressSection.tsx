@@ -982,6 +982,9 @@ export default function ProgressSection() {
   const curAvgSleep = avgOf(cur7.map(l => l.sleepQuality as number | null));
   const prevAvgSleep = avgOf(prev7.map(l => l.sleepQuality as number | null));
 
+  const curAvgSleepHours = avgOf(cur7.map(l => l.sleepHours as number | null));
+  const curAvgCaffeine = avgOf(cur7.map(l => l.caffeineServings as number | null));
+
   const curAvgSteps = avgOf(cur7.map(l => l.stepsCount as number | null));
   const prevAvgSteps = avgOf(prev7.map(l => l.stepsCount as number | null));
 
@@ -1127,6 +1130,19 @@ export default function ProgressSection() {
                   label="Avg Sleep Quality"
                   value={curAvgSleep != null ? `${curAvgSleep.toFixed(1)}/5` : "—"}
                 />
+                {curAvgSleepHours != null && (
+                  <ProgCard
+                    label="Avg Sleep Hours"
+                    value={`${curAvgSleepHours.toFixed(1)} hrs`}
+                  />
+                )}
+                {curAvgCaffeine != null && (
+                  <ProgCard
+                    label="Avg Caffeine"
+                    value={`${curAvgCaffeine.toFixed(1)} srv`}
+                    sub="1 srv ≈ 80–100 mg"
+                  />
+                )}
                 {(curAvgSteps != null || (clientProfile as any)?.stepGoal) && (
                   <ProgCard
                     label="Avg Steps"
