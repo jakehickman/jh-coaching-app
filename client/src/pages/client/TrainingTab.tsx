@@ -752,7 +752,9 @@ function WorkoutLogTab() {
                               )}
                             </p>
                             {(prevMmcrMap[displayName] ?? prevMmcrMap[ex.name]) != null && (
-                              <div className="flex items-center gap-0.5">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-muted-foreground/60">MMC</span>
+                                <div className="flex items-center gap-0.5">
                                 {[1,2,3,4,5].map(dot => (
                                   <div
                                     key={dot}
@@ -763,6 +765,7 @@ function WorkoutLogTab() {
                                     }`}
                                   />
                                 ))}
+                                </div>
                               </div>
                             )}
                           </div>
