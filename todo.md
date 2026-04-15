@@ -399,3 +399,4 @@
 - [x] MMCR: Show mmcr in coach Exercise Progress tab history rows
 - [x] MMCR: Show previous session MMCR dots alongside Last: weight × reps in client exercise card
 - [x] MMCR: Add "MMC" label before dots on Last: line in client exercise card
+- [x] MMCR: Move 5-dot rating inline on set 1 row (after tick, not below headers)

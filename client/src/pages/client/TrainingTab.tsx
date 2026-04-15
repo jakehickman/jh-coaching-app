@@ -880,10 +880,20 @@ function WorkoutLogTab() {
                         <div className="space-y-1.5">
                           {sets.map((s, idx) => (
                             <React.Fragment key={idx}>
-                            {idx === 0 && s.completed && (
-                              <div className="flex items-center gap-2 pl-8 pb-1">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">MMC</p>
-                                <div className="flex gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleSetCompleted(displayName, idx)}
+                                className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded border-2 transition-colors ${
+                                  s.completed
+                                    ? "border-green-500 bg-green-500/20 text-green-400"
+                                    : "border-border text-transparent hover:border-primary"
+                                }`}
+                              >
+                                <Check size={12} />
+                              </button>
+                              {/* Set 1 ticked: show MMC dots instead of weight/reps inputs */}
+                              {idx === 0 && s.completed ? (
+                                <div className="flex items-center gap-1.5 flex-1">
                                   {[1,2,3,4,5].map(dot => (
                                     <button
                                       key={dot}
@@ -896,39 +906,30 @@ function WorkoutLogTab() {
                                       title={`MMC ${dot}/5`}
                                     />
                                   ))}
+                                  {mmcr[displayName] != null && (
+                                    <span className="text-[10px] text-muted-foreground ml-1">{mmcr[displayName]}/5</span>
+                                  )}
                                 </div>
-                                {mmcr[displayName] != null && (
-                                  <span className="text-[10px] text-muted-foreground">{mmcr[displayName]}/5</span>
-                                )}
-                              </div>
-                            )}
-                            <div key={idx} className="flex items-center gap-2">
-                              <button
-                                onClick={() => toggleSetCompleted(displayName, idx)}
-                                className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded border-2 transition-colors ${
-                                  s.completed
-                                    ? "border-green-500 bg-green-500/20 text-green-400"
-                                    : "border-border text-transparent hover:border-primary"
-                                }`}
-                              >
-                                <Check size={12} />
-                              </button>
-                              <div className="flex-1">
-                                <input
-                                  type="number" inputMode="decimal"
-                                  value={s.weight ?? ""}
-                                  onChange={e => setSet(displayName, idx, "weight", e.target.value)}
-                                  className={inputCls}
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <input
-                                  type="number" inputMode="numeric"
-                                  value={s.reps ?? ""}
-                                  onChange={e => setSet(displayName, idx, "reps", e.target.value)}
-                                  className={inputCls}
-                                />
-                              </div>
+                              ) : (
+                                <>
+                                  <div className="flex-1">
+                                    <input
+                                      type="number" inputMode="decimal"
+                                      value={s.weight ?? ""}
+                                      onChange={e => setSet(displayName, idx, "weight", e.target.value)}
+                                      className={inputCls}
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <input
+                                      type="number" inputMode="numeric"
+                                      value={s.reps ?? ""}
+                                      onChange={e => setSet(displayName, idx, "reps", e.target.value)}
+                                      className={inputCls}
+                                    />
+                                  </div>
+                                </>
+                              )}
                               {sets.length > 1 ? (
                                 <button onClick={() => removeSet(displayName, idx)} className="w-5 flex-shrink-0 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
                                   <Minus size={14} />
@@ -938,6 +939,29 @@ function WorkoutLogTab() {
                               )}
                             </div>
                             </React.Fragment>))}
+                          {/* Set 1 weight/reps shown below the MMC row when ticked */}
+                          {sets[0]?.completed && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 flex-shrink-0" />
+                              <div className="flex-1">
+                                <input
+                                  type="number" inputMode="decimal"
+                                  value={sets[0].weight ?? ""}
+                                  onChange={e => setSet(displayName, 0, "weight", e.target.value)}
+                                  className={inputCls}
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <input
+                                  type="number" inputMode="numeric"
+                                  value={sets[0].reps ?? ""}
+                                  onChange={e => setSet(displayName, 0, "reps", e.target.value)}
+                                  className={inputCls}
+                                />
+                              </div>
+                              <div className="w-5 flex-shrink-0" />
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
