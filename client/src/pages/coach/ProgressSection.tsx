@@ -519,32 +519,24 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                 {exercises.map((ex: any, i: number) => {
                   const completedSets = (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null);
                   const firstSet = completedSets.find((s: any) => s.weight != null || s.reps != null) ?? completedSets[0];
+                  const machineName = ex.machinePreset ?? ex.equipmentDetails ?? null;
                   return (
-                    <div key={i}>
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-medium text-foreground">{ex.name}</p>
-                            {ex.substitutedFor && (
-                              <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded">SUB</span>
-                            )}
-                            {completedSets.length > 0 && firstSet && (
-                              <span className="text-xs text-muted-foreground">
-                                {firstSet.weight != null ? `${firstSet.weight}kg` : '—'} × {firstSet.reps != null ? firstSet.reps : '—'}
-                                <span className="text-muted-foreground/50 ml-1">· {completedSets.length} set{completedSets.length !== 1 ? 's' : ''}</span>
-                              </span>
-                            )}
-                          </div>
-                          {(ex.machinePreset || ex.equipmentDetails) && (
-                            <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                              {ex.machinePreset ?? ex.equipmentDetails}
-                              {ex.machineSettings && <span className="ml-1 opacity-70">· {ex.machineSettings}</span>}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                    <div key={i} className="flex items-baseline gap-2 flex-wrap">
+                      <p className="text-sm font-medium text-foreground shrink-0">{ex.name}</p>
+                      {ex.substitutedFor && (
+                        <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded shrink-0">SUB</span>
+                      )}
+                      {completedSets.length > 0 && firstSet ? (
+                        <span className="text-xs text-muted-foreground">
+                          {firstSet.weight != null ? `${firstSet.weight}kg` : '—'} × {firstSet.reps != null ? firstSet.reps : '—'}
+                          <span className="text-muted-foreground/50 ml-1">· {completedSets.length} set{completedSets.length !== 1 ? 's' : ''}</span>
+                          {machineName && <span className="text-muted-foreground/40 ml-1">· {machineName}</span>}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-amber-400/70">incomplete</span>
+                      )}
                       {ex.exerciseNotes && (
-                        <p className="text-xs text-muted-foreground/80 italic mt-1">&ldquo;{ex.exerciseNotes}&rdquo;</p>
+                        <span className="text-xs text-muted-foreground/60 italic">&ldquo;{ex.exerciseNotes}&rdquo;</span>
                       )}
                     </div>
                   );
@@ -596,8 +588,12 @@ function ExerciseProgressTab({
   for (const session of [...workoutSessions].reverse()) {
     const dateStr = toLocalDateStr(session.sessionDate);
     for (const ex of (session.exercises as any[])) {
+      // Only include exercises that have at least one completed set
+      const allSetsRaw: Array<{ weight: number | null; reps: number | null; completed?: boolean }> = ex.sets ?? [];
+      const completedSets = allSetsRaw.filter(s => s.completed || s.weight != null || s.reps != null);
+      if (completedSets.length === 0) continue;
       if (!exerciseHistory[ex.name]) exerciseHistory[ex.name] = [];
-      const sets: Array<{ weight: number | null; reps: number | null }> = ex.sets ?? [];
+      const sets: Array<{ weight: number | null; reps: number | null }> = completedSets;
       // Top set = highest weight, or highest reps if no weights
       const topSet = sets.reduce<{ weight: number | null; reps: number | null } | null>((best, s) => {
         if (!best) return s;

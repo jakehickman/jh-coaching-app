@@ -795,6 +795,14 @@ function WorkoutLogTab() {
                   {isCollapsed && sets.length > 0 && sets.every(s => s.completed) && (
                     <p className="text-xs font-semibold tracking-widest text-green-500 text-left pt-0 pb-1">COMPLETE</p>
                   )}
+                  {isCollapsed && sets.length > 0 && !sets.every(s => s.completed) && (() => {
+                    const completedCount = sets.filter(s => s.completed).length;
+                    return (
+                      <p className="text-xs font-semibold tracking-widest text-amber-400/80 text-left pt-0 pb-1">
+                        {completedCount === 0 ? 'INCOMPLETE' : `${completedCount}/${sets.length} SETS`}
+                      </p>
+                    );
+                  })()}
 
                   {!isCollapsed && (<>
                     {isEquipmentOpen && (

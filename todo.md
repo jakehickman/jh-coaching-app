@@ -383,3 +383,7 @@
 - [x] Replace Tag icon with Settings/Gear icon on machine preset button in exercise cards
 - [x] Fix exercise card key={i} to key={displayName} to prevent weight cross-population between exercises
 - [x] Remove auto-complete-on-type: sets only mark complete via tick button (Option A)
+- [x] Fix legacy "T&V" equipmentDetails appearing as separate machine filter pill in Exercise Progress tab
+- [x] Exercise Progress tab: exclude exercises with no completed sets from history
+- [x] Client training log: show incomplete indicator on exercise card when not all sets are ticked
+- [x] Coach Training tab: condense exercise rows to single line per exercise
