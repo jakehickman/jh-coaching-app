@@ -400,3 +400,4 @@
 - [x] Fix stale TS errors in server/db.ts (cleared incremental build cache; tsc now clean)
 - [x] Bug: saving daily log overrides trainingCompleted back to rest day — fixed: server-side guard in upsertDailyLog preserves trainingCompleted=true; client form no longer sends trainingCompleted at all (server-controlled)
 - [x] Fix: deleteWorkoutSession now clears trainingType and uses force=true to bypass the guard when reverting to rest
+- [x] CRITICAL BUG FIXED: Opening a saved session and hitting Save Session no longer overwrites set data — root cause was onSuccess resetting loadedRef.current which triggered loadDay to reload a stale localStorage draft; fix: removed the loadedRef.current = null reset from onSuccess

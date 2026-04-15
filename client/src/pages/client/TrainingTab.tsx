@@ -448,18 +448,13 @@ function WorkoutLogTab() {
   const saveMutation = trpc.workoutSessions.save.useMutation({
     onSuccess: () => {
       if (selectedDay) clearDraft(sessionDate, selectedDay);
-      loadedRef.current = null;
+      // Do NOT reset loadedRef.current here — resetting it causes the useEffect to re-run loadDay,
+      // which can load a stale localStorage draft and wipe the in-memory set data.
+      // The session is already saved; invalidating the query updates the cache in the background.
       utils.workoutSessions.list.invalidate();
       utils.dailyLog.list.invalidate();
       setSaving(false);
       toast.success("Session saved!");
-      if (selectedDay) {
-        dailyLogMutation.mutate({
-          logDate: sessionDate,
-          trainingCompleted: true,
-          trainingType: selectedDay,
-        });
-      }
     },
     onError: () => { setSaving(false); toast.error("Failed to save session."); },
   });
