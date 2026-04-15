@@ -683,11 +683,15 @@ function WorkoutLogTab() {
           .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)))[0];
         const prevExMap: Record<string, Array<{ weight: number | null; reps: number | null }>> = {};
         const prevMachinePresetMap: Record<string, string> = {};
+        const prevMmcrMap: Record<string, number | null> = {};
         if (prevSession) {
           for (const ex of (prevSession.exercises as any[])) {
             prevExMap[ex.name] = (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null);
             if (ex.machinePreset) prevMachinePresetMap[ex.name] = ex.machinePreset;
             else if (ex.equipmentDetails) prevMachinePresetMap[ex.name] = ex.equipmentDetails; // legacy fallback
+            // MMCR is stored on the first raw set
+            const rawFirst = (ex.sets ?? [])[0];
+            if (rawFirst?.mmcr != null) prevMmcrMap[ex.name] = rawFirst.mmcr;
           }
         }
 
@@ -740,12 +744,28 @@ function WorkoutLogTab() {
                         {ex.notes && !subName && <p className="text-xs text-muted-foreground">{ex.notes}</p>}
                         <p className="text-sm font-medium text-foreground/80">{ex.sets} sets × {ex.reps}</p>
                         {prevSets.length > 0 && (
-                          <p className="text-xs text-primary/80 mt-0.5">
-                            Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
-                            {(prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]) && (
-                              <span className="text-muted-foreground/60 ml-1">· {prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]}</span>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <p className="text-xs text-primary/80">
+                              Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
+                              {(prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]) && (
+                                <span className="text-muted-foreground/60 ml-1">· {prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]}</span>
+                              )}
+                            </p>
+                            {(prevMmcrMap[displayName] ?? prevMmcrMap[ex.name]) != null && (
+                              <div className="flex items-center gap-0.5">
+                                {[1,2,3,4,5].map(dot => (
+                                  <div
+                                    key={dot}
+                                    className={`w-2 h-2 rounded-full ${
+                                      (prevMmcrMap[displayName] ?? prevMmcrMap[ex.name])! >= dot
+                                        ? 'bg-primary/70'
+                                        : 'bg-border'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
                             )}
-                          </p>
+                          </div>
                         )}
                         {(() => {
                           const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;

@@ -397,3 +397,4 @@
 - [x] MMCR: Persist mmcr in handleSave
 - [x] MMCR: Show mmcr in coach Training tab session cards
 - [x] MMCR: Show mmcr in coach Exercise Progress tab history rows
+- [x] MMCR: Show previous session MMCR dots alongside Last: weight × reps in client exercise card
