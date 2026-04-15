@@ -250,6 +250,7 @@ export async function upsertDailyLog(data: {
   hungerLevel?: number;
   offPlanMeals?: number;
   notes?: string;
+  force?: boolean; // if true, bypass the trainingCompleted guard (used by deleteWorkoutSession)
 }) {
   const db = await getDb();
   if (!db) return;
@@ -257,12 +258,13 @@ export async function upsertDailyLog(data: {
   if (existing) {
     // Never overwrite a workout-synced trainingCompleted=true with false from the daily log form.
     // Only allow trainingCompleted to change if the caller is explicitly setting it to true,
-    // or if the existing value is already false.
+    // if the existing value is already false, or if force=true (e.g. deleteWorkoutSession).
     const updatePayload = { ...data };
-    if (existing.trainingCompleted && updatePayload.trainingCompleted === false) {
+    if (!data.force && existing.trainingCompleted && updatePayload.trainingCompleted === false) {
       delete updatePayload.trainingCompleted;
       delete updatePayload.trainingType;
     }
+    delete updatePayload.force;
     await db
       .update(dailyLogs)
       .set({ ...updatePayload, updatedAt: new Date() } as any)
@@ -751,7 +753,7 @@ export async function deleteWorkoutSession(id: number, userId: number) {
     });
 
     if (!anyComplete) {
-      await upsertDailyLog({ userId, logDate: dateStr, trainingCompleted: false });
+      await upsertDailyLog({ userId, logDate: dateStr, trainingCompleted: false, trainingType: undefined, force: true });
     }
   }
 }
