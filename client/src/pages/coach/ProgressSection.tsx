@@ -489,6 +489,12 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
         const exercises = (session.exercises as any[]) ?? [];
         const sessionNotes = session.notes as string | null;
         const hasNotes = exercises.some((ex: any) => ex.exerciseNotes) || !!sessionNotes;
+        const hasIncomplete = exercises.some((ex: any) => {
+          const sets = ex.sets ?? [];
+          const programmedSets = sets.length;
+          const completedSets = sets.filter((s: any) => s.completed).length;
+          return programmedSets > 0 && completedSets < programmedSets;
+        });
 
         return (
           <div key={session.id} className="bg-card border border-border rounded-xl overflow-hidden">
@@ -507,6 +513,7 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                       return <>{session.dayLabel} &middot; {exercises.length} exercise{exercises.length !== 1 ? 's' : ''} &middot; {totalSets} set{totalSets !== 1 ? 's' : ''}</>;
                     })()}
                     {hasNotes && <span className="ml-1.5 text-primary/70">· notes</span>}
+                    {hasIncomplete && <span className="ml-1.5 text-amber-500/80">· incomplete</span>}
                   </p>
                 </div>
               </div>

@@ -388,3 +388,4 @@
 - [x] Client training log: show incomplete indicator on exercise card when not all sets are ticked
 - [x] Coach Training tab: condense exercise rows to single line per exercise
 - [x] Coach Training tab: fix notes indicator to also show when session-level notes exist (not just exercise notes)
+- [x] Coach Training tab: add amber incomplete indicator on session card header when any exercise has uncompleted sets
