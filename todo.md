@@ -402,3 +402,4 @@
 - [x] Fix: deleteWorkoutSession now clears trainingType and uses force=true to bypass the guard when reverting to rest
 - [x] CRITICAL BUG FIXED: Opening a saved session and hitting Save Session no longer overwrites set data — root cause was onSuccess resetting loadedRef.current which triggered loadDay to reload a stale localStorage draft; fix: removed the loadedRef.current = null reset from onSuccess
 - [x] Add "Last saved: X:XX PM" timestamp below Save Session button in training log
+- [x] Remove /coaching route from App.tsx (keep component, just disable the route temporarily)
