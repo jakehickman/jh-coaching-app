@@ -66,9 +66,13 @@ export const checkInRouter = router({
       ));
 
       const startJsDay = startUtc.getUTCDay();
+      // First check-in is due one full week after start date.
+      // If the start date itself falls on the check-in day, skip it — the first
+      // due date is the *next* occurrence (7 days later), not the start date.
       const daysUntilFirst = (assignedJsDay - startJsDay + 7) % 7;
       const firstCheckInUtc = new Date(startUtc);
-      firstCheckInUtc.setUTCDate(startUtc.getUTCDate() + daysUntilFirst);
+      // Always advance at least 7 days so the start date is never the first due date
+      firstCheckInUtc.setUTCDate(startUtc.getUTCDate() + (daysUntilFirst === 0 ? 7 : daysUntilFirst));
 
       if (firstCheckInUtc > todayUtc) continue;
 
