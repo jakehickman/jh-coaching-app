@@ -377,34 +377,74 @@ export default function CheckInsSection() {
                   {/* Expanded detail */}
                   {isExpanded && (
                     <div className="border-t border-border">
-                      {/* All Q&A rows in a single table */}
+                      {/* Full Q&A grouped by section */}
                       {(() => {
-                        const rows = [
-                          { label: "Food weighing", q: "How often did you weigh all foods raw/uncooked with a digital scale?", val: ci.dietWeighedFoods },
-                          { label: "Meal prep accuracy", q: "How often did you prepare meals exactly as written in your plan?", val: ci.dietMealPrepAccuracy },
-                          { label: "Off-plan eating", q: "Excluding off-plan meals, how often did you eat/drink anything not in your plan?", val: ci.dietExtrasFrequency },
-                          { label: "Added fats", q: "When cooking, how do you use added fats (oil, butter)?", val: ci.dietAddedFats },
-                          { label: "Meal timing", q: "How often did you eat meals more than 2 hours off schedule?", val: ci.dietMealTiming },
-                          { label: "Off-plan quality", q: "When you had an off-plan meal, how close was it to your plan?", val: ci.dietOffPlanQuality },
-                          { label: "Bedtime consistency", q: "How often did you go to bed more than 1 hour later than your planned bedtime?", val: (ci as any).sleepBedtimeConsistency },
-                        ].filter((r) => r.val);
-                        if (rows.length === 0) return null;
+                        const BARRIER_LABEL: Record<string, string> = {
+                          no_issues: "No issues",
+                          hunger: "Hunger",
+                          cravings: "Cravings",
+                          social_events: "Social events",
+                          busy_time: "Busy / time constraints",
+                          poor_planning: "Poor planning",
+                          low_motivation: "Low motivation",
+                          travel_disruption: "Travel / disruption",
+                          other: "Other",
+                        };
+                        const ASSESSMENT_LABEL: Record<string, string> = {
+                          executed_exactly: "Executed exactly as planned",
+                          mostly_followed: "Mostly followed",
+                          inconsistent: "Inconsistent",
+                          didnt_follow: "Didn't follow the plan",
+                        };
+                        const sections = [
+                          {
+                            title: "Diet Execution",
+                            rows: [
+                              { q: "How often did you weigh all foods raw/uncooked with a digital scale?", val: ci.dietWeighedFoods },
+                              { q: "How often did you prepare meals exactly as written in your plan?", val: ci.dietMealPrepAccuracy },
+                              { q: "Excluding off-plan meals, how often did you eat/drink anything not in your plan?", val: ci.dietExtrasFrequency },
+                              { q: "When cooking, how do you use added fats (oil, butter)?", val: ci.dietAddedFats },
+                              { q: "How often did you eat meals more than 2 hours off schedule?", val: ci.dietMealTiming },
+                              { q: "When you had an off-plan meal, how close was it to your plan in calories/macros?", val: ci.dietOffPlanQuality },
+                            ].filter((r) => r.val),
+                          },
+                          {
+                            title: "Sleep",
+                            rows: [
+                              { q: "How often did you go to bed more than 1 hour later than your planned bedtime?", val: (ci as any).sleepBedtimeConsistency },
+                            ].filter((r) => r.val),
+                          },
+                          {
+                            title: "Adherence Barrier",
+                            rows: [
+                              { q: "What was your biggest barrier to adherence this week?", val: ci.adherenceBarrier ? (BARRIER_LABEL[ci.adherenceBarrier] ?? ci.adherenceBarrier) : null, raw: true },
+                              ...(ci.barrierExplain ? [{ q: "Can you explain further?", val: ci.barrierExplain, raw: true }] : []),
+                            ].filter((r) => r.val),
+                          },
+                          {
+                            title: "Weekly Self-Assessment",
+                            rows: [
+                              { q: "Overall, how well did you follow your plan this week?", val: ci.weeklyAssessment ? (ASSESSMENT_LABEL[ci.weeklyAssessment] ?? ci.weeklyAssessment) : null, raw: true },
+                            ].filter((r) => r.val),
+                          },
+                        ].filter((s) => s.rows.length > 0);
+
+                        if (sections.length === 0) return null;
                         return (
-                          <div className="px-4 pt-3 pb-1">
-                            <table className="w-full">
-                              <tbody>
-                                {rows.map((row, i) => (
-                                  <tr key={row.label} className={i < rows.length - 1 ? "border-b border-border/40" : ""}>
-                                    <td className="py-2.5 pr-4 align-top w-[38%]">
-                                      <span className="text-xs font-medium text-muted-foreground">{row.label}</span>
-                                    </td>
-                                    <td className="py-2.5 align-top">
-                                      <span className="text-sm text-foreground">{DIET_LABEL_MAP[row.val!] ?? row.val}</span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                          <div className="px-4 pt-3 pb-1 space-y-4">
+                            {sections.map((section) => (
+                              <div key={section.title}>
+                                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{section.title}</p>
+                                <div className="space-y-3">
+                                  {section.rows.map((row, i) => (
+                                    <div key={i} className="space-y-0.5">
+                                      <p className="text-xs text-muted-foreground">{row.q}</p>
+                                      <p className="text-sm text-foreground font-medium">{(row as any).raw ? row.val : (DIET_LABEL_MAP[(row.val as string)!] ?? row.val)}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         );
                       })()}
