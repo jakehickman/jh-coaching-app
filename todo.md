@@ -404,3 +404,4 @@
 - [x] Add "Last saved: X:XX PM" timestamp below Save Session button in training log
 - [x] Remove /coaching route from App.tsx (keep component, just disable the route temporarily)
 - [x] Bug: overdue check-in flags start date as first due date — fixed: firstCheckInUtc now always advances at least 7 days from start date (daysUntilFirst === 0 → advance 7 days instead of 0)
+- [x] Change overdue threshold: client is overdue from the day after their check-in day (no 7-day grace period)

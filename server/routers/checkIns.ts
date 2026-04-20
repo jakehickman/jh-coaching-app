@@ -88,9 +88,10 @@ export const checkInRouter = router({
       const scheduled = new Date(firstCheckInUtc);
       while (scheduled <= todayUtc) {
         const scheduledTime = scheduled.getTime();
-        const overdueThreshold = scheduledTime + 7 * 24 * 60 * 60 * 1000;
+        // Overdue from the day after the check-in day (no grace period)
+        const overdueThreshold = scheduledTime + 1 * 24 * 60 * 60 * 1000;
 
-        if (todayUtc.getTime() > overdueThreshold) {
+        if (todayUtc.getTime() >= overdueThreshold) {
           const nextScheduled = scheduledTime + 7 * 24 * 60 * 60 * 1000;
           const hasSubmission = clientSubmissions.some(
             (t: number) => t >= scheduledTime && t < nextScheduled
