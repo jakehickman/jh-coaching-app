@@ -300,7 +300,7 @@ export default function OverviewTab() {
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={schedule.length > 0 ? `${trainedInRotation}/${prescribedDays} sessions completed` : `${trainedInRotation} sessions completed`} />
           <MetricCard label="Off Plan Meals" value={offPlanTotal7.toString()} />
           <MetricCard
-            label="On-Plan Streak"
+            label="Meal Streak"
             value={onPlanStreak === 0 ? "0" : `${onPlanStreak} day${onPlanStreak > 1 ? 's' : ''}`}
           />
           {stepGoal && (
