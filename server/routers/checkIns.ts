@@ -339,7 +339,12 @@ export const checkInRouter = router({
           currentScheduled = scheduledDate;
           currentDue = addDays(scheduledDate, 6);
         }
-        if (status === "missed" && !foundHighPriority && currentStatus !== "open") {
+        if ((status === "completed" || status === "completed_late") && !foundHighPriority && currentStatus === "upcoming") {
+          currentStatus = status;
+          currentScheduled = scheduledDate;
+          currentDue = addDays(scheduledDate, 6);
+        }
+        if (status === "missed" && !foundHighPriority && currentStatus !== "open" && currentStatus !== "completed" && currentStatus !== "completed_late") {
           currentStatus = "missed";
           currentScheduled = scheduledDate;
           currentDue = addDays(scheduledDate, 6);

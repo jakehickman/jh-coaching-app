@@ -420,3 +420,4 @@
 - [x] Full check-in logic model implementation: new status system, skip feature, state-aware client UI
 - [x] Move coach Check-ins from standalone sidebar section into a sub-tab inside Client Progress
 - [x] Build kanban-style Check-ins overview page: columns per status, client cards, click navigates to Client Progress → Check-ins tab
+- [x] Bug: Sam shows as Upcoming on kanban despite having a submitted check-in — fix status computation
