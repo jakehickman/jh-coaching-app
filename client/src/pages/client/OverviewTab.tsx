@@ -299,10 +299,6 @@ export default function OverviewTab() {
           <MetricCard label="Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={schedule.length > 0 ? `${trainedInRotation}/${prescribedDays} sessions completed` : `${trainedInRotation} sessions completed`} />
           <MetricCard label="Off Plan Meals" value={offPlanTotal7.toString()} />
-          <MetricCard
-            label="Meal Streak"
-            value={onPlanStreak === 0 ? "0" : `${onPlanStreak} day${onPlanStreak > 1 ? 's' : ''}`}
-          />
           {stepGoal && (
             <MetricCard
               label="Avg Daily Steps"
@@ -310,6 +306,16 @@ export default function OverviewTab() {
               sub={`Goal: ${stepGoal.toLocaleString()}`}
             />
           )}
+        </div>
+      </div>
+
+      <div>
+        <SectionLabel>Streaks</SectionLabel>
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard
+            label="Meal Streak"
+            value={onPlanStreak === 0 ? "0" : `${onPlanStreak} day${onPlanStreak > 1 ? 's' : ''}`}
+          />
         </div>
       </div>
 
