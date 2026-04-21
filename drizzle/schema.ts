@@ -471,13 +471,31 @@ export const equipmentPresets = mysqlTable("equipment_presets", {
 export type EquipmentPreset = typeof equipmentPresets.$inferSelect;
 export type InsertEquipmentPreset = typeof equipmentPresets.$inferInsert;
 
-// Coach-side check-in skips — records when a coach explicitly skips a client's check-in week
-export const checkInSkips = mysqlTable("check_in_skips", {
+// ─── New single-cycle check-in system ────────────────────────────────────────
+
+// One active row per client — the current check-in cycle.
+// 'overdue' is NOT stored; it is derived at read time: status='upcoming' AND dueDate < today.
+export const checkInCycles = mysqlTable("check_in_cycles", {
   id: int("id").autoincrement().primaryKey(),
   clientId: int("clientId").notNull(), // FK -> users.id
-  weekStartDate: date("weekStartDate").notNull(), // The scheduled check-in date that was skipped
-  skippedAt: timestamp("skippedAt").defaultNow().notNull(),
+  dueDate: date("dueDate").notNull(),  // The date this check-in is due
+  status: mysqlEnum("status", ["upcoming", "submitted"]).notNull().default("upcoming"),
+  submissionId: int("submissionId"),   // FK -> check_in_submissions.id (set when submitted)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-export type CheckInSkip = typeof checkInSkips.$inferSelect;
-export type InsertCheckInSkip = typeof checkInSkips.$inferInsert;
+export type CheckInCycle = typeof checkInCycles.$inferSelect;
+export type InsertCheckInCycle = typeof checkInCycles.$inferInsert;
+
+// Permanent log of all completed cycles (coach clicked "Mark Complete").
+export const checkInHistory = mysqlTable("check_in_history", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("clientId").notNull(), // FK -> users.id
+  dueDate: date("dueDate").notNull(),  // The due date of the completed cycle
+  submissionId: int("submissionId"),   // FK -> check_in_submissions.id (null if cycle was missed)
+  completedAt: timestamp("completedAt").defaultNow().notNull(),
+});
+
+export type CheckInHistoryRow = typeof checkInHistory.$inferSelect;
+export type InsertCheckInHistory = typeof checkInHistory.$inferInsert;

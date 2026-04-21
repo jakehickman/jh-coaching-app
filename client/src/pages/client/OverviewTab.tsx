@@ -262,16 +262,16 @@ export default function OverviewTab() {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   };
   const [mondayStr] = useMemo(() => [getMondayStr()], []);
-  const { data: thisWeekCheckInOwn } = trpc.checkIn.myWeek.useQuery(
-    { weekStartDate: mondayStr },
+  const { data: currentCycleOwn } = trpc.checkIn.myCurrentCycle.useQuery(
+    undefined,
     { enabled: isCheckInDay && !viewAsUserId }
   );
-  const { data: thisWeekCheckInAdmin } = trpc.checkIn.weekForClient.useQuery(
-    { clientId: viewAsUserId!, weekStartDate: mondayStr },
+  const { data: clientCycleAdmin } = trpc.checkIn.clientCurrentCycle.useQuery(
+    { clientId: viewAsUserId! },
     { enabled: isCheckInDay && !!viewAsUserId }
   );
-  const thisWeekCheckIn = viewAsUserId ? thisWeekCheckInAdmin : thisWeekCheckInOwn;
-  const alreadySubmittedThisWeek = !!thisWeekCheckIn;
+  const currentCycle = viewAsUserId ? clientCycleAdmin : currentCycleOwn;
+  const alreadySubmittedThisWeek = currentCycle?.status === "submitted";
 
   return (
     <div className="space-y-6">

@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, sql } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -25,7 +25,10 @@ import {
   checkInSubmissions,
   CheckInSubmission,
   InsertCheckInSubmission,
-  checkInSkips,
+  checkInCycles,
+  checkInHistory,
+  CheckInCycle,
+  CheckInHistoryRow,
   equipmentPresets,
   EquipmentPreset,
   WorkoutExercise,
@@ -1107,49 +1110,149 @@ export async function renameEquipmentPreset(userId: number, id: number, newName:
     .where(and(eq(equipmentPresets.id, id), eq(equipmentPresets.userId, userId)));
 }
 
-// ─── Check-in Skips ──────────────────────────────────────────────────────────
+// ─── New single-cycle check-in system ────────────────────────────────────────
 
-export async function skipCheckInWeek(clientId: number, weekStartDate: string): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  await db.execute(
-    sql`INSERT INTO check_in_skips (clientId, weekStartDate) VALUES (${clientId}, ${weekStartDate})
-        ON DUPLICATE KEY UPDATE skippedAt = NOW()`
-  );
+/** Convert a MySQL date column value (Date object or string) to YYYY-MM-DD */
+function dateColToStr(v: Date | string | unknown): string {
+  if (v instanceof Date) {
+    return `${v.getUTCFullYear()}-${String(v.getUTCMonth()+1).padStart(2,'0')}-${String(v.getUTCDate()).padStart(2,'0')}`;
+  }
+  return String(v).slice(0, 10);
 }
 
-export async function unskipCheckInWeek(clientId: number, weekStartDate: string): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  await db.execute(
-    sql`DELETE FROM check_in_skips WHERE clientId = ${clientId} AND weekStartDate = ${weekStartDate}`
-  );
+/** Derive the display status from a stored cycle row and today's date string */
+export function deriveCycleStatus(cycle: CheckInCycle, today: string): "upcoming" | "overdue" | "submitted" {
+  if (cycle.status === "submitted") return "submitted";
+  const dueDateStr = dateColToStr(cycle.dueDate);
+  return today > dueDateStr ? "overdue" : "upcoming";
 }
 
-export async function getSkipsForClient(clientId: number): Promise<string[]> {
+/** Get the active cycle for a client */
+export async function getActiveCycle(clientId: number): Promise<CheckInCycle | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(checkInCycles)
+    .where(eq(checkInCycles.clientId, clientId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Get all active cycles (one per client) for the coach dashboard */
+export async function getAllActiveCycles(): Promise<CheckInCycle[]> {
   const db = await getDb();
   if (!db) return [];
-  const rows = await db
-    .select({ weekStartDate: checkInSkips.weekStartDate })
-    .from(checkInSkips)
-    .where(eq(checkInSkips.clientId, clientId));
-  return rows.map(r => {
-    const d = r.weekStartDate as unknown as Date;
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
-  });
+  return db.select().from(checkInCycles);
 }
 
-export async function getAllSkipsPerClient(): Promise<{ clientId: number; weekStartDate: string }[]> {
+/**
+ * Client submits their check-in:
+ * 1. Insert/upsert into check_in_submissions (preserves Q&A data)
+ * 2. Update check_in_cycles: status='submitted', submissionId=<new id>
+ */
+export async function submitCycleCheckIn(data: {
+  clientId: number;
+  weekStartDate: string;
+  dietWeighedFoods?: "every_meal" | "most_meals" | "some_meals" | "rarely" | "never";
+  dietMealPrepAccuracy?: "every_meal" | "most_meals" | "some_meals" | "rarely" | "never";
+  dietExtrasFrequency?: "never" | "one_two_days" | "few_days" | "most_days" | "every_day";
+  dietAddedFats?: "light_spray" | "small_amount" | "one_tsp_or_more" | "no_added_fats";
+  dietMealTiming?: "never" | "one_two_days" | "few_days" | "most_days" | "every_day";
+  dietOffPlanQuality?: "very_close" | "somewhat_close" | "not_very_close" | "very_different" | "no_off_plan_meals";
+  sleepBedtimeConsistency?: "never" | "one_two_days" | "few_days" | "most_days" | "every_day";
+  adherenceBarrier?: "no_issues" | "hunger" | "cravings" | "social_events" | "busy_time" | "poor_planning" | "low_motivation" | "travel_disruption" | "other";
+  barrierExplain?: string;
+  weeklyAssessment?: "executed_exactly" | "mostly_followed" | "inconsistent" | "didnt_follow";
+}): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Upsert submission (one per client per weekStartDate)
+  const existing = await db
+    .select()
+    .from(checkInSubmissions)
+    .where(and(
+      eq(checkInSubmissions.clientId, data.clientId),
+      eq(checkInSubmissions.weekStartDate, data.weekStartDate as any)
+    ))
+    .limit(1);
+
+  let submissionId: number;
+  if (existing.length > 0) {
+    await db.update(checkInSubmissions)
+      .set({ ...data, updatedAt: new Date() } as any)
+      .where(eq(checkInSubmissions.id, existing[0].id));
+    submissionId = existing[0].id;
+  } else {
+    const [result] = await db.insert(checkInSubmissions).values(data as any);
+    submissionId = (result as any)?.insertId ?? null;
+  }
+
+  // Update the cycle to submitted
+  await db.update(checkInCycles)
+    .set({ status: "submitted", submissionId, updatedAt: new Date() })
+    .where(eq(checkInCycles.clientId, data.clientId));
+
+  return submissionId;
+}
+
+/**
+ * Coach marks a cycle complete:
+ * 1. Archive current cycle row to check_in_history
+ * 2. Update the cycle: dueDate += 7, status='upcoming', submissionId=null
+ */
+export async function completeCycle(clientId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const cycle = await getActiveCycle(clientId);
+  if (!cycle) return;
+
+  const dueDateStr = dateColToStr(cycle.dueDate);
+
+  // Archive to history
+  await db.insert(checkInHistory).values({
+    clientId,
+    dueDate: dueDateStr as any,
+    submissionId: cycle.submissionId ?? null,
+    completedAt: new Date(),
+  });
+
+  // Advance: dueDate + 7, reset to upcoming
+  const nextDue = new Date(dueDateStr + "T00:00:00Z");
+  nextDue.setUTCDate(nextDue.getUTCDate() + 7);
+  const nextDueStr = nextDue.toISOString().slice(0, 10);
+
+  await db.update(checkInCycles)
+    .set({ dueDate: nextDueStr as any, status: "upcoming", submissionId: null, updatedAt: new Date() })
+    .where(eq(checkInCycles.clientId, clientId));
+}
+
+/** Get check-in history for a client (most recent first) */
+export async function getCycleHistory(clientId: number): Promise<(CheckInHistoryRow & { submission: CheckInSubmission | null })[]> {
   const db = await getDb();
   if (!db) return [];
+
   const rows = await db
-    .select({ clientId: checkInSkips.clientId, weekStartDate: checkInSkips.weekStartDate })
-    .from(checkInSkips);
-  return rows.map(r => {
-    const d = r.weekStartDate as unknown as Date;
-    return {
-      clientId: r.clientId,
-      weekStartDate: `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`,
-    };
-  });
+    .select()
+    .from(checkInHistory)
+    .where(eq(checkInHistory.clientId, clientId))
+    .orderBy(desc(checkInHistory.completedAt));
+
+  // Enrich with submission data
+  const result: (CheckInHistoryRow & { submission: CheckInSubmission | null })[] = [];
+  for (const row of rows) {
+    let submission: CheckInSubmission | null = null;
+    if (row.submissionId) {
+      const subs = await db
+        .select()
+        .from(checkInSubmissions)
+        .where(eq(checkInSubmissions.id, row.submissionId))
+        .limit(1);
+      submission = (subs[0] as CheckInSubmission) ?? null;
+    }
+    result.push({ ...row, submission });
+  }
+  return result;
 }

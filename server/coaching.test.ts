@@ -77,7 +77,7 @@ vi.mock("./db", () => ({
   listAssignedHabitsForClient: vi.fn().mockResolvedValue([]),
   toggleHabitCompletion: vi.fn().mockResolvedValue(undefined),
   getHabitCompletionsForClient: vi.fn().mockResolvedValue([]),
-  // Check-ins
+  // Check-ins (legacy helpers still used by deprecated procedures)
   submitCheckIn: vi.fn().mockResolvedValue({ id: 1 }),
   listCheckInsForClient: vi.fn().mockResolvedValue([]),
   getCheckInForWeek: vi.fn().mockResolvedValue(null),
@@ -85,6 +85,14 @@ vi.mock("./db", () => ({
   getLatestCheckInPerClient: vi.fn().mockResolvedValue([]),
   getAllCheckInsPerClient: vi.fn().mockResolvedValue([]),
   deleteCheckIn: vi.fn().mockResolvedValue(undefined),
+  // Check-in cycle helpers (new single-cycle model)
+  deriveCycleStatus: vi.fn().mockReturnValue("upcoming"),
+  getActiveCycle: vi.fn().mockResolvedValue(null),
+  getAllActiveCycles: vi.fn().mockResolvedValue([]),
+  submitCycleCheckIn: vi.fn().mockResolvedValue({ id: 1 }),
+  completeCycle: vi.fn().mockResolvedValue(undefined),
+  getCycleHistory: vi.fn().mockResolvedValue([]),
+  getAllClients: vi.fn().mockResolvedValue([]),
 }));
 
 beforeEach(() => {
@@ -216,32 +224,33 @@ describe("checkIn", () => {
     const result = await caller.checkIn.myList();
     expect(Array.isArray(result)).toBe(true);
   });
-
-  it("submit accepts current diet execution fields", async () => {
+  it("myCurrentCycle returns null when no active cycle", async () => {
     const caller = appRouter.createCaller(createUserContext("user"));
-    const result = await caller.checkIn.submit({
-      weekStartDate: "2026-04-07",
-      dietWeighedFoods: "every_meal",
-      dietMealPrepAccuracy: "most_meals",
-      dietExtrasFrequency: "never",
-    });
-    expect(result).toBeTruthy();
+    const result = await caller.checkIn.myCurrentCycle();
+    expect(result).toBeNull();
   });
-
+  it("submit throws when no active cycle exists", async () => {
+    const caller = appRouter.createCaller(createUserContext("user"));
+    await expect(
+      caller.checkIn.submit({
+        dietWeighedFoods: "every_meal",
+        dietMealPrepAccuracy: "most_meals",
+        dietExtrasFrequency: "never",
+      })
+    ).rejects.toThrow("No active check-in cycle found");
+  });
   it("submit rejects invalid diet execution enum values", async () => {
     const caller = appRouter.createCaller(createUserContext("user"));
     await expect(
       caller.checkIn.submit({
-        weekStartDate: "2026-04-07",
         dietWeighedFoods: "invalid_value" as any,
       })
     ).rejects.toThrow();
   });
-
   it("submit requires authentication", async () => {
     const caller = appRouter.createCaller(createGuestContext());
     await expect(
-      caller.checkIn.submit({ weekStartDate: "2026-04-07" })
+      caller.checkIn.submit({})
     ).rejects.toThrow();
   });
 });

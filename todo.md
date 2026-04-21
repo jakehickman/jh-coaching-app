@@ -421,3 +421,24 @@
 - [x] Move coach Check-ins from standalone sidebar section into a sub-tab inside Client Progress
 - [x] Build kanban-style Check-ins overview page: columns per status, client cards, click navigates to Client Progress → Check-ins tab
 - [x] Bug: Sam shows as Upcoming on kanban despite having a submitted check-in — fix status computation
+
+## New Check-in System (full replacement)
+- [ ] Audit existing check-in schema, server, and UI
+- [ ] Design and migrate new data model (check_in_cycles active record + history)
+- [ ] Rewrite server: status computation, submit, advance cycle, history
+- [ ] Rewrite coach kanban (Upcoming/Submitted/Overdue columns)
+- [ ] Rewrite coach Client Progress Check-ins sub-tab
+- [ ] Rewrite client Check-ins tab with new status states
+
+## Weekly Recurring Check-in Workflow (Apr 2026)
+- [x] Replace old check-in system with new weekly recurring single-cycle model
+- [x] DB schema: add check_in_cycles and check_in_history tables; remove checkInSkips
+- [x] Seed initial check_in_cycles rows for all existing clients
+- [x] Server: new db helpers (getActiveCycle, getAllActiveCycles, submitCycleCheckIn, completeCycle, getCycleHistory, deriveCycleStatus)
+- [x] Server: new tRPC procedures (myCurrentCycle, myHistory, clientStatusList, clientCurrentCycle, completeCycle)
+- [x] Coach kanban: 3-column layout (Overdue, Submitted, Upcoming) with one card per client
+- [x] Coach detail panel: show current cycle status, submission answers, Mark as Complete button
+- [x] Client check-in tab: status banner (Upcoming/Overdue/Submitted), form, past check-ins history
+- [x] DashboardShell: update badge logic to use clientStatusList instead of overdueClients
+- [x] OverviewTab: update check-in day reminder to use myCurrentCycle instead of myWeek
+- [x] Tests: update coaching.test.ts mocks and checkIn describe block for new procedures (54 tests passing)

@@ -83,8 +83,8 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     enabled: mode === "coach" && user?.role === "admin",
     refetchInterval: 300_000,
   });
-  // Server-side overdue clients list
-  const { data: overdueList = [] } = trpc.checkIn.overdueClients.useQuery(undefined, {
+  // Server-side client status list (replaces overdueClients)
+  const { data: clientStatusList = [] } = trpc.checkIn.clientStatusList.useQuery(undefined, {
     enabled: mode === "coach" && user?.role === "admin",
     refetchInterval: 300_000,
   });
@@ -116,8 +116,8 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     }
 
     // Overdue: from server-side calculation
-    for (const o of overdueList as any[]) {
-      overdueIds.add(o.clientId);
+    for (const o of clientStatusList as any[]) {
+      if (o.status === "overdue") overdueIds.add(o.clientId);
     }
 
     // Combine: count clients that need attention (unreviewed OR overdue, not double-counted)
@@ -133,8 +133,8 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     d.setDate(d.getDate() + diff);
     return d.toISOString().split("T")[0];
   })();
-  const { data: checkInStatus } = trpc.checkIn.myWeek.useQuery(
-    { weekStartDate },
+  const { data: currentCycleData } = trpc.checkIn.myCurrentCycle.useQuery(
+    undefined,
     { enabled: mode === "client", refetchInterval: 300_000 }
   );
   const { data: clientProfile } = trpc.profile.get.useQuery(undefined, {
@@ -142,7 +142,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
   });
   const showCheckInBadge = (() => {
     if (mode !== "client") return false;
-    if (checkInStatus) return false; // already submitted this week
+    if (currentCycleData?.status === "submitted") return false; // already submitted this cycle
     const checkInDay = (clientProfile as any)?.checkInDay as string | undefined;
     if (!checkInDay) return false;
     const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };

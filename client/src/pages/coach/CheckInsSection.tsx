@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
-import { ChevronDown, SkipForward } from "lucide-react";
+import { ChevronDown, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 // ─── Label maps ──────────────────────────────────────────────────────────────
 
@@ -28,380 +27,333 @@ const DIET_LABEL_MAP: Record<string, string> = {
   no_off_plan_meals: "No off-plan meals",
 };
 
-const fmtCheckInDate = (iso: string) => {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+const BARRIER_LABEL: Record<string, string> = {
+  no_issues: "No issues", hunger: "Hunger", cravings: "Cravings",
+  social_events: "Social events", busy_time: "Busy / time constraints",
+  poor_planning: "Poor planning", low_motivation: "Low motivation",
+  travel_disruption: "Travel / disruption", other: "Other",
 };
 
-type CheckInStatus = "upcoming" | "open" | "due_today" | "overdue" | "missed" | "skipped" | "completed" | "completed_late";
+const ASSESSMENT_LABEL: Record<string, string> = {
+  executed_exactly: "Executed exactly as planned",
+  mostly_followed: "Mostly followed",
+  inconsistent: "Inconsistent",
+  didnt_follow: "Didn't follow the plan",
+};
 
-function StatusBadge({ status, scheduledDate }: { status: CheckInStatus; scheduledDate?: string | null }) {
-  const cfg: Record<CheckInStatus, { label: string; className: string }> = {
-    upcoming:       { label: scheduledDate ? `Upcoming · ${fmtCheckInDate(scheduledDate)}` : "Upcoming", className: "bg-secondary text-muted-foreground border-border" },
-    open:           { label: "Open",       className: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
-    due_today:      { label: "Due Today",  className: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
-    overdue:        { label: scheduledDate ? `Overdue · ${fmtCheckInDate(scheduledDate)}` : "Overdue", className: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
-    missed:         { label: scheduledDate ? `Missed · ${fmtCheckInDate(scheduledDate)}` : "Missed", className: "bg-red-500/15 text-red-400 border-red-500/30" },
-    skipped:        { label: "Skipped",   className: "bg-secondary text-muted-foreground border-border" },
-    completed:      { label: "Submitted", className: "bg-green-500/15 text-green-400 border-green-500/30" },
-    completed_late: { label: "Submitted (late)", className: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
-  };
-  const { label, className } = cfg[status] ?? cfg.upcoming;
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function fmtShortDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+}
+
+type CycleStatus = "upcoming" | "overdue" | "submitted";
+
+// ─── Submission Q&A display ───────────────────────────────────────────────────
+
+function SubmissionQA({ sub }: { sub: any }) {
+  const sections = [
+    {
+      title: "Diet Execution",
+      rows: [
+        { q: "How often did you weigh all foods raw/uncooked with a digital scale?", val: sub.dietWeighedFoods },
+        { q: "How often did you prepare meals exactly as written in your plan?", val: sub.dietMealPrepAccuracy },
+        { q: "Excluding off-plan meals, how often did you eat/drink anything not in your plan?", val: sub.dietExtrasFrequency },
+        { q: "How do you use added fats when cooking?", val: sub.dietAddedFats },
+        { q: "How often did you eat meals more than 2 hours off schedule?", val: sub.dietMealTiming },
+        { q: "When you had an off-plan meal, how close was it to your plan in calories/macros?", val: sub.dietOffPlanQuality },
+      ].filter(r => r.val),
+    },
+    {
+      title: "Sleep",
+      rows: [
+        { q: "How often did you go to bed more than 1 hour later than your planned bedtime?", val: sub.sleepBedtimeConsistency },
+      ].filter(r => r.val),
+    },
+    {
+      title: "Adherence Barrier",
+      rows: [
+        { q: "What was your biggest barrier to adherence this week?", val: sub.adherenceBarrier ? (BARRIER_LABEL[sub.adherenceBarrier] ?? sub.adherenceBarrier) : null, raw: true },
+        ...(sub.barrierExplain ? [{ q: "Can you explain further?", val: sub.barrierExplain, raw: true }] : []),
+      ].filter(r => r.val),
+    },
+    {
+      title: "Weekly Self-Assessment",
+      rows: [
+        { q: "Overall, how well did you follow your plan this week?", val: sub.weeklyAssessment ? (ASSESSMENT_LABEL[sub.weeklyAssessment] ?? sub.weeklyAssessment) : null, raw: true },
+      ].filter(r => r.val),
+    },
+  ].filter(s => s.rows.length > 0);
+
+  if (sections.length === 0) {
+    return <p className="text-xs text-muted-foreground px-4 py-3">No answers recorded.</p>;
+  }
+
   return (
-    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${className}`}>
-      {label}
-    </span>
+    <div className="px-4 pt-3 pb-1 space-y-4">
+      {sections.map(section => (
+        <div key={section.title}>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{section.title}</p>
+          <div className="space-y-3">
+            {section.rows.map((row, i) => (
+              <div key={i} className="space-y-0.5">
+                <p className="text-xs text-muted-foreground">{row.q}</p>
+                <p className="text-sm text-foreground font-medium">
+                  {(row as any).raw ? row.val : (DIET_LABEL_MAP[(row.val as string)!] ?? row.val)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
 // ─── CheckInsDetailPanel ─────────────────────────────────────────────────────
-// Reusable detail panel for a single client's check-in history.
+// Reusable detail panel for a single client's check-in cycle and history.
 // Used both in the standalone CheckInsSection and as a sub-tab in ProgressSection.
 
 export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
   const utils = trpc.useUtils();
-  const [expandedCheckIns, setExpandedCheckIns] = useState<Set<number>>(new Set());
+  const [historyExpanded, setHistoryExpanded] = useState<Set<number>>(new Set());
 
-  const { data: clientCheckIns = [], refetch: refetchCheckIns } =
-    trpc.checkIn.clientList.useQuery({ clientId }, { enabled: !!clientId });
+  const { data: currentCycle, isLoading: cycleLoading } =
+    trpc.checkIn.clientCurrentCycle.useQuery({ clientId }, { enabled: !!clientId });
 
-  const { data: clientOccurrences = [] } =
-    trpc.checkIn.clientOccurrences.useQuery({ clientId }, { enabled: !!clientId });
+  const { data: history = [], isLoading: historyLoading } =
+    trpc.checkIn.clientHistory.useQuery({ clientId }, { enabled: !!clientId });
 
-  const deleteCheckIn = trpc.checkIn.delete.useMutation({
+  const markComplete = trpc.checkIn.markComplete.useMutation({
     onSuccess: () => {
-      toast.success("Check-in deleted");
-      refetchCheckIns();
-      utils.checkIn.latestPerClient.invalidate();
+      toast.success("Check-in marked complete — next cycle scheduled");
+      utils.checkIn.clientCurrentCycle.invalidate();
+      utils.checkIn.clientHistory.invalidate();
       utils.checkIn.clientStatusList.invalidate();
     },
-    onError: () => toast.error("Failed to delete check-in"),
+    onError: () => toast.error("Failed to mark complete"),
   });
 
   const markReviewed = trpc.checkIn.markReviewed.useMutation({
     onSuccess: () => {
-      refetchCheckIns();
-      utils.checkIn.latestPerClient.invalidate();
+      utils.checkIn.clientHistory.invalidate();
     },
     onError: () => toast.error("Failed to update status"),
   });
 
-  const skipWeek = trpc.checkIn.skipWeek.useMutation({
-    onSuccess: () => {
-      toast.success("Week skipped");
-      utils.checkIn.clientStatusList.invalidate();
-      utils.checkIn.clientOccurrences.invalidate();
-    },
-    onError: () => toast.error("Failed to skip week"),
-  });
-
-  const unskipWeek = trpc.checkIn.unskipWeek.useMutation({
-    onSuccess: () => {
-      toast.success("Skip removed");
-      utils.checkIn.clientStatusList.invalidate();
-      utils.checkIn.clientOccurrences.invalidate();
-    },
-    onError: () => toast.error("Failed to remove skip"),
-  });
-
-  // Mark as seen in localStorage when check-ins load
+  // Mark as seen in localStorage when current cycle loads
   useEffect(() => {
-    if (!clientId || clientCheckIns.length === 0) return;
-    const latest = clientCheckIns.reduce((a: any, b: any) =>
-      new Date(b.submittedAt).getTime() > new Date(a.submittedAt).getTime() ? b : a
-    );
-    const seenAt = new Date((latest as any).submittedAt ?? Date.now()).getTime();
+    if (!clientId || !currentCycle?.submissionId) return;
+    const seenAt = Date.now();
     localStorage.setItem(`coach:seen:checkin:${clientId}`, String(seenAt));
     window.dispatchEvent(new StorageEvent("storage", { key: `coach:seen:checkin:${clientId}` }));
-  }, [clientId, clientCheckIns]);
+  }, [clientId, currentCycle?.submissionId]);
+
+  if (cycleLoading) {
+    return <div className="text-sm text-muted-foreground py-6 text-center">Loading…</div>;
+  }
+
+  if (!currentCycle) {
+    return (
+      <div className="flex items-center justify-center h-24 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
+        No check-in cycle set up for this client
+      </div>
+    );
+  }
+
+  const { status, dueDate, submission } = currentCycle;
+
+  const statusConfig: Record<CycleStatus, { label: string; icon: React.ReactNode; className: string }> = {
+    upcoming: {
+      label: `Upcoming · Due ${fmtDate(dueDate)}`,
+      icon: <Clock size={12} />,
+      className: "bg-secondary border-border text-muted-foreground",
+    },
+    overdue: {
+      label: `Overdue · Was due ${fmtDate(dueDate)}`,
+      icon: <AlertCircle size={12} />,
+      className: "bg-amber-500/10 border-amber-500/30 text-amber-400",
+    },
+    submitted: {
+      label: `Submitted · Due ${fmtDate(dueDate)}`,
+      icon: <CheckCircle2 size={12} />,
+      className: "bg-green-500/10 border-green-500/30 text-green-400",
+    },
+  };
+
+  const cfg = statusConfig[status as CycleStatus] ?? statusConfig.upcoming;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-muted-foreground">
-          {clientCheckIns.length} check-in{clientCheckIns.length !== 1 ? "s" : ""}
-        </span>
+    <div className="space-y-3">
+      {/* Current cycle banner */}
+      <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${cfg.className}`}>
+        <div className="flex items-center gap-2 text-xs font-medium">
+          {cfg.icon}
+          <span>{cfg.label}</span>
+        </div>
+        {status === "submitted" && (
+          <button
+            onClick={() => markComplete.mutate({ clientId })}
+            disabled={markComplete.isPending}
+            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-green-500/40 text-green-400 hover:bg-green-500/10 transition-colors disabled:opacity-50"
+          >
+            {markComplete.isPending ? "Saving…" : "Mark Complete"}
+          </button>
+        )}
+        {status === "overdue" && (
+          <button
+            onClick={() => markComplete.mutate({ clientId })}
+            disabled={markComplete.isPending}
+            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            {markComplete.isPending ? "Saving…" : "Advance Cycle"}
+          </button>
+        )}
       </div>
 
-      {/* Upcoming / open occurrence banner */}
-      {(() => {
-        const upcoming = (clientOccurrences as any[]).find(
-          (o: any) => o.status === "upcoming" || o.status === "open" || o.status === "due_today"
-        );
-        if (!upcoming) return null;
-        return (
-          <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border text-xs ${
-            upcoming.status === "due_today"
-              ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-              : upcoming.status === "open"
-              ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
-              : "bg-secondary border-border text-muted-foreground"
-          }`}>
-            <span>
-              {upcoming.status === "due_today" ? "Due today" : upcoming.status === "open" ? "Open" : "Upcoming"} · Week of {fmtCheckInDate(upcoming.scheduledDate)}
-            </span>
-            {(upcoming.status === "open" || upcoming.status === "due_today") && (
-              <button
-                onClick={() => skipWeek.mutate({ clientId, weekStartDate: upcoming.scheduledDate })}
-                disabled={skipWeek.isPending}
-                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded border border-border transition-colors disabled:opacity-50"
-              >
-                <SkipForward size={9} /> Skip
-              </button>
-            )}
+      {/* Current submission Q&A */}
+      {status === "submitted" && submission && (
+        <div className="border border-border rounded-xl overflow-hidden bg-card">
+          <div className="px-4 py-3 border-b border-border/50">
+            <p className="text-sm font-semibold text-foreground">Current Submission</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Submitted {new Date((submission as any).submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+            </p>
           </div>
-        );
-      })()}
-
-      {clientCheckIns.length === 0 ? (
-        <div className="flex items-center justify-center h-24 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
-          No check-ins submitted yet
-        </div>
-      ) : (
-        clientCheckIns.map((ci: any) => {
-          const isExpanded = expandedCheckIns.has(ci.id);
-          const isReviewed = !!ci.reviewedAt;
-          const wsd = typeof ci.weekStartDate === "string"
-            ? ci.weekStartDate.slice(0, 10)
-            : new Date(ci.weekStartDate).toISOString().slice(0, 10);
-          const occurrence = (clientOccurrences as any[]).find((o: any) => o.scheduledDate === wsd);
-          const occStatus: CheckInStatus = occurrence?.status ?? "completed";
-
-          return (
-            <div
-              key={ci.id}
-              className={`border rounded-xl overflow-hidden bg-card transition-colors ${
-                isReviewed ? "border-border/50 opacity-80" : "border-border"
+          <SubmissionQA sub={submission} />
+          {/* Mark reviewed */}
+          <div className="px-4 py-3 border-t border-border/50">
+            <button
+              onClick={() => markReviewed.mutate({ id: (submission as any).id, reviewed: !(submission as any).reviewedAt })}
+              disabled={markReviewed.isPending}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+                (submission as any).reviewedAt
+                  ? "border-border text-muted-foreground hover:text-foreground"
+                  : "border-primary/40 text-primary hover:bg-primary/10"
               }`}
             >
-              {/* Header */}
-              <button
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
-                onClick={() =>
-                  setExpandedCheckIns(prev => {
-                    const next = new Set(prev);
-                    if (next.has(ci.id)) next.delete(ci.id);
-                    else next.add(ci.id);
-                    return next;
-                  })
-                }
-              >
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="text-sm font-semibold text-foreground">
-                    Week of {fmtCheckInDate(toLocalDateStr(ci.weekStartDate))}
-                  </span>
-                  <StatusBadge status={occStatus} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(ci.submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
-                  </span>
-                  <ChevronDown
-                    size={14}
-                    className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                  />
-                </div>
-              </button>
-
-              {/* Expanded detail */}
-              {isExpanded && (
-                <div className="border-t border-border">
-                  {/* Full Q&A grouped by section */}
-                  {(() => {
-                    const BARRIER_LABEL: Record<string, string> = {
-                      no_issues: "No issues", hunger: "Hunger", cravings: "Cravings",
-                      social_events: "Social events", busy_time: "Busy / time constraints",
-                      poor_planning: "Poor planning", low_motivation: "Low motivation",
-                      travel_disruption: "Travel / disruption", other: "Other",
-                    };
-                    const ASSESSMENT_LABEL: Record<string, string> = {
-                      executed_exactly: "Executed exactly as planned",
-                      mostly_followed: "Mostly followed",
-                      inconsistent: "Inconsistent",
-                      didnt_follow: "Didn't follow the plan",
-                    };
-                    const sections = [
-                      {
-                        title: "Diet Execution",
-                        rows: [
-                          { q: "How often did you weigh all foods raw/uncooked with a digital scale?", val: ci.dietWeighedFoods },
-                          { q: "How often did you prepare meals exactly as written in your plan?", val: ci.dietMealPrepAccuracy },
-                          { q: "Excluding off-plan meals, how often did you eat/drink anything not in your plan?", val: ci.dietExtrasFrequency },
-                          { q: "When cooking, how do you use added fats (oil, butter)?", val: ci.dietAddedFats },
-                          { q: "How often did you eat meals more than 2 hours off schedule?", val: ci.dietMealTiming },
-                          { q: "When you had an off-plan meal, how close was it to your plan in calories/macros?", val: ci.dietOffPlanQuality },
-                        ].filter(r => r.val),
-                      },
-                      {
-                        title: "Sleep",
-                        rows: [
-                          { q: "How often did you go to bed more than 1 hour later than your planned bedtime?", val: (ci as any).sleepBedtimeConsistency },
-                        ].filter(r => r.val),
-                      },
-                      {
-                        title: "Adherence Barrier",
-                        rows: [
-                          { q: "What was your biggest barrier to adherence this week?", val: ci.adherenceBarrier ? (BARRIER_LABEL[ci.adherenceBarrier] ?? ci.adherenceBarrier) : null, raw: true },
-                          ...(ci.barrierExplain ? [{ q: "Can you explain further?", val: ci.barrierExplain, raw: true }] : []),
-                        ].filter(r => r.val),
-                      },
-                      {
-                        title: "Weekly Self-Assessment",
-                        rows: [
-                          { q: "Overall, how well did you follow your plan this week?", val: ci.weeklyAssessment ? (ASSESSMENT_LABEL[ci.weeklyAssessment] ?? ci.weeklyAssessment) : null, raw: true },
-                        ].filter(r => r.val),
-                      },
-                    ].filter(s => s.rows.length > 0);
-
-                    if (sections.length === 0) return null;
-                    return (
-                      <div className="px-4 pt-3 pb-1 space-y-4">
-                        {sections.map(section => (
-                          <div key={section.title}>
-                            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{section.title}</p>
-                            <div className="space-y-3">
-                              {section.rows.map((row, i) => (
-                                <div key={i} className="space-y-0.5">
-                                  <p className="text-xs text-muted-foreground">{row.q}</p>
-                                  <p className="text-sm text-foreground font-medium">
-                                    {(row as any).raw ? row.val : (DIET_LABEL_MAP[(row.val as string)!] ?? row.val)}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Actions */}
-                  <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between gap-2">
-                    <button
-                      onClick={() => markReviewed.mutate({ id: ci.id, reviewed: !isReviewed })}
-                      disabled={markReviewed.isPending}
-                      className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
-                        isReviewed
-                          ? "border-border text-muted-foreground hover:text-foreground"
-                          : "border-green-500/40 text-green-400 hover:bg-green-500/10"
-                      }`}
-                    >
-                      {isReviewed ? "Mark as Incomplete" : "Mark as Complete"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm("Delete this check-in? This cannot be undone.")) {
-                          deleteCheckIn.mutate({ id: ci.id });
-                        }
-                      }}
-                      disabled={deleteCheckIn.isPending}
-                      className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })
+              {(submission as any).reviewedAt ? "Mark as Unreviewed" : "Mark as Reviewed"}
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* Skipped occurrences */}
-      {(() => {
-        const skipped = (clientOccurrences as any[]).filter((o: any) => o.status === "skipped");
-        if (skipped.length === 0) return null;
-        return (
-          <div className="mt-2 space-y-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1">Skipped Weeks</p>
-            {skipped.map((o: any) => (
-              <div key={o.scheduledDate} className="flex items-center justify-between px-4 py-2 rounded-xl border border-border/50 bg-secondary/30 text-xs text-muted-foreground">
-                <span>Week of {fmtCheckInDate(o.scheduledDate)}</span>
+      {/* History */}
+      {history.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
+            History ({history.length})
+          </p>
+          {(history as any[]).map((row: any) => {
+            const isExpanded = historyExpanded.has(row.id);
+            const hasSub = !!row.submission;
+            return (
+              <div key={row.id} className="border border-border rounded-xl overflow-hidden bg-card">
                 <button
-                  onClick={() => unskipWeek.mutate({ clientId, weekStartDate: o.scheduledDate })}
-                  disabled={unskipWeek.isPending}
-                  className="text-[10px] hover:text-foreground transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
+                  onClick={() =>
+                    setHistoryExpanded(prev => {
+                      const next = new Set(prev);
+                      if (next.has(row.id)) next.delete(row.id);
+                      else next.add(row.id);
+                      return next;
+                    })
+                  }
                 >
-                  Undo skip
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="text-sm font-semibold text-foreground">
+                      Due {fmtDate(row.dueDate)}
+                    </span>
+                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
+                      hasSub
+                        ? "bg-green-500/15 text-green-400 border-green-500/30"
+                        : "bg-secondary text-muted-foreground border-border"
+                    }`}>
+                      {hasSub ? "Submitted" : "Missed"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      Completed {fmtShortDate(row.completedAt instanceof Date
+                        ? row.completedAt.toISOString().slice(0, 10)
+                        : String(row.completedAt).slice(0, 10))}
+                    </span>
+                    {hasSub && (
+                      <ChevronDown
+                        size={14}
+                        className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      />
+                    )}
+                  </div>
                 </button>
+
+                {isExpanded && hasSub && (
+                  <div className="border-t border-border">
+                    <SubmissionQA sub={row.submission} />
+                    <div className="px-4 py-3 border-t border-border/50">
+                      <button
+                        onClick={() => markReviewed.mutate({ id: row.submission.id, reviewed: !row.submission.reviewedAt })}
+                        disabled={markReviewed.isPending}
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+                          row.submission.reviewedAt
+                            ? "border-border text-muted-foreground hover:text-foreground"
+                            : "border-primary/40 text-primary hover:bg-primary/10"
+                        }`}
+                      >
+                        {row.submission.reviewedAt ? "Mark as Unreviewed" : "Mark as Reviewed"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        );
-      })()}
+            );
+          })}
+        </div>
+      )}
+
+      {history.length === 0 && !historyLoading && (
+        <div className="text-xs text-muted-foreground text-center py-4 border border-dashed border-border/50 rounded-xl">
+          No completed cycles yet
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── CheckInsSection (standalone coach sidebar section) ──────────────────────
-// Keeps the two-column client-list + detail layout for the standalone page.
 
 export default function CheckInsSection() {
   const { user: currentUser } = useAuth();
   const { data: allUsers } = trpc.users.list.useQuery();
-  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
+  const { data: statusList = [] } = trpc.checkIn.clientStatusList.useQuery();
+  const { data: clientProfiles = [] } = trpc.users.clients.useQuery();
+
   const clients = (allUsers ?? []).filter(
     (u: any) => u.role !== "admin" || u.id === currentUser?.id
   );
 
-  const { data: clientProfiles = [] } = trpc.users.clients.useQuery();
-  const { data: statusList = [] } = trpc.checkIn.clientStatusList.useQuery();
-
-  const utils = trpc.useUtils();
-
-  const getClientStatus = (clientId: number): { status: CheckInStatus; scheduledDate: string | null } => {
+  const getClientStatus = (clientId: number): { status: CycleStatus; dueDate: string | null } => {
     const entry = (statusList as any[]).find((s: any) => s.clientId === clientId);
-    return { status: entry?.status ?? "upcoming", scheduledDate: entry?.scheduledDate ?? null };
+    return { status: entry?.status ?? "upcoming", dueDate: entry?.dueDate ?? null };
   };
 
-  const mondayUtc = (() => {
-    const now = new Date();
-    const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    const daysFromMonday = now.getUTCDay() === 0 ? 6 : now.getUTCDay() - 1;
-    const m = new Date(todayUtc);
-    m.setUTCDate(todayUtc.getUTCDate() - daysFromMonday);
-    return m;
-  })();
-
-  const sortBucket = (clientId: number, ci: any, reviewed: boolean): number => {
+  // Sort: overdue first, then submitted (awaiting review), then upcoming
+  const sortBucket = (clientId: number): number => {
     const { status } = getClientStatus(clientId);
-    if (status === "overdue" || status === "due_today") return 0;
-    if (status === "open") return 1;
-    if (!reviewed && ci) {
-      const submittedUtc = new Date(Date.UTC(
-        new Date(ci.submittedAt).getUTCFullYear(),
-        new Date(ci.submittedAt).getUTCMonth(),
-        new Date(ci.submittedAt).getUTCDate()
-      ));
-      if (submittedUtc >= mondayUtc) return 2;
-    }
-    if (status === "missed") return 3;
-    if (!ci) return 4;
-    return 5;
+    if (status === "overdue") return 0;
+    if (status === "submitted") return 1;
+    return 2;
   };
 
-  const sortedClients = [...clients].sort((a, b) => {
-    const ciA = latestCheckIns.find((x: any) => x.clientId === a.id);
-    const ciB = latestCheckIns.find((x: any) => x.clientId === b.id);
-    const bA = sortBucket(a.id, ciA, !!(ciA as any)?.reviewedAt);
-    const bB = sortBucket(b.id, ciB, !!(ciB as any)?.reviewedAt);
-    if (bA !== bB) return bA - bB;
-    const tA = ciA ? new Date((ciA as any).submittedAt).getTime() : 0;
-    const tB = ciB ? new Date((ciB as any).submittedAt).getTime() : 0;
-    return tB - tA;
-  });
+  const sortedClients = [...clients].sort((a, b) => sortBucket(a.id) - sortBucket(b.id));
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
-
-  const skipWeek = trpc.checkIn.skipWeek.useMutation({
-    onSuccess: () => {
-      toast.success("Week skipped");
-      utils.checkIn.clientStatusList.invalidate();
-      utils.checkIn.clientOccurrences.invalidate();
-    },
-    onError: () => toast.error("Failed to skip week"),
-  });
-
   const selectedClient = clients.find((c) => c.id === selectedId);
 
   return (
@@ -409,11 +361,8 @@ export default function CheckInsSection() {
       {/* Left: client list */}
       <div className="space-y-1">
         {sortedClients.filter((c) => c.id !== undefined).map((client) => {
-          const ci = latestCheckIns.find((x: any) => x.clientId === client.id);
-          const isReviewed = !!(ci as any)?.reviewedAt;
-          const hasCheckIn = !!ci;
           const isSelected = selectedId === client.id;
-          const { status, scheduledDate } = getClientStatus(client.id);
+          const { status, dueDate } = getClientStatus(client.id);
 
           const p = (clientProfiles as any[]).find((x: any) => x.userId === client.id);
           const day = p?.checkInDay as string | undefined;
@@ -436,7 +385,7 @@ export default function CheckInsSection() {
                 <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold text-foreground">
                   {(client.name ?? "U").charAt(0).toUpperCase()}
                 </div>
-                {hasCheckIn && !isReviewed && (
+                {status === "submitted" && (
                   <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background" />
                 )}
               </div>
@@ -447,44 +396,26 @@ export default function CheckInsSection() {
                   </p>
                   {day && (
                     <span className={`flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
-                      status === "overdue" || status === "due_today"
+                      status === "overdue"
                         ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                        : status === "open"
-                        ? "bg-blue-500/15 text-blue-400 border-blue-500/30"
+                        : status === "submitted"
+                        ? "bg-green-500/15 text-green-400 border-green-500/30"
                         : "bg-secondary text-muted-foreground border-border"
                     }`}>
                       {abbr[day] ?? day}
                     </span>
                   )}
                 </div>
-                {status === "overdue" || status === "due_today" ? (
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs text-amber-400 font-medium">
-                      {status === "due_today" ? "Due today" : scheduledDate ? `Overdue · ${new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}` : "Overdue"}
-                    </p>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        if (scheduledDate) skipWeek.mutate({ clientId: client.id, weekStartDate: scheduledDate });
-                      }}
-                      disabled={skipWeek.isPending}
-                      className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded border border-border hover:border-border/80 transition-colors flex items-center gap-0.5 disabled:opacity-50"
-                      title="Skip this week"
-                    >
-                      <SkipForward size={9} />
-                      Skip
-                    </button>
-                  </div>
-                ) : status === "missed" ? (
-                  <p className="text-xs text-red-400 font-medium">
-                    {scheduledDate ? `Missed · ${new Date(scheduledDate + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}` : "Missed"}
+                {status === "overdue" ? (
+                  <p className="text-xs text-amber-400 font-medium">
+                    {dueDate ? `Overdue · was due ${new Date(dueDate + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}` : "Overdue"}
                   </p>
-                ) : ci ? (
-                  <p className={`text-xs truncate ${isReviewed ? "text-muted-foreground" : "text-primary"}`}>
-                    {isReviewed ? "Complete" : "Awaiting review"} · {new Date((ci as any).submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
-                  </p>
+                ) : status === "submitted" ? (
+                  <p className="text-xs text-green-400 font-medium">Submitted · awaiting review</p>
                 ) : (
-                  <p className="text-xs text-muted-foreground">No check-ins yet</p>
+                  <p className="text-xs text-muted-foreground">
+                    {dueDate ? `Due ${new Date(dueDate + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}` : "No check-in scheduled"}
+                  </p>
                 )}
               </div>
             </button>
@@ -495,7 +426,7 @@ export default function CheckInsSection() {
         )}
       </div>
 
-      {/* Right: check-in history */}
+      {/* Right: check-in detail */}
       {selectedId ? (
         <div>
           <div className="flex items-center justify-between mb-3">
