@@ -98,10 +98,17 @@ export async function getUserByOpenId(openId: string) {
 export async function getAllClients(coachId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db
+  const rows = await db
     .select()
     .from(clientProfiles)
     .where(eq(clientProfiles.coachId, coachId));
+  // Deduplicate by userId — keep the first (oldest) profile per user
+  const seen = new Set<number>();
+  return rows.filter(r => {
+    if (seen.has(r.userId)) return false;
+    seen.add(r.userId);
+    return true;
+  });
 }
 
 export async function getAllUsers() {
