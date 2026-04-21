@@ -450,20 +450,24 @@ export default function DailyLogTab() {
 
       <div>
         <SectionLabel>Nutrition</SectionLabel>
-        <Card>
-          <button
-            type="button"
-            onClick={() => setForm(p => ({ ...p, offPlanMeals: !p.offPlanMeals }))}
-            className="flex items-center justify-between w-full"
-          >
-            <p className="text-base text-foreground font-medium">Off Plan Meal</p>
-            <div className={`w-7 h-7 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-              form.offPlanMeals ? 'bg-green-500 border-green-500' : 'border-border bg-transparent'
-            }`}>
-              {form.offPlanMeals && <Check size={16} className="text-white" />}
-            </div>
-          </button>
-        </Card>
+        <button
+          type="button"
+          onClick={() => setForm(p => ({ ...p, offPlanMeals: !p.offPlanMeals }))}
+          className={`w-full rounded-xl border transition-all duration-200 px-4 py-4 flex items-center justify-between ${
+            form.offPlanMeals
+              ? 'bg-amber-500/10 border-amber-500/50'
+              : 'bg-secondary border-border'
+          }`}
+        >
+          <p className={`text-base font-medium transition-colors ${
+            form.offPlanMeals ? 'text-amber-400' : 'text-foreground'
+          }`}>Off Plan Meal</p>
+          <div className={`w-7 h-7 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+            form.offPlanMeals ? 'bg-amber-500 border-amber-500' : 'border-border bg-transparent'
+          }`}>
+            {form.offPlanMeals && <Check size={16} className="text-white" />}
+          </div>
+        </button>
       </div>
 
       <div>
