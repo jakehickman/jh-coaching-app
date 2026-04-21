@@ -25,6 +25,7 @@ import {
   checkInSubmissions,
   CheckInSubmission,
   InsertCheckInSubmission,
+  checkInSkips,
   equipmentPresets,
   EquipmentPreset,
   WorkoutExercise,
@@ -1128,10 +1129,59 @@ export async function deleteEquipmentPreset(userId: number, id: number) {
   await db.delete(equipmentPresets).where(and(eq(equipmentPresets.id, id), eq(equipmentPresets.userId, userId)));
 }
 
+<<<<<<< Updated upstream
 export async function renameEquipmentPreset(userId: number, id: number, newName: string) {
   const db = await getDb();
   if (!db) return;
   await db.update(equipmentPresets)
     .set({ presetName: newName })
     .where(and(eq(equipmentPresets.id, id), eq(equipmentPresets.userId, userId)));
+=======
+// ─── Check-in Skips ──────────────────────────────────────────────────────────
+
+export async function skipCheckInWeek(clientId: number, weekStartDate: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // Use raw SQL to avoid date column type issues
+  await db.execute(
+    sql`INSERT INTO check_in_skips (clientId, weekStartDate) VALUES (${clientId}, ${weekStartDate})
+        ON DUPLICATE KEY UPDATE skippedAt = NOW()`
+  );
+}
+
+export async function unskipCheckInWeek(clientId: number, weekStartDate: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.execute(
+    sql`DELETE FROM check_in_skips WHERE clientId = ${clientId} AND weekStartDate = ${weekStartDate}`
+  );
+}
+
+export async function getSkipsForClient(clientId: number): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({ weekStartDate: checkInSkips.weekStartDate })
+    .from(checkInSkips)
+    .where(eq(checkInSkips.clientId, clientId));
+  return rows.map(r => {
+    const d = r.weekStartDate as unknown as Date;
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+  });
+}
+
+export async function getAllSkipsPerClient(): Promise<{ clientId: number; weekStartDate: string }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({ clientId: checkInSkips.clientId, weekStartDate: checkInSkips.weekStartDate })
+    .from(checkInSkips);
+  return rows.map(r => {
+    const d = r.weekStartDate as unknown as Date;
+    return {
+      clientId: r.clientId,
+      weekStartDate: `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`,
+    };
+  });
+>>>>>>> Stashed changes
 }

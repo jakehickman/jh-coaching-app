@@ -406,9 +406,28 @@
 - [x] Bug: overdue check-in flags start date as first due date — fixed: firstCheckInUtc now always advances at least 7 days from start date (daysUntilFirst === 0 → advance 7 days instead of 0)
 - [x] Change overdue threshold: client is overdue from the day after their check-in day (no 7-day grace period)
 - [x] Coach check-ins: show full questions + answers when expanding a client's check-in submission
+<<<<<<< Updated upstream
 - [x] PresetSelector: allow users to rename saved machine presets (inline edit in preset list)
 - [x] Revert off-plan meals from numeric counter back to simple checkbox (boolean) in daily log, server, coach view, and client overview
 - [x] Client overview: add on-plan meal streak counter (consecutive days logged without off-plan meal)
 - [x] Redesign off-plan meal card in daily log form (polished toggle style)
 - [x] Bug: Sam shows as overdue despite submitting check-in yesterday — investigate overdue calculation
 - [x] Coach check-ins: add one-tap Skip button to clear overdue flag for a specific week
+=======
+- [x] Move Check-ins into Client Progress as a sub-tab (coach side UI restructure)
+- [x] Implement new server-side check-in status model (scheduled, open, due today, overdue, missed, completed late)
+- [x] Update coach check-ins panel with full state vocabulary and badges
+- [x] Update client check-ins tab with state-aware messaging and form visibility
+- [x] PresetSelector: allow users to rename saved machine presets (inline edit in preset list)
+- [x] Revert off-plan meals from numeric counter back to simple checkbox (boolean) in daily log, server, coach view, and client overview
+- [x] Client overview: add on-plan meal streak counter (consecutive days logged without off-plan meal)
+- [x] Rename On-Plan Streak card to Meal Streak in client overview
+- [x] Redesign off-plan meal card in daily log form (polished toggle style, amber highlight)
+- [x] Remove Meals On Plan/Off-Plan text from expanded log detail on client and coach side
+- [x] Rename Off-Plan Days to Off Plan Meals in client overview and coach progress view
+- [x] Fix overdue check-in bug: match by weekStartDate instead of submittedAt timestamp
+- [x] Fix weekStartDate serialisation bug causing all clients to show as overdue
+- [x] Coach check-ins: add one-tap Skip button to clear overdue flag for a specific week
+- [x] Add check_in_skips table to schema and apply migration
+- [x] Full check-in logic model implementation: new status system, skip feature, state-aware client UI
+>>>>>>> Stashed changes
