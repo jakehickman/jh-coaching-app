@@ -1008,7 +1008,14 @@ export async function getAllCheckInsPerClient(): Promise<{ clientId: number; sub
     })
     .from(checkInSubmissions)
     .orderBy(desc(checkInSubmissions.submittedAt));
-  return rows.map(r => ({ clientId: r.clientId, submittedAt: r.submittedAt as unknown as Date, weekStartDate: String(r.weekStartDate).slice(0, 10) }));
+  return rows.map(r => {
+    const wsd = r.weekStartDate as unknown as Date | string;
+    // MySQL date columns come back as JS Date objects from the driver; convert safely
+    const weekStartDate = wsd instanceof Date
+      ? `${wsd.getUTCFullYear()}-${String(wsd.getUTCMonth() + 1).padStart(2, '0')}-${String(wsd.getUTCDate()).padStart(2, '0')}`
+      : String(wsd).slice(0, 10);
+    return { clientId: r.clientId, submittedAt: r.submittedAt as unknown as Date, weekStartDate };
+  });
 }
 
 // Coach: delete a check-in submission
