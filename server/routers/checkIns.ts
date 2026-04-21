@@ -162,22 +162,6 @@ export const checkInRouter = router({
     .mutation(({ input }) => db.markCheckInReviewed(input.id, input.reviewed)),
 
   latestPerClient: adminProcedure.query(() => db.getLatestCheckInPerClient()),
-<<<<<<< Updated upstream
-  skipWeek: adminProcedure
-    .input(z.object({ clientId: z.number(), weekStartDate: z.string() }))
-    .mutation(({ ctx, input }) =>
-      db.skipCheckInWeek(input.clientId, ctx.user.id, input.weekStartDate)
-    ),
-  unskipWeek: adminProcedure
-    .input(z.object({ clientId: z.number(), weekStartDate: z.string() }))
-    .mutation(({ input }) =>
-      db.unskipCheckInWeek(input.clientId, input.weekStartDate)
-    ),
-  overdueClients: adminProcedure.query(async ({ ctx }) => {
-    const profiles = await db.getAllClients(ctx.user.id);
-    const allCheckIns = await db.getAllCheckInsPerClient();
-    const allSkips = await db.getAllCheckInSkips();
-=======
 
   /**
    * Returns the current check-in occurrence status for a specific client.
@@ -300,7 +284,6 @@ export const checkInRouter = router({
     const allCheckIns = await db.getAllCheckInsPerClient();
     const allSkips = await db.getAllSkipsPerClient();
     const today = todayUtcStr();
->>>>>>> Stashed changes
 
     const result: {
       clientId: number;
@@ -388,43 +371,9 @@ export const checkInRouter = router({
       const upTo = today;
       const occurrences = generateOccurrences(firstDate, upTo);
 
-<<<<<<< Updated upstream
-      // Build a set of covered weekStartDate strings: submissions + coach skips
-      const clientWeekStarts = new Set([
-        ...allCheckIns
-          .filter((c: any) => c.clientId === profile.userId)
-          .map((c: any) => c.weekStartDate as string),
-        ...allSkips
-          .filter((s: any) => s.clientId === profile.userId)
-          .map((s: any) => s.weekStartDate as string),
-      ]);
-
-      // Helper: format a UTC Date as YYYY-MM-DD
-      const toIso = (d: Date) =>
-        `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-
-      let overdueDate: Date | null = null;
-      const scheduled = new Date(firstCheckInUtc);
-      while (scheduled <= todayUtc) {
-        const scheduledTime = scheduled.getTime();
-        // Overdue from the day after the check-in day (no grace period)
-        const overdueThreshold = scheduledTime + 1 * 24 * 60 * 60 * 1000;
-
-        if (todayUtc.getTime() >= overdueThreshold) {
-          // Match by weekStartDate string — the Monday of the scheduled week
-          const hasSubmission = clientWeekStarts.has(toIso(scheduled));
-          if (!hasSubmission) {
-            overdueDate = new Date(scheduled);
-            break;
-          }
-        }
-        scheduled.setUTCDate(scheduled.getUTCDate() + 7);
-      }
-=======
       const clientSubmissions = allCheckIns
         .filter((c: any) => c.clientId === profile.userId)
         .map((c: any) => toDateStr(c.weekStartDate as unknown as Date));
->>>>>>> Stashed changes
 
       const clientSkips = allSkips
         .filter((s: any) => s.clientId === profile.userId)

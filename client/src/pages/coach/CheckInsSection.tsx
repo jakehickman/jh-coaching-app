@@ -65,23 +65,9 @@ export default function CheckInsSection() {
   );
 
   const { data: clientProfiles = [] } = trpc.users.clients.useQuery();
-<<<<<<< Updated upstream
-  // Server-side overdue clients list
-  const { data: overdueList = [], refetch: refetchOverdue } = trpc.checkIn.overdueClients.useQuery();
-  const utils = trpc.useUtils();
-  const skipWeek = trpc.checkIn.skipWeek.useMutation({
-    onSuccess: () => {
-      refetchOverdue();
-      utils.checkIn.overdueClients.invalidate();
-      toast.success("Week skipped");
-    },
-    onError: () => toast.error("Failed to skip week"),
-  });
-=======
   const { data: statusList = [] } = trpc.checkIn.clientStatusList.useQuery();
 
   const utils = trpc.useUtils();
->>>>>>> Stashed changes
 
   // Helper: get status for a client
   const getClientStatus = (clientId: number): { status: CheckInStatus; scheduledDate: string | null } => {
@@ -240,59 +226,6 @@ export default function CheckInsSection() {
                     <span className={`flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
                       status === "overdue" || status === "due_today"
                         ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
-<<<<<<< Updated upstream
-                        : isToday
-                        ? "bg-primary/15 text-primary border-primary/30"
-                        : "bg-secondary text-muted-foreground border-border";
-                      return (
-                        <span
-                          className={`flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${pillClass}`}
-                        >
-                          {abbr[day] ?? day}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                  {isOverdue(client.id) ? (
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-amber-400 font-medium">
-                        {(() => {
-                          const o = (overdueList as any[]).find(
-                            (x: any) => x.clientId === client.id
-                          );
-                          if (!o?.dueDate) return "Overdue";
-                          const dateStr = new Date(o.dueDate).toLocaleDateString(
-                            "en-AU",
-                            { day: "numeric", month: "short" }
-                          );
-                          return `Overdue · ${dateStr}`;
-                        })()}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={e => {
-                          e.stopPropagation();
-                          const o = (overdueList as any[]).find((x: any) => x.clientId === client.id);
-                          if (!o?.dueDate) return;
-                          const d = new Date(o.dueDate);
-                          const wsd = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
-                          skipWeek.mutate({ clientId: client.id, weekStartDate: wsd });
-                        }}
-                        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-border rounded px-1.5 py-0.5 transition-colors"
-                        title="Skip this week"
-                      >
-                        <SkipForward size={10} />
-                        Skip
-                      </button>
-                    </div>
-                  ) : ci ? (
-                    <p
-                      className={`text-xs truncate ${
-                        isReviewed
-                          ? "text-muted-foreground"
-                          : "text-primary"
-                      }`}
-=======
                         : status === "open"
                         ? "bg-blue-500/15 text-blue-400 border-blue-500/30"
                         : "bg-secondary text-muted-foreground border-border"
@@ -315,7 +248,6 @@ export default function CheckInsSection() {
                       disabled={skipWeek.isPending}
                       className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded border border-border hover:border-border/80 transition-colors flex items-center gap-0.5 disabled:opacity-50"
                       title="Skip this week"
->>>>>>> Stashed changes
                     >
                       <SkipForward size={9} />
                       Skip

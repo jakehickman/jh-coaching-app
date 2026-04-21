@@ -29,7 +29,6 @@ import {
   equipmentPresets,
   EquipmentPreset,
   WorkoutExercise,
-  checkInSkips,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1027,43 +1026,7 @@ export async function deleteCheckIn(id: number): Promise<void> {
   await db.delete(checkInSubmissions).where(eq(checkInSubmissions.id, id));
 }
 
-// ─── Check-in Skips ─────────────────────────────────────────────────────────
-
-// Coach: skip a scheduled check-in week for a client
-export async function skipCheckInWeek(clientId: number, coachId: number, weekStartDate: string): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  // Use raw SQL to avoid Drizzle date column type mismatch with string weekStartDate
-  await db.execute(
-    sql`INSERT IGNORE INTO check_in_skips (clientId, coachId, weekStartDate) VALUES (${clientId}, ${coachId}, ${weekStartDate})`
-  );
-}
-
-// Coach: remove a skip for a client's week
-export async function unskipCheckInWeek(clientId: number, weekStartDate: string): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  // weekStartDate is a date column; compare via raw SQL to avoid Drizzle type mismatch
-  await db.execute(
-    sql`DELETE FROM check_in_skips WHERE clientId = ${clientId} AND weekStartDate = ${weekStartDate}`
-  );
-}
-
-// Get all skips (for overdue evaluation)
-export async function getAllCheckInSkips(): Promise<{ clientId: number; weekStartDate: string }[]> {
-  const db = await getDb();
-  if (!db) return [];
-  const rows = await db.select({ clientId: checkInSkips.clientId, weekStartDate: checkInSkips.weekStartDate }).from(checkInSkips);
-  return rows.map(r => {
-    const wsd = r.weekStartDate as unknown as Date | string;
-    const weekStartDate = wsd instanceof Date
-      ? `${wsd.getUTCFullYear()}-${String(wsd.getUTCMonth() + 1).padStart(2, '0')}-${String(wsd.getUTCDate()).padStart(2, '0')}`
-      : String(wsd).slice(0, 10);
-    return { clientId: r.clientId, weekStartDate };
-  });
-}
-
-// ─── Client Profile: step goal + check-in day ────────────────────────────────
+// ─── Update check-in day ─────────────────────────────────────────────────────
 
 export async function updateClientProfileExtended(userId: number, data: {
   checkInDay?: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | null;
@@ -1129,20 +1092,19 @@ export async function deleteEquipmentPreset(userId: number, id: number) {
   await db.delete(equipmentPresets).where(and(eq(equipmentPresets.id, id), eq(equipmentPresets.userId, userId)));
 }
 
-<<<<<<< Updated upstream
 export async function renameEquipmentPreset(userId: number, id: number, newName: string) {
   const db = await getDb();
   if (!db) return;
   await db.update(equipmentPresets)
     .set({ presetName: newName })
     .where(and(eq(equipmentPresets.id, id), eq(equipmentPresets.userId, userId)));
-=======
+}
+
 // ─── Check-in Skips ──────────────────────────────────────────────────────────
 
 export async function skipCheckInWeek(clientId: number, weekStartDate: string): Promise<void> {
   const db = await getDb();
   if (!db) return;
-  // Use raw SQL to avoid date column type issues
   await db.execute(
     sql`INSERT INTO check_in_skips (clientId, weekStartDate) VALUES (${clientId}, ${weekStartDate})
         ON DUPLICATE KEY UPDATE skippedAt = NOW()`
@@ -1183,5 +1145,4 @@ export async function getAllSkipsPerClient(): Promise<{ clientId: number; weekSt
       weekStartDate: `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`,
     };
   });
->>>>>>> Stashed changes
 }
