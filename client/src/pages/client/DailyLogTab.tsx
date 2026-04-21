@@ -97,7 +97,7 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
                 <div className="flex flex-wrap gap-x-4 gap-y-2 pt-3">
                   {log.weight != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Weight</p><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
                   <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p><p className="text-sm font-semibold text-foreground">{sessionLabel}</p></div>
-                  <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p><p className="text-sm font-semibold text-foreground">{hasOffPlanMeals(log.offPlanMeals) ? 'Off-Plan' : 'On Plan'}</p></div>
+
                   {log.stepsCount != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>}
                   {log.sleepHours != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep</p><p className="text-sm font-semibold text-foreground">{log.sleepHours} hrs</p></div>}
                   {log.sleepQuality != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}

@@ -382,10 +382,7 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p>
                     <p className="text-sm font-semibold text-foreground">{sessionLabel}</p>
                   </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p>
-                    <p className="text-sm font-semibold text-foreground">{(log.offPlanMeals ?? 0) > 0 ? 'Off-Plan' : 'On Plan'}</p>
-                  </div>
+
                 </div>
                 {log.notes && (
                   <div className="mt-3 pt-3 border-t border-border">
