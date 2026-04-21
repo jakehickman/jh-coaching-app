@@ -302,7 +302,6 @@ export default function OverviewTab() {
           <MetricCard
             label="On-Plan Streak"
             value={onPlanStreak === 0 ? "0" : `${onPlanStreak} day${onPlanStreak > 1 ? 's' : ''}`}
-            sub={onPlanStreak >= 7 ? "🔥 Keep it up!" : onPlanStreak > 0 ? "Stay on plan" : "Log today to start"}
           />
           {stepGoal && (
             <MetricCard
