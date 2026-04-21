@@ -450,23 +450,39 @@ export default function DailyLogTab() {
 
       <div>
         <SectionLabel>Nutrition</SectionLabel>
-        <Card>
-          <button
-            type="button"
-            onClick={() => setForm(p => ({ ...p, offPlanMeals: !p.offPlanMeals }))}
-            className="flex items-center justify-between w-full"
-          >
-            <div>
-              <p className="text-base text-foreground font-medium">Off-Plan Meals</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Had meals outside your plan today</p>
-            </div>
-            <div className={`w-7 h-7 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-              form.offPlanMeals ? 'bg-amber-500 border-amber-500' : 'border-border bg-transparent'
-            }`}>
-              {form.offPlanMeals && <Check size={16} className="text-white" />}
-            </div>
-          </button>
-        </Card>
+        <button
+          type="button"
+          onClick={() => setForm(p => ({ ...p, offPlanMeals: !p.offPlanMeals }))}
+          className={`w-full rounded-xl border transition-all duration-200 px-4 py-4 flex items-center gap-4 text-left ${
+            form.offPlanMeals
+              ? 'bg-amber-500/10 border-amber-500/50'
+              : 'bg-secondary border-border'
+          }`}
+        >
+          {/* Icon badge */}
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+            form.offPlanMeals ? 'bg-amber-500/20 text-amber-400' : 'bg-muted text-muted-foreground'
+          }`}>
+            <Utensils size={18} />
+          </div>
+          {/* Text */}
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-semibold transition-colors ${
+              form.offPlanMeals ? 'text-amber-400' : 'text-foreground'
+            }`}>Off-Plan Meals</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {form.offPlanMeals ? 'Marked as off-plan today' : 'Tap to mark as off-plan'}
+            </p>
+          </div>
+          {/* Toggle switch */}
+          <div className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+            form.offPlanMeals ? 'bg-amber-500' : 'bg-muted'
+          }`}>
+            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
+              form.offPlanMeals ? 'translate-x-5' : 'translate-x-0.5'
+            }`} />
+          </div>
+        </button>
       </div>
 
       <div>
