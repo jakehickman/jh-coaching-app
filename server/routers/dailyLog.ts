@@ -22,13 +22,15 @@ export const dailyLogRouter = router({
         stepsCount: z.number().optional(),
         sleepQuality: z.number().min(1).max(5).optional(),
         hungerLevel: z.number().min(1).max(5).optional(),
-        offPlanMeals: z.number().int().min(0).optional(),
+        offPlanMeals: z.union([z.boolean(), z.number().int().min(0)]).optional(),
         notes: z.string().optional(),
       })
     )
-    .mutation(({ ctx, input }) =>
-      db.upsertDailyLog({ userId: ctx.user.id, ...input })
-    ),
+    .mutation(({ ctx, input }) => {
+      const { offPlanMeals, ...rest } = input;
+      const offPlanMealsNum = offPlanMeals === undefined ? undefined : (typeof offPlanMeals === 'boolean' ? (offPlanMeals ? 1 : 0) : offPlanMeals);
+      return db.upsertDailyLog({ userId: ctx.user.id, ...rest, offPlanMeals: offPlanMealsNum });
+    }),
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(({ ctx, input }) => db.deleteDailyLog(input.id, ctx.user.id)),

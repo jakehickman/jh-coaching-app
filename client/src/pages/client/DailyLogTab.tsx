@@ -76,7 +76,7 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
                     <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
                       trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>{sessionLabel}</span>
-                    {hasOffPlanMeals(log.offPlanMeals) ? <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400" title={`${log.offPlanMeals} off-plan meal${(log.offPlanMeals ?? 0) > 1 ? 's' : ''}`}><Utensils size={11} />{(log.offPlanMeals ?? 0) > 1 ? <span>{log.offPlanMeals}</span> : null}</span> : null}
+                    {hasOffPlanMeals(log.offPlanMeals) ? <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400" title="Off-plan meal"><Utensils size={11} /></span> : null}
                   </>
                 ) : (
                   <span className="text-xs text-muted-foreground italic">No entry</span>
@@ -97,7 +97,7 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
                 <div className="flex flex-wrap gap-x-4 gap-y-2 pt-3">
                   {log.weight != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Weight</p><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
                   <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p><p className="text-sm font-semibold text-foreground">{sessionLabel}</p></div>
-                  <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p><p className="text-sm font-semibold text-foreground">{(log.offPlanMeals ?? 0) > 0 ? `${log.offPlanMeals} off-plan` : 'On Plan'}</p></div>
+                  <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p><p className="text-sm font-semibold text-foreground">{hasOffPlanMeals(log.offPlanMeals) ? 'Off-Plan' : 'On Plan'}</p></div>
                   {log.stepsCount != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>}
                   {log.sleepHours != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep</p><p className="text-sm font-semibold text-foreground">{log.sleepHours} hrs</p></div>}
                   {log.sleepQuality != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
@@ -225,14 +225,14 @@ type DailyForm = {
   stepsCount: string;
   sleepQuality: number | null;
   hungerLevel: number | null;
-  offPlanMeals: number;
+  offPlanMeals: boolean;
   notes: string;
 };
 
 const blank: DailyForm = {
   weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false,
   trainingType: "", stepsCount: "", sleepQuality: null, hungerLevel: null,
-  offPlanMeals: 0, notes: "",
+  offPlanMeals: false, notes: "",
 };
 
 export default function DailyLogTab() {
@@ -329,7 +329,7 @@ export default function DailyLogTab() {
           stepsCount: existing.stepsCount?.toString() ?? "",
           sleepQuality: existing.sleepQuality ?? null,
           hungerLevel: existing.hungerLevel ?? null,
-          offPlanMeals: existing.offPlanMeals ?? 0,
+          offPlanMeals: (existing.offPlanMeals ?? 0) > 0,
           notes: existing.notes ?? "",
         }, newKey);
       } else {
@@ -354,9 +354,9 @@ export default function DailyLogTab() {
         stepsCount: existing.stepsCount?.toString() ?? "",
         sleepQuality: existing.sleepQuality ?? null,
         hungerLevel: existing.hungerLevel ?? null,
-        offPlanMeals: existing.offPlanMeals ?? 0,
-        notes: existing.notes ?? "",
-      });
+          offPlanMeals: (existing.offPlanMeals ?? 0) > 0,
+          notes: existing.notes ?? "",
+        });
     } else {
       loadServerData({ ...blank, trainingCompleted: autoTrained, trainingType: autoTrainingType ?? "" });
     }
@@ -388,7 +388,7 @@ export default function DailyLogTab() {
       stepsCount: form.stepsCount ? parseInt(form.stepsCount) : undefined,
       sleepQuality: form.sleepQuality ?? undefined,
       hungerLevel: form.hungerLevel ?? undefined,
-      offPlanMeals: form.offPlanMeals ?? 0,
+      offPlanMeals: form.offPlanMeals ?? false,
       notes: form.notes || undefined,
     });
   };
@@ -451,27 +451,21 @@ export default function DailyLogTab() {
       <div>
         <SectionLabel>Nutrition</SectionLabel>
         <Card>
-          <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setForm(p => ({ ...p, offPlanMeals: !p.offPlanMeals }))}
+            className="flex items-center justify-between w-full"
+          >
             <div>
               <p className="text-base text-foreground font-medium">Off-Plan Meals</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Meals outside your plan today</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Had meals outside your plan today</p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setForm(p => ({ ...p, offPlanMeals: Math.max(0, (p.offPlanMeals ?? 0) - 1) }))}
-                className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors text-lg font-medium"
-              >−</button>
-              <span className={`text-xl font-bold w-6 text-center ${
-                (form.offPlanMeals ?? 0) > 0 ? 'text-amber-400' : 'text-muted-foreground'
-              }`}>{form.offPlanMeals ?? 0}</span>
-              <button
-                type="button"
-                onClick={() => setForm(p => ({ ...p, offPlanMeals: (p.offPlanMeals ?? 0) + 1 }))}
-                className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors text-lg font-medium"
-              >+</button>
+            <div className={`w-7 h-7 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+              form.offPlanMeals ? 'bg-amber-500 border-amber-500' : 'border-border bg-transparent'
+            }`}>
+              {form.offPlanMeals && <Check size={16} className="text-white" />}
             </div>
-          </div>
+          </button>
         </Card>
       </div>
 

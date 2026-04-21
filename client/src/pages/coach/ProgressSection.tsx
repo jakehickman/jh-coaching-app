@@ -331,9 +331,8 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                         trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                       }`}>{sessionLabel}</span>
                       {(log.offPlanMeals ?? 0) > 0 ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400" title={(log.offPlanMeals ?? 0) > 1 ? `${log.offPlanMeals} off-plan meals` : '1 off-plan meal'}>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400" title="Off-plan meal">
                           <Utensils size={11} />
-                          {(log.offPlanMeals ?? 0) > 1 && <span className="text-[10px] font-medium">{log.offPlanMeals}</span>}
                         </span>
                       ) : null}
                     </>
@@ -385,7 +384,7 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                   </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Meals</p>
-                    <p className="text-sm font-semibold text-foreground">{(log.offPlanMeals ?? 0) > 0 ? `${log.offPlanMeals} off-plan` : 'On Plan'}</p>
+                    <p className="text-sm font-semibold text-foreground">{(log.offPlanMeals ?? 0) > 0 ? 'Off-Plan' : 'On Plan'}</p>
                   </div>
                 </div>
                 {log.notes && (
@@ -997,7 +996,8 @@ export default function ProgressSection() {
   const mealAdherence = Math.round((curOnPlan / 7) * 100);
   const prevOnPlan = prev7.filter(l => (l.offPlanMeals ?? 0) === 0).length;
   const prevMealAdherence = Math.round((prevOnPlan / 7) * 100);
-  const offPlanTotal7 = cur7.reduce((sum, l) => sum + (l.offPlanMeals ?? 0), 0);
+  // Count days with any off-plan meal (boolean: 1 = yes)
+  const offPlanTotal7 = cur7.filter(l => (l.offPlanMeals ?? 0) > 0).length;
 
   // ── Training adherence: ratio-based prescribed count (avoids cycle-index anchor bug) ──
   const schedule = (trainingProgram?.schedule as string[] | null) ?? null;
@@ -1123,9 +1123,9 @@ export default function ProgressSection() {
                     : `${trainedInRotation} sessions completed`}
                 />
                 <ProgCard
-                  label="Off-Plan Meals"
+                  label="Off-Plan Days"
                   value={String(offPlanTotal7)}
-                  sub={offPlanTotal7 === 0 ? "All on-plan" : undefined}
+                  sub={offPlanTotal7 === 0 ? "All on-plan" : `${offPlanTotal7} day${offPlanTotal7 > 1 ? 's' : ''} off-plan`}
                 />
                 <ProgCard
                   label="Hunger"

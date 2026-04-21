@@ -208,7 +208,8 @@ export default function OverviewTab() {
   const mealAdherence = Math.round((curOnPlan / 7) * 100);
   const prevOnPlan = prev7Logs.filter(l => (l.offPlanMeals ?? 0) === 0).length;
   const prevMealAdherence = Math.round((prevOnPlan / 7) * 100);
-  const offPlanTotal7 = cur7Logs.reduce((sum, l) => sum + (l.offPlanMeals ?? 0), 0);
+  // Count days with any off-plan meal (boolean: 1 = yes)
+  const offPlanTotal7 = cur7Logs.filter(l => (l.offPlanMeals ?? 0) > 0).length;
 
   const stepGoal = (profile as any)?.stepGoal as number | null | undefined;
   const cur7Steps = cur7Logs.filter(l => l.stepsCount != null).map(l => l.stepsCount as number);
@@ -276,7 +277,7 @@ export default function OverviewTab() {
         <div className="grid grid-cols-2 gap-3">
           <MetricCard label="Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={schedule.length > 0 ? `${trainedInRotation}/${prescribedDays} sessions completed` : `${trainedInRotation} sessions completed`} />
-          <MetricCard label="Off-Plan Meals" value={offPlanTotal7.toString()} />
+          <MetricCard label="Off-Plan Days" value={offPlanTotal7.toString()} />
           {stepGoal && (
             <MetricCard
               label="Avg Daily Steps"

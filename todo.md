@@ -407,3 +407,4 @@
 - [x] Change overdue threshold: client is overdue from the day after their check-in day (no 7-day grace period)
 - [x] Coach check-ins: show full questions + answers when expanding a client's check-in submission
 - [x] PresetSelector: allow users to rename saved machine presets (inline edit in preset list)
+- [x] Revert off-plan meals from numeric counter back to simple checkbox (boolean) in daily log, server, coach view, and client overview
