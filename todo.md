@@ -408,3 +408,4 @@
 - [x] Coach check-ins: show full questions + answers when expanding a client's check-in submission
 - [x] PresetSelector: allow users to rename saved machine presets (inline edit in preset list)
 - [x] Revert off-plan meals from numeric counter back to simple checkbox (boolean) in daily log, server, coach view, and client overview
+- [x] Client overview: add on-plan meal streak counter (consecutive days logged without off-plan meal)

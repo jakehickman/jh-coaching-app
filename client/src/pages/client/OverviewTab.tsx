@@ -211,6 +211,27 @@ export default function OverviewTab() {
   // Count days with any off-plan meal (boolean: 1 = yes)
   const offPlanTotal7 = cur7Logs.filter(l => (l.offPlanMeals ?? 0) > 0).length;
 
+  // ── On-plan streak: consecutive logged days ending today with no off-plan meal ──
+  // Build a map of date → offPlanMeals for fast lookup
+  const logByDate: Record<string, number> = {};
+  for (const l of allLogs) {
+    const iso = toLocalDateStr(l.logDate);
+    if (iso) logByDate[iso] = l.offPlanMeals ?? 0;
+  }
+  const onPlanStreak = (() => {
+    let streak = 0;
+    // Walk backwards from today; stop at first day that is off-plan OR unlogged
+    for (let i = 0; i <= 90; i++) {
+      const iso = localDateStr(i);
+      // Respect client start date — don't count days before they started
+      if (clientStartDate && iso < clientStartDate) break;
+      if (!(iso in logByDate)) break; // unlogged day breaks the streak
+      if (logByDate[iso] > 0) break;  // off-plan day breaks the streak
+      streak++;
+    }
+    return streak;
+  })();
+
   const stepGoal = (profile as any)?.stepGoal as number | null | undefined;
   const cur7Steps = cur7Logs.filter(l => l.stepsCount != null).map(l => l.stepsCount as number);
   const avgSteps7 = cur7Steps.length > 0 ? Math.round(cur7Steps.reduce((a, b) => a + b, 0) / cur7Steps.length) : null;
@@ -278,6 +299,11 @@ export default function OverviewTab() {
           <MetricCard label="Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={schedule.length > 0 ? `${trainedInRotation}/${prescribedDays} sessions completed` : `${trainedInRotation} sessions completed`} />
           <MetricCard label="Off-Plan Days" value={offPlanTotal7.toString()} />
+          <MetricCard
+            label="On-Plan Streak"
+            value={onPlanStreak === 0 ? "0" : `${onPlanStreak} day${onPlanStreak > 1 ? 's' : ''}`}
+            sub={onPlanStreak >= 7 ? "🔥 Keep it up!" : onPlanStreak > 0 ? "Stay on plan" : "Log today to start"}
+          />
           {stepGoal && (
             <MetricCard
               label="Avg Daily Steps"
