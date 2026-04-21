@@ -11,6 +11,7 @@ import HabitsSection from "./coach/HabitsSection";
 import TrainingSection from "./coach/TrainingSection";
 import MealPlansSection from "./coach/MealPlansSection";
 import ProgressSection from "./coach/ProgressSection";
+import CheckInsKanban from "./coach/CheckInsKanban";
 import { Button } from "@/components/ui/button";
 import { SectionLabel, Card, DateInput } from "./coach/shared";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
@@ -290,6 +291,7 @@ const SECTION_MAP: Record<string, () => React.ReactNode> = {
   training: () => <SectionErrorBoundary sectionName="Training Programs"><TrainingSection /></SectionErrorBoundary>,
   "meal-plans": () => <SectionErrorBoundary sectionName="Meal Plans"><MealPlansSection /></SectionErrorBoundary>,
   progress: () => <SectionErrorBoundary sectionName="Client Progress"><ProgressSection /></SectionErrorBoundary>,
+  "check-ins": () => <SectionErrorBoundary sectionName="Check-ins"><CheckInsKanban /></SectionErrorBoundary>,
   "exercise-library": () => <SectionErrorBoundary sectionName="Exercise Library"><ExerciseLibrarySection /></SectionErrorBoundary>,
   "nutrition-data": () => <SectionErrorBoundary sectionName="Nutrition Data"><NutritionDataSection /></SectionErrorBoundary>,
   habits: () => <SectionErrorBoundary sectionName="Habits"><HabitsSection /></SectionErrorBoundary>,
@@ -299,6 +301,7 @@ const SECTION_TITLES: Record<string, string> = {
   training: "Training Programs",
   "meal-plans": "Meal Plans",
   progress: "Client Progress",
+  "check-ins": "Check-ins",
   "exercise-library": "Exercise Library",
   "nutrition-data": "Nutrition Data",
   habits: "Habits",

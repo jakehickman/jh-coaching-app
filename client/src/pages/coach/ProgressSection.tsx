@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { localToday, fmtDate, toUTCDateStr as toLocalDateStr } from "@/lib/dates";
@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils } from "lucide-react";
+import { useSearch, useLocation } from "wouter";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
   MeasurementsCard, MuscleGroupSection, DailyLogRow, ProgressHistoryTable
@@ -921,7 +922,25 @@ const fmtCheckInDate = (iso: string) => {
 // ─── Progress Section ────────────────────────────────────────────────
 
 export default function ProgressSection() {
+  const search = useSearch();
+  const searchParams = new URLSearchParams(search);
+  const urlClientId = searchParams.get("clientId") ? parseInt(searchParams.get("clientId")!, 10) : null;
+  const urlTab = searchParams.get("tab") ?? "overview";
+  const [, navigate] = useLocation();
+
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
+
+  // Sync URL clientId into selector once clients load
+  const [urlSynced, setUrlSynced] = useState(false);
+  useEffect(() => {
+    if (!urlSynced && urlClientId && clients.length > 0) {
+      const match = clients.find((c: any) => c.id === urlClientId);
+      if (match) {
+        setSelectedUserId(urlClientId);
+        setUrlSynced(true);
+      }
+    }
+  }, [urlClientId, clients, urlSynced]);
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const { data: logs } = trpc.dailyLog.listForClient.useQuery(
     { userId: selectedUserId!, limit: 60 },
@@ -1091,7 +1110,7 @@ export default function ProgressSection() {
       </div>
 
       {selectedUserId && (
-          <Tabs defaultValue="overview" className="w-full">
+          <Tabs defaultValue={urlTab} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="measurements">Measurements</TabsTrigger>

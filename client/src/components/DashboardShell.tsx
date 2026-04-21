@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import {
   BookOpen,
   Salad,
+  CalendarCheck,
   ChevronLeft,
   CheckSquare,
   ClipboardCheck,
@@ -45,6 +46,7 @@ const coachNav: NavItem[] = [
   { href: "/coach/exercise-library", label: "Exercise Library",  icon: <BookOpen size={18} /> },
   { href: "/coach/nutrition-data",   label: "Nutrition Data",    icon: <Salad size={18} /> },
   { href: "/coach/habits",           label: "Habits",            icon: <CheckSquare size={18} /> },
+  { href: "/coach/check-ins",        label: "Check-ins",         icon: <CalendarCheck size={18} /> },
 ];
 
 interface DashboardShellProps {
@@ -290,7 +292,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                       {pendingCount}
                     </span>
                   )}
-                  {item.href === "/coach/progress" && checkInsAttentionCount > 0 && (
+                  {item.href === "/coach/check-ins" && checkInsAttentionCount > 0 && (
                     <span className="ml-auto flex-shrink-0 min-w-[18px] h-4 px-1 rounded-full bg-primary text-black text-[10px] font-bold flex items-center justify-center">
                       {checkInsAttentionCount}
                     </span>
