@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, SkipForward } from "lucide-react";
 
 // ─── Label maps ──────────────────────────────────────────────────────────────
 
@@ -55,7 +55,16 @@ export default function CheckInsSection() {
   // Fetch client profiles to get checkInDay for pill display
   const { data: clientProfiles = [] } = trpc.users.clients.useQuery();
   // Server-side overdue clients list
-  const { data: overdueList = [] } = trpc.checkIn.overdueClients.useQuery();
+  const { data: overdueList = [], refetch: refetchOverdue } = trpc.checkIn.overdueClients.useQuery();
+  const utils = trpc.useUtils();
+  const skipWeek = trpc.checkIn.skipWeek.useMutation({
+    onSuccess: () => {
+      refetchOverdue();
+      utils.checkIn.overdueClients.invalidate();
+      toast.success("Week skipped");
+    },
+    onError: () => toast.error("Failed to skip week"),
+  });
 
   // UTC-based Monday for this week (used for unreviewed check)
   const mondayUtc = (() => {
@@ -122,7 +131,6 @@ export default function CheckInsSection() {
   });
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const utils = trpc.useUtils();
 
   const { data: clientCheckIns = [], refetch: refetchCheckIns } =
     trpc.checkIn.clientList.useQuery(
@@ -263,19 +271,37 @@ export default function CheckInsSection() {
                     })()}
                   </div>
                   {isOverdue(client.id) ? (
-                    <p className="text-xs text-amber-400 font-medium">
-                      {(() => {
-                        const o = (overdueList as any[]).find(
-                          (x: any) => x.clientId === client.id
-                        );
-                        if (!o?.dueDate) return "Overdue";
-                        const dateStr = new Date(o.dueDate).toLocaleDateString(
-                          "en-AU",
-                          { day: "numeric", month: "short" }
-                        );
-                        return `Overdue · ${dateStr}`;
-                      })()}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-amber-400 font-medium">
+                        {(() => {
+                          const o = (overdueList as any[]).find(
+                            (x: any) => x.clientId === client.id
+                          );
+                          if (!o?.dueDate) return "Overdue";
+                          const dateStr = new Date(o.dueDate).toLocaleDateString(
+                            "en-AU",
+                            { day: "numeric", month: "short" }
+                          );
+                          return `Overdue · ${dateStr}`;
+                        })()}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation();
+                          const o = (overdueList as any[]).find((x: any) => x.clientId === client.id);
+                          if (!o?.dueDate) return;
+                          const d = new Date(o.dueDate);
+                          const wsd = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+                          skipWeek.mutate({ clientId: client.id, weekStartDate: wsd });
+                        }}
+                        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-border rounded px-1.5 py-0.5 transition-colors"
+                        title="Skip this week"
+                      >
+                        <SkipForward size={10} />
+                        Skip
+                      </button>
+                    </div>
                   ) : ci ? (
                     <p
                       className={`text-xs truncate ${

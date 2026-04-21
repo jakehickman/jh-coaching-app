@@ -39,9 +39,20 @@ export const checkInRouter = router({
     .input(z.object({ id: z.number(), reviewed: z.boolean() }))
     .mutation(({ input }) => db.markCheckInReviewed(input.id, input.reviewed)),
   latestPerClient: adminProcedure.query(() => db.getLatestCheckInPerClient()),
+  skipWeek: adminProcedure
+    .input(z.object({ clientId: z.number(), weekStartDate: z.string() }))
+    .mutation(({ ctx, input }) =>
+      db.skipCheckInWeek(input.clientId, ctx.user.id, input.weekStartDate)
+    ),
+  unskipWeek: adminProcedure
+    .input(z.object({ clientId: z.number(), weekStartDate: z.string() }))
+    .mutation(({ input }) =>
+      db.unskipCheckInWeek(input.clientId, input.weekStartDate)
+    ),
   overdueClients: adminProcedure.query(async ({ ctx }) => {
     const profiles = await db.getAllClients(ctx.user.id);
     const allCheckIns = await db.getAllCheckInsPerClient();
+    const allSkips = await db.getAllCheckInSkips();
 
     const dayMap: Record<string, number> = {
       monday: 1, tuesday: 2, wednesday: 3, thursday: 4,
@@ -76,15 +87,15 @@ export const checkInRouter = router({
 
       if (firstCheckInUtc > todayUtc) continue;
 
-      // Build a set of weekStartDate strings (YYYY-MM-DD) for this client's submissions.
-      // Using weekStartDate (the Monday the client intended to cover) is timezone-safe —
-      // it avoids the bug where submittedAt in UTC falls on a different calendar day
-      // than the scheduled slot when the client is in a UTC+ timezone.
-      const clientWeekStarts = new Set(
-        allCheckIns
+      // Build a set of covered weekStartDate strings: submissions + coach skips
+      const clientWeekStarts = new Set([
+        ...allCheckIns
           .filter((c: any) => c.clientId === profile.userId)
-          .map((c: any) => c.weekStartDate as string)
-      );
+          .map((c: any) => c.weekStartDate as string),
+        ...allSkips
+          .filter((s: any) => s.clientId === profile.userId)
+          .map((s: any) => s.weekStartDate as string),
+      ]);
 
       // Helper: format a UTC Date as YYYY-MM-DD
       const toIso = (d: Date) =>

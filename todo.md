@@ -411,3 +411,4 @@
 - [x] Client overview: add on-plan meal streak counter (consecutive days logged without off-plan meal)
 - [x] Redesign off-plan meal card in daily log form (polished toggle style)
 - [x] Bug: Sam shows as overdue despite submitting check-in yesterday — investigate overdue calculation
+- [x] Coach check-ins: add one-tap Skip button to clear overdue flag for a specific week

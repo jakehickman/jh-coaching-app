@@ -470,3 +470,15 @@ export const equipmentPresets = mysqlTable("equipment_presets", {
 
 export type EquipmentPreset = typeof equipmentPresets.$inferSelect;
 export type InsertEquipmentPreset = typeof equipmentPresets.$inferInsert;
+
+// Coach-side check-in skips — mark a scheduled week as intentionally skipped
+export const checkInSkips = mysqlTable("check_in_skips", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("clientId").notNull(),   // FK -> users.id
+  coachId: int("coachId").notNull(),     // FK -> users.id
+  weekStartDate: date("weekStartDate").notNull(), // Monday of the skipped week (YYYY-MM-DD)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CheckInSkip = typeof checkInSkips.$inferSelect;
+export type InsertCheckInSkip = typeof checkInSkips.$inferInsert;

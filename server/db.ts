@@ -28,6 +28,7 @@ import {
   equipmentPresets,
   EquipmentPreset,
   WorkoutExercise,
+  checkInSkips,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1023,6 +1024,42 @@ export async function deleteCheckIn(id: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await db.delete(checkInSubmissions).where(eq(checkInSubmissions.id, id));
+}
+
+// ─── Check-in Skips ─────────────────────────────────────────────────────────
+
+// Coach: skip a scheduled check-in week for a client
+export async function skipCheckInWeek(clientId: number, coachId: number, weekStartDate: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // Use raw SQL to avoid Drizzle date column type mismatch with string weekStartDate
+  await db.execute(
+    sql`INSERT IGNORE INTO check_in_skips (clientId, coachId, weekStartDate) VALUES (${clientId}, ${coachId}, ${weekStartDate})`
+  );
+}
+
+// Coach: remove a skip for a client's week
+export async function unskipCheckInWeek(clientId: number, weekStartDate: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // weekStartDate is a date column; compare via raw SQL to avoid Drizzle type mismatch
+  await db.execute(
+    sql`DELETE FROM check_in_skips WHERE clientId = ${clientId} AND weekStartDate = ${weekStartDate}`
+  );
+}
+
+// Get all skips (for overdue evaluation)
+export async function getAllCheckInSkips(): Promise<{ clientId: number; weekStartDate: string }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({ clientId: checkInSkips.clientId, weekStartDate: checkInSkips.weekStartDate }).from(checkInSkips);
+  return rows.map(r => {
+    const wsd = r.weekStartDate as unknown as Date | string;
+    const weekStartDate = wsd instanceof Date
+      ? `${wsd.getUTCFullYear()}-${String(wsd.getUTCMonth() + 1).padStart(2, '0')}-${String(wsd.getUTCDate()).padStart(2, '0')}`
+      : String(wsd).slice(0, 10);
+    return { clientId: r.clientId, weekStartDate };
+  });
 }
 
 // ─── Client Profile: step goal + check-in day ────────────────────────────────
