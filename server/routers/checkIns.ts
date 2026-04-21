@@ -76,13 +76,19 @@ export const checkInRouter = router({
 
       if (firstCheckInUtc > todayUtc) continue;
 
-      const clientSubmissions = allCheckIns
-        .filter((c: any) => c.clientId === profile.userId)
-        .map((c: any) => new Date(Date.UTC(
-          new Date(c.submittedAt).getUTCFullYear(),
-          new Date(c.submittedAt).getUTCMonth(),
-          new Date(c.submittedAt).getUTCDate()
-        )).getTime());
+      // Build a set of weekStartDate strings (YYYY-MM-DD) for this client's submissions.
+      // Using weekStartDate (the Monday the client intended to cover) is timezone-safe —
+      // it avoids the bug where submittedAt in UTC falls on a different calendar day
+      // than the scheduled slot when the client is in a UTC+ timezone.
+      const clientWeekStarts = new Set(
+        allCheckIns
+          .filter((c: any) => c.clientId === profile.userId)
+          .map((c: any) => c.weekStartDate as string)
+      );
+
+      // Helper: format a UTC Date as YYYY-MM-DD
+      const toIso = (d: Date) =>
+        `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 
       let overdueDate: Date | null = null;
       const scheduled = new Date(firstCheckInUtc);
@@ -92,10 +98,8 @@ export const checkInRouter = router({
         const overdueThreshold = scheduledTime + 1 * 24 * 60 * 60 * 1000;
 
         if (todayUtc.getTime() >= overdueThreshold) {
-          const nextScheduled = scheduledTime + 7 * 24 * 60 * 60 * 1000;
-          const hasSubmission = clientSubmissions.some(
-            (t: number) => t >= scheduledTime && t < nextScheduled
-          );
+          // Match by weekStartDate string — the Monday of the scheduled week
+          const hasSubmission = clientWeekStarts.has(toIso(scheduled));
           if (!hasSubmission) {
             overdueDate = new Date(scheduled);
             break;

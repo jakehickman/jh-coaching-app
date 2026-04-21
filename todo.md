@@ -410,3 +410,4 @@
 - [x] Revert off-plan meals from numeric counter back to simple checkbox (boolean) in daily log, server, coach view, and client overview
 - [x] Client overview: add on-plan meal streak counter (consecutive days logged without off-plan meal)
 - [x] Redesign off-plan meal card in daily log form (polished toggle style)
+- [x] Bug: Sam shows as overdue despite submitting check-in yesterday — investigate overdue calculation
