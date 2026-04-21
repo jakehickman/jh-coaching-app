@@ -458,7 +458,7 @@ export default function DailyLogTab() {
           >
             <p className="text-base text-foreground font-medium">Off Plan Meal</p>
             <div className={`w-7 h-7 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-              form.offPlanMeals ? 'bg-amber-500 border-amber-500' : 'border-border bg-transparent'
+              form.offPlanMeals ? 'bg-green-500 border-green-500' : 'border-border bg-transparent'
             }`}>
               {form.offPlanMeals && <Check size={16} className="text-white" />}
             </div>
