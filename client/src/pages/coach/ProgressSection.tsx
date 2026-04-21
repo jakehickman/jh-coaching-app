@@ -13,6 +13,7 @@ import {
   MeasurementsCard, MuscleGroupSection, DailyLogRow, ProgressHistoryTable
 } from "./shared";
 import { CoachHabitsPanel } from "./HabitsSection";
+import { CheckInsDetailPanel } from "./CheckInsSection";
 
 // ─── Measurements Tab ────────────────────────────────────────────────────────
 function MeasurementsTab({ measurements }: { measurements: any[] }) {
@@ -1097,6 +1098,7 @@ export default function ProgressSection() {
             <TabsTrigger value="sessions">Training</TabsTrigger>
             <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
             <TabsTrigger value="notes">Coaching Notes</TabsTrigger>
+            <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -1206,6 +1208,10 @@ export default function ProgressSection() {
 
           <TabsContent value="notes">
             <CoachingNotesTab clientId={selectedUserId!} />
+          </TabsContent>
+
+          <TabsContent value="check-ins">
+            <CheckInsDetailPanel clientId={selectedUserId!} />
           </TabsContent>
 
         </Tabs>

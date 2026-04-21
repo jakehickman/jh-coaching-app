@@ -54,7 +54,287 @@ function StatusBadge({ status, scheduledDate }: { status: CheckInStatus; schedul
   );
 }
 
-// ─── CheckInsSection ─────────────────────────────────────────────────────────
+// ─── CheckInsDetailPanel ─────────────────────────────────────────────────────
+// Reusable detail panel for a single client's check-in history.
+// Used both in the standalone CheckInsSection and as a sub-tab in ProgressSection.
+
+export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
+  const utils = trpc.useUtils();
+  const [expandedCheckIns, setExpandedCheckIns] = useState<Set<number>>(new Set());
+
+  const { data: clientCheckIns = [], refetch: refetchCheckIns } =
+    trpc.checkIn.clientList.useQuery({ clientId }, { enabled: !!clientId });
+
+  const { data: clientOccurrences = [] } =
+    trpc.checkIn.clientOccurrences.useQuery({ clientId }, { enabled: !!clientId });
+
+  const deleteCheckIn = trpc.checkIn.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Check-in deleted");
+      refetchCheckIns();
+      utils.checkIn.latestPerClient.invalidate();
+      utils.checkIn.clientStatusList.invalidate();
+    },
+    onError: () => toast.error("Failed to delete check-in"),
+  });
+
+  const markReviewed = trpc.checkIn.markReviewed.useMutation({
+    onSuccess: () => {
+      refetchCheckIns();
+      utils.checkIn.latestPerClient.invalidate();
+    },
+    onError: () => toast.error("Failed to update status"),
+  });
+
+  const skipWeek = trpc.checkIn.skipWeek.useMutation({
+    onSuccess: () => {
+      toast.success("Week skipped");
+      utils.checkIn.clientStatusList.invalidate();
+      utils.checkIn.clientOccurrences.invalidate();
+    },
+    onError: () => toast.error("Failed to skip week"),
+  });
+
+  const unskipWeek = trpc.checkIn.unskipWeek.useMutation({
+    onSuccess: () => {
+      toast.success("Skip removed");
+      utils.checkIn.clientStatusList.invalidate();
+      utils.checkIn.clientOccurrences.invalidate();
+    },
+    onError: () => toast.error("Failed to remove skip"),
+  });
+
+  // Mark as seen in localStorage when check-ins load
+  useEffect(() => {
+    if (!clientId || clientCheckIns.length === 0) return;
+    const latest = clientCheckIns.reduce((a: any, b: any) =>
+      new Date(b.submittedAt).getTime() > new Date(a.submittedAt).getTime() ? b : a
+    );
+    const seenAt = new Date((latest as any).submittedAt ?? Date.now()).getTime();
+    localStorage.setItem(`coach:seen:checkin:${clientId}`, String(seenAt));
+    window.dispatchEvent(new StorageEvent("storage", { key: `coach:seen:checkin:${clientId}` }));
+  }, [clientId, clientCheckIns]);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs text-muted-foreground">
+          {clientCheckIns.length} check-in{clientCheckIns.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {/* Upcoming / open occurrence banner */}
+      {(() => {
+        const upcoming = (clientOccurrences as any[]).find(
+          (o: any) => o.status === "upcoming" || o.status === "open" || o.status === "due_today"
+        );
+        if (!upcoming) return null;
+        return (
+          <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border text-xs ${
+            upcoming.status === "due_today"
+              ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+              : upcoming.status === "open"
+              ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
+              : "bg-secondary border-border text-muted-foreground"
+          }`}>
+            <span>
+              {upcoming.status === "due_today" ? "Due today" : upcoming.status === "open" ? "Open" : "Upcoming"} · Week of {fmtCheckInDate(upcoming.scheduledDate)}
+            </span>
+            {(upcoming.status === "open" || upcoming.status === "due_today") && (
+              <button
+                onClick={() => skipWeek.mutate({ clientId, weekStartDate: upcoming.scheduledDate })}
+                disabled={skipWeek.isPending}
+                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded border border-border transition-colors disabled:opacity-50"
+              >
+                <SkipForward size={9} /> Skip
+              </button>
+            )}
+          </div>
+        );
+      })()}
+
+      {clientCheckIns.length === 0 ? (
+        <div className="flex items-center justify-center h-24 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
+          No check-ins submitted yet
+        </div>
+      ) : (
+        clientCheckIns.map((ci: any) => {
+          const isExpanded = expandedCheckIns.has(ci.id);
+          const isReviewed = !!ci.reviewedAt;
+          const wsd = typeof ci.weekStartDate === "string"
+            ? ci.weekStartDate.slice(0, 10)
+            : new Date(ci.weekStartDate).toISOString().slice(0, 10);
+          const occurrence = (clientOccurrences as any[]).find((o: any) => o.scheduledDate === wsd);
+          const occStatus: CheckInStatus = occurrence?.status ?? "completed";
+
+          return (
+            <div
+              key={ci.id}
+              className={`border rounded-xl overflow-hidden bg-card transition-colors ${
+                isReviewed ? "border-border/50 opacity-80" : "border-border"
+              }`}
+            >
+              {/* Header */}
+              <button
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
+                onClick={() =>
+                  setExpandedCheckIns(prev => {
+                    const next = new Set(prev);
+                    if (next.has(ci.id)) next.delete(ci.id);
+                    else next.add(ci.id);
+                    return next;
+                  })
+                }
+              >
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="text-sm font-semibold text-foreground">
+                    Week of {fmtCheckInDate(toLocalDateStr(ci.weekStartDate))}
+                  </span>
+                  <StatusBadge status={occStatus} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(ci.submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+                  </span>
+                  <ChevronDown
+                    size={14}
+                    className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                  />
+                </div>
+              </button>
+
+              {/* Expanded detail */}
+              {isExpanded && (
+                <div className="border-t border-border">
+                  {/* Full Q&A grouped by section */}
+                  {(() => {
+                    const BARRIER_LABEL: Record<string, string> = {
+                      no_issues: "No issues", hunger: "Hunger", cravings: "Cravings",
+                      social_events: "Social events", busy_time: "Busy / time constraints",
+                      poor_planning: "Poor planning", low_motivation: "Low motivation",
+                      travel_disruption: "Travel / disruption", other: "Other",
+                    };
+                    const ASSESSMENT_LABEL: Record<string, string> = {
+                      executed_exactly: "Executed exactly as planned",
+                      mostly_followed: "Mostly followed",
+                      inconsistent: "Inconsistent",
+                      didnt_follow: "Didn't follow the plan",
+                    };
+                    const sections = [
+                      {
+                        title: "Diet Execution",
+                        rows: [
+                          { q: "How often did you weigh all foods raw/uncooked with a digital scale?", val: ci.dietWeighedFoods },
+                          { q: "How often did you prepare meals exactly as written in your plan?", val: ci.dietMealPrepAccuracy },
+                          { q: "Excluding off-plan meals, how often did you eat/drink anything not in your plan?", val: ci.dietExtrasFrequency },
+                          { q: "When cooking, how do you use added fats (oil, butter)?", val: ci.dietAddedFats },
+                          { q: "How often did you eat meals more than 2 hours off schedule?", val: ci.dietMealTiming },
+                          { q: "When you had an off-plan meal, how close was it to your plan in calories/macros?", val: ci.dietOffPlanQuality },
+                        ].filter(r => r.val),
+                      },
+                      {
+                        title: "Sleep",
+                        rows: [
+                          { q: "How often did you go to bed more than 1 hour later than your planned bedtime?", val: (ci as any).sleepBedtimeConsistency },
+                        ].filter(r => r.val),
+                      },
+                      {
+                        title: "Adherence Barrier",
+                        rows: [
+                          { q: "What was your biggest barrier to adherence this week?", val: ci.adherenceBarrier ? (BARRIER_LABEL[ci.adherenceBarrier] ?? ci.adherenceBarrier) : null, raw: true },
+                          ...(ci.barrierExplain ? [{ q: "Can you explain further?", val: ci.barrierExplain, raw: true }] : []),
+                        ].filter(r => r.val),
+                      },
+                      {
+                        title: "Weekly Self-Assessment",
+                        rows: [
+                          { q: "Overall, how well did you follow your plan this week?", val: ci.weeklyAssessment ? (ASSESSMENT_LABEL[ci.weeklyAssessment] ?? ci.weeklyAssessment) : null, raw: true },
+                        ].filter(r => r.val),
+                      },
+                    ].filter(s => s.rows.length > 0);
+
+                    if (sections.length === 0) return null;
+                    return (
+                      <div className="px-4 pt-3 pb-1 space-y-4">
+                        {sections.map(section => (
+                          <div key={section.title}>
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{section.title}</p>
+                            <div className="space-y-3">
+                              {section.rows.map((row, i) => (
+                                <div key={i} className="space-y-0.5">
+                                  <p className="text-xs text-muted-foreground">{row.q}</p>
+                                  <p className="text-sm text-foreground font-medium">
+                                    {(row as any).raw ? row.val : (DIET_LABEL_MAP[(row.val as string)!] ?? row.val)}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Actions */}
+                  <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => markReviewed.mutate({ id: ci.id, reviewed: !isReviewed })}
+                      disabled={markReviewed.isPending}
+                      className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+                        isReviewed
+                          ? "border-border text-muted-foreground hover:text-foreground"
+                          : "border-green-500/40 text-green-400 hover:bg-green-500/10"
+                      }`}
+                    >
+                      {isReviewed ? "Mark as Incomplete" : "Mark as Complete"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm("Delete this check-in? This cannot be undone.")) {
+                          deleteCheckIn.mutate({ id: ci.id });
+                        }
+                      }}
+                      disabled={deleteCheckIn.isPending}
+                      className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })
+      )}
+
+      {/* Skipped occurrences */}
+      {(() => {
+        const skipped = (clientOccurrences as any[]).filter((o: any) => o.status === "skipped");
+        if (skipped.length === 0) return null;
+        return (
+          <div className="mt-2 space-y-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1">Skipped Weeks</p>
+            {skipped.map((o: any) => (
+              <div key={o.scheduledDate} className="flex items-center justify-between px-4 py-2 rounded-xl border border-border/50 bg-secondary/30 text-xs text-muted-foreground">
+                <span>Week of {fmtCheckInDate(o.scheduledDate)}</span>
+                <button
+                  onClick={() => unskipWeek.mutate({ clientId, weekStartDate: o.scheduledDate })}
+                  disabled={unskipWeek.isPending}
+                  className="text-[10px] hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  Undo skip
+                </button>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+// ─── CheckInsSection (standalone coach sidebar section) ──────────────────────
+// Keeps the two-column client-list + detail layout for the standalone page.
 
 export default function CheckInsSection() {
   const { user: currentUser } = useAuth();
@@ -69,13 +349,11 @@ export default function CheckInsSection() {
 
   const utils = trpc.useUtils();
 
-  // Helper: get status for a client
   const getClientStatus = (clientId: number): { status: CheckInStatus; scheduledDate: string | null } => {
     const entry = (statusList as any[]).find((s: any) => s.clientId === clientId);
     return { status: entry?.status ?? "upcoming", scheduledDate: entry?.scheduledDate ?? null };
   };
 
-  // Sort priority: overdue/due_today > open > unreviewed submitted > missed > upcoming/completed
   const mondayUtc = (() => {
     const now = new Date();
     const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -115,30 +393,6 @@ export default function CheckInsSection() {
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const { data: clientCheckIns = [], refetch: refetchCheckIns } =
-    trpc.checkIn.clientList.useQuery({ clientId: selectedId! }, { enabled: !!selectedId });
-
-  const { data: clientOccurrences = [] } =
-    trpc.checkIn.clientOccurrences.useQuery({ clientId: selectedId! }, { enabled: !!selectedId });
-
-  const deleteCheckIn = trpc.checkIn.delete.useMutation({
-    onSuccess: () => {
-      toast.success("Check-in deleted");
-      refetchCheckIns();
-      utils.checkIn.latestPerClient.invalidate();
-      utils.checkIn.clientStatusList.invalidate();
-    },
-    onError: () => toast.error("Failed to delete check-in"),
-  });
-
-  const markReviewed = trpc.checkIn.markReviewed.useMutation({
-    onSuccess: () => {
-      refetchCheckIns();
-      utils.checkIn.latestPerClient.invalidate();
-    },
-    onError: () => toast.error("Failed to update status"),
-  });
-
   const skipWeek = trpc.checkIn.skipWeek.useMutation({
     onSuccess: () => {
       toast.success("Week skipped");
@@ -148,38 +402,7 @@ export default function CheckInsSection() {
     onError: () => toast.error("Failed to skip week"),
   });
 
-  const unskipWeek = trpc.checkIn.unskipWeek.useMutation({
-    onSuccess: () => {
-      toast.success("Skip removed");
-      utils.checkIn.clientStatusList.invalidate();
-      utils.checkIn.clientOccurrences.invalidate();
-    },
-    onError: () => toast.error("Failed to remove skip"),
-  });
-
-  const [expandedCheckIns, setExpandedCheckIns] = useState<Set<number>>(new Set());
-
-  // Mark as seen in localStorage when client's check-ins load
-  useEffect(() => {
-    if (!selectedId || clientCheckIns.length === 0) return;
-    const latest = clientCheckIns.reduce((a: any, b: any) =>
-      new Date(b.submittedAt).getTime() > new Date(a.submittedAt).getTime() ? b : a
-    );
-    const seenAt = new Date((latest as any).submittedAt ?? Date.now()).getTime();
-    localStorage.setItem(`coach:seen:checkin:${selectedId}`, String(seenAt));
-    window.dispatchEvent(new StorageEvent("storage", { key: `coach:seen:checkin:${selectedId}` }));
-  }, [selectedId, clientCheckIns]);
-
   const selectedClient = clients.find((c) => c.id === selectedId);
-
-  // Build a map from weekStartDate -> submission for the right panel
-  const submissionByWeek = new Map<string, any>();
-  for (const ci of clientCheckIns) {
-    const wsd = typeof (ci as any).weekStartDate === "string"
-      ? (ci as any).weekStartDate.slice(0, 10)
-      : new Date((ci as any).weekStartDate).toISOString().slice(0, 10);
-    submissionByWeek.set(wsd, ci);
-  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4">
@@ -234,7 +457,6 @@ export default function CheckInsSection() {
                     </span>
                   )}
                 </div>
-                {/* Status sub-line */}
                 {status === "overdue" || status === "due_today" ? (
                   <div className="flex items-center gap-1.5">
                     <p className="text-xs text-amber-400 font-medium">
@@ -275,222 +497,13 @@ export default function CheckInsSection() {
 
       {/* Right: check-in history */}
       {selectedId ? (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between mb-1">
+        <div>
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-foreground">
               {selectedClient?.name ?? `User ${selectedId}`}
             </h2>
-            <span className="text-xs text-muted-foreground">
-              {clientCheckIns.length} check-in{clientCheckIns.length !== 1 ? "s" : ""}
-            </span>
           </div>
-
-          {/* Upcoming / open occurrence banner */}
-          {(() => {
-            const upcoming = (clientOccurrences as any[]).find(
-              (o: any) => o.status === "upcoming" || o.status === "open" || o.status === "due_today"
-            );
-            if (!upcoming) return null;
-            return (
-              <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border text-xs ${
-                upcoming.status === "due_today"
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                  : upcoming.status === "open"
-                  ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
-                  : "bg-secondary border-border text-muted-foreground"
-              }`}>
-                <span>
-                  {upcoming.status === "due_today" ? "Due today" : upcoming.status === "open" ? "Open" : "Upcoming"} · Week of {fmtCheckInDate(upcoming.scheduledDate)}
-                </span>
-                {(upcoming.status === "open" || upcoming.status === "due_today") && (
-                  <button
-                    onClick={() => skipWeek.mutate({ clientId: selectedId!, weekStartDate: upcoming.scheduledDate })}
-                    disabled={skipWeek.isPending}
-                    className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded border border-border transition-colors disabled:opacity-50"
-                  >
-                    <SkipForward size={9} /> Skip
-                  </button>
-                )}
-              </div>
-            );
-          })()}
-
-          {clientCheckIns.length === 0 ? (
-            <div className="flex items-center justify-center h-24 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
-              No check-ins submitted yet
-            </div>
-          ) : (
-            clientCheckIns.map((ci: any) => {
-              const isExpanded = expandedCheckIns.has(ci.id);
-              const isReviewed = !!ci.reviewedAt;
-              const wsd = typeof ci.weekStartDate === "string"
-                ? ci.weekStartDate.slice(0, 10)
-                : new Date(ci.weekStartDate).toISOString().slice(0, 10);
-              const occurrence = (clientOccurrences as any[]).find((o: any) => o.scheduledDate === wsd);
-              const occStatus: CheckInStatus = occurrence?.status ?? "completed";
-
-              return (
-                <div
-                  key={ci.id}
-                  className={`border rounded-xl overflow-hidden bg-card transition-colors ${
-                    isReviewed ? "border-border/50 opacity-80" : "border-border"
-                  }`}
-                >
-                  {/* Header */}
-                  <button
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
-                    onClick={() =>
-                      setExpandedCheckIns(prev => {
-                        const next = new Set(prev);
-                        if (next.has(ci.id)) next.delete(ci.id);
-                        else next.add(ci.id);
-                        return next;
-                      })
-                    }
-                  >
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="text-sm font-semibold text-foreground">
-                        Week of {fmtCheckInDate(toLocalDateStr(ci.weekStartDate))}
-                      </span>
-                      <StatusBadge status={occStatus} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(ci.submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
-                      </span>
-                      <ChevronDown
-                        size={14}
-                        className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                      />
-                    </div>
-                  </button>
-
-                  {/* Expanded detail */}
-                  {isExpanded && (
-                    <div className="border-t border-border">
-                      {/* Full Q&A grouped by section */}
-                      {(() => {
-                        const BARRIER_LABEL: Record<string, string> = {
-                          no_issues: "No issues", hunger: "Hunger", cravings: "Cravings",
-                          social_events: "Social events", busy_time: "Busy / time constraints",
-                          poor_planning: "Poor planning", low_motivation: "Low motivation",
-                          travel_disruption: "Travel / disruption", other: "Other",
-                        };
-                        const ASSESSMENT_LABEL: Record<string, string> = {
-                          executed_exactly: "Executed exactly as planned",
-                          mostly_followed: "Mostly followed",
-                          inconsistent: "Inconsistent",
-                          didnt_follow: "Didn't follow the plan",
-                        };
-                        const sections = [
-                          {
-                            title: "Diet Execution",
-                            rows: [
-                              { q: "How often did you weigh all foods raw/uncooked with a digital scale?", val: ci.dietWeighedFoods },
-                              { q: "How often did you prepare meals exactly as written in your plan?", val: ci.dietMealPrepAccuracy },
-                              { q: "Excluding off-plan meals, how often did you eat/drink anything not in your plan?", val: ci.dietExtrasFrequency },
-                              { q: "When cooking, how do you use added fats (oil, butter)?", val: ci.dietAddedFats },
-                              { q: "How often did you eat meals more than 2 hours off schedule?", val: ci.dietMealTiming },
-                              { q: "When you had an off-plan meal, how close was it to your plan in calories/macros?", val: ci.dietOffPlanQuality },
-                            ].filter(r => r.val),
-                          },
-                          {
-                            title: "Sleep",
-                            rows: [
-                              { q: "How often did you go to bed more than 1 hour later than your planned bedtime?", val: (ci as any).sleepBedtimeConsistency },
-                            ].filter(r => r.val),
-                          },
-                          {
-                            title: "Adherence Barrier",
-                            rows: [
-                              { q: "What was your biggest barrier to adherence this week?", val: ci.adherenceBarrier ? (BARRIER_LABEL[ci.adherenceBarrier] ?? ci.adherenceBarrier) : null, raw: true },
-                              ...(ci.barrierExplain ? [{ q: "Can you explain further?", val: ci.barrierExplain, raw: true }] : []),
-                            ].filter(r => r.val),
-                          },
-                          {
-                            title: "Weekly Self-Assessment",
-                            rows: [
-                              { q: "Overall, how well did you follow your plan this week?", val: ci.weeklyAssessment ? (ASSESSMENT_LABEL[ci.weeklyAssessment] ?? ci.weeklyAssessment) : null, raw: true },
-                            ].filter(r => r.val),
-                          },
-                        ].filter(s => s.rows.length > 0);
-
-                        if (sections.length === 0) return null;
-                        return (
-                          <div className="px-4 pt-3 pb-1 space-y-4">
-                            {sections.map(section => (
-                              <div key={section.title}>
-                                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{section.title}</p>
-                                <div className="space-y-3">
-                                  {section.rows.map((row, i) => (
-                                    <div key={i} className="space-y-0.5">
-                                      <p className="text-xs text-muted-foreground">{row.q}</p>
-                                      <p className="text-sm text-foreground font-medium">
-                                        {(row as any).raw ? row.val : (DIET_LABEL_MAP[(row.val as string)!] ?? row.val)}
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      })()}
-
-                      {/* Actions */}
-                      <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between gap-2">
-                        <button
-                          onClick={() => markReviewed.mutate({ id: ci.id, reviewed: !isReviewed })}
-                          disabled={markReviewed.isPending}
-                          className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
-                            isReviewed
-                              ? "border-border text-muted-foreground hover:text-foreground"
-                              : "border-green-500/40 text-green-400 hover:bg-green-500/10"
-                          }`}
-                        >
-                          {isReviewed ? "Mark as Incomplete" : "Mark as Complete"}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm("Delete this check-in? This cannot be undone.")) {
-                              deleteCheckIn.mutate({ id: ci.id });
-                            }
-                          }}
-                          disabled={deleteCheckIn.isPending}
-                          className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-
-          {/* Skipped occurrences */}
-          {(() => {
-            const skipped = (clientOccurrences as any[]).filter((o: any) => o.status === "skipped");
-            if (skipped.length === 0) return null;
-            return (
-              <div className="mt-2 space-y-1">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1">Skipped Weeks</p>
-                {skipped.map((o: any) => (
-                  <div key={o.scheduledDate} className="flex items-center justify-between px-4 py-2 rounded-xl border border-border/50 bg-secondary/30 text-xs text-muted-foreground">
-                    <span>Week of {fmtCheckInDate(o.scheduledDate)}</span>
-                    <button
-                      onClick={() => unskipWeek.mutate({ clientId: selectedId!, weekStartDate: o.scheduledDate })}
-                      disabled={unskipWeek.isPending}
-                      className="text-[10px] hover:text-foreground transition-colors disabled:opacity-50"
-                    >
-                      Undo skip
-                    </button>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
+          <CheckInsDetailPanel clientId={selectedId} />
         </div>
       ) : (
         <div className="flex items-center justify-center h-40 text-sm text-muted-foreground border border-dashed border-border rounded-xl">

@@ -18,7 +18,6 @@ import {
   Utensils,
   X,
   Zap,
-  CalendarCheck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation, useSearch } from "wouter";
@@ -40,7 +39,6 @@ const clientNav: NavItem[] = [
 
 const coachNav: NavItem[] = [
   { href: "/coach/clients",          label: "Clients",          icon: <Users size={18} /> },
-  { href: "/coach/check-ins",        label: "Check-ins",        icon: <CalendarCheck size={18} /> },
   { href: "/coach/training",         label: "Training Programs", icon: <Dumbbell size={18} /> },
   { href: "/coach/meal-plans",       label: "Meal Plans",        icon: <Zap size={18} /> },
   { href: "/coach/progress",         label: "Client Progress",   icon: <TrendingUp size={18} /> },
@@ -292,7 +290,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                       {pendingCount}
                     </span>
                   )}
-                  {item.href === "/coach/check-ins" && checkInsAttentionCount > 0 && (
+                  {item.href === "/coach/progress" && checkInsAttentionCount > 0 && (
                     <span className="ml-auto flex-shrink-0 min-w-[18px] h-4 px-1 rounded-full bg-primary text-black text-[10px] font-bold flex items-center justify-center">
                       {checkInsAttentionCount}
                     </span>

@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { Trash2, Users, Eye } from "lucide-react";
-import CheckInsSection from "./coach/CheckInsSection";
 import ExerciseLibrarySection from "./coach/ExerciseLibrarySection";
 import NutritionDataSection from "./coach/NutritionDataSection";
 import HabitsSection from "./coach/HabitsSection";
@@ -288,7 +287,6 @@ function ClientsSection() {
 
 const SECTION_MAP: Record<string, () => React.ReactNode> = {
   clients: () => <SectionErrorBoundary sectionName="Clients"><ClientsSection /></SectionErrorBoundary>,
-  "check-ins": () => <SectionErrorBoundary sectionName="Check-ins"><CheckInsSection /></SectionErrorBoundary>,
   training: () => <SectionErrorBoundary sectionName="Training Programs"><TrainingSection /></SectionErrorBoundary>,
   "meal-plans": () => <SectionErrorBoundary sectionName="Meal Plans"><MealPlansSection /></SectionErrorBoundary>,
   progress: () => <SectionErrorBoundary sectionName="Client Progress"><ProgressSection /></SectionErrorBoundary>,
@@ -298,7 +296,6 @@ const SECTION_MAP: Record<string, () => React.ReactNode> = {
 };
 const SECTION_TITLES: Record<string, string> = {
   clients: "Clients",
-  "check-ins": "Check-ins",
   training: "Training Programs",
   "meal-plans": "Meal Plans",
   progress: "Client Progress",
