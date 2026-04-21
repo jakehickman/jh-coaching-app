@@ -1120,7 +1120,7 @@ export default function ProgressSection() {
                     : `${trainedInRotation} sessions completed`}
                 />
                 <ProgCard
-                  label="Off-Plan Days"
+                  label="Off Plan Meals"
                   value={String(offPlanTotal7)}
                   sub={offPlanTotal7 === 0 ? "All on-plan" : `${offPlanTotal7} day${offPlanTotal7 > 1 ? 's' : ''} off-plan`}
                 />
