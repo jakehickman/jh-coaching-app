@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
@@ -187,9 +187,24 @@ function PresetSelector({
   const deleteMutation = trpc.equipmentPresets.delete.useMutation({
     onSuccess: () => utils.equipmentPresets.list.invalidate({ exerciseName }),
   });
+  const renameMutation = trpc.equipmentPresets.rename.useMutation({
+    onSuccess: (_data, vars) => {
+      utils.equipmentPresets.list.invalidate({ exerciseName });
+      // If the renamed preset was selected, update the parent selection to the new name
+      if (currentPreset === renamingFrom) {
+        onSelectPreset(vars.newName, currentSettings || null);
+      }
+      setRenamingId(null);
+      setRenamingFrom("");
+      setRenameValue("");
+    },
+  });
 
-  // Expose upsert so parent can call it via onSaveNewPreset / onSettingsBlur
-  // We intercept those callbacks here and call the mutation directly
+  // Rename state — local to this component
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renamingFrom, setRenamingFrom] = useState("");
+  const [renameValue, setRenameValue] = useState("");
+
   const handleSaveNewPreset = (name: string) => {
     upsertMutation.mutate({ exerciseName, presetName: name });
     onSaveNewPreset(name);
@@ -201,10 +216,43 @@ function PresetSelector({
 
   const selectedPresetObj = (presetList as any[]).find((p: any) => p.presetName === currentPreset);
 
+  const startRename = (preset: any) => {
+    setRenamingId(preset.id);
+    setRenamingFrom(preset.presetName);
+    setRenameValue(preset.presetName);
+  };
+  const commitRename = () => {
+    const trimmed = renameValue.trim();
+    if (!trimmed || !renamingId) { setRenamingId(null); return; }
+    renameMutation.mutate({ id: renamingId, newName: trimmed });
+  };
+
   return (
     <div className="mb-3 -mt-1 space-y-2">
       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Machine</p>
-      {!isAddingNew ? (
+      {renamingId !== null ? (
+        /* ── Rename mode ── */
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={renameValue}
+            onChange={e => setRenameValue(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") setRenamingId(null); }}
+            autoFocus
+            className="flex-1 bg-secondary border border-primary rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <button
+            onClick={commitRename}
+            disabled={renameMutation.isPending}
+            className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50"
+          >Save</button>
+          <button
+            onClick={() => setRenamingId(null)}
+            className="px-3 py-2 bg-secondary text-muted-foreground rounded-lg text-sm"
+          >Cancel</button>
+        </div>
+      ) : !isAddingNew ? (
+        /* ── Normal select mode ── */
         <div className="space-y-1.5">
           <div className="flex gap-2">
             <select
@@ -227,22 +275,32 @@ function PresetSelector({
               <option value="__new__">+ Add new machine</option>
             </select>
             {selectedPresetObj && (
-              <button
-                onClick={() => {
-                  if (confirm(`Delete "${selectedPresetObj.presetName}"?`)) {
-                    onDeletePreset(selectedPresetObj.id, selectedPresetObj.presetName);
-                    deleteMutation.mutate({ id: selectedPresetObj.id });
-                  }
-                }}
-                title="Delete this machine preset"
-                className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-red-400 transition-colors flex-shrink-0"
-              >
-                <Trash2 size={14} />
-              </button>
+              <>
+                <button
+                  onClick={() => startRename(selectedPresetObj)}
+                  title="Rename this machine preset"
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Delete "${selectedPresetObj.presetName}"?`)) {
+                      onDeletePreset(selectedPresetObj.id, selectedPresetObj.presetName);
+                      deleteMutation.mutate({ id: selectedPresetObj.id });
+                    }
+                  }}
+                  title="Delete this machine preset"
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-red-400 transition-colors flex-shrink-0"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </>
             )}
           </div>
         </div>
       ) : (
+        /* ── Add new mode ── */
         <div className="flex gap-2">
           <input
             type="text"
@@ -261,7 +319,7 @@ function PresetSelector({
           >Cancel</button>
         </div>
       )}
-      {currentPreset && (
+      {currentPreset && renamingId === null && (
         <>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Settings</p>
           <input

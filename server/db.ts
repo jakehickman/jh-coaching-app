@@ -1082,3 +1082,11 @@ export async function deleteEquipmentPreset(userId: number, id: number) {
   if (!db) return;
   await db.delete(equipmentPresets).where(and(eq(equipmentPresets.id, id), eq(equipmentPresets.userId, userId)));
 }
+
+export async function renameEquipmentPreset(userId: number, id: number, newName: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(equipmentPresets)
+    .set({ presetName: newName })
+    .where(and(eq(equipmentPresets.id, id), eq(equipmentPresets.userId, userId)));
+}

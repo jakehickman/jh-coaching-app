@@ -100,6 +100,9 @@ export const equipmentPresetsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(({ ctx, input }) => db.deleteEquipmentPreset(ctx.user.id, input.id)),
+  rename: protectedProcedure
+    .input(z.object({ id: z.number(), newName: z.string().min(1) }))
+    .mutation(({ ctx, input }) => db.renameEquipmentPreset(ctx.user.id, input.id, input.newName)),
 });
 
 export const exerciseLibraryRouter = router({
