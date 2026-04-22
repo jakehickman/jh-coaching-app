@@ -1121,7 +1121,10 @@ function WorkoutLogTab() {
                   const dateStr = (() => { const d = new Date(toLocalDateStr(s.sessionDate) + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); })();
                   return (
                     <div key={s.id} className="bg-secondary rounded-xl px-4 py-3 space-y-1.5">
-                      <p className="text-xs font-semibold text-foreground">{dateStr}</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold text-foreground">{dateStr}</p>
+                        <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">Day {s.dayLabel}</span>
+                      </div>
                       {(exEntry.machinePreset || exEntry.equipmentDetails) && (
                         <p className="text-xs text-muted-foreground">{exEntry.machinePreset ?? exEntry.equipmentDetails}</p>
                       )}
