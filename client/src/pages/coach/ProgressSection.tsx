@@ -927,6 +927,13 @@ export default function ProgressSection() {
   const [, navigate] = useLocation();
 
   const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
+  const [activeTab, setActiveTab] = useState(urlTab);
+  const [focusWeekNumber, setFocusWeekNumber] = useState<number | null>(null);
+
+  function handleWeekClick(weekNumber: number) {
+    setFocusWeekNumber(weekNumber);
+    setActiveTab("check-ins");
+  }
 
   // Sync URL clientId into selector once clients load
   const [urlSynced, setUrlSynced] = useState(false);
@@ -1108,7 +1115,7 @@ export default function ProgressSection() {
       </div>
 
       {selectedUserId && (
-          <Tabs defaultValue={urlTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== "check-ins") setFocusWeekNumber(null); }} className="w-full">
                <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
@@ -1118,7 +1125,7 @@ export default function ProgressSection() {
           <TabsContent value="overview">
             <div className="space-y-6">
               <SectionLabel>Weekly Review</SectionLabel>
-              <WeeklyReviewTab clientId={selectedUserId!} />
+              <WeeklyReviewTab clientId={selectedUserId!} onWeekClick={handleWeekClick} />
               <CoachHabitsPanel clientId={selectedUserId!} />
               {(logs ?? []).length > 0 && (
                 <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
@@ -1141,7 +1148,7 @@ export default function ProgressSection() {
             </div>
           </TabsContent>
           <TabsContent value="check-ins">
-            <CheckInsDetailPanel clientId={selectedUserId!} />
+            <CheckInsDetailPanel clientId={selectedUserId!} focusWeekNumber={focusWeekNumber} />
           </TabsContent>
 
         </Tabs>

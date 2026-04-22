@@ -7,6 +7,7 @@ import { AlertCircle } from "lucide-react";
 
 interface Props {
   clientId: number;
+  onWeekClick?: (weekNumber: number) => void;
 }
 
 type Week = {
@@ -122,7 +123,7 @@ function ValueDeltaCell({
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-export function WeeklyReviewTab({ clientId }: Props) {
+export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
   const [showAll, setShowAll] = useState(false);
 
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
@@ -224,7 +225,10 @@ export function WeeklyReviewTab({ clientId }: Props) {
               return (
                 <tr
                   key={week.weekStart}
+                  onClick={onWeekClick ? () => onWeekClick(week.weekNumber) : undefined}
                   className={`border-b border-border/50 last:border-0 transition-colors ${
+                    onWeekClick ? "cursor-pointer" : ""
+                  } ${
                     week.isInProgress
                       ? "bg-amber-500/5 hover:bg-amber-500/10"
                       : !hasData

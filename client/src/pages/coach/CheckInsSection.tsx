@@ -269,9 +269,10 @@ function WeeklyDataSummary({ clientId, weekStartDate }: { clientId: number; week
 // Reusable detail panel for a single client's check-in cycle and history.
 // Used both in the standalone CheckInsSection and as a sub-tab in ProgressSection.
 
-export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
+export function CheckInsDetailPanel({ clientId, focusWeekNumber }: { clientId: number; focusWeekNumber?: number | null }) {
   const utils = trpc.useUtils();
   const [historyExpanded, setHistoryExpanded] = useState<Set<number>>(new Set());
+  const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const { data: currentCycle, isLoading: cycleLoading } =
     trpc.checkIn.clientCurrentCycle.useQuery({ clientId }, { enabled: !!clientId });
@@ -303,6 +304,19 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
     localStorage.setItem(`coach:seen:checkin:${clientId}`, String(seenAt));
     window.dispatchEvent(new StorageEvent("storage", { key: `coach:seen:checkin:${clientId}` }));
   }, [clientId, currentCycle?.submissionId]);
+
+  // Auto-expand and scroll to the history card matching focusWeekNumber
+  useEffect(() => {
+    if (focusWeekNumber == null || (history as any[]).length === 0) return;
+    const row = (history as any[]).find((r: any) => r.weekNumber === focusWeekNumber);
+    if (!row) return;
+    setHistoryExpanded(prev => { const next = new Set(prev); next.add(row.id); return next; });
+    // Scroll after a short delay to let the DOM update
+    setTimeout(() => {
+      const el = cardRefs.current.get(row.id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  }, [focusWeekNumber, (history as any[]).length]);
 
   if (cycleLoading) {
     return <div className="text-sm text-muted-foreground py-6 text-center">Loading…</div>;
@@ -407,7 +421,7 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
             const isExpanded = historyExpanded.has(row.id);
             const hasSub = !!row.submission;
             return (
-              <div key={row.id} className="border border-border rounded-xl overflow-hidden bg-card">
+              <div key={row.id} ref={(el) => { if (el) cardRefs.current.set(row.id, el); else cardRefs.current.delete(row.id); }} className="border border-border rounded-xl overflow-hidden bg-card">
                 <button
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
                   onClick={() =>
@@ -435,6 +449,12 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
                     }`}>
                       {hasSub ? "Submitted" : "Missed"}
                     </span>
+                    {hasSub && row.submission.reviewedAt && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full border bg-primary/10 text-primary border-primary/20 flex items-center gap-1">
+                        <CheckCircle2 size={10} />
+                        Reviewed
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">
