@@ -705,7 +705,7 @@ function ExerciseProgressTab({
   }
 
   // Build per-exercise history (chronological)
-  const exerciseHistory: Record<string, Array<{ date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }>; substitutedFor?: string; equipmentDetails?: string; machinePreset?: string; machineSettings?: string }>> = {};
+  const exerciseHistory: Record<string, Array<{ date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }>; substitutedFor?: string; equipmentDetails?: string | null; machinePreset?: string | null; machineSettings?: string | null }>> = {};
   for (const session of [...workoutSessions].reverse()) {
     const dateStr = toLocalDateStr(session.sessionDate);
     for (const ex of (session.exercises as any[])) {
@@ -723,7 +723,7 @@ function ExerciseProgressTab({
         if (sw === bw && (s.reps ?? 0) > (best.reps ?? 0)) return s;
         return best;
       }, null);
-      exerciseHistory[ex.name].push({ date: dateStr, topSet, allSets: sets, substitutedFor: ex.substitutedFor ?? undefined, equipmentDetails: ex.equipmentDetails ?? undefined, machinePreset: ex.machinePreset ?? undefined, machineSettings: ex.machineSettings ?? undefined });
+      exerciseHistory[ex.name].push({ date: dateStr, topSet, allSets: sets, substitutedFor: ex.substitutedFor ?? undefined, equipmentDetails: ex.equipmentDetails ?? null, machinePreset: ex.machinePreset ?? null, machineSettings: ex.machineSettings ?? null });
     }
   }
 
@@ -846,8 +846,8 @@ function ExerciseProgressTab({
                       const weightStr = w != null ? `${w} kg` : '—';
                       const repsStr = r != null ? ` × ${r}` : '';
                       // Show preset name only when single-preset (multi-preset uses filter above)
-                      const presetStr = presets.length <= 1 && (entry.machinePreset || entry.equipmentDetails)
-                        ? (entry.machinePreset ?? entry.equipmentDetails)
+                      const presetStr = presets.length <= 1
+                        ? (entry.machinePreset || entry.equipmentDetails || null)
                         : null;
                       const detailParts = presetStr ?? '';
                       return (
