@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { AlertCircle, ArrowUp, ArrowDown, Minus, ChevronDown } from "lucide-react";
 
 interface Props {
   clientId: number;
@@ -99,6 +99,9 @@ function Tile({ label, value, muted, delta, deltaText, higherIsBetter }: TilePro
 
 export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
   const [showAll, setShowAll] = useState(false);
+  // Set of expanded week starts; initialised once data loads
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [expandedInit, setExpandedInit] = useState(false);
 
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
     { clientId },
@@ -129,6 +132,25 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
 
   const weeks = data?.weeks ?? [];
 
+  // Initialise: expand the first two weeks (current + previous) once
+  useEffect(() => {
+    if (expandedInit || weeks.length === 0) return;
+    const toExpand = new Set<string>();
+    if (weeks[0]) toExpand.add(weeks[0].weekStart);
+    if (weeks[1]) toExpand.add(weeks[1].weekStart);
+    setExpanded(toExpand);
+    setExpandedInit(true);
+  }, [weeks.length, expandedInit]);
+
+  function toggleCard(weekStart: string) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(weekStart)) next.delete(weekStart);
+      else next.add(weekStart);
+      return next;
+    });
+  }
+
   if (weeks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -144,6 +166,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
     <div className="mt-2 space-y-2">
       {visibleWeeks.map((week, idx) => {
         const hasData = week.daysLogged > 0;
+        const isExpanded = expanded.has(week.weekStart);
         const prev: Week | null = weeks[idx + 1] ?? null;
         const d = (curr: number | null, p: number | null) =>
           curr != null && p != null ? +(curr - p).toFixed(2) : null;
@@ -157,19 +180,20 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         return (
           <div
             key={week.weekStart}
-            onClick={onWeekClick ? () => onWeekClick(week.weekNumber) : undefined}
-            className={`rounded-xl border p-4 transition-colors ${
-              onWeekClick ? "cursor-pointer" : ""
-            } ${
+            className={`rounded-xl border transition-colors ${
               week.isInProgress
-                ? "border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10"
+                ? "border-amber-500/40 bg-amber-500/5"
                 : !hasData
                 ? "border-border bg-card opacity-50"
-                : "border-border bg-card hover:bg-muted/20"
+                : "border-border bg-card"
             }`}
           >
-            {/* Card header */}
-            <div className="flex items-center justify-between mb-3">
+            {/* Card header — always visible, click to collapse/expand */}
+            <button
+              className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors rounded-xl ${
+                week.isInProgress ? "hover:bg-amber-500/10" : "hover:bg-muted/20"            }`}
+              onClick={() => toggleCard(week.weekStart)}
+            >
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
                   W{week.weekNumber}
@@ -181,14 +205,21 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                   </Badge>
                 )}
               </div>
-              <span className="text-[11px] text-muted-foreground">
-                {hasData ? `${week.daysLogged} day${week.daysLogged !== 1 ? "s" : ""} logged` : "No data"}
-              </span>
-            </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-muted-foreground">
+                  {hasData ? `${week.daysLogged} day${week.daysLogged !== 1 ? "s" : ""} logged` : "No data"}
+                </span>
+                <ChevronDown size={14} className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+              </div>
+            </button>
 
-            {/* Metrics grid */}
-            {hasData ? (
-              <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-x-4 gap-y-3">
+            {/* Metrics grid — only visible when expanded */}
+            {isExpanded && hasData ? (
+              <div
+                className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-x-4 gap-y-3 px-4 pb-4"
+                onClick={onWeekClick ? (e) => { e.stopPropagation(); onWeekClick(week.weekNumber); } : undefined}
+                style={onWeekClick ? { cursor: 'pointer' } : undefined}
+              >
                 {/* Body Composition */}
                 <Tile
                   label="Weight"
@@ -266,9 +297,9 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                   higherIsBetter={true}
                 />
               </div>
-            ) : (
-              <p className="text-xs text-muted-foreground italic">No daily logs recorded this week.</p>
-            )}
+            ) : isExpanded && !hasData ? (
+              <p className="text-xs text-muted-foreground italic px-4 pb-4">No daily logs recorded this week.</p>
+            ) : null}
           </div>
         );
       })}
