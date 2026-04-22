@@ -724,26 +724,31 @@ function WorkoutLogTab() {
       {selectedDay && (() => {
         const dayDef = days.find(d => d.label === selectedDay);
 
-        const prevSession = [...sessions]
+        // All past sessions for this day, newest first
+        const pastSessions = [...sessions]
           .filter(s => s.dayLabel === selectedDay && toLocalDateStr(s.sessionDate) < sessionDate)
-          .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)))[0];
+          .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)));
+        // For last-performance we look up per exercise name across all past sessions.
+        // A substitution's sets should NOT count as last performance for the original exercise
+        // (different movement / load range). We only record an entry for the name under which
+        // the exercise was actually performed (ex.name), never under ex.substitutedFor.
         const prevExMap: Record<string, Array<{ weight: number | null; reps: number | null }>> = {};
         const prevMachinePresetMap: Record<string, string> = {};
-        if (prevSession) {
-          for (const ex of (prevSession.exercises as any[])) {
-            const filteredSets = (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null);
-            // Index by the saved name (may be a substitution)
-            prevExMap[ex.name] = filteredSets;
-            // Also index by the original exercise name so last performance shows
-            // even when the previous session used a substitution for that exercise.
-            if (ex.substitutedFor) prevExMap[ex.substitutedFor] = filteredSets;
+        for (const s of pastSessions) {
+          for (const ex of (s.exercises as any[])) {
+            // Only record the first (most recent) occurrence for each name
+            if (!(ex.name in prevExMap)) {
+              const filteredSets = (ex.sets ?? []).filter((set: any) => set.weight != null || set.reps != null);
+              prevExMap[ex.name] = filteredSets;
+            }
             const preset = ex.machinePreset || ex.equipmentDetails || null;
-            if (preset) {
+            if (preset && !(ex.name in prevMachinePresetMap)) {
               prevMachinePresetMap[ex.name] = preset;
-              if (ex.substitutedFor) prevMachinePresetMap[ex.substitutedFor] = preset;
             }
           }
         }
+        // Keep a reference to the single most recent session for prev-note lookups
+        const prevSession = pastSessions[0] ?? null;
 
         return (
           <div className="space-y-3">
