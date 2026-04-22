@@ -162,10 +162,10 @@ export function WeeklyReviewTab({ clientId }: Props) {
               <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Training
               </th>
-              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
+              <th colSpan={2} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Nutrition
               </th>
-              <th colSpan={4} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
+              <th colSpan={3} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Recovery
               </th>
               <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
@@ -180,8 +180,8 @@ export function WeeklyReviewTab({ clientId }: Props) {
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Skinfold (mm)</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sessions</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Off-Plan</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Hunger /5</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Sleep Qual /5</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Hunger /5</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sleep Qual /5</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Sleep Hrs</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Caffeine (srv)</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Steps</th>
@@ -283,21 +283,21 @@ export function WeeklyReviewTab({ clientId }: Props) {
                     borderLeft
                   />
 
-                  {/* Hunger */}
+                  {/* Hunger — in Nutrition group, no border-left (follows Off-Plan) */}
                   <StackedCell
                     value={fmt(week.avgHunger, 1)}
                     delta={d(week.avgHunger, prev?.avgHunger ?? null)}
                     higherIsBetter={false}
                     muted={week.avgHunger == null}
-                    borderLeft
                   />
 
-                  {/* Sleep Quality */}
+                  {/* Sleep Quality — first col in Recovery group */}
                   <StackedCell
                     value={fmt(week.avgSleepQuality, 1)}
                     delta={d(week.avgSleepQuality, prev?.avgSleepQuality ?? null)}
                     higherIsBetter={true}
                     muted={week.avgSleepQuality == null}
+                    borderLeft
                   />
 
                   {/* Sleep Hours */}
