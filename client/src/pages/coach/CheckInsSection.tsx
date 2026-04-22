@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -116,6 +116,51 @@ function SubmissionQA({ sub }: { sub: any }) {
   );
 }
 
+// ─── CoachNotesField ─────────────────────────────────────────────────────────
+// Auto-saving textarea for coach notes on a submission.
+
+function CoachNotesField({ submissionId, initialNotes }: { submissionId: number; initialNotes: string | null | undefined }) {
+  const [value, setValue] = useState(initialNotes ?? "");
+  const [saved, setSaved] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveNotes = trpc.checkIn.saveCoachNotes.useMutation({
+    onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 2000); },
+    onError: () => toast.error("Failed to save notes"),
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setValue(e.target.value);
+    setSaved(false);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveNotes.mutate({ submissionId, notes: e.target.value });
+    }, 1200);
+  };
+
+  const handleBlur = () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveNotes.mutate({ submissionId, notes: value });
+  };
+
+  return (
+    <div className="px-4 py-3 border-t border-border/50 space-y-1.5">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Coach Notes</p>
+        {saved && <span className="text-[10px] text-green-400">Saved</span>}
+        {saveNotes.isPending && <span className="text-[10px] text-muted-foreground">Saving…</span>}
+      </div>
+      <textarea
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder="Add feedback, program adjustments, or observations…"
+        rows={3}
+        className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 transition-colors"
+      />
+    </div>
+  );
+}
+
 // ─── CheckInsDetailPanel ─────────────────────────────────────────────────────
 // Reusable detail panel for a single client's check-in cycle and history.
 // Used both in the standalone CheckInsSection and as a sub-tab in ProgressSection.
@@ -228,6 +273,7 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
           </div>
           <SubmissionQA sub={submission} />
           {/* Mark reviewed */}
+          <CoachNotesField submissionId={(submission as any).id} initialNotes={(submission as any).coachNotes} />
           <div className="px-4 py-3 border-t border-border/50">
             <button
               onClick={() => markReviewed.mutate({ id: (submission as any).id, reviewed: !(submission as any).reviewedAt })}
@@ -296,6 +342,7 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
                 {isExpanded && hasSub && (
                   <div className="border-t border-border">
                     <SubmissionQA sub={row.submission} />
+                    <CoachNotesField submissionId={row.submission.id} initialNotes={row.submission.coachNotes} />
                     <div className="px-4 py-3 border-t border-border/50">
                       <button
                         onClick={() => markReviewed.mutate({ id: row.submission.id, reviewed: !row.submission.reviewedAt })}

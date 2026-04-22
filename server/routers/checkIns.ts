@@ -201,6 +201,16 @@ export const checkInRouter = router({
     .input(z.object({ id: z.number(), reviewed: z.boolean() }))
     .mutation(({ input }) => db.markCheckInReviewed(input.id, input.reviewed)),
 
+  /**
+   * COACH: Save notes for a specific check-in submission.
+   */
+  saveCoachNotes: adminProcedure
+    .input(z.object({ submissionId: z.number(), notes: z.string() }))
+    .mutation(async ({ input }) => {
+      await db.saveCheckInCoachNotes(input.submissionId, input.notes);
+      return { success: true };
+    }),
+
   // ─── Legacy procedures (kept for backward compatibility) ──────────────────
 
   /** @deprecated Use myCurrentCycle instead */

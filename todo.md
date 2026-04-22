@@ -456,3 +456,12 @@
 - [x] UI: replace expandable-rows table with compact always-visible horizontal table (one row per week, one column per metric)
 - [x] UI: show week number + date range in row header, amber badge for in-progress week
 - [x] UI: inline delta % chips (colour-coded) for weight, waist, skinfold, steps
+
+## Client Progress Tab Restructure (Apr 2026)
+- [x] Add coachNotes column to check_in_submissions table and migrate DB
+- [x] Add saveCoachNotes tRPC procedure (notes returned inline via existing submission queries)
+- [x] Update CheckInsDetailPanel to show inline coach notes field per submission
+- [x] Merge Training + Exercise Progress into single Training tab
+- [x] Build Body Composition tab (weight trend + skinfold trend + measurement history)
+- [x] Update ProgressSection tabs: Overview / Body Composition / Training / Check-ins
+- [x] Remove standalone Coaching Notes tab from ProgressSection

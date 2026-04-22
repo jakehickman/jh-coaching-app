@@ -450,11 +450,12 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
   weeklyAssessment: mysqlEnum("weeklyAssessment", ["executed_exactly","mostly_followed","inconsistent","didnt_follow"]),
   // Coach review status
   reviewedAt: timestamp("reviewedAt"),
+  // Coach notes — feedback and program adjustments tied to this submission
+  coachNotes: text("coachNotes"),
   submittedAt: timestamp("submittedAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
-export type CheckInSubmission = typeof checkInSubmissions.$inferSelect;
+export type CheckInSubmission = typeof checkInSubmissions.$inferSelect;;
 export type InsertCheckInSubmission = typeof checkInSubmissions.$inferInsert;
 
 // Equipment presets — per user per exercise, saved machine names + last-used settings

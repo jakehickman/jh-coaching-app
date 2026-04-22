@@ -18,7 +18,7 @@ import { CheckInsDetailPanel } from "./CheckInsSection";
 import { WeeklyReviewTab } from "./WeeklyReviewTab";
 
 // ─── Measurements Tab ────────────────────────────────────────────────────────
-function MeasurementsTab({ measurements }: { measurements: any[] }) {
+function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: any[] }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const sorted = [...measurements].sort((a, b) =>
@@ -98,11 +98,22 @@ function MeasurementsTab({ measurements }: { measurements: any[] }) {
     };
   });
 
-  if (sorted.length === 0) {
+  // Build weight trend data from daily logs (oldest first, last 60 days)
+  const weightData = [...(logs ?? [])]
+    .filter((l: any) => l.weight != null)
+    .sort((a: any, b: any) => toLocalDateStr(a.logDate).localeCompare(toLocalDateStr(b.logDate)))
+    .map((l: any) => {
+      const iso = toLocalDateStr(l.logDate);
+      const [, mo, d] = iso.split('-');
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return { date: `${parseInt(d)} ${months[parseInt(mo)-1]}`, weight: l.weight };
+    });
+
+  if (sorted.length === 0 && weightData.length === 0) {
     return (
       <div className="bg-card border border-border rounded-xl p-8 text-center">
         <Ruler className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-        <p className="text-sm text-muted-foreground">No measurements recorded yet.</p>
+        <p className="text-sm text-muted-foreground">No body composition data recorded yet.</p>
       </div>
     );
   }
@@ -116,6 +127,27 @@ function MeasurementsTab({ measurements }: { measurements: any[] }) {
 
   return (
     <div className="space-y-5">
+      {/* Weight trend chart */}
+      {weightData.length > 1 && (
+        <div>
+          <SectionLabel>Weight Trend (kg)</SectionLabel>
+          <div className="bg-card border border-border rounded-xl p-4">
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={weightData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                <XAxis dataKey="date" tick={{ fill: '#666', fontSize: 10 }} interval="preserveStartEnd" />
+                <YAxis tick={{ fill: '#666', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
+                <Tooltip
+                  contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 8 }}
+                  labelStyle={{ color: '#fff' }}
+                  formatter={(v: number) => [`${v} kg`, 'Weight']}
+                />
+                <Area type="monotone" dataKey="weight" stroke="#3b82f6" fill="#3b82f622" strokeWidth={2} dot={{ r: 2, fill: '#3b82f6' }} connectNulls />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
       {/* Site-by-site trend chart */}
       {trendData.length > 1 && (
         <div>
@@ -1112,44 +1144,37 @@ export default function ProgressSection() {
 
       {selectedUserId && (
           <Tabs defaultValue={urlTab} className="w-full">
-          <TabsList className="mb-4">
+               <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="measurements">Measurements</TabsTrigger>
-            <TabsTrigger value="sessions">Training</TabsTrigger>
-            <TabsTrigger value="exercise">Exercise Progress</TabsTrigger>
-            <TabsTrigger value="notes">Coaching Notes</TabsTrigger>
+            <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
+            <TabsTrigger value="training">Training</TabsTrigger>
             <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
           </TabsList>
-
           <TabsContent value="overview">
-          <div className="space-y-6">
-          <SectionLabel>Weekly Review</SectionLabel>
-          <WeeklyReviewTab clientId={selectedUserId!} />
-
-          <CoachHabitsPanel clientId={selectedUserId!} />
-
-          {(logs ?? []).length > 0 && (
-            <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
-          )}
-          </div>
+            <div className="space-y-6">
+              <SectionLabel>Weekly Review</SectionLabel>
+              <WeeklyReviewTab clientId={selectedUserId!} />
+              <CoachHabitsPanel clientId={selectedUserId!} />
+              {(logs ?? []).length > 0 && (
+                <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
+              )}
+            </div>
           </TabsContent>
-
-          <TabsContent value="measurements">
-            <MeasurementsTab measurements={measurements ?? []} />
+          <TabsContent value="body-comp">
+            <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
           </TabsContent>
-
-          <TabsContent value="exercise">
-            <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
+          <TabsContent value="training">
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Session Log</p>
+                <WorkoutSessionsTab workoutSessions={workoutSessions} />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Exercise Progress</p>
+                <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
+              </div>
+            </div>
           </TabsContent>
-
-          <TabsContent value="sessions">
-            <WorkoutSessionsTab workoutSessions={workoutSessions} />
-          </TabsContent>
-
-          <TabsContent value="notes">
-            <CoachingNotesTab clientId={selectedUserId!} />
-          </TabsContent>
-
           <TabsContent value="check-ins">
             <CheckInsDetailPanel clientId={selectedUserId!} />
           </TabsContent>
