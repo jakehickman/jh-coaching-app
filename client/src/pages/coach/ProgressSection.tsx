@@ -534,9 +534,13 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
             {isOpen && (
               <div className="px-4 pb-4 border-t border-border/50 space-y-4 pt-3">
                 {exercises.map((ex: any, i: number) => {
-                  const completedSets = (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null);
+                  const allSets: any[] = ex.sets ?? [];
+                  const totalSets = allSets.length;
+                  const completedSets = allSets.filter((s: any) => s.completed || s.weight != null || s.reps != null);
                   const firstSet = completedSets.find((s: any) => s.weight != null || s.reps != null) ?? completedSets[0];
                   const machineName = ex.machinePreset ?? ex.equipmentDetails ?? null;
+                  const isPartial = completedSets.length > 0 && totalSets > 0 && completedSets.length < totalSets;
+                  const isSkipped = completedSets.length === 0 && totalSets > 0;
                   return (
                     <div key={i} className="flex items-baseline gap-2 flex-wrap">
                       <p className="text-sm font-medium text-foreground shrink-0">{ex.name}</p>
@@ -546,9 +550,15 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                       {completedSets.length > 0 && firstSet ? (
                         <span className="text-xs text-muted-foreground">
                           {firstSet.weight != null ? `${firstSet.weight}kg` : '—'} × {firstSet.reps != null ? firstSet.reps : '—'}
-                          <span className="text-muted-foreground/50 ml-1">· {completedSets.length} set{completedSets.length !== 1 ? 's' : ''}</span>
+                          {isPartial ? (
+                            <span className="text-amber-400/80 ml-1">· {completedSets.length}/{totalSets} sets</span>
+                          ) : (
+                            <span className="text-muted-foreground/50 ml-1">· {completedSets.length} set{completedSets.length !== 1 ? 's' : ''}</span>
+                          )}
                           {machineName && <span className="text-muted-foreground/40 ml-1">· {machineName}</span>}
                         </span>
+                      ) : isSkipped ? (
+                        <span className="text-xs text-amber-400/80">0/{totalSets} sets — skipped</span>
                       ) : (
                         <span className="text-xs text-amber-400/70">incomplete</span>
                       )}
