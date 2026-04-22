@@ -265,7 +265,7 @@ function CheckInsTabContent() {
       {shouldShowForm && currentCycle && (
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-            Check-in Form — Due {fmtDate(dueDate)}
+            {currentCycle?.weekNumber != null ? `Week ${currentCycle.weekNumber} · ` : ""}Check-in Form — Due {fmtDate(dueDate)}
           </p>
           <Card className="space-y-0 divide-y divide-border mb-4">
             {/* Diet Execution */}
@@ -437,7 +437,14 @@ function CheckInsTabContent() {
             {(history as any[]).map((row: any) => (
               <Card key={row.id} className="opacity-80">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-foreground">Due {fmtDate(row.dueDate)}</p>
+                  <div className="flex items-center gap-2">
+                    {row.weekNumber != null && (
+                      <span className="text-xs font-semibold text-primary/80 bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full">
+                        W{row.weekNumber}
+                      </span>
+                    )}
+                    <p className="text-sm font-semibold text-foreground">Due {fmtDate(row.dueDate)}</p>
+                  </div>
                   <div className="flex items-center gap-2">
                     {row.submission?.reviewedAt && (
                       <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full border bg-green-500/15 text-green-400 border-green-500/30">

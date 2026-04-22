@@ -89,6 +89,11 @@ export const checkInRouter = router({
     }
 
     const profile = await db.getClientProfile(ctx.user.id);
+    const weekNumber = computeWeekNumber(
+      profile?.startDate ? toDateStr(profile.startDate) : null,
+      profile?.checkInDay ?? null,
+      dueDateStr,
+    );
     return {
       id: cycle.id,
       dueDate: dueDateStr,
@@ -96,6 +101,7 @@ export const checkInRouter = router({
       submissionId: cycle.submissionId ?? null,
       submission,
       checkInDay: profile?.checkInDay ?? null,
+      weekNumber,
     };
   }),
 
@@ -104,13 +110,22 @@ export const checkInRouter = router({
    */
   myHistory: protectedProcedure.query(async ({ ctx }) => {
     const rows = await db.getCycleHistory(ctx.user.id);
-    return rows.map(r => ({
-      id: r.id,
-      dueDate: toDateStr(r.dueDate),
-      completedAt: r.completedAt,
-      submissionId: r.submissionId ?? null,
-      submission: r.submission,
-    }));
+    const profile = await db.getClientProfile(ctx.user.id);
+    return rows.map(r => {
+      const dueDateStr = toDateStr(r.dueDate);
+      return {
+        id: r.id,
+        dueDate: dueDateStr,
+        completedAt: r.completedAt,
+        submissionId: r.submissionId ?? null,
+        submission: r.submission,
+        weekNumber: computeWeekNumber(
+          profile?.startDate ? toDateStr(profile.startDate) : null,
+          profile?.checkInDay ?? null,
+          dueDateStr,
+        ),
+      };
+    });
   }),
 
   /**

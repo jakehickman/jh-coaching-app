@@ -498,9 +498,9 @@ export default function CheckInsSection() {
     (u: any) => u.role !== "admin" || u.id === currentUser?.id
   );
 
-  const getClientStatus = (clientId: number): { status: CycleStatus; dueDate: string | null } => {
+  const getClientStatus = (clientId: number): { status: CycleStatus; dueDate: string | null; weekNumber: number | null } => {
     const entry = (statusList as any[]).find((s: any) => s.clientId === clientId);
-    return { status: entry?.status ?? "upcoming", dueDate: entry?.dueDate ?? null };
+    return { status: entry?.status ?? "upcoming", dueDate: entry?.dueDate ?? null, weekNumber: entry?.weekNumber ?? null };
   };
 
   // Sort: overdue first, then submitted (awaiting review), then upcoming
@@ -522,7 +522,7 @@ export default function CheckInsSection() {
       <div className="space-y-1">
         {sortedClients.filter((c) => c.id !== undefined).map((client) => {
           const isSelected = selectedId === client.id;
-          const { status, dueDate } = getClientStatus(client.id);
+          const { status, dueDate, weekNumber } = getClientStatus(client.id);
 
           const p = (clientProfiles as any[]).find((x: any) => x.userId === client.id);
           const day = p?.checkInDay as string | undefined;
@@ -568,13 +568,13 @@ export default function CheckInsSection() {
                 </div>
                 {status === "overdue" ? (
                   <p className="text-xs text-amber-400 font-medium">
-                    {dueDate ? `Overdue · was due ${new Date(dueDate + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}` : "Overdue"}
+                    {weekNumber != null ? `W${weekNumber} · ` : ""}{dueDate ? `Overdue · was due ${new Date(dueDate + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}` : "Overdue"}
                   </p>
                 ) : status === "submitted" ? (
-                  <p className="text-xs text-green-400 font-medium">Submitted · awaiting review</p>
+                  <p className="text-xs text-green-400 font-medium">{weekNumber != null ? `W${weekNumber} · ` : ""}Submitted · awaiting review</p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    {dueDate ? `Due ${new Date(dueDate + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}` : "No check-in scheduled"}
+                    {weekNumber != null ? `W${weekNumber} · ` : ""}{dueDate ? `Due ${new Date(dueDate + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}` : "No check-in scheduled"}
                   </p>
                 )}
               </div>
