@@ -39,22 +39,64 @@ function fmt(val: number | null | undefined, decimals = 1): string {
   return val.toFixed(decimals);
 }
 
-// ─── Numeric cell — right-aligned, fixed font for vertical alignment ─────────
+function fmtDelta(d: number, decimals = 1): string {
+  const sign = d > 0 ? "+" : "";
+  return `${sign}${d.toFixed(decimals)}`;
+}
 
-interface NumCellProps {
-  children: React.ReactNode;
+function deltaColor(d: number, higherIsBetter: boolean | null): string {
+  if (higherIsBetter === null) return "text-muted-foreground";
+  if (higherIsBetter) return d > 0 ? "text-green-400" : d < 0 ? "text-red-400" : "text-muted-foreground";
+  return d < 0 ? "text-green-400" : d > 0 ? "text-red-400" : "text-muted-foreground";
+}
+
+// ─── Stacked cell: main value on top, small delta below ──────────────────────
+
+interface StackedCellProps {
+  /** Formatted main value string */
+  value: string;
+  /** Raw numeric delta (curr - prev). null = no prev week. undefined = no chip. */
+  delta?: number | null;
+  /** Formatted delta string override */
+  deltaText?: string;
+  /** true = higher is better, false = lower is better, null = neutral */
+  higherIsBetter?: boolean | null;
+  /** Dim the main value (no data) */
   muted?: boolean;
   borderLeft?: boolean;
 }
 
-function NumCell({ children, muted, borderLeft }: NumCellProps) {
+function StackedCell({
+  value,
+  delta,
+  deltaText,
+  higherIsBetter = null,
+  muted,
+  borderLeft,
+}: StackedCellProps) {
+  const showDelta = delta !== undefined; // undefined = never show delta row
+  const hasDelta = delta != null && !isNaN(delta);
+  const color = hasDelta ? deltaColor(delta!, higherIsBetter) : "text-muted-foreground";
+  const text = hasDelta
+    ? (deltaText ?? fmtDelta(delta!, 1))
+    : "—";
+
   return (
     <td
-      className={`px-3 py-2.5 text-right text-sm tabular-nums whitespace-nowrap
-        ${muted ? "text-muted-foreground" : "text-foreground"}
-        ${borderLeft ? "border-l border-border/30" : ""}`}
+      className={`px-3 py-2 text-right text-sm tabular-nums whitespace-nowrap align-top
+        ${borderLeft ? "border-l border-border/30" : ""}
+      `}
     >
-      {children}
+      {/* Main value */}
+      <div className={muted ? "text-muted-foreground" : "text-foreground"}>
+        {value}
+      </div>
+      {/* Delta row — always rendered when showDelta, keeps row height consistent */}
+      {showDelta && (
+        <div className={`text-[10px] leading-tight mt-0.5 ${color}`}>
+          {text}
+        </div>
+      )}
     </td>
   );
 }
@@ -73,7 +115,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
     return (
       <div className="space-y-2 mt-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-10 w-full bg-muted rounded-md" />
+          <Skeleton key={i} className="h-12 w-full bg-muted rounded-md" />
         ))}
       </div>
     );
@@ -134,8 +176,8 @@ export function WeeklyReviewTab({ clientId }: Props) {
             <tr className="border-b border-border bg-muted/10">
               <th className="px-3 py-1.5 sticky left-0 bg-muted/10 z-10" />
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Avg Wt (kg)</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Wt Δ%</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Waist (cm)</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Skinfold (mm)</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sessions</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Off-Plan</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Caffeine (srv)</th>
@@ -146,8 +188,13 @@ export function WeeklyReviewTab({ clientId }: Props) {
             </tr>
           </thead>
           <tbody>
-            {visibleWeeks.map((week) => {
+            {visibleWeeks.map((week, idx) => {
+              const prev: Week | null = weeks[idx + 1] ?? null;
               const hasData = week.daysLogged > 0;
+
+              // Helper: delta or null if either value is missing
+              const d = (curr: number | null, p: number | null) =>
+                curr != null && p != null ? curr - p : null;
 
               return (
                 <tr
@@ -178,58 +225,113 @@ export function WeeklyReviewTab({ clientId }: Props) {
                     </div>
                   </td>
 
-                  {/* Avg Weight */}
-                  <NumCell muted={!hasData || week.avgWeight == null} borderLeft>
-                    {fmt(week.avgWeight, 1)}
-                  </NumCell>
-
-                  {/* Weight % change */}
-                  <NumCell muted={week.avgWeightPct == null}>
-                    {week.avgWeightPct != null
-                      ? `${week.avgWeightPct > 0 ? "+" : ""}${week.avgWeightPct.toFixed(2)}%`
-                      : "—"}
-                  </NumCell>
+                  {/* Avg Weight — delta shown as % change */}
+                  <StackedCell
+                    value={fmt(week.avgWeight, 1)}
+                    delta={week.avgWeightPct}
+                    deltaText={
+                      week.avgWeightPct != null
+                        ? `${week.avgWeightPct > 0 ? "+" : ""}${week.avgWeightPct.toFixed(2)}%`
+                        : undefined
+                    }
+                    higherIsBetter={null}
+                    muted={!hasData || week.avgWeight == null}
+                    borderLeft
+                  />
 
                   {/* Waist */}
-                  <NumCell muted={week.avgWaist == null}>
-                    {fmt(week.avgWaist, 1)}
-                  </NumCell>
+                  <StackedCell
+                    value={fmt(week.avgWaist, 1)}
+                    delta={d(week.avgWaist, prev?.avgWaist ?? null)}
+                    higherIsBetter={false}
+                    muted={week.avgWaist == null}
+                  />
+
+                  {/* Skinfold */}
+                  <StackedCell
+                    value={fmt(week.avgSkinfold, 1)}
+                    delta={d(week.avgSkinfold, prev?.avgSkinfold ?? null)}
+                    higherIsBetter={false}
+                    muted={week.avgSkinfold == null}
+                  />
 
                   {/* Sessions */}
-                  <NumCell muted={!hasData} borderLeft>
-                    {week.sessionsCompleted}
-                  </NumCell>
+                  <StackedCell
+                    value={String(week.sessionsCompleted)}
+                    delta={d(week.sessionsCompleted, prev?.sessionsCompleted ?? null)}
+                    deltaText={
+                      prev != null
+                        ? fmtDelta(week.sessionsCompleted - prev.sessionsCompleted, 0)
+                        : undefined
+                    }
+                    higherIsBetter={true}
+                    muted={!hasData}
+                    borderLeft
+                  />
 
                   {/* Off-Plan */}
-                  <NumCell muted={week.totalOffPlan == null} borderLeft>
-                    {week.totalOffPlan != null ? week.totalOffPlan : "—"}
-                  </NumCell>
+                  <StackedCell
+                    value={week.totalOffPlan != null ? String(week.totalOffPlan) : "—"}
+                    delta={d(week.totalOffPlan, prev?.totalOffPlan ?? null)}
+                    deltaText={
+                      prev?.totalOffPlan != null && week.totalOffPlan != null
+                        ? fmtDelta(week.totalOffPlan - prev.totalOffPlan, 0)
+                        : undefined
+                    }
+                    higherIsBetter={false}
+                    muted={week.totalOffPlan == null}
+                    borderLeft
+                  />
 
-                  {/* Caffeine */}
-                  <NumCell muted={week.avgCaffeine == null}>
-                    {fmt(week.avgCaffeine, 1)}
-                  </NumCell>
+                  {/* Caffeine — no delta (neutral metric) */}
+                  <StackedCell
+                    value={fmt(week.avgCaffeine, 1)}
+                    muted={week.avgCaffeine == null}
+                  />
 
                   {/* Hunger */}
-                  <NumCell muted={week.avgHunger == null} borderLeft>
-                    {fmt(week.avgHunger, 1)}
-                  </NumCell>
+                  <StackedCell
+                    value={fmt(week.avgHunger, 1)}
+                    delta={d(week.avgHunger, prev?.avgHunger ?? null)}
+                    higherIsBetter={false}
+                    muted={week.avgHunger == null}
+                    borderLeft
+                  />
 
                   {/* Sleep Quality */}
-                  <NumCell muted={week.avgSleepQuality == null}>
-                    {fmt(week.avgSleepQuality, 1)}
-                  </NumCell>
+                  <StackedCell
+                    value={fmt(week.avgSleepQuality, 1)}
+                    delta={d(week.avgSleepQuality, prev?.avgSleepQuality ?? null)}
+                    higherIsBetter={true}
+                    muted={week.avgSleepQuality == null}
+                  />
 
                   {/* Sleep Hours */}
-                  <NumCell muted={week.avgSleepHours == null}>
-                    {fmt(week.avgSleepHours, 1)}
-                  </NumCell>
+                  <StackedCell
+                    value={fmt(week.avgSleepHours, 1)}
+                    delta={d(week.avgSleepHours, prev?.avgSleepHours ?? null)}
+                    higherIsBetter={true}
+                    muted={week.avgSleepHours == null}
+                  />
 
                   {/* Avg Steps */}
-                  <td className="px-3 py-2.5 text-right text-sm tabular-nums whitespace-nowrap border-l border-border/30">
-                    <span className={week.avgSteps != null ? "text-foreground" : "text-muted-foreground"}>
+                  <td className="px-3 py-2 text-right text-sm tabular-nums whitespace-nowrap border-l border-border/30 align-top">
+                    <div className={week.avgSteps != null ? "text-foreground" : "text-muted-foreground"}>
                       {week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—"}
-                    </span>
+                    </div>
+                    {/* Delta */}
+                    {(() => {
+                      const stepDelta = d(week.avgSteps, prev?.avgSteps ?? null);
+                      const color = stepDelta != null ? deltaColor(stepDelta, true) : "text-muted-foreground";
+                      const text = stepDelta != null
+                        ? `${stepDelta > 0 ? "+" : ""}${Math.round(stepDelta).toLocaleString()}`
+                        : "—";
+                      return (
+                        <div className={`text-[10px] leading-tight mt-0.5 ${color}`}>
+                          {text}
+                        </div>
+                      );
+                    })()}
                     {week.stepGoal != null && (
                       <div className="text-[10px] text-muted-foreground mt-0.5">
                         goal {week.stepGoal.toLocaleString()}
