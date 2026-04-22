@@ -308,8 +308,18 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
           ? log.trainingType
           : (trained ? 'Training' : 'Rest');
 
+        // Determine left-border accent colour
+        const hasOffPlan = hasData && (log.offPlanMeals ?? 0) > 0;
+        const borderAccent = !hasData
+          ? 'border-l-border'
+          : hasOffPlan
+          ? 'border-l-amber-500/70'
+          : trained
+          ? 'border-l-primary/70'
+          : 'border-l-border/40';
+
         return (
-          <div key={iso} className="bg-card border border-border rounded-xl overflow-hidden">
+          <div key={iso} className={`bg-card border border-border border-l-4 ${borderAccent} rounded-xl overflow-hidden`}>
             {/* Summary row */}
             <button
               onClick={() => hasData && setExpandedId(isExpanded ? null : iso)}
@@ -1124,9 +1134,17 @@ export default function ProgressSection() {
           </TabsList>
           <TabsContent value="overview">
             <div className="space-y-6">
-              <SectionLabel>Weekly Review</SectionLabel>
-              <WeeklyReviewTab clientId={selectedUserId!} onWeekClick={handleWeekClick} />
-              <CoachHabitsPanel clientId={selectedUserId!} />
+              {/* Top 2-column grid: Weekly Review (left) + Habit Adherence (right) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <div>
+                  <SectionLabel>Weekly Review</SectionLabel>
+                  <WeeklyReviewTab clientId={selectedUserId!} onWeekClick={handleWeekClick} />
+                </div>
+                <div>
+                  <CoachHabitsPanel clientId={selectedUserId!} />
+                </div>
+              </div>
+              {/* Full-width: Recent Daily Logs */}
               {(logs ?? []).length > 0 && (
                 <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
               )}

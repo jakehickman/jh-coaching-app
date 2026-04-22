@@ -110,8 +110,6 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
                 <p className="text-sm font-semibold text-foreground">{h.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {h.frequency === "daily" ? "Daily" : `${h.targetDays}x/week`}
-                  {" · "}
-                  {h.pct28}% last 28 days
                   {h.streak > 0 ? ` · ${h.streak}-day streak` : ""}
                 </p>
               </div>
