@@ -177,25 +177,22 @@ function CheckInsTabContent() {
       case "upcoming":
         return {
           icon: "📅",
-          text: checkInDay
-            ? `Your check-in day is ${checkInDay}. Your next check-in is due ${fmtDate(dueDate)}.`
-            : `Your next check-in is due ${fmtDate(dueDate)}.`,
+          heading: checkInDay ? `Your check-in day is ${checkInDay}` : `Your next check-in`,
+          subtext: `Your next check-in is due ${fmtDate(dueDate)}.`,
           className: "bg-card border-border text-foreground"
         };
       case "overdue":
         return {
           icon: "⚠️",
-          text: checkInDay
-            ? `Your check-in day is ${checkInDay}. Your check-in was due ${fmtDate(dueDate)} — please submit as soon as possible.`
-            : `Your check-in was due ${fmtDate(dueDate)} — please submit as soon as possible.`,
+          heading: checkInDay ? `Your check-in day is ${checkInDay}` : `Check-in overdue`,
+          subtext: `Your check-in was due ${fmtDate(dueDate)} — please submit as soon as possible.`,
           className: "bg-amber-500/10 border-amber-500/30 text-amber-400"
         };
       case "submitted":
         return {
           icon: "✓",
-          text: checkInDay
-            ? `Your check-in day is ${checkInDay}. Check-in submitted for ${fmtDate(dueDate)}.`
-            : `Check-in submitted for ${fmtDate(dueDate)}.`,
+          heading: checkInDay ? `Your check-in day is ${checkInDay}` : `Check-in submitted`,
+          subtext: `Check-in submitted for ${fmtDate(dueDate)}.`,
           className: "bg-green-500/10 border-green-500/30 text-green-400"
         };
       default:
@@ -226,7 +223,8 @@ function CheckInsTabContent() {
           <div className="flex items-start gap-3">
             <span className="text-lg mt-0.5">{statusBanner.icon}</span>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{statusBanner.text}</p>
+              <p className="text-sm font-semibold text-foreground">{statusBanner.heading}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{statusBanner.subtext}</p>
             </div>
             {cycleStatus === "submitted" && !isEditing && (
               <button onClick={() => setIsEditing(true)} className="text-xs text-primary hover:opacity-80 font-medium flex-shrink-0">
