@@ -994,6 +994,16 @@ export async function saveCheckInCoachNotes(submissionId: number, notes: string)
     .where(eq(checkInSubmissions.id, submissionId));
 }
 
+// Coach: save changes-made notes on a check-in submission
+export async function saveCheckInChangesNotes(submissionId: number, notes: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(checkInSubmissions)
+    .set({ changesNotes: notes, updatedAt: new Date() })
+    .where(eq(checkInSubmissions.id, submissionId));
+}
+
 // Coach: get the most recent check-in week for each client (for indicator badges)
 export async function getLatestCheckInPerClient(): Promise<{ clientId: number; weekStartDate: string; submittedAt: Date; reviewedAt: Date | null }[]> {
   const db = await getDb();

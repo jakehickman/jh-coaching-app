@@ -452,6 +452,8 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
   reviewedAt: timestamp("reviewedAt"),
   // Coach notes — feedback and program adjustments tied to this submission
   coachNotes: text("coachNotes"),
+  // Changes made — free-text record of meal plan / training adjustments after review
+  changesNotes: text("changesNotes"),
   submittedAt: timestamp("submittedAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

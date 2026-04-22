@@ -211,6 +211,16 @@ export const checkInRouter = router({
       return { success: true };
     }),
 
+  /**
+   * COACH: Save changes-made notes for a specific check-in submission.
+   */
+  saveChangesNotes: adminProcedure
+    .input(z.object({ submissionId: z.number(), notes: z.string() }))
+    .mutation(async ({ input }) => {
+      await db.saveCheckInChangesNotes(input.submissionId, input.notes);
+      return { success: true };
+    }),
+
   // ─── Legacy procedures (kept for backward compatibility) ──────────────────
 
   /** @deprecated Use myCurrentCycle instead */

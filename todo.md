@@ -465,3 +465,11 @@
 - [x] Build Body Composition tab (weight trend + skinfold trend + measurement history)
 - [x] Update ProgressSection tabs: Overview / Body Composition / Training / Check-ins
 - [x] Remove standalone Coaching Notes tab from ProgressSection
+
+## Check-in Review Integration (Apr 2026)
+- [x] Add changesNotes column to check_in_submissions schema and apply migration
+- [x] Add saveChangesNotes tRPC procedure to checkIns router
+- [x] Add saveChangesNotes db helper to db.ts
+- [x] Fetch matching weeklyReview row for the submission week in CheckInsDetailPanel
+- [x] Add "This Week's Data" compact summary grid to CheckInsDetailPanel
+- [x] Add "Changes Made" auto-saving free-text field to CheckInsDetailPanel

@@ -161,6 +161,110 @@ function CoachNotesField({ submissionId, initialNotes }: { submissionId: number;
   );
 }
 
+// ─── ChangesNotesField ───────────────────────────────────────────────────────
+// Auto-saving textarea for coach's "Changes Made" notes on a submission.
+
+function ChangesNotesField({ submissionId, initialNotes }: { submissionId: number; initialNotes: string | null | undefined }) {
+  const [value, setValue] = useState(initialNotes ?? "");
+  const [saved, setSaved] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveNotes = trpc.checkIn.saveChangesNotes.useMutation({
+    onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 2000); },
+    onError: () => toast.error("Failed to save changes"),
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setValue(e.target.value);
+    setSaved(false);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveNotes.mutate({ submissionId, notes: e.target.value });
+    }, 1200);
+  };
+
+  const handleBlur = () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveNotes.mutate({ submissionId, notes: value });
+  };
+
+  return (
+    <div className="px-4 py-3 border-t border-border/50 space-y-1.5">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Changes Made</p>
+        {saved && <span className="text-[10px] text-green-400">Saved</span>}
+        {saveNotes.isPending && <span className="text-[10px] text-muted-foreground">Saving…</span>}
+      </div>
+      <textarea
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder="Record any adjustments made to meal plan, training, or other changes…"
+        rows={3}
+        className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 transition-colors"
+      />
+    </div>
+  );
+}
+
+// ─── WeeklyDataSummary ────────────────────────────────────────────────────────
+// Compact read-only grid showing the weekly review data for a specific week.
+
+function WeeklyDataSummary({ clientId, weekStartDate }: { clientId: number; weekStartDate: string }) {
+  const { data, isLoading } = trpc.progress.weeklyReview.useQuery(
+    { clientId },
+    { enabled: !!clientId, staleTime: 60_000 }
+  );
+
+  if (isLoading) {
+    return <div className="px-4 py-3 border-t border-border/50 text-xs text-muted-foreground">Loading week data…</div>;
+  }
+
+  // Find the week whose weekStart matches the submission's dueDate (check-in week)
+  const week = data?.weeks?.find((w: any) => w.weekStart === weekStartDate || w.weekEnd === weekStartDate);
+
+  if (!week) {
+    return null; // No data for this week — don't show the section
+  }
+
+  const fmt = (v: number | null | undefined, dp = 1) =>
+    v != null ? v.toFixed(dp) : "—";
+
+  const fmtK = (v: number | null | undefined) => {
+    if (v == null) return "—";
+    return v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(Math.round(v));
+  };
+
+  const metrics = [
+    { label: "Weight", value: week.avgWeight != null ? `${fmt(week.avgWeight)} kg${week.avgWeightPct != null ? ` (${week.avgWeightPct > 0 ? "+" : ""}${week.avgWeightPct}%)` : ""}` : "—" },
+    { label: "Waist", value: week.avgWaist != null ? `${fmt(week.avgWaist)} cm` : "—" },
+    { label: "Skinfold", value: week.avgSkinfold != null ? `${fmt(week.avgSkinfold)} mm` : "—" },
+    { label: "Sessions", value: fmt(week.sessionsCompleted, 0) },
+    { label: "Off-Plan", value: week.totalOffPlan != null ? `${week.totalOffPlan} meals` : "—" },
+    { label: "Hunger", value: fmt(week.avgHunger) },
+    { label: "Sleep Qual", value: fmt(week.avgSleepQuality) },
+    { label: "Sleep Hrs", value: fmt(week.avgSleepHours) },
+    { label: "Caffeine", value: fmt(week.avgCaffeine) },
+    { label: "Steps", value: fmtK(week.avgSteps) + (week.stepGoal ? ` / ${fmtK(week.stepGoal)}` : "") },
+  ];
+
+  return (
+    <div className="px-4 py-3 border-t border-border/50 space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">This Week's Data</p>
+        <span className="text-[10px] text-muted-foreground">{week.daysLogged} day{week.daysLogged !== 1 ? "s" : ""} logged</span>
+      </div>
+      <div className="grid grid-cols-5 gap-x-3 gap-y-2">
+        {metrics.map(m => (
+          <div key={m.label}>
+            <p className="text-[10px] text-muted-foreground leading-none mb-0.5">{m.label}</p>
+            <p className="text-xs font-medium text-foreground tabular-nums">{m.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── CheckInsDetailPanel ─────────────────────────────────────────────────────
 // Reusable detail panel for a single client's check-in cycle and history.
 // Used both in the standalone CheckInsSection and as a sub-tab in ProgressSection.
@@ -272,8 +376,9 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
             </p>
           </div>
           <SubmissionQA sub={submission} />
-          {/* Mark reviewed */}
+          <WeeklyDataSummary clientId={clientId} weekStartDate={dueDate} />
           <CoachNotesField submissionId={(submission as any).id} initialNotes={(submission as any).coachNotes} />
+          <ChangesNotesField submissionId={(submission as any).id} initialNotes={(submission as any).changesNotes} />
           <div className="px-4 py-3 border-t border-border/50">
             <button
               onClick={() => markReviewed.mutate({ id: (submission as any).id, reviewed: !(submission as any).reviewedAt })}
@@ -342,7 +447,9 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
                 {isExpanded && hasSub && (
                   <div className="border-t border-border">
                     <SubmissionQA sub={row.submission} />
+                    <WeeklyDataSummary clientId={clientId} weekStartDate={row.dueDate} />
                     <CoachNotesField submissionId={row.submission.id} initialNotes={row.submission.coachNotes} />
+                    <ChangesNotesField submissionId={row.submission.id} initialNotes={row.submission.changesNotes} />
                     <div className="px-4 py-3 border-t border-border/50">
                       <button
                         onClick={() => markReviewed.mutate({ id: row.submission.id, reviewed: !row.submission.reviewedAt })}
