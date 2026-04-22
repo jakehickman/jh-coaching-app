@@ -102,7 +102,7 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
   return (
     <div>
       <SectionLabel>Habit Adherence (4 Weeks)</SectionLabel>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {habitStats.map((h: any) => (
           <div key={h.id} className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
