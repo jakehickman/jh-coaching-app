@@ -20,7 +20,6 @@ import {
   nutritionFoodsRouter,
   onboardingRouter,
   clientConfigRouter,
-  progressRouter,
 } from "./routers/index";
 
 export const appRouter = router({
@@ -44,7 +43,6 @@ export const appRouter = router({
   nutritionFoods: nutritionFoodsRouter,
   onboarding: onboardingRouter,
   clientConfig: clientConfigRouter,
-  progress: progressRouter,
 });
 
 export type AppRouter = typeof appRouter;

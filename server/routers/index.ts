@@ -8,4 +8,3 @@ export { trainingRouter, mesoRouter, workoutSessionsRouter, exerciseLibraryRoute
 export { checkInRouter } from "./checkIns";
 export { habitsRouter } from "./habits";
 export { timelineRouter, notesRouter, nutritionFoodsRouter, onboardingRouter, clientConfigRouter } from "./misc";
-export { progressRouter } from "./progress";
