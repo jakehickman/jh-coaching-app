@@ -782,7 +782,7 @@ function ExerciseProgressTab({
               const presetsSeen = new Map<string, string>();
               for (const p of presetsRaw) { const key = p.toLowerCase(); if (!presetsSeen.has(key)) presetsSeen.set(key, p); }
               const presets = Array.from(presetsSeen.values());
-              const activeMachineFilter = presetFilter[name] ?? 'All';
+              const activeMachineFilter = presetFilter[name] ?? (presets.length > 1 ? presets[0] : 'All');
               const filteredHistory = activeMachineFilter === 'All'
                 ? history
                 : history.filter(e => (e.machinePreset ?? e.equipmentDetails) === activeMachineFilter);
@@ -811,7 +811,7 @@ function ExerciseProgressTab({
                   {/* Machine preset filter — only shown when multiple presets exist */}
                   {presets.length > 1 && (
                     <div className="flex flex-wrap gap-1 mb-3">
-                      {['All', ...presets].map(p => (
+                      {presets.map(p => (
                         <button
                           key={p}
                           onClick={() => setPresetFilter(prev => ({ ...prev, [name]: p }))}
