@@ -58,11 +58,12 @@ interface ClientCardProps {
   name: string;
   status: CycleStatus;
   dueDate: string | null;
+  weekNumber: number | null;
   cardClass: string;
   badgeClass: string;
 }
 
-function ClientCard({ clientId, name, status, dueDate, cardClass, badgeClass }: ClientCardProps) {
+function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, badgeClass }: ClientCardProps) {
   const [, navigate] = useLocation();
 
   function handleClick() {
@@ -82,13 +83,13 @@ function ClientCard({ clientId, name, status, dueDate, cardClass, badgeClass }: 
     upcoming: "Upcoming",
   };
 
-  const subtext = dueDate
-    ? status === "submitted"
-      ? `Due ${fmtDate(dueDate)}`
-      : status === "overdue"
+  const weekLabel = weekNumber != null ? `W${weekNumber}` : null;
+  const dateLabel = dueDate
+    ? status === "overdue"
       ? `Was due ${fmtDate(dueDate)}`
       : `Due ${fmtDate(dueDate)}`
     : null;
+  const subtext = [weekLabel, dateLabel].filter(Boolean).join(" · ") || null;
 
   return (
     <div
@@ -184,6 +185,7 @@ export default function CheckInsKanban() {
         name: nameMap.get(entry.clientId) ?? `Client ${entry.clientId}`,
         status,
         dueDate: entry.dueDate ?? null,
+        weekNumber: entry.weekNumber ?? null,
         cardClass: COLUMNS.find(c => c.id === status)!.cardClass,
         badgeClass: COLUMNS.find(c => c.id === status)!.badgeClass,
       });
