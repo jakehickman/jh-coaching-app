@@ -298,7 +298,7 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
   const isTrained = (v: unknown) => v === true || v === 1 || v === '1';
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
       {days.map((iso) => {
         const log = logMap[iso] ?? null;
         const isExpanded = expandedId === iso;
@@ -309,7 +309,7 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
           : (trained ? 'Training' : 'Rest');
 
         return (
-          <div key={iso} className="border-b border-border last:border-0">
+          <div key={iso} className="bg-card border border-border rounded-xl overflow-hidden">
             {/* Summary row */}
             <button
               onClick={() => hasData && setExpandedId(isExpanded ? null : iso)}
