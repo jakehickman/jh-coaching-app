@@ -174,10 +174,11 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         const isExpanded = expanded.has(week.weekStart);
         const prev: Week | null = weeks[idx + 1] ?? null;
 
+        const stepsAvg = week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—";
         const stepsValue = week.avgSteps != null
           ? (week.stepGoal != null
-            ? `${fmtK(Math.round(week.avgSteps))} / ${fmtK(week.stepGoal)}`
-            : fmtK(Math.round(week.avgSteps)))
+            ? `${stepsAvg}  ·  Goal: ${week.stepGoal.toLocaleString()}`
+            : stepsAvg)
           : "—";
 
         return (
@@ -256,8 +257,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                     <Tile
                       label="Sessions"
                       value={String(week.sessionsCompleted)}
-                      delta={d(week.sessionsCompleted, prev?.sessionsCompleted ?? null)}
-                      higherIsBetter={true}
                     />
                   </MetricGroup>
 
@@ -267,8 +266,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                       label="Off-Plan Meals"
                       value={week.totalOffPlan != null ? String(week.totalOffPlan) : "—"}
                       muted={week.totalOffPlan == null}
-                      delta={d(week.totalOffPlan, prev?.totalOffPlan ?? null)}
-                      higherIsBetter={false}
                     />
                   </MetricGroup>
 
@@ -285,8 +282,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                       label="Sleep Hours"
                       value={week.avgSleepHours != null ? `${fmt(week.avgSleepHours)} h` : "—"}
                       muted={week.avgSleepHours == null}
-                      delta={d(week.avgSleepHours, prev?.avgSleepHours ?? null)}
-                      higherIsBetter={true}
                     />
                     <Tile
                       label="Hunger"
@@ -299,8 +294,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                       label="Caffeine"
                       value={week.avgCaffeine != null ? `${fmt(week.avgCaffeine)} srv` : "—"}
                       muted={week.avgCaffeine == null}
-                      delta={d(week.avgCaffeine, prev?.avgCaffeine ?? null)}
-                      higherIsBetter={null}
                     />
                   </MetricGroup>
 
@@ -310,8 +303,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                       label="Steps"
                       value={stepsValue}
                       muted={week.avgSteps == null}
-                      delta={d(week.avgSteps, prev?.avgSteps ?? null)}
-                      higherIsBetter={true}
                     />
                   </MetricGroup>
                 </div>
