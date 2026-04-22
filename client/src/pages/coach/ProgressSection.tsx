@@ -14,7 +14,6 @@ import {
   MeasurementsCard, MuscleGroupSection, DailyLogRow, ProgressHistoryTable
 } from "./shared";
 import { CoachHabitsPanel } from "./HabitsSection";
-import { WeeklyReviewTab } from "./WeeklyReviewTab";
 import { CheckInsDetailPanel } from "./CheckInsSection";
 
 // ─── Measurements Tab ────────────────────────────────────────────────────────
@@ -1123,8 +1122,91 @@ export default function ProgressSection() {
 
           <TabsContent value="overview">
           <div className="space-y-6">
-          <WeeklyReviewTab clientId={selectedUserId!} />
+          {/* ── Desktop two-column: metrics left, chart+measurements right ── */}
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-5 items-start">
+            {/* Left: metric cards */}
+            <div>
+              <SectionLabel>7-Day Averages</SectionLabel>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                <ProgCard
+                  label="Weight"
+                  value={curAvgWeight != null ? `${curAvgWeight.toFixed(1)} kg` : "—"}
+                  sub={weightPct ? `${weightPct} vs prev 7 days` : undefined}
+                />
+                <ProgCard
+                  label="Training Adherence"
+                  value={trainingAdherence != null ? `${trainingAdherence}%` : "—"}
+                  sub={prescribedPerRotation != null
+                    ? `${trainedInRotation}/${prescribedPerRotation} sessions completed`
+                    : `${trainedInRotation} sessions completed`}
+                />
+                <ProgCard
+                  label="Off Plan Meals"
+                  value={String(offPlanTotal7)}
+                  sub={offPlanTotal7 === 0 ? "All on-plan" : `${offPlanTotal7} day${offPlanTotal7 > 1 ? 's' : ''} off-plan`}
+                />
+                <ProgCard
+                  label="Hunger"
+                  value={curAvgHunger != null ? `${curAvgHunger.toFixed(1)}/5` : "—"}
+                />
+                <ProgCard
+                  label="Sleep Quality"
+                  value={curAvgSleep != null ? `${curAvgSleep.toFixed(1)}/5` : "—"}
+                />
+                {curAvgSleepHours != null && (
+                  <ProgCard
+                    label="Sleep Hours"
+                    value={`${curAvgSleepHours.toFixed(1)} hrs`}
+                  />
+                )}
+                {curAvgCaffeine != null && (
+                  <ProgCard
+                    label="Caffeine"
+                    value={`${curAvgCaffeine.toFixed(1)} srv`}
+                    sub="1 srv ≈ 80–100 mg"
+                  />
+                )}
+                {(curAvgSteps != null || (clientProfile as any)?.stepGoal) && (
+                  <ProgCard
+                    label="Steps"
+                    value={curAvgSteps != null ? Math.round(curAvgSteps).toLocaleString() : "—"}
+                    sub={(clientProfile as any)?.stepGoal ? `Goal: ${((clientProfile as any).stepGoal as number).toLocaleString()}` : undefined}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Right: weight chart + measurements */}
+            <div className="space-y-4">
+              {weightData.length > 1 && (
+                <div>
+                  <SectionLabel>Weight Trend (last 14 entries)</SectionLabel>
+                  <Card>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <LineChart data={weightData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                        <XAxis dataKey="date" tick={{ fill: "#666", fontSize: 10 }} interval="preserveStartEnd" />
+                        <YAxis domain={["auto", "auto"]} tick={{ fill: "#666", fontSize: 10 }} width={36} />
+                        <Tooltip contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }} labelStyle={{ color: "#fff" }} itemStyle={{ color: "#22c55e" }} formatter={(v: number) => [`${v} kg`, "Weight"]} />
+                        <Line type="monotone" dataKey="weight" stroke="#22c55e" strokeWidth={2} dot={{ r: 3, fill: "#22c55e" }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </div>
+              )}
+
+            </div>
+          </div>
+
+          <ProgressHistoryTable
+            logs={allLogs}
+            measurements={measurements ?? []}
+            startDate={clientStartDate}
+            checkInDay={(clientProfile as any)?.checkInDay ?? null}
+          />
+
           <CoachHabitsPanel clientId={selectedUserId!} />
+
           {(logs ?? []).length > 0 && (
             <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
           )}
