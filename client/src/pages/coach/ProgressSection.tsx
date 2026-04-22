@@ -150,7 +150,7 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
       )}
       {/* Session cards */}
       <div>
-        <SectionLabel>All Measurements</SectionLabel>
+        <SectionLabel>Measurements</SectionLabel>
         <div className="space-y-2">
           {sorted.map((m, i) => {
             const iso = toLocalDateStr(m.measureDate);
