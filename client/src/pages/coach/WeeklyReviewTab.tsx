@@ -66,13 +66,14 @@ function Delta({ delta, text, higherIsBetter = null }: {
 
 // ─── Metric tile ─────────────────────────────────────────────────────────────
 
-function Tile({ label, value, muted, delta, deltaText, higherIsBetter }: {
+function Tile({ label, value, muted, delta, deltaText, higherIsBetter, subtext }: {
   label: string;
   value: string;
   muted?: boolean;
   delta?: number | null;
   deltaText?: string;
   higherIsBetter?: boolean | null;
+  subtext?: string;
 }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -81,6 +82,7 @@ function Tile({ label, value, muted, delta, deltaText, higherIsBetter }: {
         <span className={`text-sm font-bold tabular-nums ${muted ? "text-muted-foreground" : "text-foreground"}`}>{value}</span>
         {delta != null && <Delta delta={delta} text={deltaText} higherIsBetter={higherIsBetter} />}
       </div>
+      {subtext && <span className="text-[10px] text-muted-foreground/50 leading-none">{subtext}</span>}
     </div>
   );
 }
@@ -175,11 +177,8 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         const prev: Week | null = weeks[idx + 1] ?? null;
 
         const stepsAvg = week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—";
-        const stepsValue = week.avgSteps != null
-          ? (week.stepGoal != null
-            ? `${stepsAvg}  ·  Goal: ${week.stepGoal.toLocaleString()}`
-            : stepsAvg)
-          : "—";
+        const stepsValue = week.avgSteps != null ? stepsAvg : "—";
+        const stepsSubtext = week.stepGoal != null ? `Goal: ${week.stepGoal.toLocaleString()}` : undefined;
 
         return (
           <div
@@ -303,6 +302,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                       label="Steps"
                       value={stepsValue}
                       muted={week.avgSteps == null}
+                      subtext={stepsSubtext}
                     />
                   </MetricGroup>
                 </div>
