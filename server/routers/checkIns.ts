@@ -129,6 +129,36 @@ export const checkInRouter = router({
   }),
 
   /**
+   * CLIENT: Check whether the client has already submitted a check-in for the
+   * most recent occurrence of their check-in day (i.e. today, if today IS their
+   * check-in day).  This is used to hide the banner / dot even after the coach
+   * has reviewed and advanced the cycle (which resets status to 'upcoming').
+   */
+  myHasSubmittedThisWeek: protectedProcedure.query(async ({ ctx }) => {
+    const profile = await db.getClientProfile(ctx.user.id);
+    const checkInDay = profile?.checkInDay;
+    if (!checkInDay) return false;
+
+    const DAY_MAP: Record<string, number> = {
+      sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+      thursday: 4, friday: 5, saturday: 6,
+    };
+    const targetDow = DAY_MAP[checkInDay.toLowerCase()];
+    if (targetDow === undefined) return false;
+
+    // Compute the most recent occurrence of checkInDay (today if today IS that day)
+    const now = new Date();
+    const todayDow = now.getUTCDay();
+    const daysBack = (todayDow - targetDow + 7) % 7;
+    const checkInDate = new Date(now);
+    checkInDate.setUTCDate(now.getUTCDate() - daysBack);
+    const checkInDateStr = checkInDate.toISOString().slice(0, 10);
+
+    const submission = await db.getCheckInForWeek(ctx.user.id, checkInDateStr);
+    return submission !== null;
+  }),
+
+  /**
    * CLIENT: Submit a check-in for the current cycle.
    * Uses the cycle's dueDate as the weekStartDate for the submission record.
    */

@@ -271,8 +271,13 @@ export default function OverviewTab() {
     { enabled: isCheckInDay && !!viewAsUserId, staleTime: 0 }
   );
   const currentCycle = viewAsUserId ? clientCycleAdmin : currentCycleOwn;
-  // Banner hides as soon as the cycle is submitted — staleTime:0 ensures fresh data on every mount
-  const alreadySubmittedThisWeek = currentCycle?.status === "submitted";
+  // Also check via a direct submission lookup — covers the case where the coach has already
+  // reviewed and advanced the cycle (resetting status to 'upcoming') on the same day.
+  const { data: hasSubmittedThisWeek } = trpc.checkIn.myHasSubmittedThisWeek.useQuery(
+    undefined,
+    { enabled: isCheckInDay && !viewAsUserId, staleTime: 0 }
+  );
+  const alreadySubmittedThisWeek = currentCycle?.status === "submitted" || hasSubmittedThisWeek === true;
 
   return (
     <div className="space-y-6">

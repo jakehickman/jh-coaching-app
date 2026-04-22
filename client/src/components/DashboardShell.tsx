@@ -140,14 +140,23 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
   const { data: clientProfile } = trpc.profile.get.useQuery(undefined, {
     enabled: mode === "client",
   });
-  const showCheckInBadge = (() => {
+  // Determine if today is the client's check-in day
+  const isClientCheckInDay = (() => {
     if (mode !== "client") return false;
-    if (currentCycleData?.status === "submitted") return false; // already submitted this cycle
     const checkInDay = (clientProfile as any)?.checkInDay as string | undefined;
     if (!checkInDay) return false;
     const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
     return new Date().getDay() === (dayMap[checkInDay] ?? -1);
   })();
+  // Direct submission lookup — covers the case where the coach reviewed and advanced the cycle
+  // on the same day (resetting status to 'upcoming' even though the client already submitted).
+  const { data: hasSubmittedThisWeekDot } = trpc.checkIn.myHasSubmittedThisWeek.useQuery(
+    undefined,
+    { enabled: mode === "client" && isClientCheckInDay, staleTime: 0, refetchInterval: 300_000 }
+  );
+  const showCheckInBadge = isClientCheckInDay
+    && currentCycleData?.status !== "submitted"
+    && hasSubmittedThisWeekDot !== true;
 
   // Track whether any localStorage draft exists for coach meal plans or training programs
   const [hasMealDraft, setHasMealDraft] = useState(false);
