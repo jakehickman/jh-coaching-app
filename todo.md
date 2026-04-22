@@ -442,3 +442,9 @@
 - [x] DashboardShell: update badge logic to use clientStatusList instead of overdueClients
 - [x] OverviewTab: update check-in day reminder to use myCurrentCycle instead of myWeek
 - [x] Tests: update coaching.test.ts mocks and checkIn describe block for new procedures (54 tests passing)
+
+## Weekly Review Feature (Apr 2026)
+- [x] Add server/routers/progress.ts with weeklyReview protectedProcedure (8 weeks, aligned to client check-in day, with deltas)
+- [x] Register progressRouter in server/routers/index.ts and server/routers.ts
+- [x] Create WeeklyReviewTab.tsx: expandable rows, in-progress badge, empty/error states, bg-muted skeleton, enabled guard
+- [x] Wire WeeklyReviewTab into ProgressSection.tsx Overview tab (replace 7-day averages cards and ProgressHistoryTable)
