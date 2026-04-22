@@ -136,6 +136,8 @@ function CheckInsTabContent() {
     onSuccess: () => {
       refetchCycle();
       utils.checkIn.myHistory.invalidate();
+      // Invalidate the cycle cache so the Overview banner disappears immediately
+      utils.checkIn.myCurrentCycle.invalidate();
       setIsEditing(false);
       toast.success('Your check-in has been submitted', { duration: 3000 });
     },

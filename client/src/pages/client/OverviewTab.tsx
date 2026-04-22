@@ -264,13 +264,14 @@ export default function OverviewTab() {
   const [mondayStr] = useMemo(() => [getMondayStr()], []);
   const { data: currentCycleOwn } = trpc.checkIn.myCurrentCycle.useQuery(
     undefined,
-    { enabled: isCheckInDay && !viewAsUserId }
+    { enabled: isCheckInDay && !viewAsUserId, staleTime: 0 }
   );
   const { data: clientCycleAdmin } = trpc.checkIn.clientCurrentCycle.useQuery(
     { clientId: viewAsUserId! },
-    { enabled: isCheckInDay && !!viewAsUserId }
+    { enabled: isCheckInDay && !!viewAsUserId, staleTime: 0 }
   );
   const currentCycle = viewAsUserId ? clientCycleAdmin : currentCycleOwn;
+  // Banner hides as soon as the cycle is submitted — staleTime:0 ensures fresh data on every mount
   const alreadySubmittedThisWeek = currentCycle?.status === "submitted";
 
   return (
