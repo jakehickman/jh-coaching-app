@@ -493,7 +493,8 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
       {visible.map((session) => {
         const dateStr = toLocalDateStr(session.sessionDate);
         const [y, m, d] = dateStr.split('-');
-        const dateLabel = `${d}/${m}/${y}`;
+        const weekday = new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-AU', { weekday: 'short' });
+        const dateLabel = `${weekday} ${d}/${m}/${y}`;
         const isOpen = expandedId === session.id;
         const exercises = (session.exercises as any[]) ?? [];
         const sessionNotes = session.notes as string | null;
