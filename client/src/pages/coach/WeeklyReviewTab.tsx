@@ -66,17 +66,38 @@ function Cell({ children, muted, borderLeft, className = "" }: CellProps) {
   );
 }
 
-// ─── Weight cell: value + inline % change ────────────────────────────────────
+// ─── ValueDeltaCell: value + inline delta (small, coloured) ─────────────────
 
-function WeightCell({ weight, pct, borderLeft }: { weight: number | null; pct: number | null; borderLeft?: boolean }) {
-  const weightStr = weight != null ? `${weight.toFixed(1)}` : "—";
-  const pctColor = pct == null
-    ? ""
-    : "text-muted-foreground";
+interface ValueDeltaCellProps {
+  value: number | null;
+  delta?: number | null;        // raw numeric delta (curr - prev)
+  deltaText?: string;           // override formatted delta string
+  decimals?: number;
+  higherIsBetter?: boolean | null; // null = neutral (no colour)
+  borderLeft?: boolean;
+}
 
-  const pctStr = pct != null
-    ? `${pct > 0 ? "+" : ""}${pct.toFixed(2)}%`
-    : null;
+function ValueDeltaCell({
+  value,
+  delta,
+  deltaText,
+  decimals = 1,
+  higherIsBetter = null,
+  borderLeft,
+}: ValueDeltaCellProps) {
+  const valueStr = value != null ? value.toFixed(decimals) : "—";
+
+  let deltaStr: string | null = null;
+  let deltaColor = "text-muted-foreground";
+
+  if (delta != null) {
+    deltaStr = deltaText ?? `${delta > 0 ? "+" : ""}${delta.toFixed(decimals)}`;
+    if (higherIsBetter === true) {
+      deltaColor = delta > 0 ? "text-green-400" : delta < 0 ? "text-red-400" : "text-muted-foreground";
+    } else if (higherIsBetter === false) {
+      deltaColor = delta < 0 ? "text-green-400" : delta > 0 ? "text-red-400" : "text-muted-foreground";
+    }
+  }
 
   return (
     <td
@@ -84,12 +105,12 @@ function WeightCell({ weight, pct, borderLeft }: { weight: number | null; pct: n
         ${borderLeft ? "border-l border-border/30" : ""}
       `}
     >
-      <span className={weight == null ? "text-muted-foreground" : "text-foreground"}>
-        {weightStr}
+      <span className={value == null ? "text-muted-foreground" : "text-foreground"}>
+        {valueStr}
       </span>
-      {pctStr && (
-        <span className={`ml-1.5 text-[11px] ${pctColor}`}>
-          {pctStr}
+      {deltaStr && (
+        <span className={`ml-1.5 text-[11px] ${deltaColor}`}>
+          {deltaStr}
         </span>
       )}
     </td>
@@ -187,6 +208,10 @@ export function WeeklyReviewTab({ clientId }: Props) {
               const hasData = week.daysLogged > 0;
               const isEven = idx % 2 === 0;
 
+              const prev: Week | null = weeks[idx + 1] ?? null;
+              const d = (curr: number | null, p: number | null) =>
+                curr != null && p != null ? curr - p : null;
+
               const stepsValue = week.avgSteps != null
                 ? (week.stepGoal != null
                   ? `${fmtK(Math.round(week.avgSteps))} / ${fmtK(week.stepGoal)}`
@@ -225,13 +250,27 @@ export function WeeklyReviewTab({ clientId }: Props) {
                   </td>
 
                   {/* Weight + inline % change */}
-                  <WeightCell weight={week.avgWeight} pct={week.avgWeightPct} borderLeft />
+                  <ValueDeltaCell
+                    value={week.avgWeight}
+                    delta={week.avgWeightPct}
+                    deltaText={week.avgWeightPct != null ? `${week.avgWeightPct > 0 ? "+" : ""}${week.avgWeightPct.toFixed(2)}%` : undefined}
+                    higherIsBetter={null}
+                    borderLeft
+                  />
 
                   {/* Waist */}
-                  <Cell muted={week.avgWaist == null}>{fmt(week.avgWaist, 1)}</Cell>
+                  <ValueDeltaCell
+                    value={week.avgWaist}
+                    delta={d(week.avgWaist, prev?.avgWaist ?? null)}
+                    higherIsBetter={false}
+                  />
 
                   {/* Skinfold */}
-                  <Cell muted={week.avgSkinfold == null}>{fmt(week.avgSkinfold, 1)}</Cell>
+                  <ValueDeltaCell
+                    value={week.avgSkinfold}
+                    delta={d(week.avgSkinfold, prev?.avgSkinfold ?? null)}
+                    higherIsBetter={false}
+                  />
 
                   {/* Sessions */}
                   <Cell borderLeft muted={!hasData}>{week.sessionsCompleted}</Cell>
