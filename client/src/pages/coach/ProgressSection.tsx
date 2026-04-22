@@ -148,44 +148,9 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
           </div>
         </div>
       )}
-      {/* Site-by-site trend chart */}
-      {trendData.length > 1 && (
-        <div>
-          <SectionLabel>Skinfold Trend (mm per site)</SectionLabel>
-          <div className="bg-card border border-border rounded-xl p-4">
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={trendData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                <XAxis dataKey="date" tick={{ fill: '#666', fontSize: 10 }} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: '#666', fontSize: 10 }} width={30} />
-                <Tooltip
-                  contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 8 }}
-                  labelStyle={{ color: '#fff' }}
-                  formatter={(v: number, name: string) => [`${v} mm`, name.charAt(0).toUpperCase() + name.slice(1)]}
-                />
-                {SITES.map(s => (
-                  <Area key={s.key} type="monotone" dataKey={s.key} stroke={SITE_COLORS[s.key]}
-                    fill={SITE_COLORS[s.key] + '22'} strokeWidth={2} dot={{ r: 3, fill: SITE_COLORS[s.key] }}
-                    connectNulls />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
-            {/* Legend */}
-            <div className="flex flex-wrap gap-4 mt-3 justify-center">
-              {SITES.map(s => (
-                <div key={s.key} className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full" style={{ background: SITE_COLORS[s.key] }} />
-                  <span className="text-[11px] text-muted-foreground">{s.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Session cards */}
       <div>
-        <SectionLabel>All Measurement Sessions</SectionLabel>
+        <SectionLabel>All Measurements</SectionLabel>
         <div className="space-y-2">
           {sorted.map((m, i) => {
             const iso = toLocalDateStr(m.measureDate);
