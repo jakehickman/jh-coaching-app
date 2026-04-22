@@ -34,82 +34,27 @@ const DEFAULT_VISIBLE = 8;
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
 
-function fmt(val: number | null | undefined, decimals = 1, suffix = ""): string {
+function fmt(val: number | null | undefined, decimals = 1): string {
   if (val == null) return "—";
-  return `${val.toFixed(decimals)}${suffix}`;
+  return val.toFixed(decimals);
 }
 
-function fmtInt(val: number | null | undefined, suffix = ""): string {
-  if (val == null) return "—";
-  return `${Math.round(val).toLocaleString()}${suffix}`;
-}
+// ─── Numeric cell — right-aligned, fixed font for vertical alignment ─────────
 
-// ─── Delta chip ──────────────────────────────────────────────────────────────
-
-interface DeltaChipProps {
-  curr: number | null;
-  prev: number | null;
-  /** Format the delta value for display */
-  format?: (d: number) => string;
-  /** true = higher is better, false = lower is better, null = neutral */
-  higherIsBetter?: boolean | null;
-}
-
-const NeutralDash = () => (
-  <span className="ml-1 text-[10px] font-semibold px-1 py-0.5 rounded text-muted-foreground bg-muted/40">
-    –
-  </span>
-);
-
-function DeltaChip({ curr, prev, format, higherIsBetter = null }: DeltaChipProps) {
-  // No previous week to compare — always show neutral dash
-  if (prev == null) return <NeutralDash />;
-  // This week has no data — show nothing
-  if (curr == null) return null;
-  const d = curr - prev;
-
-  // Zero change — show a neutral dash for consistency
-  if (Math.abs(d) < 0.001) {
-    return (
-      <span className="ml-1 text-[10px] font-semibold px-1 py-0.5 rounded text-muted-foreground bg-muted/40">
-        –
-      </span>
-    );
-  }
-
-  const sign = d > 0 ? "+" : "";
-  const text = format ? format(d) : `${sign}${d.toFixed(1)}`;
-
-  let colorClass = "text-muted-foreground bg-muted/40";
-  if (higherIsBetter === true) {
-    colorClass = d > 0 ? "text-green-400 bg-green-500/10" : "text-red-400 bg-red-500/10";
-  } else if (higherIsBetter === false) {
-    colorClass = d < 0 ? "text-green-400 bg-green-500/10" : "text-red-400 bg-red-500/10";
-  }
-
-  return (
-    <span className={`ml-1 text-[10px] font-semibold px-1 py-0.5 rounded ${colorClass}`}>
-      {text}
-    </span>
-  );
-}
-
-// ─── Cell ────────────────────────────────────────────────────────────────────
-
-interface CellProps {
-  value: string;
-  chip?: React.ReactNode;
+interface NumCellProps {
+  children: React.ReactNode;
   muted?: boolean;
-  center?: boolean;
+  borderLeft?: boolean;
 }
 
-function Cell({ value, chip, muted, center }: CellProps) {
+function NumCell({ children, muted, borderLeft }: NumCellProps) {
   return (
-    <td className={`px-3 py-2.5 text-sm whitespace-nowrap ${center ? "text-center" : "text-right"} ${muted ? "text-muted-foreground" : "text-foreground"}`}>
-      <span className="inline-flex items-center gap-0.5">
-        {value}
-        {chip}
-      </span>
+    <td
+      className={`px-3 py-2.5 text-right text-sm tabular-nums whitespace-nowrap
+        ${muted ? "text-muted-foreground" : "text-foreground"}
+        ${borderLeft ? "border-l border-border/30" : ""}`}
+    >
+      {children}
     </td>
   );
 }
@@ -161,58 +106,47 @@ export function WeeklyReviewTab({ clientId }: Props) {
 
   return (
     <div className="mt-2">
-      {/* Horizontally scrollable table */}
       <div className="rounded-lg border border-border overflow-x-auto">
         <table className="w-full text-sm border-collapse min-w-[900px]">
           <thead>
+            {/* Group headers */}
             <tr className="border-b border-border bg-muted/30">
-              {/* Week column */}
-              <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap sticky left-0 bg-muted/30 z-10 min-w-[160px]">
+              <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap sticky left-0 bg-muted/30 z-10 min-w-[180px]">
                 Week
               </th>
-              {/* Body Composition group */}
               <th colSpan={3} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Body Composition
               </th>
-              {/* Training */}
               <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Training
               </th>
-              {/* Nutrition */}
               <th colSpan={2} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Nutrition
               </th>
-              {/* Recovery */}
               <th colSpan={3} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Recovery
               </th>
-              {/* Activity */}
               <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Activity
               </th>
             </tr>
+            {/* Column headers */}
             <tr className="border-b border-border bg-muted/10">
-              <th className="px-3 py-1.5 text-left text-[11px] text-muted-foreground sticky left-0 bg-muted/10 z-10"></th>
-              {/* Body Composition sub-headers */}
+              <th className="px-3 py-1.5 sticky left-0 bg-muted/10 z-10" />
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Avg Wt (kg)</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Wt Δ%</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Waist (cm)</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Skinfold (mm)</th>
-              {/* Training */}
-              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sessions</th>
-              {/* Nutrition */}
-              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Off-Plan</th>
-              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Caffeine (srv)</th>
-              {/* Recovery */}
-              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Hunger /5</th>
-              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Sleep Qual /5</th>
-              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Sleep Hrs</th>
-              {/* Activity */}
-              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Avg Steps</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sessions</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Off-Plan</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Caffeine (srv)</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Hunger /5</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Sleep Qual /5</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Sleep Hrs</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Avg Steps</th>
             </tr>
           </thead>
           <tbody>
-            {visibleWeeks.map((week, idx) => {
-              const prev: Week | null = weeks[idx + 1] ?? null;
+            {visibleWeeks.map((week) => {
               const hasData = week.daysLogged > 0;
 
               return (
@@ -245,160 +179,56 @@ export function WeeklyReviewTab({ clientId }: Props) {
                   </td>
 
                   {/* Avg Weight */}
-                  <td className="px-3 py-2.5 text-right text-sm whitespace-nowrap border-l border-border/30">
-                    <span className="inline-flex items-center gap-0.5 justify-end">
-                      <span className={hasData && week.avgWeight != null ? "text-foreground" : "text-muted-foreground"}>
-                        {fmt(week.avgWeight, 1)}
-                      </span>
-                      {week.avgWeightPct != null ? (() => {
-                        const pct = week.avgWeightPct;
-                        const sign = pct > 0 ? "+" : "";
-                        // neutral — weight direction depends on goal, no colour
-                        return (
-                          <span className="ml-1 text-[10px] font-semibold px-1 py-0.5 rounded text-muted-foreground bg-muted/40">
-                            {sign}{pct.toFixed(2)}%
-                          </span>
-                        );
-                      })() : <NeutralDash />}
-                    </span>
-                  </td>
+                  <NumCell muted={!hasData || week.avgWeight == null} borderLeft>
+                    {fmt(week.avgWeight, 1)}
+                  </NumCell>
+
+                  {/* Weight % change */}
+                  <NumCell muted={week.avgWeightPct == null}>
+                    {week.avgWeightPct != null
+                      ? `${week.avgWeightPct > 0 ? "+" : ""}${week.avgWeightPct.toFixed(2)}%`
+                      : "—"}
+                  </NumCell>
 
                   {/* Waist */}
-                  <td className="px-3 py-2.5 text-right text-sm whitespace-nowrap">
-                    <span className="inline-flex items-center gap-0.5 justify-end">
-                      <span className={week.avgWaist != null ? "text-foreground" : "text-muted-foreground"}>
-                        {fmt(week.avgWaist, 1)}
-                      </span>
-                      <DeltaChip
-                        curr={week.avgWaist}
-                        prev={prev?.avgWaist ?? null}
-                        format={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`}
-                        higherIsBetter={false}
-                      />
-                    </span>
-                  </td>
-
-                  {/* Skinfold */}
-                  <td className="px-3 py-2.5 text-right text-sm whitespace-nowrap">
-                    <span className="inline-flex items-center gap-0.5 justify-end">
-                      <span className={week.avgSkinfold != null ? "text-foreground" : "text-muted-foreground"}>
-                        {fmt(week.avgSkinfold, 1)}
-                      </span>
-                      <DeltaChip
-                        curr={week.avgSkinfold}
-                        prev={prev?.avgSkinfold ?? null}
-                        format={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`}
-                        higherIsBetter={false}
-                      />
-                    </span>
-                  </td>
+                  <NumCell muted={week.avgWaist == null}>
+                    {fmt(week.avgWaist, 1)}
+                  </NumCell>
 
                   {/* Sessions */}
-                  <Cell
-                    center
-                    value={String(week.sessionsCompleted)}
-                    muted={!hasData}
-                    chip={
-                      prev != null ? (
-                        <DeltaChip
-                          curr={week.sessionsCompleted}
-                          prev={prev.sessionsCompleted}
-                          format={(d) => `${d > 0 ? "+" : ""}${Math.round(d)}`}
-                          higherIsBetter={true}
-                        />
-                      ) : undefined
-                    }
-                  />
+                  <NumCell muted={!hasData} borderLeft>
+                    {week.sessionsCompleted}
+                  </NumCell>
 
-                  {/* Off-Plan Meals */}
-                  <Cell
-                    center
-                    value={week.totalOffPlan != null ? String(week.totalOffPlan) : "—"}
-                    muted={!hasData}
-                    chip={
-                      prev != null ? (
-                        <DeltaChip
-                          curr={week.totalOffPlan}
-                          prev={prev.totalOffPlan}
-                          format={(d) => `${d > 0 ? "+" : ""}${Math.round(d)}`}
-                          higherIsBetter={false}
-                        />
-                      ) : undefined
-                    }
-                  />
+                  {/* Off-Plan */}
+                  <NumCell muted={week.totalOffPlan == null} borderLeft>
+                    {week.totalOffPlan != null ? week.totalOffPlan : "—"}
+                  </NumCell>
 
                   {/* Caffeine */}
-                  <Cell
-                    center
-                    value={fmt(week.avgCaffeine, 1)}
-                    muted={!hasData}
-                  />
+                  <NumCell muted={week.avgCaffeine == null}>
+                    {fmt(week.avgCaffeine, 1)}
+                  </NumCell>
 
                   {/* Hunger */}
-                  <Cell
-                    center
-                    value={fmt(week.avgHunger, 1)}
-                    muted={!hasData}
-                    chip={
-                      prev != null ? (
-                        <DeltaChip
-                          curr={week.avgHunger}
-                          prev={prev.avgHunger}
-                          format={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`}
-                          higherIsBetter={false}
-                        />
-                      ) : undefined
-                    }
-                  />
+                  <NumCell muted={week.avgHunger == null} borderLeft>
+                    {fmt(week.avgHunger, 1)}
+                  </NumCell>
 
                   {/* Sleep Quality */}
-                  <Cell
-                    center
-                    value={fmt(week.avgSleepQuality, 1)}
-                    muted={!hasData}
-                    chip={
-                      prev != null ? (
-                        <DeltaChip
-                          curr={week.avgSleepQuality}
-                          prev={prev.avgSleepQuality}
-                          format={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`}
-                          higherIsBetter={true}
-                        />
-                      ) : undefined
-                    }
-                  />
+                  <NumCell muted={week.avgSleepQuality == null}>
+                    {fmt(week.avgSleepQuality, 1)}
+                  </NumCell>
 
                   {/* Sleep Hours */}
-                  <Cell
-                    center
-                    value={fmt(week.avgSleepHours, 1)}
-                    muted={!hasData}
-                    chip={
-                      prev != null ? (
-                        <DeltaChip
-                          curr={week.avgSleepHours}
-                          prev={prev.avgSleepHours}
-                          format={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`}
-                          higherIsBetter={true}
-                        />
-                      ) : undefined
-                    }
-                  />
+                  <NumCell muted={week.avgSleepHours == null}>
+                    {fmt(week.avgSleepHours, 1)}
+                  </NumCell>
 
                   {/* Avg Steps */}
-                  <td className="px-3 py-2.5 text-center text-sm whitespace-nowrap border-l border-border/30">
-                    <span className="inline-flex items-center gap-0.5 justify-center">
-                      <span className={week.avgSteps != null ? "text-foreground" : "text-muted-foreground"}>
-                        {week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—"}
-                      </span>
-                      {prev != null && (
-                        <DeltaChip
-                          curr={week.avgSteps}
-                          prev={prev.avgSteps}
-                          format={(d) => `${d > 0 ? "+" : ""}${Math.round(d).toLocaleString()}`}
-                          higherIsBetter={true}
-                        />
-                      )}
+                  <td className="px-3 py-2.5 text-right text-sm tabular-nums whitespace-nowrap border-l border-border/30">
+                    <span className={week.avgSteps != null ? "text-foreground" : "text-muted-foreground"}>
+                      {week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—"}
                     </span>
                     {week.stepGoal != null && (
                       <div className="text-[10px] text-muted-foreground mt-0.5">
