@@ -188,7 +188,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
 
             {/* Metrics grid */}
             {hasData ? (
-              <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-x-4 gap-y-3">
+              <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-x-4 gap-y-3">
                 {/* Body Composition */}
                 <Tile
                   label="Weight"
@@ -248,6 +248,14 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                   muted={week.avgSleepHours == null}
                   delta={d(week.avgSleepHours, prev?.avgSleepHours ?? null)}
                   higherIsBetter={true}
+                />
+                {/* Caffeine */}
+                <Tile
+                  label="Caffeine"
+                  value={week.avgCaffeine != null ? `${fmt(week.avgCaffeine)} srv` : "—"}
+                  muted={week.avgCaffeine == null}
+                  delta={d(week.avgCaffeine, prev?.avgCaffeine ?? null)}
+                  higherIsBetter={null}
                 />
                 {/* Activity */}
                 <Tile
