@@ -162,10 +162,10 @@ export function WeeklyReviewTab({ clientId }: Props) {
               <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Training
               </th>
-              <th colSpan={2} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
+              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Nutrition
               </th>
-              <th colSpan={3} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
+              <th colSpan={4} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
                 Recovery
               </th>
               <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
@@ -180,10 +180,10 @@ export function WeeklyReviewTab({ clientId }: Props) {
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Skinfold (mm)</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sessions</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Off-Plan</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Caffeine (srv)</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Hunger /5</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Sleep Qual /5</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Sleep Hrs</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Caffeine (srv)</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Steps</th>
             </tr>
           </thead>
@@ -283,12 +283,6 @@ export function WeeklyReviewTab({ clientId }: Props) {
                     borderLeft
                   />
 
-                  {/* Caffeine — no delta (neutral metric) */}
-                  <StackedCell
-                    value={fmt(week.avgCaffeine, 1)}
-                    muted={week.avgCaffeine == null}
-                  />
-
                   {/* Hunger */}
                   <StackedCell
                     value={fmt(week.avgHunger, 1)}
@@ -312,6 +306,12 @@ export function WeeklyReviewTab({ clientId }: Props) {
                     delta={d(week.avgSleepHours, prev?.avgSleepHours ?? null)}
                     higherIsBetter={true}
                     muted={week.avgSleepHours == null}
+                  />
+
+                  {/* Caffeine — moved to Recovery, no delta (neutral metric) */}
+                  <StackedCell
+                    value={fmt(week.avgCaffeine, 1)}
+                    muted={week.avgCaffeine == null}
                   />
 
                   {/* Steps — compact value / goal on one line, delta below */}
