@@ -168,22 +168,32 @@ export const checkInRouter = router({
     const today = todayUtcStr();
 
     const cycleMap = new Map(cycles.map(c => [c.clientId, c]));
+    // Build profile map for week number computation
+    const profileMap = new Map(clients.map(c => [c.userId, c]));
 
     return clients.map(client => {
       const cycle = cycleMap.get(client.userId);
+      const profile = profileMap.get(client.userId);
       if (!cycle) {
         return {
           clientId: client.userId,
           status: "upcoming" as CycleDisplayStatus,
           dueDate: null as string | null,
           submissionId: null as number | null,
+          weekNumber: null as number | null,
         };
       }
+      const dueDateStr = toDateStr(cycle.dueDate);
       return {
         clientId: client.userId,
         status: deriveCycleStatus(cycle, today),
-        dueDate: toDateStr(cycle.dueDate),
+        dueDate: dueDateStr,
         submissionId: cycle.submissionId ?? null,
+        weekNumber: computeWeekNumber(
+          profile?.startDate ? toDateStr(profile.startDate) : null,
+          profile?.checkInDay ?? null,
+          dueDateStr,
+        ),
       };
     });
   }),
