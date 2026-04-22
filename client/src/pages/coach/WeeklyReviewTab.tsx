@@ -311,14 +311,14 @@ export function WeeklyReviewTab({ clientId }: { clientId: number }) {
 
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
     { clientId },
-    { enabled: !!clientId }
+    { enabled: !!clientId, retry: 1, staleTime: 0 }
   );
 
   if (isLoading) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
-          <Skeleton key={i} className="h-14 w-full rounded-lg" />
+          <Skeleton key={i} className="h-14 w-full rounded-lg bg-muted" />
         ))}
       </div>
     );
