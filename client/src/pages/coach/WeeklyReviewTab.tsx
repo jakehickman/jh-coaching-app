@@ -194,16 +194,16 @@ export function WeeklyReviewTab({ clientId }: Props) {
             {/* Column headers */}
             <tr className="border-b border-border bg-muted/10">
               <th className="px-3 py-1.5 sticky left-0 bg-muted/10 z-10" />
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Weight (kg)</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Waist (cm)</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Skinfold (mm)</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sessions</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Off-Plan</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Hunger /5</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sleep Qual /5</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Sleep Hrs</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Caffeine (srv)</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Steps</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Weight (kg)</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Waist (cm)</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Skinfold (mm)</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sessions</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Off-Plan</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Hunger /5</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sleep Qual /5</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Sleep Hrs</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Caffeine (srv)</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Steps</th>
             </tr>
           </thead>
           <tbody>
