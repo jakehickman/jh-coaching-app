@@ -297,14 +297,17 @@ export default function OverviewTab() {
       <div>
         <SectionLabel>Weekly Summary (last 7 days)</SectionLabel>
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
+          <MetricCard label="Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
           <MetricCard label="Training Adherence" value={`${adherence}%`} sub={schedule.length > 0 ? `${trainedInRotation}/${prescribedDays} sessions completed` : `${trainedInRotation} sessions completed`} />
           <MetricCard label="Off Plan Meals" value={offPlanTotal7.toString()} />
           {stepGoal && (
             <MetricCard
-              label="Avg Daily Steps"
-              value={avgSteps7 != null ? avgSteps7.toLocaleString() : "—"}
-              sub={`Goal: ${stepGoal.toLocaleString()}`}
+              label="Daily Steps"
+              value={(() => {
+                if (avgSteps7 == null) return "—";
+                const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : n.toString();
+                return `${fmt(avgSteps7)} / ${fmt(stepGoal)}`;
+              })()}
             />
           )}
         </div>
