@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { localToday, fmtDate, toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { pctChange as pctChangeNum } from "@/lib/stats";
 import {
-  LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, ExternalLink } from "lucide-react";
@@ -192,7 +192,7 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
     };
   });
 
-  // Build weight trend data from daily logs (oldest first, last 60 days)
+  // Build weight trend data from daily logs (oldest first)
   const weightData = [...(logs ?? [])]
     .filter((l: any) => l.weight != null)
     .sort((a: any, b: any) => toLocalDateStr(a.logDate).localeCompare(toLocalDateStr(b.logDate)))
@@ -202,6 +202,36 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
       const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       return { date: `${parseInt(d)} ${months[parseInt(mo)-1]}`, weight: l.weight };
     });
+
+  // Build waist trend data from measurements (oldest first)
+  const waistData = [...sorted].reverse()
+    .filter(m => m.waist != null)
+    .map(m => {
+      const iso = toLocalDateStr(m.measureDate);
+      const [, mo, d] = iso.split('-');
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return { date: `${parseInt(d)} ${months[parseInt(mo)-1]}`, waist: m.waist };
+    });
+
+  // Merge weight and waist onto a shared date axis
+  const combinedTrendData = (() => {
+    const map = new Map<string, { date: string; weight?: number; waist?: number }>();
+    for (const w of weightData) {
+      map.set(w.date, { ...map.get(w.date), date: w.date, weight: w.weight });
+    }
+    for (const w of waistData) {
+      map.set(w.date, { ...map.get(w.date), date: w.date, waist: w.waist as number });
+    }
+    return Array.from(map.values()).sort((a, b) => {
+      // Sort by original order (month/day string — use index from weightData as proxy)
+      const ai = weightData.findIndex(x => x.date === a.date);
+      const bi = weightData.findIndex(x => x.date === b.date);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
+      return 0;
+    });
+  })();
 
   if (sorted.length === 0 && weightData.length === 0) {
     return (
@@ -221,24 +251,37 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
 
   return (
     <div className="space-y-5">
-      {/* Weight trend chart */}
-      {weightData.length > 1 && (
+      {/* Weight + Waist dual-axis trend chart */}
+      {(weightData.length > 1 || waistData.length > 1) && (
         <div>
-          <SectionLabel>Weight Trend (kg)</SectionLabel>
+          <SectionLabel>Weight &amp; Waist Trend</SectionLabel>
           <div className="bg-card border border-border rounded-xl p-4">
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={weightData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+            <ResponsiveContainer width="100%" height={200}>
+              <ComposedChart data={combinedTrendData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
                 <XAxis dataKey="date" tick={{ fill: '#666', fontSize: 10 }} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: '#666', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
+                <YAxis yAxisId="weight" tick={{ fill: '#3b82f6', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
+                <YAxis yAxisId="waist" orientation="right" tick={{ fill: '#f59e0b', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 8 }}
                   labelStyle={{ color: '#fff' }}
-                  formatter={(v: number) => [`${v} kg`, 'Weight']}
+                  formatter={(v: number, name: string) => name === 'weight' ? [`${v} kg`, 'Weight'] : [`${v} cm`, 'Waist']}
                 />
-                <Area type="monotone" dataKey="weight" stroke="#3b82f6" fill="#3b82f622" strokeWidth={2} dot={{ r: 2, fill: '#3b82f6' }} connectNulls />
-              </AreaChart>
+                <Area yAxisId="weight" type="monotone" dataKey="weight" stroke="#3b82f6" fill="#3b82f622" strokeWidth={2} dot={{ r: 2, fill: '#3b82f6' }} connectNulls />
+                <Line yAxisId="waist" type="monotone" dataKey="waist" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, fill: '#f59e0b' }} connectNulls />
+              </ComposedChart>
             </ResponsiveContainer>
+            {/* Legend */}
+            <div className="flex items-center gap-4 mt-2 justify-center">
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="w-3 h-0.5 bg-blue-500 inline-block rounded" />
+                Weight (kg)
+              </span>
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="w-3 h-0.5 bg-amber-500 inline-block rounded" />
+                Waist (cm)
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -252,20 +295,15 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
             const isExpanded = expandedId === m.id;
             const total = totalSkinfold(m);
             const prevTotal = prev ? totalSkinfold(prev) : null;
-            const isLatest = i === 0;
-
             return (
-              <div key={m.id} className={`rounded-xl border transition-colors ${
-                isLatest ? 'border-primary/30 bg-primary/5' : 'border-border bg-card'
-              }`}>
+              <div key={m.id} className="rounded-xl border border-border bg-card transition-colors">
                 {/* Summary row */}
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : m.id)}
                   className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/20 transition-colors rounded-xl"
                 >
                   <div className="flex items-center gap-3">
-                    {isLatest && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold uppercase tracking-wide">Latest</span>}
-                    <p className={`text-sm font-semibold ${isLatest ? 'text-foreground' : 'text-muted-foreground'}`}>{fmtDate(iso)}</p>
+                    <p className="text-sm font-semibold text-foreground">{fmtDate(iso)}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-right">
