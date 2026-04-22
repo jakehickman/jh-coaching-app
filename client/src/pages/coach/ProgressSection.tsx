@@ -7,7 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, ExternalLink } from "lucide-react";
 import { useSearch, useLocation } from "wouter";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
@@ -16,6 +16,100 @@ import {
 import { CoachHabitsPanel } from "./HabitsSection";
 import { CheckInsDetailPanel } from "./CheckInsSection";
 import { WeeklyReviewTab } from "./WeeklyReviewTab";
+
+// ─── Nutrition Tab ───────────────────────────────────────────────────────────
+function NutritionTab({ clientId }: { clientId: number }) {
+  const { data: trainingPlan, isLoading: loadingTraining } = trpc.mealPlan.getForClient.useQuery(
+    { userId: clientId, dayType: "training" },
+    { enabled: !!clientId }
+  );
+  const { data: restPlan, isLoading: loadingRest } = trpc.mealPlan.getForClient.useQuery(
+    { userId: clientId, dayType: "rest" },
+    { enabled: !!clientId }
+  );
+
+  const isLoading = loadingTraining || loadingRest;
+  const hasAny = trainingPlan || restPlan;
+
+  function MacroTile({ label, value, unit }: { label: string; value: number | null | undefined; unit: string }) {
+    return (
+      <div className="flex flex-col gap-0.5">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">{label}</span>
+        <span className="text-xl font-bold tabular-nums text-foreground">
+          {value != null ? value.toLocaleString() : "—"}
+        </span>
+        <span className="text-[10px] text-muted-foreground/50 leading-none">{unit}</span>
+      </div>
+    );
+  }
+
+  function DayCard({ label, plan }: { label: string; plan: any }) {
+    if (!plan) return (
+      <div className="bg-card border border-border rounded-xl p-5 flex flex-col gap-1">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{label}</p>
+        <p className="text-sm text-muted-foreground italic">No plan set</p>
+      </div>
+    );
+    return (
+      <div className="bg-card border border-border rounded-xl p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">{label}</p>
+        <div className="grid grid-cols-4 gap-4">
+          <MacroTile label="Calories" value={plan.totalCalories} unit="kcal" />
+          <MacroTile label="Protein" value={plan.totalProtein} unit="g" />
+          <MacroTile label="Carbs" value={plan.totalCarbs} unit="g" />
+          <MacroTile label="Fat" value={plan.totalFat} unit="g" />
+        </div>
+        {plan.treatAllowanceKcal != null && (
+          <p className="text-[11px] text-muted-foreground/60 mt-3">Treat allowance: {plan.treatAllowanceKcal} kcal</p>
+        )}
+        {plan.notes && (
+          <p className="text-xs text-muted-foreground/70 mt-2 italic">{plan.notes}</p>
+        )}
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3 mt-2">
+        <div className="h-32 bg-muted rounded-xl animate-pulse" />
+        <div className="h-32 bg-muted rounded-xl animate-pulse" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <SectionLabel>Nutrition Plan</SectionLabel>
+        <a
+          href="/coach/meal-plans"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+        >
+          <ExternalLink size={12} />
+          Edit Plan
+        </a>
+      </div>
+      {!hasAny ? (
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <p className="text-base font-medium">No nutrition plan set</p>
+          <p className="text-sm mt-1">Assign a meal plan to this client in the Meal Plans section.</p>
+          <a
+            href="/coach/meal-plans"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            <ExternalLink size={13} /> Go to Meal Plans
+          </a>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <DayCard label="Training Day" plan={trainingPlan} />
+          <DayCard label="Rest Day" plan={restPlan} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Measurements Tab ────────────────────────────────────────────────────────
 function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: any[] }) {
@@ -1141,6 +1235,7 @@ export default function ProgressSection() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
             <TabsTrigger value="training">Training</TabsTrigger>
+            <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
             <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
           </TabsList>
           <TabsContent value="overview">
@@ -1175,6 +1270,9 @@ export default function ProgressSection() {
                 <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
               </div>
             </div>
+          </TabsContent>
+          <TabsContent value="nutrition">
+            <NutritionTab clientId={selectedUserId!} />
           </TabsContent>
           <TabsContent value="check-ins">
             <CheckInsDetailPanel clientId={selectedUserId!} focusWeekNumber={focusWeekNumber} />
