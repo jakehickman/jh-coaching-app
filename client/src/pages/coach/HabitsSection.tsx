@@ -12,17 +12,6 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
     { clientId },
     { enabled: !!clientId }
   );
-  const { data: clientProfile } = trpc.profile.getById.useQuery(
-    { userId: clientId },
-    { enabled: !!clientId }
-  );
-  // Normalise startDate to yyyy-mm-dd (may be a Date object from Drizzle)
-  const clientStartDate = useMemo(() => {
-    const raw = (clientProfile as any)?.startDate;
-    if (!raw) return null;
-    const d = raw instanceof Date ? raw : new Date(String(raw));
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }, [clientProfile]);
   const from28 = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 27);
@@ -147,8 +136,8 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
                   </span>
                   <div className="flex gap-1">
                     {week.map((d) => {
-                      // Blank spacer for dates before the client's start date
-                      if (clientStartDate && d < clientStartDate) {
+                      // Blank spacer for dates before this habit was assigned
+                      if (d < normCompDate(h.assignedAt)) {
                         return <div key={d} className="w-5 h-5 rounded-sm bg-transparent" />;
                       }
                       const done = completedSet.has(`${h.id}:${d}`);
@@ -164,8 +153,9 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
                     })}
                   </div>
                   {(() => {
-                    // Only count days on/after the client start date
-                    const eligibleDays = week.filter(d => !clientStartDate || d >= clientStartDate);
+                    // Only count days on/after the habit's assigned date
+                    const habitStart = normCompDate(h.assignedAt);
+                    const eligibleDays = week.filter(d => d >= habitStart);
                     const doneDays = eligibleDays.filter(d => completedSet.has(`${h.id}:${d}`)).length;
                     return (
                       <span className="text-[10px] text-muted-foreground">
