@@ -55,8 +55,17 @@ interface DeltaChipProps {
   higherIsBetter?: boolean | null;
 }
 
+const NeutralDash = () => (
+  <span className="ml-1 text-[10px] font-semibold px-1 py-0.5 rounded text-muted-foreground bg-muted/40">
+    –
+  </span>
+);
+
 function DeltaChip({ curr, prev, format, higherIsBetter = null }: DeltaChipProps) {
-  if (curr == null || prev == null) return null;
+  // No previous week to compare — always show neutral dash
+  if (prev == null) return <NeutralDash />;
+  // This week has no data — show nothing
+  if (curr == null) return null;
   const d = curr - prev;
 
   // Zero change — show a neutral dash for consistency
@@ -241,7 +250,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
                       <span className={hasData && week.avgWeight != null ? "text-foreground" : "text-muted-foreground"}>
                         {fmt(week.avgWeight, 1)}
                       </span>
-                      {week.avgWeightPct != null && (() => {
+                      {week.avgWeightPct != null ? (() => {
                         const pct = week.avgWeightPct;
                         const sign = pct > 0 ? "+" : "";
                         // neutral — weight direction depends on goal, no colour
@@ -250,7 +259,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
                             {sign}{pct.toFixed(2)}%
                           </span>
                         );
-                      })()}
+                      })() : <NeutralDash />}
                     </span>
                   </td>
 
