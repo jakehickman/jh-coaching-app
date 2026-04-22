@@ -451,6 +451,14 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
                   </div>
                 </button>
 
+                {/* Changes Made preview — always visible when there's content */}
+                {hasSub && row.submission.changesNotes && !isExpanded && (
+                  <div className="px-4 pb-3 pt-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Changes Made</p>
+                    <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">{row.submission.changesNotes}</p>
+                  </div>
+                )}
+
                 {isExpanded && hasSub && (
                   <div className="border-t border-border">
                     <SubmissionQA sub={row.submission} />
