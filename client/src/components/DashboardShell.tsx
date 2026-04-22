@@ -40,13 +40,13 @@ const clientNav: NavItem[] = [
 
 const coachNav: NavItem[] = [
   { href: "/coach/clients",          label: "Clients",          icon: <Users size={18} /> },
+  { href: "/coach/check-ins",        label: "Check-ins",         icon: <CalendarCheck size={18} /> },
   { href: "/coach/training",         label: "Training Programs", icon: <Dumbbell size={18} /> },
   { href: "/coach/meal-plans",       label: "Meal Plans",        icon: <Zap size={18} /> },
   { href: "/coach/progress",         label: "Client Progress",   icon: <TrendingUp size={18} /> },
   { href: "/coach/exercise-library", label: "Exercise Library",  icon: <BookOpen size={18} /> },
   { href: "/coach/nutrition-data",   label: "Nutrition Data",    icon: <Salad size={18} /> },
   { href: "/coach/habits",           label: "Habits",            icon: <CheckSquare size={18} /> },
-  { href: "/coach/check-ins",        label: "Check-ins",         icon: <CalendarCheck size={18} /> },
 ];
 
 interface DashboardShellProps {
