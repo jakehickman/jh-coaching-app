@@ -777,10 +777,11 @@ function ExerciseProgressTab({
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {visibleExercises.map(name => {
               const history = exerciseHistory[name];
-              // Collect unique machine presets for this exercise
-              const presets = Array.from(new Set(
-                history.map(e => e.machinePreset ?? e.equipmentDetails ?? null).filter(Boolean)
-              )) as string[];
+              // Collect unique machine presets for this exercise (case-insensitive dedup)
+              const presetsRaw = history.map(e => e.machinePreset ?? e.equipmentDetails ?? null).filter(Boolean) as string[];
+              const presetsSeen = new Map<string, string>();
+              for (const p of presetsRaw) { const key = p.toLowerCase(); if (!presetsSeen.has(key)) presetsSeen.set(key, p); }
+              const presets = Array.from(presetsSeen.values());
               const activeMachineFilter = presetFilter[name] ?? 'All';
               const filteredHistory = activeMachineFilter === 'All'
                 ? history
