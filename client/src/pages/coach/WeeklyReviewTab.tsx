@@ -108,6 +108,28 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
     { enabled: !!clientId, staleTime: 0, retry: 1 }
   );
 
+  const weeks = data?.weeks ?? [];
+
+  // Initialise: expand the first two weeks (current + previous) once
+  // Must be before any early returns to satisfy Rules of Hooks
+  useEffect(() => {
+    if (expandedInit || weeks.length === 0) return;
+    const toExpand = new Set<string>();
+    if (weeks[0]) toExpand.add(weeks[0].weekStart);
+    if (weeks[1]) toExpand.add(weeks[1].weekStart);
+    setExpanded(toExpand);
+    setExpandedInit(true);
+  }, [weeks.length, expandedInit]);
+
+  function toggleCard(weekStart: string) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(weekStart)) next.delete(weekStart);
+      else next.add(weekStart);
+      return next;
+    });
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-2 mt-2">
@@ -128,27 +150,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         </div>
       </div>
     );
-  }
-
-  const weeks = data?.weeks ?? [];
-
-  // Initialise: expand the first two weeks (current + previous) once
-  useEffect(() => {
-    if (expandedInit || weeks.length === 0) return;
-    const toExpand = new Set<string>();
-    if (weeks[0]) toExpand.add(weeks[0].weekStart);
-    if (weeks[1]) toExpand.add(weeks[1].weekStart);
-    setExpanded(toExpand);
-    setExpandedInit(true);
-  }, [weeks.length, expandedInit]);
-
-  function toggleCard(weekStart: string) {
-    setExpanded(prev => {
-      const next = new Set(prev);
-      if (next.has(weekStart)) next.delete(weekStart);
-      else next.add(weekStart);
-      return next;
-    });
   }
 
   if (weeks.length === 0) {
