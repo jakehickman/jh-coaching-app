@@ -58,7 +58,15 @@ interface DeltaChipProps {
 function DeltaChip({ curr, prev, format, higherIsBetter = null }: DeltaChipProps) {
   if (curr == null || prev == null) return null;
   const d = curr - prev;
-  if (Math.abs(d) < 0.001) return null;
+
+  // Zero change — show a neutral dash for consistency
+  if (Math.abs(d) < 0.001) {
+    return (
+      <span className="ml-1 text-[10px] font-semibold px-1 py-0.5 rounded text-muted-foreground bg-muted/40">
+        –
+      </span>
+    );
+  }
 
   const sign = d > 0 ? "+" : "";
   const text = format ? format(d) : `${sign}${d.toFixed(1)}`;
