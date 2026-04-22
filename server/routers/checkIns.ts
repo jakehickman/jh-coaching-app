@@ -55,12 +55,14 @@ export const checkInRouter = router({
       submission = await db.getCheckInForWeek(ctx.user.id, dueDateStr);
     }
 
+    const profile = await db.getClientProfile(ctx.user.id);
     return {
       id: cycle.id,
       dueDate: dueDateStr,
       status: displayStatus,
       submissionId: cycle.submissionId ?? null,
       submission,
+      checkInDay: profile?.checkInDay ?? null,
     };
   }),
 

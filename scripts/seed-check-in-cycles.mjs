@@ -9,7 +9,7 @@ async function main() {
     SELECT u.id, cp.checkInDay, cp.startDate
     FROM users u
     JOIN client_profiles cp ON cp.userId = u.id
-    WHERE u.role = 'user'
+    WHERE cp.checkInDay IS NOT NULL AND cp.startDate IS NOT NULL
   `);
 
   console.log('Clients found:', clients.length);

@@ -109,6 +109,9 @@ function CheckInsTabContent() {
   const cycleStatus: CycleStatus = (currentCycle?.status as CycleStatus) ?? "upcoming";
   const dueDate = currentCycle?.dueDate ?? null;
   const existingSubmission = currentCycle?.submission ?? null;
+  const checkInDay = currentCycle?.checkInDay
+    ? currentCycle.checkInDay.charAt(0).toUpperCase() + currentCycle.checkInDay.slice(1)
+    : null;
 
   useEffect(() => {
     if (existingSubmission) {
@@ -172,11 +175,29 @@ function CheckInsTabContent() {
     if (!dueDate) return null;
     switch (cycleStatus) {
       case "upcoming":
-        return { icon: "📅", text: `Your next check-in is due ${fmtDate(dueDate)}`, className: "bg-card border-border text-foreground" };
+        return {
+          icon: "📅",
+          text: checkInDay
+            ? `Your check-in day is ${checkInDay}. Your next check-in is due ${fmtDate(dueDate)}.`
+            : `Your next check-in is due ${fmtDate(dueDate)}.`,
+          className: "bg-card border-border text-foreground"
+        };
       case "overdue":
-        return { icon: "⚠️", text: `Your check-in is overdue — it was due ${fmtDate(dueDate)}. Please submit as soon as possible.`, className: "bg-amber-500/10 border-amber-500/30 text-amber-400" };
+        return {
+          icon: "⚠️",
+          text: checkInDay
+            ? `Your check-in day is ${checkInDay}. Your check-in was due ${fmtDate(dueDate)} — please submit as soon as possible.`
+            : `Your check-in was due ${fmtDate(dueDate)} — please submit as soon as possible.`,
+          className: "bg-amber-500/10 border-amber-500/30 text-amber-400"
+        };
       case "submitted":
-        return { icon: "✓", text: `Check-in submitted for ${fmtDate(dueDate)}`, className: "bg-green-500/10 border-green-500/30 text-green-400" };
+        return {
+          icon: "✓",
+          text: checkInDay
+            ? `Your check-in day is ${checkInDay}. Check-in submitted for ${fmtDate(dueDate)}.`
+            : `Check-in submitted for ${fmtDate(dueDate)}.`,
+          className: "bg-green-500/10 border-green-500/30 text-green-400"
+        };
       default:
         return null;
     }
