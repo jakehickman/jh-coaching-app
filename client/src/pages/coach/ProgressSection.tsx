@@ -1260,7 +1260,7 @@ export default function ProgressSection() {
             <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
           </TabsContent>
           <TabsContent value="training">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="flex flex-col gap-8">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Session Log</p>
                 <WorkoutSessionsTab workoutSessions={workoutSessions} />
