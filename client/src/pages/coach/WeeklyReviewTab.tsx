@@ -175,7 +175,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
             {/* Column headers */}
             <tr className="border-b border-border bg-muted/10">
               <th className="px-3 py-1.5 sticky left-0 bg-muted/10 z-10" />
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Avg Wt (kg)</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Wt (kg)</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Waist (cm)</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Skinfold (mm)</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sessions</th>
@@ -184,7 +184,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Hunger /5</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Sleep Qual /5</th>
               <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Sleep Hrs</th>
-              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Avg Steps</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Steps</th>
             </tr>
           </thead>
           <tbody>
@@ -314,29 +314,32 @@ export function WeeklyReviewTab({ clientId }: Props) {
                     muted={week.avgSleepHours == null}
                   />
 
-                  {/* Avg Steps */}
+                  {/* Steps — compact value / goal on one line, delta below */}
                   <td className="px-3 py-2 text-right text-sm tabular-nums whitespace-nowrap border-l border-border/30 align-top">
-                    <div className={week.avgSteps != null ? "text-foreground" : "text-muted-foreground"}>
-                      {week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—"}
-                    </div>
-                    {/* Delta */}
                     {(() => {
+                      const fmtK = (n: number) =>
+                        n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
                       const stepDelta = d(week.avgSteps, prev?.avgSteps ?? null);
                       const color = stepDelta != null ? deltaColor(stepDelta, true) : "text-muted-foreground";
-                      const text = stepDelta != null
-                        ? `${stepDelta > 0 ? "+" : ""}${Math.round(stepDelta).toLocaleString()}`
+                      const deltaText = stepDelta != null
+                        ? `${stepDelta > 0 ? "+" : ""}${fmtK(Math.round(stepDelta))}`
+                        : "—";
+                      const mainValue = week.avgSteps != null
+                        ? (week.stepGoal != null
+                          ? `${fmtK(Math.round(week.avgSteps))} / ${fmtK(week.stepGoal)}`
+                          : fmtK(Math.round(week.avgSteps)))
                         : "—";
                       return (
-                        <div className={`text-[10px] leading-tight mt-0.5 ${color}`}>
-                          {text}
-                        </div>
+                        <>
+                          <div className={week.avgSteps != null ? "text-foreground" : "text-muted-foreground"}>
+                            {mainValue}
+                          </div>
+                          <div className={`text-[10px] leading-tight mt-0.5 ${color}`}>
+                            {deltaText}
+                          </div>
+                        </>
                       );
                     })()}
-                    {week.stepGoal != null && (
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        goal {week.stepGoal.toLocaleString()}
-                      </div>
-                    )}
                   </td>
                 </tr>
               );
