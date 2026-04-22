@@ -731,9 +731,17 @@ function WorkoutLogTab() {
         const prevMachinePresetMap: Record<string, string> = {};
         if (prevSession) {
           for (const ex of (prevSession.exercises as any[])) {
-            prevExMap[ex.name] = (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null);
-            if (ex.machinePreset) prevMachinePresetMap[ex.name] = ex.machinePreset;
-            else if (ex.equipmentDetails) prevMachinePresetMap[ex.name] = ex.equipmentDetails; // legacy fallback
+            const filteredSets = (ex.sets ?? []).filter((s: any) => s.weight != null || s.reps != null);
+            // Index by the saved name (may be a substitution)
+            prevExMap[ex.name] = filteredSets;
+            // Also index by the original exercise name so last performance shows
+            // even when the previous session used a substitution for that exercise.
+            if (ex.substitutedFor) prevExMap[ex.substitutedFor] = filteredSets;
+            const preset = ex.machinePreset || ex.equipmentDetails || null;
+            if (preset) {
+              prevMachinePresetMap[ex.name] = preset;
+              if (ex.substitutedFor) prevMachinePresetMap[ex.substitutedFor] = preset;
+            }
           }
         }
 
