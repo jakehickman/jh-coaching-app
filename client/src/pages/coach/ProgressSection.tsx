@@ -1235,8 +1235,8 @@ export default function ProgressSection() {
                <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
-            <TabsTrigger value="training">Training</TabsTrigger>
             <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+            <TabsTrigger value="training">Training</TabsTrigger>
             <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
           </TabsList>
           <TabsContent value="overview">
@@ -1260,6 +1260,9 @@ export default function ProgressSection() {
           <TabsContent value="body-comp">
             <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
           </TabsContent>
+          <TabsContent value="nutrition">
+            <NutritionTab clientId={selectedUserId!} />
+          </TabsContent>
           <TabsContent value="training">
             <div className="flex flex-col gap-8">
               <div>
@@ -1271,9 +1274,6 @@ export default function ProgressSection() {
                 <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
               </div>
             </div>
-          </TabsContent>
-          <TabsContent value="nutrition">
-            <NutritionTab clientId={selectedUserId!} />
           </TabsContent>
           <TabsContent value="check-ins">
             <CheckInsDetailPanel clientId={selectedUserId!} focusWeekNumber={focusWeekNumber} />
