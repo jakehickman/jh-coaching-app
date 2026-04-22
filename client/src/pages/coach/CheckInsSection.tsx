@@ -376,7 +376,6 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
             </p>
           </div>
           <SubmissionQA sub={submission} />
-          <WeeklyDataSummary clientId={clientId} weekStartDate={dueDate} />
           <CoachNotesField submissionId={(submission as any).id} initialNotes={(submission as any).coachNotes} />
           <ChangesNotesField submissionId={(submission as any).id} initialNotes={(submission as any).changesNotes} />
           <div className="px-4 py-3 border-t border-border/50">
@@ -447,7 +446,6 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
                 {isExpanded && hasSub && (
                   <div className="border-t border-border">
                     <SubmissionQA sub={row.submission} />
-                    <WeeklyDataSummary clientId={clientId} weekStartDate={row.dueDate} />
                     <CoachNotesField submissionId={row.submission.id} initialNotes={row.submission.coachNotes} />
                     <ChangesNotesField submissionId={row.submission.id} initialNotes={row.submission.changesNotes} />
                     <div className="px-4 py-3 border-t border-border/50">
