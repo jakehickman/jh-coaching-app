@@ -108,11 +108,14 @@ function ValueDeltaCell({
       <span className={value == null ? "text-muted-foreground" : "text-foreground"}>
         {valueStr}
       </span>
-      {deltaStr && (
-        <span className={`ml-1.5 text-[11px] ${deltaColor}`}>
-          {deltaStr}
-        </span>
-      )}
+      {/* Always render delta span so cell width is consistent across all rows */}
+      <span
+        className={`inline-block ml-1.5 text-[11px] min-w-[3.5rem] text-right ${
+          deltaStr ? deltaColor : "invisible"
+        }`}
+      >
+        {deltaStr ?? "—"}
+      </span>
     </td>
   );
 }
