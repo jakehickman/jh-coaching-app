@@ -448,3 +448,11 @@
 - [x] Register progressRouter in server/routers/index.ts and server/routers.ts
 - [x] Create WeeklyReviewTab.tsx: expandable rows, in-progress badge, empty/error states, bg-muted skeleton, enabled guard
 - [x] Wire WeeklyReviewTab into ProgressSection.tsx Overview tab (replace 7-day averages cards and ProgressHistoryTable)
+
+## Weekly Review Redesign (Apr 2026)
+- [x] Server: add weekNumber field to weeklyReview procedure output
+- [x] Server: compute avgWeightPct (% change vs previous week avg weight) instead of raw delta
+- [x] Server: remove trainingAdherence and habitAdherence from weeklyReview output
+- [x] UI: replace expandable-rows table with compact always-visible horizontal table (one row per week, one column per metric)
+- [x] UI: show week number + date range in row header, amber badge for in-progress week
+- [x] UI: inline delta % chips (colour-coded) for weight, waist, skinfold, steps

@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 interface Props {
   clientId: number;
@@ -14,16 +14,15 @@ type Week = {
   weekEnd: string;
   label: string;
   isInProgress: boolean;
+  weekNumber: number;
   daysLogged: number;
   avgWeight: number | null;
+  avgWeightPct: number | null;
   avgWaist: number | null;
   avgSkinfold: number | null;
-  trainingAdherence: number | null;
-  trainedDays: number;
   sessionsCompleted: number;
   totalOffPlan: number | null;
   avgCaffeine: number | null;
-  habitAdherence: number | null;
   avgHunger: number | null;
   avgSleepQuality: number | null;
   avgSleepHours: number | null;
@@ -32,6 +31,8 @@ type Week = {
 };
 
 const DEFAULT_VISIBLE = 8;
+
+// ─── Formatters ──────────────────────────────────────────────────────────────
 
 function fmt(val: number | null | undefined, decimals = 1, suffix = ""): string {
   if (val == null) return "—";
@@ -43,209 +44,62 @@ function fmtInt(val: number | null | undefined, suffix = ""): string {
   return `${Math.round(val).toLocaleString()}${suffix}`;
 }
 
-function deltaStr(curr: number | null, prev: number | null, decimals = 1, suffix = ""): string | null {
+// ─── Delta chip ──────────────────────────────────────────────────────────────
+
+interface DeltaChipProps {
+  curr: number | null;
+  prev: number | null;
+  /** Format the delta value for display */
+  format?: (d: number) => string;
+  /** true = higher is better, false = lower is better, null = neutral */
+  higherIsBetter?: boolean | null;
+}
+
+function DeltaChip({ curr, prev, format, higherIsBetter = null }: DeltaChipProps) {
   if (curr == null || prev == null) return null;
   const d = curr - prev;
+  if (Math.abs(d) < 0.001) return null;
+
   const sign = d > 0 ? "+" : "";
-  return `${sign}${d.toFixed(decimals)}${suffix}`;
+  const text = format ? format(d) : `${sign}${d.toFixed(1)}`;
+
+  let colorClass = "text-muted-foreground bg-muted/40";
+  if (higherIsBetter === true) {
+    colorClass = d > 0 ? "text-green-400 bg-green-500/10" : "text-red-400 bg-red-500/10";
+  } else if (higherIsBetter === false) {
+    colorClass = d < 0 ? "text-green-400 bg-green-500/10" : "text-red-400 bg-red-500/10";
+  }
+
+  return (
+    <span className={`ml-1 text-[10px] font-semibold px-1 py-0.5 rounded ${colorClass}`}>
+      {text}
+    </span>
+  );
 }
 
-function deltaClass(curr: number | null, prev: number | null, higherIsBetter = true): string {
-  if (curr == null || prev == null) return "text-muted-foreground";
-  const d = curr - prev;
-  if (Math.abs(d) < 0.001) return "text-muted-foreground";
-  const improved = higherIsBetter ? d > 0 : d < 0;
-  return improved ? "text-green-400" : "text-red-400";
-}
+// ─── Cell ────────────────────────────────────────────────────────────────────
 
-interface MetricRowProps {
-  label: string;
+interface CellProps {
   value: string;
-  delta?: string | null;
-  deltaGood?: boolean | null;
+  chip?: React.ReactNode;
+  muted?: boolean;
+  center?: boolean;
 }
 
-function MetricRow({ label, value, delta, deltaGood }: MetricRowProps) {
-  const deltaColor =
-    delta == null
-      ? ""
-      : deltaGood === true
-      ? "text-green-400"
-      : deltaGood === false
-      ? "text-red-400"
-      : "text-muted-foreground";
-
+function Cell({ value, chip, muted, center }: CellProps) {
   return (
-    <div className="flex items-center justify-between py-1 text-sm border-b border-border/30 last:border-0">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="flex items-center gap-2 font-medium">
+    <td className={`px-3 py-2.5 text-sm whitespace-nowrap ${center ? "text-center" : "text-right"} ${muted ? "text-muted-foreground" : "text-foreground"}`}>
+      <span className="inline-flex items-center gap-0.5">
         {value}
-        {delta && (
-          <span className={`text-xs ${deltaColor}`}>{delta}</span>
-        )}
+        {chip}
       </span>
-    </div>
+    </td>
   );
 }
 
-interface ExpandedRowProps {
-  week: Week;
-  prev: Week | null;
-}
-
-function ExpandedRow({ week, prev }: ExpandedRowProps) {
-  const w = week;
-  const p = prev;
-
-  const weightDelta = deltaStr(w.avgWeight, p?.avgWeight ?? null);
-  const weightGood = w.avgWeight != null && p?.avgWeight != null
-    ? null // neutral — weight direction depends on goal
-    : null;
-
-  const waistDelta = deltaStr(w.avgWaist, p?.avgWaist ?? null);
-  const waistGood = w.avgWaist != null && p?.avgWaist != null
-    ? w.avgWaist < p.avgWaist
-    : null;
-
-  const skinfoldDelta = deltaStr(w.avgSkinfold, p?.avgSkinfold ?? null);
-  const skinfoldGood = w.avgSkinfold != null && p?.avgSkinfold != null
-    ? w.avgSkinfold < p.avgSkinfold
-    : null;
-
-  const adherenceDelta = deltaStr(w.trainingAdherence, p?.trainingAdherence ?? null, 0, "%");
-  const adherenceGood = w.trainingAdherence != null && p?.trainingAdherence != null
-    ? w.trainingAdherence >= p.trainingAdherence
-    : null;
-
-  const habitDelta = deltaStr(w.habitAdherence, p?.habitAdherence ?? null, 0, "%");
-  const habitGood = w.habitAdherence != null && p?.habitAdherence != null
-    ? w.habitAdherence >= p.habitAdherence
-    : null;
-
-  const hungerDelta = deltaStr(w.avgHunger, p?.avgHunger ?? null);
-  const hungerGood = w.avgHunger != null && p?.avgHunger != null
-    ? w.avgHunger <= p.avgHunger
-    : null;
-
-  const sleepQualityDelta = deltaStr(w.avgSleepQuality, p?.avgSleepQuality ?? null);
-  const sleepQualityGood = w.avgSleepQuality != null && p?.avgSleepQuality != null
-    ? w.avgSleepQuality >= p.avgSleepQuality
-    : null;
-
-  const sleepHoursDelta = deltaStr(w.avgSleepHours, p?.avgSleepHours ?? null);
-  const sleepHoursGood = w.avgSleepHours != null && p?.avgSleepHours != null
-    ? w.avgSleepHours >= p.avgSleepHours
-    : null;
-
-  const stepsDelta = deltaStr(w.avgSteps, p?.avgSteps ?? null, 0);
-  const stepsGood = w.avgSteps != null && p?.avgSteps != null
-    ? w.avgSteps >= p.avgSteps
-    : null;
-
-  return (
-    <div className="px-4 pb-4 pt-2 bg-muted/20 border-t border-border/30">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-0">
-        {/* Body Composition */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 mt-2">Body Composition</p>
-          <MetricRow
-            label="Avg Weight"
-            value={fmt(w.avgWeight, 1, " kg")}
-            delta={weightDelta ?? undefined}
-            deltaGood={weightGood}
-          />
-          <MetricRow
-            label="Avg Waist"
-            value={fmt(w.avgWaist, 1, " cm")}
-            delta={waistDelta ?? undefined}
-            deltaGood={waistGood}
-          />
-          <MetricRow
-            label="Avg Skinfold"
-            value={fmt(w.avgSkinfold, 1, " mm")}
-            delta={skinfoldDelta ?? undefined}
-            deltaGood={skinfoldGood}
-          />
-        </div>
-
-        {/* Training */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 mt-2">Training</p>
-          <MetricRow
-            label="Adherence"
-            value={w.trainingAdherence != null ? `${w.trainingAdherence}%` : "—"}
-            delta={adherenceDelta ?? undefined}
-            deltaGood={adherenceGood}
-          />
-          <MetricRow
-            label="Trained Days"
-            value={`${w.trainedDays} / ${w.daysLogged}`}
-          />
-          <MetricRow
-            label="Sessions Logged"
-            value={fmtInt(w.sessionsCompleted)}
-          />
-        </div>
-
-        {/* Nutrition & Habits */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 mt-2">Nutrition & Habits</p>
-          <MetricRow
-            label="Off-Plan Meals"
-            value={w.totalOffPlan != null ? String(w.totalOffPlan) : "—"}
-          />
-          <MetricRow
-            label="Avg Caffeine"
-            value={fmt(w.avgCaffeine, 1, " srv")}
-          />
-          <MetricRow
-            label="Habit Adherence"
-            value={w.habitAdherence != null ? `${w.habitAdherence}%` : "—"}
-            delta={habitDelta ?? undefined}
-            deltaGood={habitGood}
-          />
-        </div>
-
-        {/* Recovery & Activity */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 mt-2">Recovery & Activity</p>
-          <MetricRow
-            label="Avg Hunger"
-            value={fmt(w.avgHunger, 1, "/5")}
-            delta={hungerDelta ?? undefined}
-            deltaGood={hungerGood}
-          />
-          <MetricRow
-            label="Sleep Quality"
-            value={fmt(w.avgSleepQuality, 1, "/5")}
-            delta={sleepQualityDelta ?? undefined}
-            deltaGood={sleepQualityGood}
-          />
-          <MetricRow
-            label="Sleep Hours"
-            value={fmt(w.avgSleepHours, 1, " hrs")}
-            delta={sleepHoursDelta ?? undefined}
-            deltaGood={sleepHoursGood}
-          />
-          <MetricRow
-            label="Avg Steps"
-            value={w.avgSteps != null ? Math.round(w.avgSteps).toLocaleString() : "—"}
-            delta={stepsDelta ?? undefined}
-            deltaGood={stepsGood}
-          />
-          {w.stepGoal != null && (
-            <div className="text-xs text-muted-foreground mt-0.5 text-right">
-              Goal: {w.stepGoal.toLocaleString()}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── Main component ──────────────────────────────────────────────────────────
 
 export function WeeklyReviewTab({ clientId }: Props) {
-  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
   const [showAll, setShowAll] = useState(false);
 
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
@@ -253,23 +107,11 @@ export function WeeklyReviewTab({ clientId }: Props) {
     { enabled: !!clientId, staleTime: 0, retry: 1 }
   );
 
-  function toggleWeek(weekStart: string) {
-    setExpandedWeeks((prev) => {
-      const next = new Set(prev);
-      if (next.has(weekStart)) {
-        next.delete(weekStart);
-      } else {
-        next.add(weekStart);
-      }
-      return next;
-    });
-  }
-
   if (isLoading) {
     return (
-      <div className="space-y-2 mt-4">
+      <div className="space-y-2 mt-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full bg-muted rounded-md" />
+          <Skeleton key={i} className="h-10 w-full bg-muted rounded-md" />
         ))}
       </div>
     );
@@ -277,7 +119,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
 
   if (error) {
     return (
-      <div className="flex items-center gap-3 p-4 mt-4 rounded-lg border border-destructive/40 bg-destructive/10 text-destructive">
+      <div className="flex items-center gap-3 p-4 mt-2 rounded-lg border border-destructive/40 bg-destructive/10 text-destructive">
         <AlertCircle className="h-5 w-5 shrink-0" />
         <div>
           <p className="font-medium">Failed to load weekly review</p>
@@ -301,74 +143,257 @@ export function WeeklyReviewTab({ clientId }: Props) {
   const visibleWeeks = showAll ? weeks : weeks.slice(0, DEFAULT_VISIBLE);
 
   return (
-    <div className="mt-4">
-      <div className="rounded-lg border border-border overflow-hidden">
-        {visibleWeeks.map((week, idx) => {
-          const isExpanded = expandedWeeks.has(week.weekStart);
-          // prev = next item in the array (older week, since weeks are newest-first)
-          const prevWeek = weeks[idx + 1] ?? null;
-          const hasData = week.daysLogged > 0;
+    <div className="mt-2">
+      {/* Horizontally scrollable table */}
+      <div className="rounded-lg border border-border overflow-x-auto">
+        <table className="w-full text-sm border-collapse min-w-[900px]">
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              {/* Week column */}
+              <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap sticky left-0 bg-muted/30 z-10 min-w-[160px]">
+                Week
+              </th>
+              {/* Body Composition group */}
+              <th colSpan={3} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
+                Body Composition
+              </th>
+              {/* Training */}
+              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
+                Training
+              </th>
+              {/* Nutrition */}
+              <th colSpan={2} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
+                Nutrition
+              </th>
+              {/* Recovery */}
+              <th colSpan={3} className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
+                Recovery
+              </th>
+              {/* Activity */}
+              <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l border-border/50">
+                Activity
+              </th>
+            </tr>
+            <tr className="border-b border-border bg-muted/10">
+              <th className="px-3 py-1.5 text-left text-[11px] text-muted-foreground sticky left-0 bg-muted/10 z-10"></th>
+              {/* Body Composition sub-headers */}
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Avg Wt (kg)</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Waist (cm)</th>
+              <th className="px-3 py-1.5 text-right text-[11px] text-muted-foreground whitespace-nowrap">Skinfold (mm)</th>
+              {/* Training */}
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Sessions</th>
+              {/* Nutrition */}
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Off-Plan</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Caffeine (srv)</th>
+              {/* Recovery */}
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Hunger /5</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Sleep Qual /5</th>
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground whitespace-nowrap">Sleep Hrs</th>
+              {/* Activity */}
+              <th className="px-3 py-1.5 text-center text-[11px] text-muted-foreground border-l border-border/50 whitespace-nowrap">Avg Steps</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleWeeks.map((week, idx) => {
+              const prev: Week | null = weeks[idx + 1] ?? null;
+              const hasData = week.daysLogged > 0;
 
-          return (
-            <div key={week.weekStart} className="border-b border-border last:border-0">
-              {/* Row header */}
-              <button
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors ${week.isInProgress ? "bg-muted/10" : ""}`}
-                onClick={() => toggleWeek(week.weekStart)}
-                disabled={!hasData}
-              >
-                <span className="text-muted-foreground">
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </span>
+              return (
+                <tr
+                  key={week.weekStart}
+                  className={`border-b border-border/50 last:border-0 transition-colors ${
+                    week.isInProgress
+                      ? "bg-amber-500/5 hover:bg-amber-500/10"
+                      : hasData
+                      ? "hover:bg-muted/20"
+                      : "opacity-50"
+                  }`}
+                >
+                  {/* Week label — sticky left */}
+                  <td className={`px-3 py-2.5 sticky left-0 z-10 ${week.isInProgress ? "bg-amber-500/5" : "bg-card"}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-primary min-w-[28px]">W{week.weekNumber}</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs text-foreground font-medium leading-tight">{week.label}</span>
+                        <span className="text-[10px] text-muted-foreground leading-tight">
+                          {hasData ? `${week.daysLogged}d logged` : "No data"}
+                        </span>
+                      </div>
+                      {week.isInProgress && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-400 bg-amber-500/10 ml-1">
+                          Live
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
 
-                <span className="flex-1 font-medium text-sm">{week.label}</span>
-
-                {week.isInProgress && (
-                  <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-400 bg-amber-500/10">
-                    In progress
-                  </Badge>
-                )}
-
-                {/* Quick summary: weight + adherence */}
-                <span className="hidden sm:flex items-center gap-4 text-sm text-muted-foreground">
-                  {week.avgWeight != null && (
-                    <span>
-                      {week.avgWeight.toFixed(1)} kg
-                      {prevWeek?.avgWeight != null && (() => {
-                        const d = week.avgWeight! - prevWeek.avgWeight!;
-                        const sign = d > 0 ? "+" : "";
+                  {/* Avg Weight */}
+                  <td className="px-3 py-2.5 text-right text-sm whitespace-nowrap border-l border-border/30">
+                    <span className="inline-flex items-center gap-0.5 justify-end">
+                      <span className={hasData && week.avgWeight != null ? "text-foreground" : "text-muted-foreground"}>
+                        {fmt(week.avgWeight, 1)}
+                      </span>
+                      {week.avgWeightPct != null && (() => {
+                        const pct = week.avgWeightPct;
+                        const sign = pct > 0 ? "+" : "";
+                        // neutral — weight direction depends on goal, no colour
                         return (
-                          <span className={`ml-1 text-xs ${d < 0 ? "text-green-400" : d > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                            ({sign}{d.toFixed(1)})
+                          <span className="ml-1 text-[10px] font-semibold px-1 py-0.5 rounded text-muted-foreground bg-muted/40">
+                            {sign}{pct.toFixed(2)}%
                           </span>
                         );
                       })()}
                     </span>
-                  )}
-                  {week.trainingAdherence != null && (
-                    <span>{week.trainingAdherence}% adherence</span>
-                  )}
-                  {!hasData && (
-                    <span className="italic text-xs">No data</span>
-                  )}
-                </span>
+                  </td>
 
-                <span className="text-xs text-muted-foreground">
-                  {hasData ? `${week.daysLogged} day${week.daysLogged !== 1 ? "s" : ""} logged` : "No data"}
-                </span>
-              </button>
+                  {/* Waist */}
+                  <td className="px-3 py-2.5 text-right text-sm whitespace-nowrap">
+                    <span className="inline-flex items-center gap-0.5 justify-end">
+                      <span className={week.avgWaist != null ? "text-foreground" : "text-muted-foreground"}>
+                        {fmt(week.avgWaist, 1)}
+                      </span>
+                      <DeltaChip
+                        curr={week.avgWaist}
+                        prev={prev?.avgWaist ?? null}
+                        format={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`}
+                        higherIsBetter={false}
+                      />
+                    </span>
+                  </td>
 
-              {/* Expanded detail */}
-              {isExpanded && hasData && (
-                <ExpandedRow week={week} prev={prevWeek} />
-              )}
-            </div>
-          );
-        })}
+                  {/* Skinfold */}
+                  <td className="px-3 py-2.5 text-right text-sm whitespace-nowrap">
+                    <span className="inline-flex items-center gap-0.5 justify-end">
+                      <span className={week.avgSkinfold != null ? "text-foreground" : "text-muted-foreground"}>
+                        {fmt(week.avgSkinfold, 1)}
+                      </span>
+                      <DeltaChip
+                        curr={week.avgSkinfold}
+                        prev={prev?.avgSkinfold ?? null}
+                        format={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`}
+                        higherIsBetter={false}
+                      />
+                    </span>
+                  </td>
+
+                  {/* Sessions */}
+                  <Cell
+                    center
+                    value={String(week.sessionsCompleted)}
+                    muted={!hasData}
+                    chip={
+                      prev != null ? (
+                        <DeltaChip
+                          curr={week.sessionsCompleted}
+                          prev={prev.sessionsCompleted}
+                          format={(d) => `${d > 0 ? "+" : ""}${Math.round(d)}`}
+                          higherIsBetter={true}
+                        />
+                      ) : undefined
+                    }
+                  />
+
+                  {/* Off-Plan Meals */}
+                  <Cell
+                    center
+                    value={week.totalOffPlan != null ? String(week.totalOffPlan) : "—"}
+                    muted={!hasData}
+                    chip={
+                      prev != null ? (
+                        <DeltaChip
+                          curr={week.totalOffPlan}
+                          prev={prev.totalOffPlan}
+                          format={(d) => `${d > 0 ? "+" : ""}${Math.round(d)}`}
+                          higherIsBetter={false}
+                        />
+                      ) : undefined
+                    }
+                  />
+
+                  {/* Caffeine */}
+                  <Cell
+                    center
+                    value={fmt(week.avgCaffeine, 1)}
+                    muted={!hasData}
+                  />
+
+                  {/* Hunger */}
+                  <Cell
+                    center
+                    value={fmt(week.avgHunger, 1)}
+                    muted={!hasData}
+                    chip={
+                      prev != null ? (
+                        <DeltaChip
+                          curr={week.avgHunger}
+                          prev={prev.avgHunger}
+                          format={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`}
+                          higherIsBetter={false}
+                        />
+                      ) : undefined
+                    }
+                  />
+
+                  {/* Sleep Quality */}
+                  <Cell
+                    center
+                    value={fmt(week.avgSleepQuality, 1)}
+                    muted={!hasData}
+                    chip={
+                      prev != null ? (
+                        <DeltaChip
+                          curr={week.avgSleepQuality}
+                          prev={prev.avgSleepQuality}
+                          format={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`}
+                          higherIsBetter={true}
+                        />
+                      ) : undefined
+                    }
+                  />
+
+                  {/* Sleep Hours */}
+                  <Cell
+                    center
+                    value={fmt(week.avgSleepHours, 1)}
+                    muted={!hasData}
+                    chip={
+                      prev != null ? (
+                        <DeltaChip
+                          curr={week.avgSleepHours}
+                          prev={prev.avgSleepHours}
+                          format={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}`}
+                          higherIsBetter={true}
+                        />
+                      ) : undefined
+                    }
+                  />
+
+                  {/* Avg Steps */}
+                  <td className="px-3 py-2.5 text-center text-sm whitespace-nowrap border-l border-border/30">
+                    <span className="inline-flex items-center gap-0.5 justify-center">
+                      <span className={week.avgSteps != null ? "text-foreground" : "text-muted-foreground"}>
+                        {week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—"}
+                      </span>
+                      {prev != null && (
+                        <DeltaChip
+                          curr={week.avgSteps}
+                          prev={prev.avgSteps}
+                          format={(d) => `${d > 0 ? "+" : ""}${Math.round(d).toLocaleString()}`}
+                          higherIsBetter={true}
+                        />
+                      )}
+                    </span>
+                    {week.stepGoal != null && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        goal {week.stepGoal.toLocaleString()}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
       {/* Show all / show less */}
@@ -380,7 +405,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
             onClick={() => setShowAll((v) => !v)}
             className="text-muted-foreground hover:text-foreground"
           >
-            {showAll ? `Show less` : `Show all ${weeks.length} weeks`}
+            {showAll ? "Show less" : `Show all ${weeks.length} weeks`}
           </Button>
         </div>
       )}
