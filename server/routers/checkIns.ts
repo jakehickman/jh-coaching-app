@@ -33,7 +33,40 @@ function deriveCycleStatus(cycle: { status: string; dueDate: Date | string }, to
   return today > dueDateStr ? "overdue" : "upcoming";
 }
 
-// ─── Router ───────────────────────────────────────────────────────────────────
+// ─── Week number helper ─────────────────────────────────────────────────────
+
+const DAY_NAME_TO_DOW: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+  thursday: 4, friday: 5, saturday: 6,
+};
+
+/**
+ * Given a client's startDate, checkInDay, and a dueDate string,
+ * return the 1-based week number aligned with buildWeekPeriods in progress.ts.
+ * W1 = first scheduled check-in week (oldest), Wn = most recent.
+ */
+function computeWeekNumber(
+  startDate: string | null | undefined,
+  checkInDay: string | null | undefined,
+  dueDate: string,
+): number | null {
+  if (!startDate || !checkInDay) return null;
+  const dow = DAY_NAME_TO_DOW[checkInDay.toLowerCase()];
+  if (dow === undefined) return null;
+  const start = new Date(startDate + "T00:00:00Z");
+  const startDow = start.getUTCDay();
+  let daysUntilFirst = (dow - startDow + 7) % 7;
+  if (daysUntilFirst === 0) daysUntilFirst = 7;
+  const firstDue = new Date(start);
+  firstDue.setUTCDate(start.getUTCDate() + daysUntilFirst);
+  const firstDueMs = firstDue.getTime();
+  const dueDateMs = new Date(dueDate + "T00:00:00Z").getTime();
+  if (dueDateMs < firstDueMs) return null;
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  return Math.round((dueDateMs - firstDueMs) / msPerWeek) + 1;
+}
+
+// ─── Router ─────────────────────────────────────────────────────────────────────
 
 export const checkInRouter = router({
 
@@ -158,12 +191,20 @@ export const checkInRouter = router({
         submission = await db.getCheckInForWeek(input.clientId, dueDateStr);
       }
 
+      const profile = await db.getClientProfile(input.clientId);
+      const weekNumber = computeWeekNumber(
+        profile?.startDate ? toDateStr(profile.startDate) : null,
+        profile?.checkInDay ?? null,
+        dueDateStr,
+      );
+
       return {
         id: cycle.id,
         dueDate: dueDateStr,
         status: displayStatus,
         submissionId: cycle.submissionId ?? null,
         submission,
+        weekNumber,
       };
     }),
 
@@ -174,13 +215,22 @@ export const checkInRouter = router({
     .input(z.object({ clientId: z.number() }))
     .query(async ({ input }) => {
       const rows = await db.getCycleHistory(input.clientId);
-      return rows.map(r => ({
-        id: r.id,
-        dueDate: toDateStr(r.dueDate),
-        completedAt: r.completedAt,
-        submissionId: r.submissionId ?? null,
-        submission: r.submission,
-      }));
+      const profile = await db.getClientProfile(input.clientId);
+      return rows.map(r => {
+        const dueDateStr = toDateStr(r.dueDate);
+        return {
+          id: r.id,
+          dueDate: dueDateStr,
+          completedAt: r.completedAt,
+          submissionId: r.submissionId ?? null,
+          submission: r.submission,
+          weekNumber: computeWeekNumber(
+            profile?.startDate ? toDateStr(profile.startDate) : null,
+            profile?.checkInDay ?? null,
+            dueDateStr,
+          ),
+        };
+      });
     }),
 
   /**

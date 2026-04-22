@@ -316,21 +316,24 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
     );
   }
 
-  const { status, dueDate, submission } = currentCycle;
+  const { status, dueDate, submission, weekNumber } = currentCycle as any;
 
   const statusConfig: Record<CycleStatus, { label: string; icon: React.ReactNode; className: string }> = {
     upcoming: {
-      label: `Upcoming · Due ${fmtDate(dueDate)}`,
+      label: `${weekNumber != null ? `Week ${weekNumber} · ` : ""}Upcoming · Due ${fmtDate(dueDate)}`,
+
       icon: <Clock size={12} />,
       className: "bg-secondary border-border text-muted-foreground",
     },
     overdue: {
-      label: `Overdue · Was due ${fmtDate(dueDate)}`,
+      label: `${weekNumber != null ? `Week ${weekNumber} · ` : ""}Overdue · Was due ${fmtDate(dueDate)}`,
+
       icon: <AlertCircle size={12} />,
       className: "bg-amber-500/10 border-amber-500/30 text-amber-400",
     },
     submitted: {
-      label: `Submitted · Due ${fmtDate(dueDate)}`,
+      label: `${weekNumber != null ? `Week ${weekNumber} · ` : ""}Submitted · Due ${fmtDate(dueDate)}`,
+
       icon: <CheckCircle2 size={12} />,
       className: "bg-green-500/10 border-green-500/30 text-green-400",
     },
@@ -417,6 +420,11 @@ export function CheckInsDetailPanel({ clientId }: { clientId: number }) {
                   }
                 >
                   <div className="flex items-center gap-2.5 flex-wrap">
+                    {row.weekNumber != null && (
+                      <span className="text-xs font-semibold text-primary/80 bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full">
+                        W{row.weekNumber}
+                      </span>
+                    )}
                     <span className="text-sm font-semibold text-foreground">
                       Due {fmtDate(row.dueDate)}
                     </span>
