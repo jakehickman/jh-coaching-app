@@ -114,12 +114,11 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
 
   const weeks = data?.weeks ?? [];
 
-  // Initialise: expand the first two weeks once data loads (before any early returns)
+  // Initialise: expand only the most recent week once data loads (before any early returns)
   useEffect(() => {
     if (expandedInit || weeks.length === 0) return;
     const toExpand = new Set<string>();
     if (weeks[0]) toExpand.add(weeks[0].weekStart);
-    if (weeks[1]) toExpand.add(weeks[1].weekStart);
     setExpanded(toExpand);
     setExpandedInit(true);
   }, [weeks.length, expandedInit]);
