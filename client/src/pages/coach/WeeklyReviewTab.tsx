@@ -183,8 +183,9 @@ export function WeeklyReviewTab({ clientId }: Props) {
             </tr>
           </thead>
           <tbody>
-            {visibleWeeks.map((week) => {
+            {visibleWeeks.map((week, idx) => {
               const hasData = week.daysLogged > 0;
+              const isEven = idx % 2 === 0;
 
               const stepsValue = week.avgSteps != null
                 ? (week.stepGoal != null
@@ -198,13 +199,15 @@ export function WeeklyReviewTab({ clientId }: Props) {
                   className={`border-b border-border/50 last:border-0 transition-colors ${
                     week.isInProgress
                       ? "bg-amber-500/5 hover:bg-amber-500/10"
-                      : hasData
-                      ? "hover:bg-muted/20"
-                      : "opacity-40"
+                      : !hasData
+                      ? "opacity-40"
+                      : isEven
+                      ? "hover:bg-muted/30"
+                      : "bg-muted/10 hover:bg-muted/20"
                   }`}
                 >
                   {/* Week label — sticky left */}
-                  <td className={`px-3 py-2.5 sticky left-0 z-10 ${week.isInProgress ? "bg-amber-500/5" : "bg-card"}`}>
+                  <td className={`px-3 py-2.5 sticky left-0 z-10 ${week.isInProgress ? "bg-amber-500/5" : !hasData ? "bg-card" : isEven ? "bg-card" : "bg-muted/10"}`}>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-primary min-w-[28px]">W{week.weekNumber}</span>
                       <div className="flex flex-col">
