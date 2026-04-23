@@ -761,7 +761,11 @@ function WorkoutLogTab() {
               const displayName = subName ?? ex.name;
               const sets = exerciseData[displayName] ?? [{ weight: "", reps: "", notes: "" }];
               const isCollapsed = collapsedExercises[displayName] ?? false;
-              const prevSets = prevExMap[displayName] ?? prevExMap[ex.name] ?? [];
+              // When a substitution is active, only look up by the sub name.
+              // Never fall back to the original exercise's last performance — different movement.
+              const prevSets = subName
+                ? (prevExMap[displayName] ?? [])
+                : (prevExMap[ex.name] ?? []);
               const exVideoUrl = videoMap[displayName] ?? videoMap[ex.name];
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
               const currentPreset = machinePreset[displayName] ?? "";
