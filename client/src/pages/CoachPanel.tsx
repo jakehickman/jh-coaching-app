@@ -4,7 +4,7 @@ import { useParams, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { Trash2, Users, Eye, LayoutDashboard } from "lucide-react";
+import { Trash2, Users, Eye, Pencil } from "lucide-react";
 import ExerciseLibrarySection from "./coach/ExerciseLibrarySection";
 import NutritionDataSection from "./coach/NutritionDataSection";
 import HabitsSection from "./coach/HabitsSection";
@@ -132,10 +132,8 @@ function ClientsSection() {
             {(allUsers ?? []).map(user => (
               <div
                 key={user.id}
-                onClick={() => setSelectedId(user.id === selectedId ? null : user.id)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${
-                  selectedId === user.id ? "border-primary bg-primary/5" : "border-border bg-card hover:border-border/80"
-                }`}
+                onClick={() => navigate(`/coach/client/${user.id}`)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors border-border bg-card hover:border-primary/40 hover:bg-primary/5"
               >
                 <div className="relative flex-shrink-0">
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
@@ -169,12 +167,12 @@ function ClientsSection() {
                       <button
                         onClick={e => {
                           e.stopPropagation();
-                          navigate(`/coach/client/${user.id}`);
+                          setSelectedId(user.id === selectedId ? null : user.id);
                         }}
                         className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-md hover:bg-primary/10"
-                        title={`View ${user.name ?? 'client'}'s profile hub`}
+                        title={`Edit ${user.name ?? 'client'}'s details`}
                       >
-                        <LayoutDashboard size={13} />
+                        <Pencil size={13} />
                       </button>
                       <button
                         onClick={e => {
