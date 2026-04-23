@@ -809,8 +809,8 @@ function WorkoutLogTab() {
                         {prevSets.length > 0 && (
                           <p className="text-xs text-primary/80 mt-0.5">
                             Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
-                            {(prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]) && (
-                              <span className="text-muted-foreground/60 ml-1">· {prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]}</span>
+                            {(currentPreset || (prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name])) && (
+                              <span className="text-muted-foreground/60 ml-1">· {currentPreset || (prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name])}</span>
                             )}
                           </p>
                         )}
