@@ -1361,22 +1361,18 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </div>
           </TabsContent>
 
-          {/* ── Progress: body comp, nutrition history, progression ── */}
+          {/* ── Progress: training history + nutrition history ── */}
           <TabsContent value="progress">
-            <Tabs defaultValue="body-comp" className="w-full">
+            <Tabs defaultValue="training" className="w-full">
               <TabsList className="mb-4">
-                <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
+                <TabsTrigger value="training">Training</TabsTrigger>
                 <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-                <TabsTrigger value="progression">Progression</TabsTrigger>
               </TabsList>
-              <TabsContent value="body-comp">
-                <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
-              </TabsContent>
-              <TabsContent value="nutrition">
-                <NutritionTab clientId={selectedUserId!} />
-              </TabsContent>
-              <TabsContent value="progression">
+              <TabsContent value="training">
                 <div className="flex flex-col gap-8">
+                  <div>
+                    <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
+                  </div>
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Session Log</p>
                     <WorkoutSessionsTab workoutSessions={workoutSessions} />
@@ -1387,6 +1383,9 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                   </div>
                 </div>
               </TabsContent>
+              <TabsContent value="nutrition">
+                <NutritionTab clientId={selectedUserId!} />
+              </TabsContent>
             </Tabs>
           </TabsContent>
 
@@ -1394,13 +1393,13 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           <TabsContent value="program">
             <Tabs defaultValue="training" className="w-full">
               <TabsList className="mb-4">
-                <TabsTrigger value="training">Training Program</TabsTrigger>
-                <TabsTrigger value="meal-plan">Meal Plan</TabsTrigger>
+                <TabsTrigger value="training">Training</TabsTrigger>
+                <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
               </TabsList>
               <TabsContent value="training">
                 <TrainingSection fixedClientId={selectedUserId!} />
               </TabsContent>
-              <TabsContent value="meal-plan">
+              <TabsContent value="nutrition">
                 <MealPlansSection fixedClientId={selectedUserId!} />
               </TabsContent>
             </Tabs>
