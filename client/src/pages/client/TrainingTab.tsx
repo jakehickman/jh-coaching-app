@@ -736,10 +736,14 @@ function WorkoutLogTab() {
         const prevMachinePresetMap: Record<string, string> = {};
         for (const s of pastSessions) {
           for (const ex of (s.exercises as any[])) {
-            // Only record the first (most recent) occurrence for each name
+            // Only record the first (most recent) occurrence that has actual set data.
+            // Skip sessions where the exercise was present but no sets were logged,
+            // so the lookback continues to find the last session with real numbers.
             if (!(ex.name in prevExMap)) {
               const filteredSets = (ex.sets ?? []).filter((set: any) => set.weight != null || set.reps != null);
-              prevExMap[ex.name] = filteredSets;
+              if (filteredSets.length > 0) {
+                prevExMap[ex.name] = filteredSets;
+              }
             }
             const preset = ex.machinePreset || ex.equipmentDetails || null;
             if (preset && !(ex.name in prevMachinePresetMap)) {
