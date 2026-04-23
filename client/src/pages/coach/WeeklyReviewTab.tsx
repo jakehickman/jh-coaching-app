@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -107,8 +107,9 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [expandedInit, setExpandedInit] = useState(false);
 
+  const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
-    { clientId },
+    { clientId, tzOffsetMinutes },
     { enabled: !!clientId, staleTime: 0, retry: 1 }
   );
 

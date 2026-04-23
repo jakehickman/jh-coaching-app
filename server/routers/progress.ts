@@ -27,7 +27,8 @@ function buildWeekPeriods(
   checkInDay: string,
   startDate: string,
   today: Date,
-  maxWeeks = 52
+  maxWeeks = 52,
+  tzOffsetMinutes = 0
 ): Array<{ weekStart: string; weekEnd: string; label: string; isInProgress: boolean; weekNumber: number }> {
   const dow = DAY_NAME_TO_DOW[checkInDay.toLowerCase()] ?? 1;
   const start = new Date(startDate + "T00:00:00Z");
@@ -39,38 +40,57 @@ function buildWeekPeriods(
   const firstDue = new Date(start);
   firstDue.setUTCDate(start.getUTCDate() + daysUntilFirst);
 
-  // Find the most recent past due date (≤ today)
-  const todayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  // Compute local today using the client's timezone offset
+  const localMs = today.getTime() + tzOffsetMinutes * 60 * 1000;
+  const localToday = new Date(localMs);
+  const todayMs = Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate());
   const firstDueMs = firstDue.getTime();
 
   if (firstDueMs > todayMs) return []; // no periods yet
 
-  // How many full 7-day periods since firstDue?
   const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+
+  // Most recent past due date (≤ today)
   const weeksSinceFirst = Math.floor((todayMs - firstDueMs) / msPerWeek);
-  const latestDueMs = firstDueMs + weeksSinceFirst * msPerWeek;
-  const totalWeeks = weeksSinceFirst + 1; // 1-based count of completed+current weeks
+  const latestPastDueMs = firstDueMs + weeksSinceFirst * msPerWeek;
+
+  // Next due date (> today) — this is the end of the current in-progress week
+  const nextDueMs = latestPastDueMs + msPerWeek;
 
   const periods: Array<{ weekStart: string; weekEnd: string; label: string; isInProgress: boolean; weekNumber: number }> = [];
 
+  // Always include the current in-progress week (from day after last due → next due)
+  const inProgressWeekStart = new Date(latestPastDueMs + 24 * 60 * 60 * 1000);
+  const inProgressWeekEnd = new Date(nextDueMs);
+  const inProgressLabel = `${inProgressWeekStart.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} – ${inProgressWeekEnd.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+  const totalWeeks = weeksSinceFirst + 2; // +1 for 1-based, +1 for in-progress week
+
+  periods.push({
+    weekStart: toDateStr(inProgressWeekStart),
+    weekEnd: toDateStr(inProgressWeekEnd),
+    label: inProgressLabel,
+    isInProgress: true,
+    weekNumber: totalWeeks,
+  });
+
+  // Then add completed weeks newest-first
   for (let i = 0; i < maxWeeks; i++) {
-    const weekEndMs = latestDueMs - i * msPerWeek;
+    const weekEndMs = latestPastDueMs - i * msPerWeek;
     if (weekEndMs < firstDueMs) break;
 
     const weekEnd = new Date(weekEndMs);
     const weekStart = new Date(weekEndMs - 6 * 24 * 60 * 60 * 1000);
-    const isInProgress = i === 0 && weekEndMs > todayMs;
 
     const label = `${weekStart.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} – ${weekEnd.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
 
-    // weekNumber: oldest week = 1, newest = totalWeeks
-    const weekNumber = totalWeeks - i;
+    // weekNumber: oldest week = 1, newest completed = totalWeeks - 1
+    const weekNumber = totalWeeks - 1 - i;
 
     periods.push({
       weekStart: toDateStr(weekStart),
       weekEnd: toDateStr(weekEnd),
       label,
-      isInProgress,
+      isInProgress: false,
       weekNumber,
     });
   }
@@ -104,9 +124,9 @@ function skinfoldTotal(m: Record<string, any>): number | null {
 
 export const progressRouter = router({
   weeklyReview: protectedProcedure
-    .input(z.object({ clientId: z.number() }))
+    .input(z.object({ clientId: z.number(), tzOffsetMinutes: z.number().optional().default(0) }))
     .query(async ({ input }) => {
-      const { clientId } = input;
+      const { clientId, tzOffsetMinutes } = input;
 
       const [profile, logs, meas, sessions] = await Promise.all([
         db.getClientProfile(clientId),
@@ -121,7 +141,7 @@ export const progressRouter = router({
 
       const today = new Date();
       const startDateStr = typeof profile.startDate === "string" ? profile.startDate : toDateStr(profile.startDate as Date);
-      const periods = buildWeekPeriods(profile.checkInDay, startDateStr, today);
+      const periods = buildWeekPeriods(profile.checkInDay, startDateStr, today, 52, tzOffsetMinutes);
 
       // Build weeks newest-first; we need the next item (older week) for deltas
       const rawWeeks = periods.map((period) => {
