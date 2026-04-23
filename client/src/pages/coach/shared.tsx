@@ -2,7 +2,7 @@
  * Shared primitives used across CoachPanel section files.
  * Keep this file small — only truly shared, stateless helpers belong here.
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { trpc } from "@/lib/trpc";
 import { Check, ChevronsUpDown, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Minus } from "lucide-react";
@@ -62,11 +62,18 @@ export function Card({
 
 export function useClientSelector() {
   const { data: allUsers } = trpc.users.list.useQuery();
+  const searchString = typeof window !== 'undefined' ? window.location.search : '';
+  const urlClientId = useMemo(() => {
+    const p = new URLSearchParams(searchString);
+    const v = p.get('client');
+    return v ? parseInt(v, 10) : null;
+  }, [searchString]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const clients = allUsers ?? [];
   useEffect(() => {
     if (clients.length > 0 && !selectedUserId) {
-      setSelectedUserId(clients[0].id);
+      const target = urlClientId && clients.find(c => c.id === urlClientId) ? urlClientId : clients[0].id;
+      setSelectedUserId(target);
     }
   }, [clients]);
   return { clients, selectedUserId, setSelectedUserId };

@@ -1376,6 +1376,15 @@ export default function ProgressSection() {
           </TabsContent>
           <TabsContent value="training">
             <div className="flex flex-col gap-8">
+              <div className="flex items-center justify-end">
+                <a
+                  href={`/coach/training?client=${selectedUserId}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  <ExternalLink size={12} />
+                  Edit Program
+                </a>
+              </div>
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Session Log</p>
                 <WorkoutSessionsTab workoutSessions={workoutSessions} />
