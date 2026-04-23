@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { localToday, fmtDate, toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { pctChange as pctChangeNum } from "@/lib/stats";
 import {
-  LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, ExternalLink } from "lucide-react";
@@ -185,7 +185,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
 }
 
 // ─── Measurements Tab ────────────────────────────────────────────────────────
-function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: any[] }) {
+function MeasurementsTab({ measurements, logs, macroHistory }: { measurements: any[]; logs?: any[]; macroHistory?: any[] }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const sorted = [...measurements].sort((a, b) =>
@@ -266,15 +266,34 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
   });
 
   // Build weight trend data from daily logs (oldest first)
-  const weightData = [...(logs ?? [])]
+  const sortedLogs = [...(logs ?? [])]
     .filter((l: any) => l.weight != null)
-    .sort((a: any, b: any) => toLocalDateStr(a.logDate).localeCompare(toLocalDateStr(b.logDate)))
-    .map((l: any) => {
-      const iso = toLocalDateStr(l.logDate);
-      const [, mo, d] = iso.split('-');
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return { date: `${parseInt(d)} ${months[parseInt(mo)-1]}`, weight: l.weight };
-    });
+    .sort((a: any, b: any) => toLocalDateStr(a.logDate).localeCompare(toLocalDateStr(b.logDate)));
+
+  const weightData = sortedLogs.map((l: any) => {
+    const iso = toLocalDateStr(l.logDate);
+    const [, mo, d] = iso.split('-');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return { date: `${parseInt(d)} ${months[parseInt(mo)-1]}`, weight: l.weight, isoDate: iso };
+  });
+
+  // Compute 7-day rolling average weight
+  const weightWithAvg = weightData.map((point, i) => {
+    const window = weightData.slice(Math.max(0, i - 6), i + 1);
+    const avg7 = parseFloat((window.reduce((s, p) => s + p.weight, 0) / window.length).toFixed(2));
+    return { ...point, avg7 };
+  });
+
+  // Build macro change marker dates mapped to chart date strings
+  const macroMarkers = (macroHistory ?? []).map((h: any) => {
+    const iso = toLocalDateStr(h.changedAt);
+    const [, mo, d] = iso.split('-');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return {
+      date: `${parseInt(d)} ${months[parseInt(mo)-1]}`,
+      label: `Train: ${h.trainingCalories} kcal · Rest: ${h.restCalories} kcal`,
+    };
+  });
 
   // Build waist trend data from measurements (oldest first)
   const waistData = [...sorted].reverse()
@@ -286,19 +305,18 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
       return { date: `${parseInt(d)} ${months[parseInt(mo)-1]}`, waist: m.waist };
     });
 
-  // Merge weight and waist onto a shared date axis
+  // Merge weight (with avg7) and waist onto a shared date axis
   const combinedTrendData = (() => {
-    const map = new Map<string, { date: string; weight?: number; waist?: number }>();
-    for (const w of weightData) {
-      map.set(w.date, { ...map.get(w.date), date: w.date, weight: w.weight });
+    const map = new Map<string, { date: string; weight?: number; avg7?: number; waist?: number }>();
+    for (const w of weightWithAvg) {
+      map.set(w.date, { ...map.get(w.date), date: w.date, weight: w.weight, avg7: w.avg7 });
     }
     for (const w of waistData) {
       map.set(w.date, { ...map.get(w.date), date: w.date, waist: w.waist as number });
     }
     return Array.from(map.values()).sort((a, b) => {
-      // Sort by original order (month/day string — use index from weightData as proxy)
-      const ai = weightData.findIndex(x => x.date === a.date);
-      const bi = weightData.findIndex(x => x.date === b.date);
+      const ai = weightWithAvg.findIndex(x => x.date === a.date);
+      const bi = weightWithAvg.findIndex(x => x.date === b.date);
       if (ai !== -1 && bi !== -1) return ai - bi;
       if (ai !== -1) return -1;
       if (bi !== -1) return 1;
@@ -329,7 +347,7 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
         <div>
           <SectionLabel>Weight &amp; Waist Trend</SectionLabel>
           <div className="bg-card border border-border rounded-xl p-4">
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={220}>
               <ComposedChart data={combinedTrendData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
                 <XAxis dataKey="date" tick={{ fill: '#666', fontSize: 10 }} interval="preserveStartEnd" />
@@ -337,24 +355,61 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
                 <YAxis yAxisId="waist" orientation="right" tick={{ fill: '#f59e0b', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 8 }}
-                  labelStyle={{ color: '#fff' }}
-                  formatter={(v: number, name: string) => name === 'weight' ? [`${v} kg`, 'Weight'] : [`${v} cm`, 'Waist']}
+                  labelStyle={{ color: '#fff', fontWeight: 600 }}
+                  formatter={(v: number, name: string) => {
+                    if (name === 'weight') return [`${v} kg`, 'Weight'];
+                    if (name === 'avg7') return [`${v} kg`, '7-day avg'];
+                    return [`${v} cm`, 'Waist'];
+                  }}
                 />
-                <Area yAxisId="weight" type="monotone" dataKey="weight" stroke="#3b82f6" fill="#3b82f622" strokeWidth={2} dot={{ r: 2, fill: '#3b82f6' }} connectNulls />
+                {/* Macro change vertical markers */}
+                {macroMarkers.map((m, i) => (
+                  <ReferenceLine
+                    key={i}
+                    yAxisId="weight"
+                    x={m.date}
+                    stroke="#22c55e"
+                    strokeDasharray="4 3"
+                    strokeWidth={1.5}
+                    label={{ value: '▲', position: 'top', fill: '#22c55e', fontSize: 9 }}
+                  />
+                ))}
+                <Area yAxisId="weight" type="monotone" dataKey="weight" stroke="#3b82f644" fill="#3b82f611" strokeWidth={1} dot={{ r: 2, fill: '#3b82f6' }} connectNulls />
+                <Line yAxisId="weight" type="monotone" dataKey="avg7" stroke="#3b82f6" strokeWidth={2} dot={false} connectNulls />
                 <Line yAxisId="waist" type="monotone" dataKey="waist" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, fill: '#f59e0b' }} connectNulls />
               </ComposedChart>
             </ResponsiveContainer>
             {/* Legend */}
-            <div className="flex items-center gap-4 mt-2 justify-center">
+            <div className="flex items-center gap-4 mt-2 justify-center flex-wrap">
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="w-3 h-0.5 bg-blue-500/30 inline-block rounded" />
+                Weight (kg)
+              </span>
               <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="w-3 h-0.5 bg-blue-500 inline-block rounded" />
-                Weight (kg)
+                7-day avg
               </span>
               <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="w-3 h-0.5 bg-amber-500 inline-block rounded" />
                 Waist (cm)
               </span>
+              {macroMarkers.length > 0 && (
+                <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="w-0.5 h-3 bg-green-500 inline-block" style={{ borderLeft: '1.5px dashed #22c55e' }} />
+                  Macro change
+                </span>
+              )}
             </div>
+            {/* Macro change details */}
+            {macroMarkers.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {macroMarkers.map((m, i) => (
+                  <span key={i} className="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 rounded-full px-2 py-0.5">
+                    {m.date}: {m.label}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1195,6 +1250,10 @@ export default function ProgressSection() {
     { userId: selectedUserId! },
     { enabled: !!selectedUserId }
   );
+  const { data: macroHistory = [] } = trpc.mealPlan.getHistory.useQuery(
+    { userId: selectedUserId! },
+    { enabled: !!selectedUserId }
+  );
   const clientStartDate = clientProfile?.startDate ? toLocalDateStr(clientProfile.startDate) : null;
   // allExpandedState: null = no global action, true/false = last global action
   const [globalToggle, setGlobalToggle] = useState<{ expanded: boolean; gen: number } | null>(null);
@@ -1369,7 +1428,7 @@ export default function ProgressSection() {
             </div>
           </TabsContent>
           <TabsContent value="body-comp">
-            <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
+            <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} macroHistory={macroHistory} />
           </TabsContent>
           <TabsContent value="nutrition">
             <NutritionTab clientId={selectedUserId!} />
