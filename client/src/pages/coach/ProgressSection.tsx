@@ -1146,14 +1146,16 @@ const fmtCheckInDate = (iso: string) => {
 
 // ─── Progress Section ────────────────────────────────────────────────
 
-export default function ProgressSection() {
+export default function ProgressSection({ fixedClientId }: { fixedClientId?: number } = {}) {
   const search = useSearch();
   const searchParams = new URLSearchParams(search);
   const urlClientId = searchParams.get("clientId") ? parseInt(searchParams.get("clientId")!, 10) : null;
   const urlTab = searchParams.get("tab") ?? "overview";
   const [, navigate] = useLocation();
 
-  const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
+  const { clients, selectedUserId: selectorUserId, setSelectedUserId } = useClientSelector();
+  // In hub mode, use the fixed clientId directly without a selector
+  const selectedUserId = fixedClientId ?? selectorUserId;
   const [activeTab, setActiveTab] = useState(urlTab);
   const [focusWeekNumber, setFocusWeekNumber] = useState<number | null>(null);
 
@@ -1162,9 +1164,10 @@ export default function ProgressSection() {
     setActiveTab("check-ins");
   }
 
-  // Sync URL clientId into selector once clients load
+  // Sync URL clientId into selector once clients load (only in standalone mode)
   const [urlSynced, setUrlSynced] = useState(false);
   useEffect(() => {
+    if (fixedClientId) return; // hub mode — no selector sync needed
     if (!urlSynced && urlClientId && clients.length > 0) {
       const match = clients.find((c: any) => c.id === urlClientId);
       if (match) {
@@ -1172,7 +1175,7 @@ export default function ProgressSection() {
         setUrlSynced(true);
       }
     }
-  }, [urlClientId, clients, urlSynced]);
+  }, [urlClientId, clients, urlSynced, fixedClientId]);
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const { data: logs } = trpc.dailyLog.listForClient.useQuery(
     { userId: selectedUserId!, limit: 60 },
@@ -1337,9 +1340,11 @@ export default function ProgressSection() {
   }
   return (
     <div className="space-y-5">
-      <div>
-        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} />
-      </div>
+      {!fixedClientId && (
+        <div>
+          <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} />
+        </div>
+      )}
 
       {selectedUserId && (
           <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== "check-ins") setFocusWeekNumber(null); }} className="w-full">

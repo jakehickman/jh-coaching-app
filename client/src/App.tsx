@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ClientDashboard from "./pages/ClientDashboard";
 import CoachPanel from "./pages/CoachPanel";
+import ClientHub from "./pages/coach/ClientHub";
 // import CoachingLanding from "./pages/CoachingLanding"; // temporarily disabled
 import Onboarding from "./pages/Onboarding";
 import GettingStarted from "./pages/GettingStarted";
@@ -18,6 +19,7 @@ function AppRoutes() {
       <Route path="/dashboard" component={ClientDashboard} />
       <Route path="/dashboard/:tab" component={ClientDashboard} />
       <Route path="/coach" component={CoachPanel} />
+      <Route path="/coach/client/:id" component={ClientHub} />
       <Route path="/coach/:section" component={CoachPanel} />
       {/* <Route path="/coaching" component={CoachingLanding} /> */} {/* temporarily disabled */}
       <Route path="/onboarding" component={Onboarding} />

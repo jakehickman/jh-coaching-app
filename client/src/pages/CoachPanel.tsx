@@ -4,7 +4,7 @@ import { useParams, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { Trash2, Users, Eye } from "lucide-react";
+import { Trash2, Users, Eye, LayoutDashboard } from "lucide-react";
 import ExerciseLibrarySection from "./coach/ExerciseLibrarySection";
 import NutritionDataSection from "./coach/NutritionDataSection";
 import HabitsSection from "./coach/HabitsSection";
@@ -165,6 +165,16 @@ function ClientsSection() {
                         }`}
                       >
                         {(user as any).approved ? "✓ Approved" : "Approve"}
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          navigate(`/coach/client/${user.id}`);
+                        }}
+                        className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-md hover:bg-primary/10"
+                        title={`View ${user.name ?? 'client'}'s profile hub`}
+                      >
+                        <LayoutDashboard size={13} />
                       </button>
                       <button
                         onClick={e => {
