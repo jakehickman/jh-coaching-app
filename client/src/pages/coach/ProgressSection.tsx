@@ -7,7 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, ExternalLink } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils } from "lucide-react";
 import { useSearch, useLocation } from "wouter";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
@@ -83,26 +83,13 @@ function NutritionTab({ clientId }: { clientId: number }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div>
         <SectionLabel>Nutrition Plan</SectionLabel>
-        <a
-          href={`/coach/meal-plans?client=${clientId}`}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-        >
-          <ExternalLink size={12} />
-          Edit Plan
-        </a>
       </div>
       {!hasAny ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <p className="text-base font-medium">No nutrition plan set</p>
-          <p className="text-sm mt-1">Assign a meal plan to this client in the Meal Plans section.</p>
-          <a
-            href={`/coach/meal-plans?client=${clientId}`}
-            className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-          >
-            <ExternalLink size={13} /> Go to Meal Plans
-          </a>
+          <p className="text-sm mt-1">Go to the Nutrition tab to assign a meal plan.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1345,7 +1332,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
             <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-            <TabsTrigger value="training">Training</TabsTrigger>
+            <TabsTrigger value="training">Progression</TabsTrigger>
           </TabsList>
           <TabsContent value="overview">
             <div className="space-y-6">
@@ -1371,15 +1358,6 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           </TabsContent>
           <TabsContent value="training">
             <div className="flex flex-col gap-8">
-              <div className="flex items-center justify-end">
-                <a
-                  href={`/coach/training?client=${selectedUserId}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                >
-                  <ExternalLink size={12} />
-                  Edit Program
-                </a>
-              </div>
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Session Log</p>
                 <WorkoutSessionsTab workoutSessions={workoutSessions} />

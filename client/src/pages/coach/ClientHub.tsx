@@ -2,10 +2,10 @@
  * ClientHub — /coach/client/:id
  *
  * A single-client workspace with four top-level tabs:
- *   Progress   — body comp, nutrition summary, training log (no client selector)
- *   Training   — full training program editor (no client selector)
- *   Meal Plan  — full meal plan editor (no client selector)
- *   Check-ins  — weekly review cards + check-in detail panel
+ *   Dashboard        — overview, body comp, progression, nutrition logs
+ *   Training Program — full training program editor (no client selector)
+ *   Nutrition        — full meal plan editor (no client selector)
+ *   Check-ins        — check-in history and detail panel
  *
  * All tabs are pre-filtered to the client in the URL — the coach never needs
  * to re-select the client when switching tabs.
@@ -26,7 +26,7 @@ export default function ClientHub() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { user, isAuthenticated, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState("progress");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const clientId = parseInt(id ?? "0", 10);
 
@@ -82,13 +82,13 @@ export default function ClientHub() {
       {clientId > 0 && (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="progress">Progress</TabsTrigger>
-            <TabsTrigger value="training">Training</TabsTrigger>
-            <TabsTrigger value="meal-plan">Meal Plan</TabsTrigger>
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="training">Training Program</TabsTrigger>
+            <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
             <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="progress">
+          <TabsContent value="dashboard">
             <ProgressSection fixedClientId={clientId} />
           </TabsContent>
 
@@ -96,7 +96,7 @@ export default function ClientHub() {
             <TrainingSection fixedClientId={clientId} />
           </TabsContent>
 
-          <TabsContent value="meal-plan">
+          <TabsContent value="nutrition">
             <MealPlansSection fixedClientId={clientId} />
           </TabsContent>
 
