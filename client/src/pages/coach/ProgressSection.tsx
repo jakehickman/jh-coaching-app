@@ -15,6 +15,9 @@ import {
 } from "./shared";
 import { CoachHabitsPanel } from "./HabitsSection";
 import { WeeklyReviewTab } from "./WeeklyReviewTab";
+import { CheckInsDetailPanel } from "./CheckInsSection";
+import TrainingSection from "./TrainingSection";
+import MealPlansSection from "./MealPlansSection";
 
 // ─── Nutrition Tab ───────────────────────────────────────────────────────────
 function NutritionTab({ clientId }: { clientId: number }) {
@@ -1327,15 +1330,16 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
       )}
 
       {selectedUserId && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-               <TabsList className="mb-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
-            <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-            <TabsTrigger value="training">Progression</TabsTrigger>
+            <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="program">Program</TabsTrigger>
           </TabsList>
+
+          {/* ── Overview: weekly review, habits, logs, check-ins ── */}
           <TabsContent value="overview">
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 <div>
                   <SectionLabel>Weekly Review</SectionLabel>
@@ -1348,25 +1352,58 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               {(logs ?? []).length > 0 && (
                 <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
               )}
-            </div>
-          </TabsContent>
-          <TabsContent value="body-comp">
-            <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
-          </TabsContent>
-          <TabsContent value="nutrition">
-            <NutritionTab clientId={selectedUserId!} />
-          </TabsContent>
-          <TabsContent value="training">
-            <div className="flex flex-col gap-8">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Session Log</p>
-                <WorkoutSessionsTab workoutSessions={workoutSessions} />
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Exercise Progress</p>
-                <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
+                <SectionLabel>Check-ins</SectionLabel>
+                <div className="mt-3">
+                  <CheckInsDetailPanel clientId={selectedUserId!} />
+                </div>
               </div>
             </div>
+          </TabsContent>
+
+          {/* ── Progress: body comp, nutrition history, progression ── */}
+          <TabsContent value="progress">
+            <Tabs defaultValue="body-comp" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
+                <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+                <TabsTrigger value="progression">Progression</TabsTrigger>
+              </TabsList>
+              <TabsContent value="body-comp">
+                <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
+              </TabsContent>
+              <TabsContent value="nutrition">
+                <NutritionTab clientId={selectedUserId!} />
+              </TabsContent>
+              <TabsContent value="progression">
+                <div className="flex flex-col gap-8">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Session Log</p>
+                    <WorkoutSessionsTab workoutSessions={workoutSessions} />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Exercise Progress</p>
+                    <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* ── Program: training program + meal plan editors ── */}
+          <TabsContent value="program">
+            <Tabs defaultValue="training" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="training">Training Program</TabsTrigger>
+                <TabsTrigger value="meal-plan">Meal Plan</TabsTrigger>
+              </TabsList>
+              <TabsContent value="training">
+                <TrainingSection fixedClientId={selectedUserId!} />
+              </TabsContent>
+              <TabsContent value="meal-plan">
+                <MealPlansSection fixedClientId={selectedUserId!} />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       )}

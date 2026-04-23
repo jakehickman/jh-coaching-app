@@ -1,32 +1,24 @@
 /**
  * ClientHub — /coach/client/:id
  *
- * A single-client workspace with four top-level tabs:
- *   Dashboard        — overview, body comp, progression, nutrition logs
- *   Training Program — full training program editor (no client selector)
- *   Nutrition        — full meal plan editor (no client selector)
- *   Check-ins        — check-in history and detail panel
+ * A single-client workspace. ProgressSection handles all three tabs:
+ *   Overview  — weekly review, habits, recent logs, check-ins
+ *   Progress  — body comp, nutrition history, progression
+ *   Program   — training program editor + meal plan editor
  *
- * All tabs are pre-filtered to the client in the URL — the coach never needs
- * to re-select the client when switching tabs.
+ * All content is pre-filtered to the client in the URL.
  */
-import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { ArrowLeft } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardShell from "@/components/DashboardShell";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import ProgressSection from "./ProgressSection";
-import TrainingSection from "./TrainingSection";
-import MealPlansSection from "./MealPlansSection";
-import { ClientCheckInsTab } from "./ClientCheckInsTab";
 
 export default function ClientHub() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { user, isAuthenticated, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState("dashboard");
 
   const clientId = parseInt(id ?? "0", 10);
 
@@ -78,33 +70,8 @@ export default function ClientHub() {
         </div>
       </div>
 
-      {/* Four top-level tabs — all scoped to this client */}
-      {clientId > 0 && (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="training">Training Program</TabsTrigger>
-            <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-            <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="dashboard">
-            <ProgressSection fixedClientId={clientId} />
-          </TabsContent>
-
-          <TabsContent value="training">
-            <TrainingSection fixedClientId={clientId} />
-          </TabsContent>
-
-          <TabsContent value="nutrition">
-            <MealPlansSection fixedClientId={clientId} />
-          </TabsContent>
-
-          <TabsContent value="check-ins">
-            <ClientCheckInsTab clientId={clientId} />
-          </TabsContent>
-        </Tabs>
-      )}
+      {/* Three tabs: Overview · Progress · Program */}
+      {clientId > 0 && <ProgressSection fixedClientId={clientId} />}
     </DashboardShell>
   );
 }
