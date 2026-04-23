@@ -1147,7 +1147,7 @@ function WorkoutLogTab() {
                         <p className="text-xs text-muted-foreground">No sets recorded</p>
                       )}
                       {exEntry.exerciseNotes && (
-                        <p className="text-xs text-muted-foreground italic mt-1">📝 {exEntry.exerciseNotes}</p>
+                        <p className="text-xs text-muted-foreground italic mt-1">"{exEntry.exerciseNotes}"</p>
                       )}
                     </div>
                   );
