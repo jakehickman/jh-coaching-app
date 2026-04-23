@@ -14,8 +14,6 @@ import {
   MeasurementsCard, MuscleGroupSection, DailyLogRow, ProgressHistoryTable
 } from "./shared";
 import { CoachHabitsPanel } from "./HabitsSection";
-import { CheckInsDetailPanel } from "./CheckInsSection";
-import { WeeklyReviewTab } from "./WeeklyReviewTab";
 
 // ─── Nutrition Tab ───────────────────────────────────────────────────────────
 function NutritionTab({ clientId }: { clientId: number }) {
@@ -1157,12 +1155,6 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
   // In hub mode, use the fixed clientId directly without a selector
   const selectedUserId = fixedClientId ?? selectorUserId;
   const [activeTab, setActiveTab] = useState(urlTab);
-  const [focusWeekNumber, setFocusWeekNumber] = useState<number | null>(null);
-
-  function handleWeekClick(weekNumber: number) {
-    setFocusWeekNumber(weekNumber);
-    setActiveTab("check-ins");
-  }
 
   // Sync URL clientId into selector once clients load (only in standalone mode)
   const [urlSynced, setUrlSynced] = useState(false);
@@ -1347,27 +1339,16 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
       )}
 
       {selectedUserId && (
-          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== "check-ins") setFocusWeekNumber(null); }} className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
             <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
             <TabsTrigger value="training">Training</TabsTrigger>
-            <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
           </TabsList>
           <TabsContent value="overview">
             <div className="space-y-6">
-              {/* Top 2-column grid: Weekly Review (left) + Habit Adherence (right) */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <div>
-                  <SectionLabel>Weekly Review</SectionLabel>
-                  <WeeklyReviewTab clientId={selectedUserId!} onWeekClick={handleWeekClick} />
-                </div>
-                <div>
-                  <CoachHabitsPanel clientId={selectedUserId!} />
-                </div>
-              </div>
-              {/* Full-width: Recent Daily Logs */}
+              <CoachHabitsPanel clientId={selectedUserId!} />
               {(logs ?? []).length > 0 && (
                 <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
               )}
@@ -1400,10 +1381,6 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               </div>
             </div>
           </TabsContent>
-          <TabsContent value="check-ins">
-            <CheckInsDetailPanel clientId={selectedUserId!} focusWeekNumber={focusWeekNumber} />
-          </TabsContent>
-
         </Tabs>
       )}
     </div>

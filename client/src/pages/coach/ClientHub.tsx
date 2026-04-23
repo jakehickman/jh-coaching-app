@@ -1,21 +1,32 @@
 /**
  * ClientHub — /coach/client/:id
  *
- * A single-client deep-dive page. Renders ProgressSection with the client
- * pre-selected (fixedClientId) so the coach never needs to re-select the
- * client when switching between tabs.
+ * A single-client workspace with four top-level tabs:
+ *   Progress   — body comp, nutrition summary, training log (no client selector)
+ *   Training   — full training program editor (no client selector)
+ *   Meal Plan  — full meal plan editor (no client selector)
+ *   Check-ins  — weekly review cards + check-in detail panel
+ *
+ * All tabs are pre-filtered to the client in the URL — the coach never needs
+ * to re-select the client when switching tabs.
  */
+import { useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardShell from "@/components/DashboardShell";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import ProgressSection from "./ProgressSection";
+import TrainingSection from "./TrainingSection";
+import MealPlansSection from "./MealPlansSection";
+import { ClientCheckInsTab } from "./ClientCheckInsTab";
 
 export default function ClientHub() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { user, isAuthenticated, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState("progress");
 
   const clientId = parseInt(id ?? "0", 10);
 
@@ -31,9 +42,9 @@ export default function ClientHub() {
     );
   }
 
-  const displayName = clientUser?.displayName ?? clientUser?.name ?? "Client";
-  const checkInDay = clientUser?.checkInDay
-    ? clientUser.checkInDay.charAt(0).toUpperCase() + clientUser.checkInDay.slice(1)
+  const displayName = (clientUser as any)?.displayName ?? clientUser?.name ?? "Client";
+  const checkInDay = (clientUser as any)?.checkInDay
+    ? ((clientUser as any).checkInDay as string).charAt(0).toUpperCase() + ((clientUser as any).checkInDay as string).slice(1)
     : null;
 
   return (
@@ -67,8 +78,33 @@ export default function ClientHub() {
         </div>
       </div>
 
-      {/* All progress tabs pre-filtered to this client */}
-      {clientId > 0 && <ProgressSection fixedClientId={clientId} />}
+      {/* Four top-level tabs — all scoped to this client */}
+      {clientId > 0 && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="training">Training</TabsTrigger>
+            <TabsTrigger value="meal-plan">Meal Plan</TabsTrigger>
+            <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="progress">
+            <ProgressSection fixedClientId={clientId} />
+          </TabsContent>
+
+          <TabsContent value="training">
+            <TrainingSection fixedClientId={clientId} />
+          </TabsContent>
+
+          <TabsContent value="meal-plan">
+            <MealPlansSection fixedClientId={clientId} />
+          </TabsContent>
+
+          <TabsContent value="check-ins">
+            <ClientCheckInsTab clientId={clientId} />
+          </TabsContent>
+        </Tabs>
+      )}
     </DashboardShell>
   );
 }

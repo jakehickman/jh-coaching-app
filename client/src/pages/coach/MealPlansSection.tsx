@@ -125,8 +125,9 @@ function MacroChip({ label, value, unit = "g", highlight = false }: { label: str
   );
 }
 
-export default function MealPlansSection() {
-  const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
+export default function MealPlansSection({ fixedClientId }: { fixedClientId?: number } = {}) {
+  const { clients, selectedUserId: selectorUserId, setSelectedUserId } = useClientSelector();
+  const selectedUserId = fixedClientId ?? selectorUserId;
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const [dayType, setDayType] = useState<"training" | "rest">("training");
 
@@ -310,9 +311,11 @@ export default function MealPlansSection() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} draftUserIds={mealDraftUserIds} />
-      </div>
+      {!fixedClientId && (
+        <div>
+          <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} draftUserIds={mealDraftUserIds} />
+        </div>
+      )}
 
       {selectedUserId && (
         <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:items-start">

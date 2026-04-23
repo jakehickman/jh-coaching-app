@@ -656,8 +656,9 @@ function SortableDayCard({
   );
 }
 
-export default function TrainingSection() {
-  const { clients, selectedUserId, setSelectedUserId } = useClientSelector();
+export default function TrainingSection({ fixedClientId }: { fixedClientId?: number } = {}) {
+  const { clients, selectedUserId: selectorUserId, setSelectedUserId } = useClientSelector();
+  const selectedUserId = fixedClientId ?? selectorUserId;
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
 
   // Compute which client userIds have an unsaved training draft in localStorage
@@ -908,9 +909,11 @@ export default function TrainingSection() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} draftUserIds={trainingDraftUserIds} />
-      </div>
+      {!fixedClientId && (
+        <div>
+          <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} draftUserIds={trainingDraftUserIds} />
+        </div>
+      )}
       {selectedUserId && (
         <div className="space-y-6">
           {/* ── Training Schedule ── */}
