@@ -502,3 +502,24 @@ export const checkInHistory = mysqlTable("check_in_history", {
 
 export type CheckInHistoryRow = typeof checkInHistory.$inferSelect;
 export type InsertCheckInHistory = typeof checkInHistory.$inferInsert;
+
+// Append-only history of every macro change per client.
+// One row is inserted each time a coach saves a meal plan update.
+export const mealPlanHistory = mysqlTable("meal_plan_history", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),       // client
+  coachId: int("coachId"),               // coach who made the change
+  // Training day macros
+  trainingCalories: int("trainingCalories"),
+  trainingProtein: int("trainingProtein"),
+  trainingCarbs: int("trainingCarbs"),
+  trainingFat: int("trainingFat"),
+  // Rest day macros
+  restCalories: int("restCalories"),
+  restProtein: int("restProtein"),
+  restCarbs: int("restCarbs"),
+  restFat: int("restFat"),
+  changedAt: timestamp("changedAt").defaultNow().notNull(),
+});
+export type MealPlanHistoryRow = typeof mealPlanHistory.$inferSelect;
+export type InsertMealPlanHistory = typeof mealPlanHistory.$inferInsert;

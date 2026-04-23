@@ -24,9 +24,29 @@ export const mealPlanRouter = router({
         notes: z.string().nullable().optional(),
       })
     )
-    .mutation(({ ctx, input }) =>
-      db.upsertMealPlan({ coachId: ctx.user.id, ...input })
-    ),
+    .mutation(async ({ ctx, input }) => {
+      await db.upsertMealPlan({ coachId: ctx.user.id, ...input });
+      // Snapshot both plans together for the change history
+      const [training, rest] = await Promise.all([
+        db.getMealPlan(input.userId, "training"),
+        db.getMealPlan(input.userId, "rest"),
+      ]);
+      await db.insertMealPlanHistorySnapshot({
+        userId: input.userId,
+        coachId: ctx.user.id,
+        trainingCalories: training?.totalCalories ?? null,
+        trainingProtein: training?.totalProtein ?? null,
+        trainingCarbs: training?.totalCarbs ?? null,
+        trainingFat: training?.totalFat ?? null,
+        restCalories: rest?.totalCalories ?? null,
+        restProtein: rest?.totalProtein ?? null,
+        restCarbs: rest?.totalCarbs ?? null,
+        restFat: rest?.totalFat ?? null,
+      });
+    }),
+  getHistory: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(({ input }) => db.getMealPlanHistory(input.userId)),
 });
 
 export const shoppingRouter = router({

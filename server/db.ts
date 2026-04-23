@@ -32,6 +32,8 @@ import {
   equipmentPresets,
   EquipmentPreset,
   WorkoutExercise,
+  mealPlanHistory,
+  MealPlanHistoryRow,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -375,6 +377,33 @@ export async function upsertMealPlan(data: {
   } else {
     await db.insert(mealPlans).values(data as any);
   }
+}
+
+export async function getMealPlanHistory(userId: number): Promise<MealPlanHistoryRow[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(mealPlanHistory)
+    .where(eq(mealPlanHistory.userId, userId))
+    .orderBy(desc(mealPlanHistory.changedAt));
+}
+
+export async function insertMealPlanHistorySnapshot(data: {
+  userId: number;
+  coachId?: number;
+  trainingCalories?: number | null;
+  trainingProtein?: number | null;
+  trainingCarbs?: number | null;
+  trainingFat?: number | null;
+  restCalories?: number | null;
+  restProtein?: number | null;
+  restCarbs?: number | null;
+  restFat?: number | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(mealPlanHistory).values(data as any);
 }
 
 // Shopping List

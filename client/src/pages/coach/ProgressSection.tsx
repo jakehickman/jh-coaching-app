@@ -27,6 +27,10 @@ function NutritionTab({ clientId }: { clientId: number }) {
     { userId: clientId, dayType: "rest" },
     { enabled: !!clientId }
   );
+  const { data: history = [] } = trpc.mealPlan.getHistory.useQuery(
+    { userId: clientId },
+    { enabled: !!clientId }
+  );
 
   const isLoading = loadingTraining || loadingRest;
   const hasAny = trainingPlan || restPlan;
@@ -105,6 +109,66 @@ function NutritionTab({ clientId }: { clientId: number }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <DayCard label="Training Day" plan={trainingPlan} />
           <DayCard label="Rest Day" plan={restPlan} />
+        </div>
+      )}
+
+      {/* Macro Change History */}
+      {history.length > 0 && (
+        <div className="mt-6">
+          <SectionLabel>Macro Change History</SectionLabel>
+          <div className="mt-3 space-y-3">
+            {history.map((entry: any, idx: number) => {
+              const prev = history[idx + 1] as any | undefined;
+              function delta(curr: number | null, prev: number | null | undefined): string | null {
+                if (curr == null || prev == null || prev === undefined) return null;
+                const d = curr - prev;
+                if (d === 0) return null;
+                return (d > 0 ? "+" : "") + d;
+              }
+              function DeltaBadge({ curr, prev: p }: { curr: number | null; prev: number | null | undefined }) {
+                const d = delta(curr, p);
+                if (!d) return null;
+                const positive = d.startsWith("+");
+                return (
+                  <span className={`text-[10px] font-semibold ml-1 ${positive ? "text-emerald-500" : "text-red-400"}`}>
+                    {d}
+                  </span>
+                );
+              }
+              function Row({ label, tCurr, tPrev, rCurr, rPrev, unit }: { label: string; tCurr: number | null; tPrev: number | null | undefined; rCurr: number | null; rPrev: number | null | undefined; unit: string }) {
+                return (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="w-16 text-[11px] text-muted-foreground uppercase tracking-wide shrink-0">{label}</span>
+                    <span className="text-foreground tabular-nums">
+                      {tCurr != null ? tCurr.toLocaleString() : "—"}<span className="text-muted-foreground/50 text-[10px]">{unit}</span>
+                      <DeltaBadge curr={tCurr} prev={tPrev} />
+                    </span>
+                    <span className="text-muted-foreground/30 text-xs">/</span>
+                    <span className="text-foreground tabular-nums">
+                      {rCurr != null ? rCurr.toLocaleString() : "—"}<span className="text-muted-foreground/50 text-[10px]">{unit}</span>
+                      <DeltaBadge curr={rCurr} prev={rPrev} />
+                    </span>
+                  </div>
+                );
+              }
+              return (
+                <div key={entry.id} className="bg-card border border-border rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {new Date(entry.changedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wide">Train / Rest</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Row label="Calories" tCurr={entry.trainingCalories} tPrev={prev?.trainingCalories} rCurr={entry.restCalories} rPrev={prev?.restCalories} unit=" kcal" />
+                    <Row label="Protein" tCurr={entry.trainingProtein} tPrev={prev?.trainingProtein} rCurr={entry.restProtein} rPrev={prev?.restProtein} unit="g" />
+                    <Row label="Carbs" tCurr={entry.trainingCarbs} tPrev={prev?.trainingCarbs} rCurr={entry.restCarbs} rPrev={prev?.restCarbs} unit="g" />
+                    <Row label="Fat" tCurr={entry.trainingFat} tPrev={prev?.trainingFat} rCurr={entry.restFat} rPrev={prev?.restFat} unit="g" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
