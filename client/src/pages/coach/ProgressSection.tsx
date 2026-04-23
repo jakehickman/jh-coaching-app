@@ -119,51 +119,60 @@ function NutritionTab({ clientId }: { clientId: number }) {
           <div className="mt-3 space-y-3">
             {history.map((entry: any, idx: number) => {
               const prev = history[idx + 1] as any | undefined;
-              function delta(curr: number | null, prev: number | null | undefined): string | null {
-                if (curr == null || prev == null || prev === undefined) return null;
-                const d = curr - prev;
-                if (d === 0) return null;
-                return (d > 0 ? "+" : "") + d;
+              function getDelta(curr: number | null, p: number | null | undefined): number | null {
+                if (curr == null || p == null) return null;
+                const d = curr - p;
+                return d === 0 ? null : d;
               }
-              function DeltaBadge({ curr, prev: p }: { curr: number | null; prev: number | null | undefined }) {
-                const d = delta(curr, p);
-                if (!d) return null;
-                const positive = d.startsWith("+");
+              function Cell({ value, unit, delta }: { value: number | null; unit: string; delta?: number | null }) {
                 return (
-                  <span className={`text-[10px] font-semibold ml-1 ${positive ? "text-emerald-500" : "text-red-400"}`}>
-                    {d}
-                  </span>
-                );
-              }
-              function Row({ label, tCurr, tPrev, rCurr, rPrev, unit }: { label: string; tCurr: number | null; tPrev: number | null | undefined; rCurr: number | null; rPrev: number | null | undefined; unit: string }) {
-                return (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="w-16 text-[11px] text-muted-foreground uppercase tracking-wide shrink-0">{label}</span>
-                    <span className="text-foreground tabular-nums">
-                      {tCurr != null ? tCurr.toLocaleString() : "—"}<span className="text-muted-foreground/50 text-[10px]">{unit}</span>
-                      <DeltaBadge curr={tCurr} prev={tPrev} />
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="text-sm font-semibold tabular-nums text-foreground leading-none">
+                      {value != null ? value.toLocaleString() : "—"}
+                      <span className="text-[10px] font-normal text-muted-foreground/50 ml-0.5">{unit}</span>
                     </span>
-                    <span className="text-muted-foreground/30 text-xs">/</span>
-                    <span className="text-foreground tabular-nums">
-                      {rCurr != null ? rCurr.toLocaleString() : "—"}<span className="text-muted-foreground/50 text-[10px]">{unit}</span>
-                      <DeltaBadge curr={rCurr} prev={rPrev} />
-                    </span>
+                    {delta != null ? (
+                      <span className={`text-[10px] font-semibold leading-none ${delta > 0 ? "text-emerald-500" : "text-red-400"}`}>
+                        {delta > 0 ? "+" : ""}{delta}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] leading-none text-transparent select-none">·</span>
+                    )}
                   </div>
                 );
               }
+              const cols = [
+                { label: "Calories", unit: "kcal", tVal: entry.trainingCalories, rVal: entry.restCalories, tPrev: prev?.trainingCalories, rPrev: prev?.restCalories },
+                { label: "Protein",  unit: "g",    tVal: entry.trainingProtein,  rVal: entry.restProtein,  tPrev: prev?.trainingProtein,  rPrev: prev?.restProtein },
+                { label: "Carbs",    unit: "g",    tVal: entry.trainingCarbs,    rVal: entry.restCarbs,    tPrev: prev?.trainingCarbs,    rPrev: prev?.restCarbs },
+                { label: "Fat",      unit: "g",    tVal: entry.trainingFat,      rVal: entry.restFat,      tPrev: prev?.trainingFat,      rPrev: prev?.restFat },
+              ];
               return (
                 <div key={entry.id} className="bg-card border border-border rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      {new Date(entry.changedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wide">Train / Rest</span>
+                  {/* Date header */}
+                  <p className="text-xs font-semibold text-muted-foreground mb-3">
+                    {new Date(entry.changedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                  </p>
+                  {/* Column headers */}
+                  <div className="grid grid-cols-5 mb-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 col-span-1" />
+                    {cols.map(c => (
+                      <span key={c.label} className="text-[10px] uppercase tracking-wider text-muted-foreground/60 text-right">{c.label}</span>
+                    ))}
                   </div>
-                  <div className="space-y-1.5">
-                    <Row label="Calories" tCurr={entry.trainingCalories} tPrev={prev?.trainingCalories} rCurr={entry.restCalories} rPrev={prev?.restCalories} unit=" kcal" />
-                    <Row label="Protein" tCurr={entry.trainingProtein} tPrev={prev?.trainingProtein} rCurr={entry.restProtein} rPrev={prev?.restProtein} unit="g" />
-                    <Row label="Carbs" tCurr={entry.trainingCarbs} tPrev={prev?.trainingCarbs} rCurr={entry.restCarbs} rPrev={prev?.restCarbs} unit="g" />
-                    <Row label="Fat" tCurr={entry.trainingFat} tPrev={prev?.trainingFat} rCurr={entry.restFat} rPrev={prev?.restFat} unit="g" />
+                  {/* Training row */}
+                  <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Train</span>
+                    {cols.map(c => (
+                      <Cell key={c.label} value={c.tVal} unit={c.unit} delta={getDelta(c.tVal, c.tPrev)} />
+                    ))}
+                  </div>
+                  {/* Rest row */}
+                  <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Rest</span>
+                    {cols.map(c => (
+                      <Cell key={c.label} value={c.rVal} unit={c.unit} delta={getDelta(c.rVal, c.rPrev)} />
+                    ))}
                   </div>
                 </div>
               );
