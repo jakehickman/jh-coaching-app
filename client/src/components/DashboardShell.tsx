@@ -14,13 +14,11 @@ import {
   Home,
   LogOut,
   Menu,
-  TrendingUp,
   Users,
   Utensils,
   X,
-  Zap,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 
 interface NavItem {
@@ -41,9 +39,6 @@ const clientNav: NavItem[] = [
 const coachNav: NavItem[] = [
   { href: "/coach/clients",          label: "Clients",          icon: <Users size={18} /> },
   { href: "/coach/check-ins",        label: "Check-ins",         icon: <CalendarCheck size={18} /> },
-  { href: "/coach/training",         label: "Training Programs", icon: <Dumbbell size={18} /> },
-  { href: "/coach/meal-plans",       label: "Meal Plans",        icon: <Zap size={18} /> },
-  { href: "/coach/progress",         label: "Client Progress",   icon: <TrendingUp size={18} /> },
   { href: "/coach/exercise-library", label: "Exercise Library",  icon: <BookOpen size={18} /> },
   { href: "/coach/nutrition-data",   label: "Nutrition Data",    icon: <Salad size={18} /> },
   { href: "/coach/habits",           label: "Habits",            icon: <CheckSquare size={18} /> },
@@ -158,27 +153,6 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     && currentCycleData?.status !== "submitted"
     && hasSubmittedThisWeekDot !== true;
 
-  // Track whether any localStorage draft exists for coach meal plans or training programs
-  const [hasMealDraft, setHasMealDraft] = useState(false);
-  const [hasTrainingDraft, setHasTrainingDraft] = useState(false);
-
-  useEffect(() => {
-    if (mode !== "coach") return;
-    function checkDrafts() {
-      const keys = Object.keys(localStorage);
-      setHasMealDraft(keys.some(k => k.startsWith("draft:mealPlan:")));
-      setHasTrainingDraft(keys.some(k => k.startsWith("draft:training:")));
-    }
-    // Run once on mount and whenever localStorage changes (cross-tab or same-tab via storage event)
-    checkDrafts();
-    window.addEventListener("storage", checkDrafts);
-    // Also listen for a custom event dispatched by the forms when they write a draft
-    window.addEventListener("draft-changed", checkDrafts);
-    return () => {
-      window.removeEventListener("storage", checkDrafts);
-      window.removeEventListener("draft-changed", checkDrafts);
-    };
-  }, [mode]);
 
 
   if (loading) {
@@ -306,12 +280,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                       {checkInsAttentionCount}
                     </span>
                   )}
-                  {item.href === "/coach/meal-plans" && hasMealDraft && (
-                    <span className="ml-auto flex-shrink-0 w-1.5 h-1.5 rounded-full bg-amber-400" title="Unsaved changes" />
-                  )}
-                  {item.href === "/coach/training" && hasTrainingDraft && (
-                    <span className="ml-auto flex-shrink-0 w-1.5 h-1.5 rounded-full bg-amber-400" title="Unsaved changes" />
-                  )}
+
                 </Link>
               );
             })}
