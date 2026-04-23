@@ -87,7 +87,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
       <div className="flex items-center justify-between">
         <SectionLabel>Nutrition Plan</SectionLabel>
         <a
-          href="/coach/meal-plans"
+          href={`/coach/meal-plans?client=${clientId}`}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
         >
           <ExternalLink size={12} />
@@ -99,7 +99,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
           <p className="text-base font-medium">No nutrition plan set</p>
           <p className="text-sm mt-1">Assign a meal plan to this client in the Meal Plans section.</p>
           <a
-            href="/coach/meal-plans"
+            href={`/coach/meal-plans?client=${clientId}`}
             className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
           >
             <ExternalLink size={13} /> Go to Meal Plans
