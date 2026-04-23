@@ -205,7 +205,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                 <span className="text-sm font-semibold text-foreground">{week.label}</span>
                 {week.isInProgress && (
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-400 bg-amber-500/10">
-                    Live
+                    Current
                   </Badge>
                 )}
               </div>
