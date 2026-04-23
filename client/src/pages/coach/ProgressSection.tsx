@@ -14,6 +14,7 @@ import {
   MeasurementsCard, MuscleGroupSection, DailyLogRow, ProgressHistoryTable
 } from "./shared";
 import { CoachHabitsPanel } from "./HabitsSection";
+import { WeeklyReviewTab } from "./WeeklyReviewTab";
 
 // ─── Nutrition Tab ───────────────────────────────────────────────────────────
 function NutritionTab({ clientId }: { clientId: number }) {
@@ -1348,7 +1349,15 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           </TabsList>
           <TabsContent value="overview">
             <div className="space-y-6">
-              <CoachHabitsPanel clientId={selectedUserId!} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <div>
+                  <SectionLabel>Weekly Review</SectionLabel>
+                  <WeeklyReviewTab clientId={selectedUserId!} />
+                </div>
+                <div>
+                  <CoachHabitsPanel clientId={selectedUserId!} />
+                </div>
+              </div>
               {(logs ?? []).length > 0 && (
                 <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
               )}
