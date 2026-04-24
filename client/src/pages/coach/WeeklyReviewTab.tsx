@@ -382,8 +382,11 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         const stepsValue = week.avgSteps != null ? stepsAvg : "—";
         const stepsSubtext = week.stepGoal != null ? `Goal: ${week.stepGoal.toLocaleString()}` : undefined;
 
-        // Weight delta vs previous week (absolute kg)
+        // Weight delta vs previous week (% BW change)
         const weightDeltaKg = d(week.avgWeight, prev?.avgWeight ?? null);
+        const weightDeltaPct = weightDeltaKg != null && prev?.avgWeight != null && prev.avgWeight > 0
+          ? parseFloat(((weightDeltaKg / prev.avgWeight) * 100).toFixed(2))
+          : null;
 
         return (
           <div
@@ -429,8 +432,8 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                 {week.avgWeight != null && (
                   <div className="flex items-baseline gap-1">
                     <span className="text-[11px] font-semibold tabular-nums text-foreground">{fmt(week.avgWeight)} kg</span>
-                    {weightDeltaKg != null && (
-                      <Delta delta={weightDeltaKg} text={`${weightDeltaKg > 0 ? "+" : ""}${weightDeltaKg.toFixed(1)}`} higherIsBetter={null} />
+                    {weightDeltaPct != null && (
+                      <Delta delta={weightDeltaPct} text={`${weightDeltaPct > 0 ? "+" : ""}${weightDeltaPct.toFixed(2)}%`} higherIsBetter={null} />
                     )}
                   </div>
                 )}

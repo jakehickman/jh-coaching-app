@@ -14,9 +14,9 @@ function fmtDate(d: string): string {
   return dt.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
 }
 
-type DeltaProps = { delta: number | null; unit?: string; invert?: boolean };
+type DeltaProps = { delta: number | null; unit?: string; invert?: boolean; decimals?: number };
 
-function Delta({ delta, unit = "", invert = false }: DeltaProps) {
+function Delta({ delta, unit = "", invert = false, decimals = 1 }: DeltaProps) {
   if (delta == null) return <span className="text-muted-foreground text-xs">—</span>;
   if (Math.abs(delta) < 0.05) {
     return (
@@ -34,7 +34,7 @@ function Delta({ delta, unit = "", invert = false }: DeltaProps) {
   return (
     <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${colour}`}>
       <Icon className="w-3 h-3" />
-      {Math.abs(delta).toFixed(1)}{unit}
+      {Math.abs(delta).toFixed(decimals)}{unit}
     </span>
   );
 }
@@ -83,8 +83,11 @@ type Week = {
 function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
   const [expanded, setExpanded] = useState(false);
 
-  const weightDelta = week.avgWeight != null && prevWeek?.avgWeight != null
-    ? parseFloat((week.avgWeight - prevWeek.avgWeight).toFixed(1))
+  const weightDeltaKg = week.avgWeight != null && prevWeek?.avgWeight != null
+    ? week.avgWeight - prevWeek.avgWeight
+    : null;
+  const weightDelta = weightDeltaKg != null && prevWeek?.avgWeight != null && prevWeek.avgWeight > 0
+    ? parseFloat(((weightDeltaKg / prevWeek.avgWeight) * 100).toFixed(2))
     : null;
   const waistDelta = week.avgWaist != null && prevWeek?.avgWaist != null
     ? parseFloat((week.avgWaist - prevWeek.avgWaist).toFixed(1))
@@ -122,7 +125,7 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
               <div className="text-right">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Avg Wt</p>
                 <p className="text-sm font-bold tabular-nums">{fmt(week.avgWeight)} kg</p>
-                <Delta delta={weightDelta} unit=" kg" invert />
+                <Delta delta={weightDelta} unit="%" invert decimals={2} />
               </div>
             )}
             {week.avgWaist != null && (
