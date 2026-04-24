@@ -15,7 +15,6 @@ import {
 } from "./shared";
 import { CoachHabitsPanel } from "./HabitsSection";
 import { WeeklyReviewTab } from "./WeeklyReviewTab";
-import { CheckInsDetailPanel } from "./CheckInsSection";
 import TrainingSection from "./TrainingSection";
 import MealPlansSection from "./MealPlansSection";
 
@@ -1370,12 +1369,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               {(logs ?? []).length > 0 && (
                 <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
               )}
-              <div>
-                <SectionLabel>Check-ins</SectionLabel>
-                <div className="mt-3">
-                  <CheckInsDetailPanel clientId={selectedUserId!} />
-                </div>
-              </div>
+
             </div>
           </TabsContent>
 
