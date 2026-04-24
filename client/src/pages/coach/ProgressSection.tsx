@@ -191,7 +191,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
 }
 
 // ─── Measurements Tab ────────────────────────────────────────────────────────
-function MeasurementsTab({ measurements, logs, chartOnly, historyOnly }: { measurements: any[]; logs?: any[]; chartOnly?: boolean; historyOnly?: boolean }) {
+function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId }: { measurements: any[]; logs?: any[]; chartOnly?: boolean; historyOnly?: boolean; clientId?: number }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const sorted = [...measurements].sort((a, b) =>
@@ -328,18 +328,25 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly }: { measu
     thigh: '#a855f7',
   };
 
-  // Skinfold trend data (per measurement entry, oldest first)
-  const skinfoldData = [...sorted].reverse()
-    .filter(m => totalSkinfold(m) != null)
-    .map(m => {
-      const iso = toLocalDateStr(m.measureDate);
-      const [, mo, d] = iso.split('-');
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return { date: `${parseInt(d)} ${months[parseInt(mo)-1]}`, skinfold: totalSkinfold(m) };
-    });
+  // Weekly review data for skinfold vs avg weight chart
+  const tzOffsetMinutes = -new Date().getTimezoneOffset();
+  const { data: weeklyData } = trpc.progress.weeklyReview.useQuery(
+    { clientId: clientId!, tzOffsetMinutes },
+    { enabled: !!clientId && !historyOnly, staleTime: 60_000 }
+  );
+
+  // Build skinfold vs avg weight chart data (oldest first, only weeks with both values)
+  const skinfoldWeightData = [...(weeklyData?.weeks ?? [])]
+    .reverse()
+    .filter((w: any) => w.avgSkinfold != null || w.avgWeight != null)
+    .map((w: any) => ({
+      label: `Wk ${w.weekNumber}`,
+      skinfold: w.avgSkinfold ?? null,
+      avgWeight: w.avgWeight ?? null,
+    }));
 
   const hasWeightWaist = weightData.length > 1 || waistData.length > 1;
-  const hasSkinfold = skinfoldData.length > 1;
+  const hasSkinfold = skinfoldWeightData.filter((d: any) => d.skinfold != null).length > 1;
 
   return (
     <div className="space-y-5">
@@ -379,28 +386,36 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly }: { measu
               </div>
             </div>
           )}
-          {/* Skinfold trend chart */}
+          {/* Skinfold vs Avg Weight dual-axis chart */}
           {hasSkinfold && (
             <div>
-              <SectionLabel>Skinfold Thickness</SectionLabel>
+              <SectionLabel>Skinfold vs Weight</SectionLabel>
               <div className="bg-card border border-border rounded-xl p-4">
                 <ResponsiveContainer width="100%" height={200}>
-                  <ComposedChart data={skinfoldData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                  <ComposedChart data={skinfoldWeightData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                    <XAxis dataKey="date" tick={{ fill: '#666', fontSize: 10 }} interval="preserveStartEnd" />
-                    <YAxis tick={{ fill: '#22c55e', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
+                    <XAxis dataKey="label" tick={{ fill: '#666', fontSize: 10 }} />
+                    <YAxis yAxisId="skinfold" tick={{ fill: '#22c55e', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
+                    <YAxis yAxisId="weight" orientation="right" tick={{ fill: '#3b82f6', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
                     <Tooltip
                       contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 8 }}
                       labelStyle={{ color: '#fff' }}
-                      formatter={(v: number) => [`${v} mm`, 'Total Skinfold']}
+                      formatter={(v: number, name: string) =>
+                        name === 'skinfold' ? [`${v} mm`, 'Total Skinfold'] : [`${v} kg`, 'Avg Weight']
+                      }
                     />
-                    <Area type="monotone" dataKey="skinfold" stroke="#22c55e" fill="#22c55e22" strokeWidth={2} dot={{ r: 3, fill: '#22c55e' }} connectNulls />
+                    <Area yAxisId="skinfold" type="monotone" dataKey="skinfold" stroke="#22c55e" fill="#22c55e22" strokeWidth={2} dot={{ r: 3, fill: '#22c55e' }} connectNulls />
+                    <Line yAxisId="weight" type="monotone" dataKey="avgWeight" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }} strokeDasharray="4 3" connectNulls />
                   </ComposedChart>
                 </ResponsiveContainer>
                 <div className="flex items-center gap-4 mt-2 justify-center">
                   <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                     <span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />
-                    Total Skinfold (mm)
+                    Skinfold (mm)
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <span className="w-5 h-0 border-t-2 border-dashed border-blue-500 inline-block" />
+                    Avg Weight (kg)
                   </span>
                 </div>
               </div>
@@ -1422,7 +1437,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           {/* ── Body Composition: measurements + weight trend ── */}
           <TabsContent value="body-comp">
             <div className="space-y-8">
-              <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly />
+              <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Progress Photos</p>
                 <ProgressPhotosTab
