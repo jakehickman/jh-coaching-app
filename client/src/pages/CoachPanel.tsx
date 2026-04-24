@@ -33,7 +33,7 @@ function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => 
   const updateClientConfig = trpc.clientConfig.update.useMutation({
     onSuccess: () => { toast.success("Config updated"); utils.profile.getById.invalidate({ userId }); }
   });
-  const [form, setForm] = useState({ displayName: "", startDate: "", notes: "", checkInDay: "" as any, stepGoal: "" });
+  const [form, setForm] = useState({ displayName: "", startDate: "", notes: "", checkInDay: "" as any, stepGoal: "", photoType: "standard" as "standard" | "athlete" });
   useEffect(() => {
     if (profile) {
       setForm({
@@ -42,6 +42,7 @@ function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => 
         notes: profile.notes ?? "",
         checkInDay: ((profile as any).checkInDay ?? "") as any,
         stepGoal: (profile as any).stepGoal?.toString() ?? "",
+        photoType: ((profile as any).photoType ?? "standard") as "standard" | "athlete",
       });
     }
   }, [profile]);
@@ -75,6 +76,22 @@ function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => 
           </div>
         </div>
         <div>
+          <label className="text-xs text-muted-foreground block mb-1">Progress Photo Type</label>
+          <div className="flex gap-2">
+            {(["standard", "athlete"] as const).map(t => (
+              <button key={t} type="button"
+                onClick={() => setForm((p: any) => ({ ...p, photoType: t }))}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                  form.photoType === t
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+                }`}>
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
           <label className="text-xs text-muted-foreground block mb-1">Daily Step Goal</label>
           <input type="number" value={form.stepGoal} onChange={e => setForm((p: any) => ({ ...p, stepGoal: e.target.value }))}
             placeholder="e.g. 10000" className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
@@ -86,7 +103,7 @@ function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => 
         </div>
         <button
           onClick={() => {
-            upsertProfile.mutate({ userId, displayName: form.displayName || undefined, startDate: form.startDate || undefined, notes: form.notes || null });
+            upsertProfile.mutate({ userId, displayName: form.displayName || undefined, startDate: form.startDate || undefined, notes: form.notes || null, photoType: form.photoType });
             updateClientConfig.mutate({ userId, checkInDay: form.checkInDay || null, stepGoal: form.stepGoal ? parseInt(form.stepGoal) : null });
           }}
           disabled={upsertProfile.isPending || updateClientConfig.isPending}

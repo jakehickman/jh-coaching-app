@@ -93,6 +93,7 @@ export const clientProfiles = mysqlTable("client_profiles", {
   notes: text("notes"),
   checkInDay: mysqlEnum("checkInDay", ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]),
   stepGoal: int("stepGoal"), // daily step goal
+  photoType: mysqlEnum("photoType", ["standard", "athlete"]).default("standard").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -523,3 +524,30 @@ export const mealPlanHistory = mysqlTable("meal_plan_history", {
 });
 export type MealPlanHistoryRow = typeof mealPlanHistory.$inferSelect;
 export type InsertMealPlanHistory = typeof mealPlanHistory.$inferInsert;
+
+// Progress photos — coach uploads per client per check-in cycle week
+export const STANDARD_POSES = ["front", "side", "back"] as const;
+export const ATHLETE_POSES = [
+  "front_relaxed", "side_relaxed", "rear_relaxed",
+  "front_double_biceps", "front_lat_spread",
+  "side_chest", "side_triceps",
+  "rear_double_biceps", "rear_lat_spread",
+  "abdominals_thighs", "most_muscular"
+] as const;
+export type StandardPose = typeof STANDARD_POSES[number];
+export type AthletePose = typeof ATHLETE_POSES[number];
+export type PhotoPose = StandardPose | AthletePose;
+
+export const progressPhotos = mysqlTable("progress_photos", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("clientId").notNull(),       // FK -> users.id
+  coachId: int("coachId").notNull(),          // FK -> users.id (uploader)
+  weekNumber: int("weekNumber").notNull(),    // check-in cycle week number (1-based)
+  pose: varchar("pose", { length: 64 }).notNull(), // one of STANDARD_POSES or ATHLETE_POSES
+  photoUrl: text("photoUrl").notNull(),       // S3 public URL
+  s3Key: varchar("s3Key", { length: 512 }).notNull(), // S3 object key for deletion
+  uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
+});
+
+export type ProgressPhoto = typeof progressPhotos.$inferSelect;
+export type InsertProgressPhoto = typeof progressPhotos.$inferInsert;

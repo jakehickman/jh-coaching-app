@@ -9,3 +9,4 @@ export { checkInRouter } from "./checkIns";
 export { habitsRouter } from "./habits";
 export { timelineRouter, notesRouter, nutritionFoodsRouter, onboardingRouter, clientConfigRouter } from "./misc";
 export { progressRouter } from "./progress";
+export { progressPhotosRouter } from "./progressPhotos";

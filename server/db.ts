@@ -34,6 +34,9 @@ import {
   WorkoutExercise,
   mealPlanHistory,
   MealPlanHistoryRow,
+  progressPhotos,
+  ProgressPhoto,
+  InsertProgressPhoto,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -211,6 +214,7 @@ export async function upsertClientProfile(data: {
   displayName?: string;
   startDate?: string;
   notes?: string | null;
+  photoType?: "standard" | "athlete";
 }) {
   const db = await getDb();
   if (!db) return;
@@ -1305,4 +1309,70 @@ export async function getCycleHistory(clientId: number): Promise<(CheckInHistory
     result.push({ ...row, submission });
   }
   return result;
+}
+
+// ─── Progress Photos ─────────────────────────────────────────────────────────
+
+export async function insertProgressPhoto(data: InsertProgressPhoto): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(progressPhotos).values(data);
+}
+
+export async function getProgressPhotosByWeek(
+  clientId: number,
+  weekNumber: number
+): Promise<ProgressPhoto[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(progressPhotos)
+    .where(and(eq(progressPhotos.clientId, clientId), eq(progressPhotos.weekNumber, weekNumber)))
+    .orderBy(asc(progressPhotos.uploadedAt));
+}
+
+export async function getProgressPhotosForCompare(
+  clientId: number,
+  weekA: number,
+  weekB: number
+): Promise<ProgressPhoto[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const { inArray } = await import("drizzle-orm");
+  return db
+    .select()
+    .from(progressPhotos)
+    .where(
+      and(
+        eq(progressPhotos.clientId, clientId),
+        inArray(progressPhotos.weekNumber, [weekA, weekB])
+      )
+    )
+    .orderBy(asc(progressPhotos.weekNumber), asc(progressPhotos.uploadedAt));
+}
+
+export async function deleteProgressPhoto(id: number, coachId: number): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(progressPhotos)
+    .where(and(eq(progressPhotos.id, id), eq(progressPhotos.coachId, coachId)))
+    .limit(1);
+  if (!rows[0]) return null;
+  const s3Key = rows[0].s3Key;
+  await db.delete(progressPhotos).where(eq(progressPhotos.id, id));
+  return s3Key;
+}
+
+export async function getProgressPhotoWeeks(clientId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .selectDistinct({ weekNumber: progressPhotos.weekNumber })
+    .from(progressPhotos)
+    .where(eq(progressPhotos.clientId, clientId))
+    .orderBy(asc(progressPhotos.weekNumber));
+  return rows.map((r) => r.weekNumber);
 }

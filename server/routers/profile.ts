@@ -29,6 +29,7 @@ export const profileRouter = router({
         displayName: z.string().optional(),
         startDate: z.string().optional(),
         notes: z.string().nullable().optional(),
+        photoType: z.enum(["standard", "athlete"]).optional(),
       })
     )
     .mutation(({ ctx, input }) => db.upsertClientProfile({ coachId: ctx.user.id, ...input })),
