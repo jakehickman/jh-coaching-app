@@ -47,6 +47,9 @@ export const mealPlanRouter = router({
   getHistory: adminProcedure
     .input(z.object({ userId: z.number() }))
     .query(({ input }) => db.getMealPlanHistory(input.userId)),
+  updateHistoryNote: adminProcedure
+    .input(z.object({ id: z.number(), note: z.string().nullable() }))
+    .mutation(({ input }) => db.updateMealPlanHistoryNote(input.id, input.note)),
 });
 
 export const shoppingRouter = router({

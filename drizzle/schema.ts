@@ -520,6 +520,7 @@ export const mealPlanHistory = mysqlTable("meal_plan_history", {
   restProtein: int("restProtein"),
   restCarbs: int("restCarbs"),
   restFat: int("restFat"),
+  note: text("note"),
   changedAt: timestamp("changedAt").defaultNow().notNull(),
 });
 export type MealPlanHistoryRow = typeof mealPlanHistory.$inferSelect;
@@ -567,6 +568,7 @@ export const programChangeLogs = mysqlTable("program_change_logs", {
   userId: int("userId").notNull(),   // client
   coachId: int("coachId"),           // coach who made the change
   changes: json("changes").$type<ProgramChangeEntry[]>().notNull(),
+  note: text("note"),
   changedAt: timestamp("changedAt").defaultNow().notNull(),
 });
 

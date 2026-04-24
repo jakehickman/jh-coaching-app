@@ -473,3 +473,12 @@
 - [x] Fetch matching weeklyReview row for the submission week in CheckInsDetailPanel
 - [x] Add "This Week's Data" compact summary grid to CheckInsDetailPanel
 - [x] Add "Changes Made" auto-saving free-text field to CheckInsDetailPanel
+
+## Notes on History Entries (Apr 2026)
+- [x] Add note TEXT NULL column to program_change_logs and meal_plan_history tables (raw SQL)
+- [x] Update drizzle/schema.ts: add note: text("note") to both programChangeLogs and mealPlanHistory
+- [x] Add updateProgramChangeLogNote and updateMealPlanHistoryNote helpers to server/db.ts
+- [x] Add updateChangeLogNote mutation to training tRPC router
+- [x] Add updateHistoryNote mutation to mealPlan tRPC router
+- [x] ProgramChangeLogTab: show date only (no time), remove count badges, add inline note textarea (saves on blur/Enter)
+- [x] MacroPlanHistoryTab: add inline note textarea per history card (saves on blur/Enter)

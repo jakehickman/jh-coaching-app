@@ -397,6 +397,15 @@ export async function getMealPlanHistory(userId: number): Promise<MealPlanHistor
     .orderBy(desc(mealPlanHistory.changedAt));
 }
 
+export async function updateMealPlanHistoryNote(id: number, note: string | null) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(mealPlanHistory)
+    .set({ note })
+    .where(eq(mealPlanHistory.id, id));
+}
+
 export async function insertMealPlanHistorySnapshot(data: {
   userId: number;
   coachId?: number;
@@ -585,6 +594,15 @@ export async function getProgramChangeLogs(userId: number) {
     .from(programChangeLogs)
     .where(eq(programChangeLogs.userId, userId))
     .orderBy(programChangeLogs.changedAt);
+}
+
+export async function updateProgramChangeLogNote(id: number, note: string | null) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(programChangeLogs)
+    .set({ note })
+    .where(eq(programChangeLogs.id, id));
 }
 
 export async function listAllTrainingPrograms() {

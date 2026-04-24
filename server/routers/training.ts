@@ -40,6 +40,9 @@ export const trainingRouter = router({
   getChangeLogs: adminProcedure
     .input(z.object({ userId: z.number() }))
     .query(({ input }) => db.getProgramChangeLogs(input.userId)),
+  updateChangeLogNote: adminProcedure
+    .input(z.object({ id: z.number(), note: z.string().nullable() }))
+    .mutation(({ input }) => db.updateProgramChangeLogNote(input.id, input.note)),
   listAll: adminProcedure.query(() => db.listAllTrainingPrograms()),
 });
 

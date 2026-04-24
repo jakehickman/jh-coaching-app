@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { localToday, fmtDate, toUTCDateStr as toLocalDateStr } from "@/lib/dates";
@@ -22,6 +22,55 @@ import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import ProgramChangeLogTab from "./ProgramChangeLogTab";
 
 // ─── Nutrition Tab ───────────────────────────────────────────────────────────
+function MealPlanNoteEditor({ entryId, initialNote }: { entryId: number; initialNote?: string | null }) {
+  const [note, setNote] = useState(initialNote ?? "");
+  const [saved, setSaved] = useState(false);
+  const utils = trpc.useUtils();
+  const updateNote = trpc.mealPlan.updateHistoryNote.useMutation({
+    onSuccess: () => {
+      utils.mealPlan.getHistory.invalidate();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    },
+  });
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  function handleBlur() {
+    const trimmed = note.trim();
+    const current = initialNote?.trim() ?? "";
+    if (trimmed !== current) {
+      updateNote.mutate({ id: entryId, note: trimmed || null });
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      textareaRef.current?.blur();
+    }
+    if (e.key === "Escape") {
+      setNote(initialNote ?? "");
+      textareaRef.current?.blur();
+    }
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/40">
+      <textarea
+        ref={textareaRef}
+        value={note}
+        onChange={e => setNote(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        placeholder="Add a note about this plan change..."
+        rows={2}
+        className="w-full resize-none rounded-md bg-muted/30 border border-border/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring/50 transition-colors"
+      />
+      {saved && <p className="text-xs text-emerald-500 mt-1">Note saved</p>}
+    </div>
+  );
+}
+
 function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
   const { data: history = [], isLoading } = trpc.mealPlan.getHistory.useQuery(
     { userId: clientId },
@@ -102,6 +151,7 @@ function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
                 <Cell key={c.label} value={c.rVal} unit={c.unit} delta={getDelta(c.rVal, c.rPrev)} />
               ))}
             </div>
+            <MealPlanNoteEditor entryId={entry.id} initialNote={entry.note} />
           </div>
         );
       })}
