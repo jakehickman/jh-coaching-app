@@ -443,9 +443,9 @@ export default function MealPlansSection({ fixedClientId }: { fixedClientId?: nu
                             className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                           {isServingBased && (
-                            <span className="text-[9px] text-muted-foreground block text-center mt-0.5">{selectedFood.servingUnit}{effectiveGrams ? ` (${effectiveGrams}g)` : ""}</span>
+                            <span className="text-[9px] text-muted-foreground block text-left mt-0.5">{selectedFood.servingUnit}{effectiveGrams ? ` (${effectiveGrams}g)` : ""}</span>
                           )}
-                          {!isServingBased && <span className="text-[9px] text-muted-foreground block text-center mt-0.5">g</span>}
+                          {!isServingBased && <span className="text-[9px] text-muted-foreground block text-left mt-0.5">g</span>}
                         </div>
                         <div className="col-span-3 text-[10px] text-muted-foreground leading-tight pt-1.5">
                           {hasData ? (
