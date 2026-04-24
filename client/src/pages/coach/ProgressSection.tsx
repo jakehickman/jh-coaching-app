@@ -190,7 +190,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
 }
 
 // ─── Measurements Tab ────────────────────────────────────────────────────────
-function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: any[] }) {
+function MeasurementsTab({ measurements, logs, chartOnly, historyOnly }: { measurements: any[]; logs?: any[]; chartOnly?: boolean; historyOnly?: boolean }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const sorted = [...measurements].sort((a, b) =>
@@ -330,7 +330,7 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
   return (
     <div className="space-y-5">
       {/* Weight + Waist dual-axis trend chart */}
-      {(weightData.length > 1 || waistData.length > 1) && (
+      {!historyOnly && (weightData.length > 1 || waistData.length > 1) && (
         <div>
           <SectionLabel>Weight &amp; Waist Trend</SectionLabel>
           <div className="bg-card border border-border rounded-xl p-4">
@@ -364,7 +364,7 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
         </div>
       )}
       {/* Session cards */}
-      <div>
+      {!chartOnly && (<div>
         <SectionLabel>Measurements</SectionLabel>
         <div className="space-y-2">
           {sorted.map((m, i) => {
@@ -468,7 +468,7 @@ function MeasurementsTab({ measurements, logs }: { measurements: any[]; logs?: a
             );
           })}
         </div>
-      </div>
+      </div>)}
     </div>
   );
 }
@@ -1377,6 +1377,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           {/* ── Body Composition: measurements + weight trend ── */}
           <TabsContent value="body-comp">
             <div className="space-y-8">
+              <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly />
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Progress Photos</p>
                 <ProgressPhotosTab
@@ -1384,7 +1385,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                   photoType={(clientProfile?.photoType as "standard" | "athlete") ?? "standard"}
                 />
               </div>
-              <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
+              <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} historyOnly />
             </div>
           </TabsContent>
 
