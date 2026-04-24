@@ -41,7 +41,6 @@ export default function ClientHub() {
 
   return (
     <DashboardShell mode="coach">
-      <div className="text-[110%]">
       {/* Back navigation */}
       <button
         onClick={() => navigate("/coach/clients")}
@@ -73,7 +72,6 @@ export default function ClientHub() {
 
       {/* Three tabs: Overview · Progress · Program */}
       {clientId > 0 && <ProgressSection fixedClientId={clientId} />}
-      </div>
     </DashboardShell>
   );
 }
