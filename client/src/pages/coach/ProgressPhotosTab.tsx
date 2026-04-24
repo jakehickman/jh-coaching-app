@@ -44,7 +44,7 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 export function ProgressPhotosTab({ clientId, photoType }: Props) {
-  const poses = photoType === "athlete" ? [...ATHLETE_POSES] : [...STANDARD_POSES];
+  const poses: string[] = photoType === "athlete" ? [...ATHLETE_POSES] : [...STANDARD_POSES];
   const utils = trpc.useUtils();
 
   // Fetch available weeks from check-in history

@@ -506,7 +506,7 @@ export function diffTrainingPrograms(
   const newMap = new Map(newDays.map(d => [d.name, d]));
 
   // Sessions added
-  for (const [name] of newMap) {
+  for (const [name] of Array.from(newMap)) {
     if (!oldMap.has(name)) {
       const day = newMap.get(name)!;
       for (const ex of day.exercises) {
@@ -516,7 +516,7 @@ export function diffTrainingPrograms(
   }
 
   // Sessions removed
-  for (const [name] of oldMap) {
+  for (const [name] of Array.from(oldMap)) {
     if (!newMap.has(name)) {
       const day = oldMap.get(name)!;
       for (const ex of day.exercises) {
@@ -526,7 +526,7 @@ export function diffTrainingPrograms(
   }
 
   // Sessions in both — diff exercises
-  for (const [name, newDay] of newMap) {
+  for (const [name, newDay] of Array.from(newMap)) {
     const oldDay = oldMap.get(name);
     if (!oldDay) continue;
 
@@ -534,21 +534,21 @@ export function diffTrainingPrograms(
     const newExMap = new Map(newDay.exercises.map(e => [e.name, e]));
 
     // Exercises added
-    for (const [exName] of newExMap) {
+    for (const [exName] of Array.from(newExMap)) {
       if (!oldExMap.has(exName)) {
         changes.push({ type: "add", session: name, exercise: exName });
       }
     }
 
     // Exercises removed
-    for (const [exName] of oldExMap) {
+    for (const [exName] of Array.from(oldExMap)) {
       if (!newExMap.has(exName)) {
         changes.push({ type: "remove", session: name, exercise: exName });
       }
     }
 
     // Exercises in both — diff fields
-    for (const [exName, newEx] of newExMap) {
+    for (const [exName, newEx] of Array.from(newExMap)) {
       const oldEx = oldExMap.get(exName);
       if (!oldEx) continue;
       const fields: Array<keyof typeof oldEx> = ["sets", "reps", "notes"];

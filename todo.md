@@ -482,3 +482,7 @@
 - [x] Add updateHistoryNote mutation to mealPlan tRPC router
 - [x] ProgramChangeLogTab: show date only (no time), remove count badges, add inline note textarea (saves on blur/Enter)
 - [x] MacroPlanHistoryTab: add inline note textarea per history card (saves on blur/Enter)
+
+## TypeScript Error Fixes (Apr 2026)
+- [x] Fix server/db.ts Map iteration TS2802 errors (lines 509–551) — use Array.from() wrappers
+- [x] Fix ProgressPhotosTab.tsx TS2345 type mismatch (line 137)
