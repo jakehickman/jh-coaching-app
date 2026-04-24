@@ -169,6 +169,33 @@ function NutritionTab({ clientId }: { clientId: number }) {
     { userId: clientId, dayType: "rest" },
     { enabled: !!clientId }
   );
+  const { data: trainingProgram } = trpc.training.getForClient.useQuery(
+    { userId: clientId },
+    { enabled: !!clientId }
+  );
+
+  // Derive weekly average calories from training schedule rotation
+  const weeklyAvgCalories = useMemo(() => {
+    const schedule: string[] = (trainingProgram as any)?.schedule ?? [];
+    if (!schedule.length) return null;
+    const cycleLength = schedule.length;
+    const trainingDays = schedule.filter((s: string) => s.toUpperCase() !== "OFF").length;
+    const restDays = cycleLength - trainingDays;
+    const tCal = trainingPlan?.totalCalories ?? null;
+    const rCal = restPlan?.totalCalories ?? null;
+    if (tCal == null && rCal == null) return null;
+    const tCalVal = tCal ?? rCal!;
+    const rCalVal = rCal ?? tCal!;
+    return Math.round((trainingDays * tCalVal + restDays * rCalVal) / cycleLength);
+  }, [trainingProgram, trainingPlan, restPlan]);
+
+  const scheduleLabel = useMemo(() => {
+    const schedule: string[] = (trainingProgram as any)?.schedule ?? [];
+    if (!schedule.length) return null;
+    const trainingDays = schedule.filter((s: string) => s.toUpperCase() !== "OFF").length;
+    const restDays = schedule.length - trainingDays;
+    return `${trainingDays} training / ${restDays} OFF per ${schedule.length}-day cycle`;
+  }, [trainingProgram]);
 
   const isLoading = loadingTraining || loadingRest;
   const hasAny = trainingPlan || restPlan;
@@ -231,10 +258,35 @@ function NutritionTab({ clientId }: { clientId: number }) {
           <p className="text-sm mt-1">Go to the Nutrition tab to assign a meal plan.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <DayCard label="Training Day" plan={trainingPlan} />
-          <DayCard label="Rest Day" plan={restPlan} />
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <DayCard label="Training Day" plan={trainingPlan} />
+            <DayCard label="Rest Day" plan={restPlan} />
+          </div>
+
+          {/* Weekly average calorie summary */}
+          {weeklyAvgCalories != null && (
+            <div className="bg-card border border-border rounded-xl p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly Average</p>
+              <div className="flex items-end gap-3">
+                <div>
+                  <span className="text-3xl font-bold tabular-nums text-foreground">
+                    {weeklyAvgCalories.toLocaleString()}
+                  </span>
+                  <span className="text-sm text-muted-foreground ml-1.5">kcal / day</span>
+                </div>
+                <div className="text-xs text-muted-foreground pb-1">
+                  {weeklyAvgCalories * 7 >= 1000
+                    ? `${(weeklyAvgCalories * 7 / 1000).toFixed(1)}k kcal / week`
+                    : `${(weeklyAvgCalories * 7).toLocaleString()} kcal / week`}
+                </div>
+              </div>
+              {scheduleLabel && (
+                <p className="text-xs text-muted-foreground/60 mt-2">{scheduleLabel}</p>
+              )}
+            </div>
+          )}
+        </>
       )}
 
     </div>
