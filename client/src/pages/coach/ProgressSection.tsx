@@ -18,6 +18,7 @@ import { WeeklyReviewTab } from "./WeeklyReviewTab";
 import TrainingSection from "./TrainingSection";
 import MealPlansSection from "./MealPlansSection";
 import { ProgressPhotosTab } from "./ProgressPhotosTab";
+import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 
 // ─── Nutrition Tab ───────────────────────────────────────────────────────────
 function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
@@ -1385,7 +1386,10 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                   photoType={(clientProfile?.photoType as "standard" | "athlete") ?? "standard"}
                 />
               </div>
-              <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} historyOnly />
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly History</p>
+                <WeeklyBodyCompCards clientId={selectedUserId!} />
+              </div>
             </div>
           </TabsContent>
 

@@ -182,6 +182,32 @@ export const progressRouter = router({
         const avgSteps = avg(periodLogs.map((l) => l.stepsCount));
         const stepGoal = profile.stepGoal ?? null;
 
+        // Raw weigh-ins for expanded view
+        const weighIns = periodLogs
+          .filter((l) => l.weight != null)
+          .map((l) => ({
+            logDate: typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date),
+            weight: l.weight as number,
+          }))
+          .sort((a, b) => a.logDate.localeCompare(b.logDate));
+
+        // Raw measurements for expanded view
+        const measurementEntries = periodMeas.map((m) => ({
+          id: m.id,
+          measureDate: typeof m.measureDate === "string" ? m.measureDate : toDateStr(m.measureDate as Date),
+          waist: m.waist ?? null,
+          umbilical: avg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]),
+          suprailiac: avg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]),
+          calf: avg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]),
+          thigh: avg([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]),
+          totalSkinfold: skinfoldTotal(m),
+          // raw readings for drill-down
+          umbilicalReadings: [m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5],
+          suprailiacReadings: [m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5],
+          calfReadings: [m.calf1, m.calf2, m.calf3, m.calf4, m.calf5],
+          thighReadings: [m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5],
+        })).sort((a, b) => a.measureDate.localeCompare(b.measureDate));
+
         return {
           weekStart: period.weekStart,
           weekEnd: period.weekEnd,
@@ -193,6 +219,9 @@ export const progressRouter = router({
           avgWeight,
           avgWaist,
           avgSkinfold,
+          // Expanded detail
+          weighIns,
+          measurementEntries,
           // Training
           sessionsCompleted,
           // Nutrition

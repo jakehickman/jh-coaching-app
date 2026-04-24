@@ -127,9 +127,16 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
     if (!compareByPoseWeek[p.pose]) compareByPoseWeek[p.pose] = {};
     compareByPoseWeek[p.pose][p.weekNumber] = p;
   }
-  const comparePoses = poses.filter(
-    (pose) => compareByPoseWeek[pose] && (compareByPoseWeek[pose][compareWeekA!] || compareByPoseWeek[pose][compareWeekB!])
+  // Show all poses that have at least one photo in either week (not limited to client's pose set)
+  const allPosesWithPhotos = Object.keys(compareByPoseWeek).filter(
+    (pose) => compareByPoseWeek[pose][compareWeekA!] || compareByPoseWeek[pose][compareWeekB!]
   );
+  // Preserve pose order: client's poses first, then any extras
+  const posesInOrder = [
+    ...poses.filter((p) => allPosesWithPhotos.includes(p)),
+    ...allPosesWithPhotos.filter((p) => !poses.includes(p)),
+  ];
+  const comparePoses = posesInOrder;
 
   return (
     <div className="space-y-6">
