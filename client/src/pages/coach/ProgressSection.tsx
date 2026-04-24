@@ -20,6 +20,94 @@ import TrainingSection from "./TrainingSection";
 import MealPlansSection from "./MealPlansSection";
 
 // ─── Nutrition Tab ───────────────────────────────────────────────────────────
+function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
+  const { data: history = [], isLoading } = trpc.mealPlan.getHistory.useQuery(
+    { userId: clientId },
+    { enabled: !!clientId }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3 mt-2">
+        <div className="h-28 bg-muted rounded-xl animate-pulse" />
+        <div className="h-28 bg-muted rounded-xl animate-pulse" />
+        <div className="h-28 bg-muted rounded-xl animate-pulse" />
+      </div>
+    );
+  }
+
+  if (history.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <p className="text-base font-medium">No plan changes recorded</p>
+        <p className="text-sm mt-1">Changes to the nutrition plan will appear here.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {history.map((entry: any, idx: number) => {
+        const prev = history[idx + 1] as any | undefined;
+        function getDelta(curr: number | null, p: number | null | undefined): number | null {
+          if (curr == null || p == null) return null;
+          const d = curr - p;
+          return d === 0 ? null : d;
+        }
+        function Cell({ value, unit, delta }: { value: number | null; unit: string; delta?: number | null }) {
+          return (
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="text-sm font-semibold tabular-nums text-foreground leading-none">
+                {value != null ? value.toLocaleString() : "—"}
+                <span className="text-[10px] font-normal text-muted-foreground/50 ml-0.5">{unit}</span>
+              </span>
+              {delta != null ? (
+                <span className={`text-[10px] font-semibold leading-none ${delta > 0 ? "text-emerald-500" : "text-red-400"}`}>
+                  {delta > 0 ? "+" : ""}{delta}
+                </span>
+              ) : (
+                <span className="text-[10px] leading-none text-transparent select-none">·</span>
+              )}
+            </div>
+          );
+        }
+        const cols = [
+          { label: "Calories", unit: "kcal", tVal: entry.trainingCalories, rVal: entry.restCalories, tPrev: prev?.trainingCalories, rPrev: prev?.restCalories },
+          { label: "Protein",  unit: "g",    tVal: entry.trainingProtein,  rVal: entry.restProtein,  tPrev: prev?.trainingProtein,  rPrev: prev?.restProtein },
+          { label: "Carbs",    unit: "g",    tVal: entry.trainingCarbs,    rVal: entry.restCarbs,    tPrev: prev?.trainingCarbs,    rPrev: prev?.restCarbs },
+          { label: "Fat",      unit: "g",    tVal: entry.trainingFat,      rVal: entry.restFat,      tPrev: prev?.trainingFat,      rPrev: prev?.restFat },
+        ];
+        return (
+          <div key={entry.id} className="bg-card border border-border rounded-xl p-4">
+            <p className="text-xs font-semibold text-muted-foreground mb-3">
+              {new Date(entry.changedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+            </p>
+            <div className="grid grid-cols-5 mb-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 col-span-1" />
+              {cols.map(c => (
+                <span key={c.label} className="text-[10px] uppercase tracking-wider text-muted-foreground/60 text-right">{c.label}</span>
+              ))}
+            </div>
+            <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Train</span>
+              {cols.map(c => (
+                <Cell key={c.label} value={c.tVal} unit={c.unit} delta={getDelta(c.tVal, c.tPrev)} />
+              ))}
+            </div>
+            <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Rest</span>
+              {cols.map(c => (
+                <Cell key={c.label} value={c.rVal} unit={c.unit} delta={getDelta(c.rVal, c.rPrev)} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Nutrition Tab (current plan only) ───────────────────────────────────────
 function NutritionTab({ clientId }: { clientId: number }) {
   const { data: trainingPlan, isLoading: loadingTraining } = trpc.mealPlan.getForClient.useQuery(
     { userId: clientId, dayType: "training" },
@@ -27,10 +115,6 @@ function NutritionTab({ clientId }: { clientId: number }) {
   );
   const { data: restPlan, isLoading: loadingRest } = trpc.mealPlan.getForClient.useQuery(
     { userId: clientId, dayType: "rest" },
-    { enabled: !!clientId }
-  );
-  const { data: history = [] } = trpc.mealPlan.getHistory.useQuery(
-    { userId: clientId },
     { enabled: !!clientId }
   );
 
@@ -101,74 +185,6 @@ function NutritionTab({ clientId }: { clientId: number }) {
         </div>
       )}
 
-      {/* Macro Change History */}
-      {history.length > 0 && (
-        <div className="mt-6">
-          <SectionLabel>Macro Change History</SectionLabel>
-          <div className="mt-3 space-y-3">
-            {history.map((entry: any, idx: number) => {
-              const prev = history[idx + 1] as any | undefined;
-              function getDelta(curr: number | null, p: number | null | undefined): number | null {
-                if (curr == null || p == null) return null;
-                const d = curr - p;
-                return d === 0 ? null : d;
-              }
-              function Cell({ value, unit, delta }: { value: number | null; unit: string; delta?: number | null }) {
-                return (
-                  <div className="flex flex-col items-end gap-0.5">
-                    <span className="text-sm font-semibold tabular-nums text-foreground leading-none">
-                      {value != null ? value.toLocaleString() : "—"}
-                      <span className="text-[10px] font-normal text-muted-foreground/50 ml-0.5">{unit}</span>
-                    </span>
-                    {delta != null ? (
-                      <span className={`text-[10px] font-semibold leading-none ${delta > 0 ? "text-emerald-500" : "text-red-400"}`}>
-                        {delta > 0 ? "+" : ""}{delta}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] leading-none text-transparent select-none">·</span>
-                    )}
-                  </div>
-                );
-              }
-              const cols = [
-                { label: "Calories", unit: "kcal", tVal: entry.trainingCalories, rVal: entry.restCalories, tPrev: prev?.trainingCalories, rPrev: prev?.restCalories },
-                { label: "Protein",  unit: "g",    tVal: entry.trainingProtein,  rVal: entry.restProtein,  tPrev: prev?.trainingProtein,  rPrev: prev?.restProtein },
-                { label: "Carbs",    unit: "g",    tVal: entry.trainingCarbs,    rVal: entry.restCarbs,    tPrev: prev?.trainingCarbs,    rPrev: prev?.restCarbs },
-                { label: "Fat",      unit: "g",    tVal: entry.trainingFat,      rVal: entry.restFat,      tPrev: prev?.trainingFat,      rPrev: prev?.restFat },
-              ];
-              return (
-                <div key={entry.id} className="bg-card border border-border rounded-xl p-4">
-                  {/* Date header */}
-                  <p className="text-xs font-semibold text-muted-foreground mb-3">
-                    {new Date(entry.changedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
-                  </p>
-                  {/* Column headers */}
-                  <div className="grid grid-cols-5 mb-1.5">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 col-span-1" />
-                    {cols.map(c => (
-                      <span key={c.label} className="text-[10px] uppercase tracking-wider text-muted-foreground/60 text-right">{c.label}</span>
-                    ))}
-                  </div>
-                  {/* Training row */}
-                  <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
-                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Train</span>
-                    {cols.map(c => (
-                      <Cell key={c.label} value={c.tVal} unit={c.unit} delta={getDelta(c.tVal, c.tPrev)} />
-                    ))}
-                  </div>
-                  {/* Rest row */}
-                  <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
-                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Rest</span>
-                    {cols.map(c => (
-                      <Cell key={c.label} value={c.rVal} unit={c.unit} delta={getDelta(c.rVal, c.rPrev)} />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1404,7 +1420,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <MealPlansSection fixedClientId={selectedUserId!} />
               </TabsContent>
               <TabsContent value="history">
-                <NutritionTab clientId={selectedUserId!} />
+                <MacroPlanHistoryTab clientId={selectedUserId!} />
               </TabsContent>
             </Tabs>
           </TabsContent>
