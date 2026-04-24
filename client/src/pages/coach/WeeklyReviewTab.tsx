@@ -385,7 +385,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         // Weight delta vs previous week (% BW change)
         const weightDeltaKg = d(week.avgWeight, prev?.avgWeight ?? null);
         const weightDeltaPct = weightDeltaKg != null && prev?.avgWeight != null && prev.avgWeight > 0
-          ? parseFloat(((weightDeltaKg / prev.avgWeight) * 100).toFixed(2))
+          ? parseFloat(((weightDeltaKg / prev.avgWeight) * 100).toFixed(1))
           : null;
 
         return (
@@ -433,7 +433,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                   <div className="flex items-baseline gap-1">
                     <span className="text-[11px] font-semibold tabular-nums text-foreground">{fmt(week.avgWeight)} kg</span>
                     {weightDeltaPct != null && (
-                      <Delta delta={weightDeltaPct} text={`${weightDeltaPct > 0 ? "+" : ""}${weightDeltaPct.toFixed(2)}%`} higherIsBetter={null} />
+                      <Delta delta={weightDeltaPct} text={`${weightDeltaPct > 0 ? "+" : ""}${weightDeltaPct.toFixed(1)}%`} higherIsBetter={null} />
                     )}
                   </div>
                 )}

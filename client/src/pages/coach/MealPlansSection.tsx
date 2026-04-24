@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, ArrowUp, ArrowDown, Check, Candy } from "lucide-react";
+import { Plus, Trash2, Save, ArrowUp, ArrowDown, Check } from "lucide-react";
 import { Card, SectionLabel, ClientCombobox, useClientSelector } from "./shared";
 
 function FoodCombobox({
@@ -494,8 +494,7 @@ export default function MealPlansSection({ fixedClientId }: { fixedClientId?: nu
           {/* Treat allowance */}
           <div className="flex items-end gap-2">
             <div className="flex-1">
-              <label className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                <Candy size={12} className="text-pink-400" />
+              <label className="text-xs text-muted-foreground mb-1 block">
                 Daily Treat Allowance (kcal)
               </label>
               <input

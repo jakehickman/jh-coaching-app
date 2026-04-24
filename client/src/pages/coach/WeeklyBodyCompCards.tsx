@@ -86,9 +86,10 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
   const weightDeltaKg = week.avgWeight != null && prevWeek?.avgWeight != null
     ? week.avgWeight - prevWeek.avgWeight
     : null;
-  const weightDelta = weightDeltaKg != null && prevWeek?.avgWeight != null && prevWeek.avgWeight > 0
+  const weightDeltaPct2dp = weightDeltaKg != null && prevWeek?.avgWeight != null && prevWeek.avgWeight > 0
     ? parseFloat(((weightDeltaKg / prevWeek.avgWeight) * 100).toFixed(2))
     : null;
+  const weightDelta = weightDeltaPct2dp != null ? parseFloat(weightDeltaPct2dp.toFixed(1)) : null;
   const waistDelta = week.avgWaist != null && prevWeek?.avgWaist != null
     ? parseFloat((week.avgWaist - prevWeek.avgWaist).toFixed(1))
     : null;
@@ -125,7 +126,7 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
               <div className="text-right">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Avg Wt</p>
                 <p className="text-sm font-bold tabular-nums">{fmt(week.avgWeight)} kg</p>
-                <Delta delta={weightDelta} unit="%" invert decimals={2} />
+                <Delta delta={weightDelta} unit="%" invert decimals={1} />
               </div>
             )}
             {week.avgWaist != null && (
