@@ -45,12 +45,9 @@ function SiteRow({ label, avg, readings }: { label: string; avg: number | null; 
   const valid = readings.filter((v): v is number => v != null);
   if (valid.length === 0) return null;
   return (
-    <div className="flex items-center justify-between py-1 border-b border-border/40 last:border-0">
-      <span className="text-xs text-muted-foreground w-24">{label}</span>
-      <span className="text-xs font-medium tabular-nums">{fmt(avg)} mm</span>
-      <span className="text-[10px] text-muted-foreground tabular-nums">
-        [{valid.map(v => v.toFixed(1)).join(", ")}]
-      </span>
+    <div className="flex items-center py-1 border-b border-border/40 last:border-0">
+      <span className="text-xs text-muted-foreground flex-1">{label}</span>
+      <span className="text-xs font-medium tabular-nums text-right w-20">{fmt(avg)} mm</span>
     </div>
   );
 }
@@ -162,11 +159,11 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
           {week.weighIns.length > 0 && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Daily Weigh-ins</p>
-              <div className="space-y-1">
+              <div className="space-y-0">
                 {week.weighIns.map((w) => (
-                  <div key={w.logDate} className="flex items-center justify-between py-1 border-b border-border/40 last:border-0">
-                    <span className="text-xs text-muted-foreground">{fmtDate(w.logDate)}</span>
-                    <span className="text-xs font-medium tabular-nums">{w.weight.toFixed(1)} kg</span>
+                  <div key={w.logDate} className="flex items-center py-1 border-b border-border/40 last:border-0">
+                    <span className="text-xs text-muted-foreground flex-1">{fmtDate(w.logDate)}</span>
+                    <span className="text-xs font-medium tabular-nums text-right w-20">{w.weight.toFixed(1)} kg</span>
                   </div>
                 ))}
               </div>
@@ -181,10 +178,9 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
               </p>
               <div className="space-y-0.5">
                 {entry.waist != null && (
-                  <div className="flex items-center justify-between py-1 border-b border-border/40">
-                    <span className="text-xs text-muted-foreground w-24">Waist</span>
-                    <span className="text-xs font-medium tabular-nums">{entry.waist.toFixed(1)} cm</span>
-                    <span className="text-[10px] text-muted-foreground" />
+                  <div className="flex items-center py-1 border-b border-border/40">
+                    <span className="text-xs text-muted-foreground flex-1">Waist</span>
+                    <span className="text-xs font-medium tabular-nums text-right w-20">{entry.waist.toFixed(1)} cm</span>
                   </div>
                 )}
                 <SiteRow label="Umbilical" avg={entry.umbilical} readings={entry.umbilicalReadings} />
@@ -192,10 +188,9 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
                 <SiteRow label="Calf" avg={entry.calf} readings={entry.calfReadings} />
                 <SiteRow label="Thigh" avg={entry.thigh} readings={entry.thighReadings} />
                 {entry.totalSkinfold != null && (
-                  <div className="flex items-center justify-between py-1 pt-2">
-                    <span className="text-xs font-semibold text-foreground w-24">Total</span>
-                    <span className="text-xs font-bold tabular-nums">{entry.totalSkinfold.toFixed(1)} mm</span>
-                    <span className="text-[10px] text-muted-foreground" />
+                  <div className="flex items-center py-1 pt-2">
+                    <span className="text-xs font-semibold text-foreground flex-1">Total</span>
+                    <span className="text-xs font-bold tabular-nums text-right w-20">{entry.totalSkinfold.toFixed(1)} mm</span>
                   </div>
                 )}
               </div>

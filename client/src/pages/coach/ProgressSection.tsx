@@ -328,40 +328,84 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly }: { measu
     thigh: '#a855f7',
   };
 
+  // Skinfold trend data (per measurement entry, oldest first)
+  const skinfoldData = [...sorted].reverse()
+    .filter(m => totalSkinfold(m) != null)
+    .map(m => {
+      const iso = toLocalDateStr(m.measureDate);
+      const [, mo, d] = iso.split('-');
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return { date: `${parseInt(d)} ${months[parseInt(mo)-1]}`, skinfold: totalSkinfold(m) };
+    });
+
+  const hasWeightWaist = weightData.length > 1 || waistData.length > 1;
+  const hasSkinfold = skinfoldData.length > 1;
+
   return (
     <div className="space-y-5">
-      {/* Weight + Waist dual-axis trend chart */}
-      {!historyOnly && (weightData.length > 1 || waistData.length > 1) && (
-        <div>
-          <SectionLabel>Weight &amp; Waist Trend</SectionLabel>
-          <div className="bg-card border border-border rounded-xl p-4">
-            <ResponsiveContainer width="100%" height={200}>
-              <ComposedChart data={combinedTrendData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                <XAxis dataKey="date" tick={{ fill: '#666', fontSize: 10 }} interval="preserveStartEnd" />
-                <YAxis yAxisId="weight" tick={{ fill: '#3b82f6', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
-                <YAxis yAxisId="waist" orientation="right" tick={{ fill: '#f59e0b', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
-                <Tooltip
-                  contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 8 }}
-                  labelStyle={{ color: '#fff' }}
-                  formatter={(v: number, name: string) => name === 'weight' ? [`${v} kg`, 'Weight'] : [`${v} cm`, 'Waist']}
-                />
-                <Area yAxisId="weight" type="monotone" dataKey="weight" stroke="#3b82f6" fill="#3b82f622" strokeWidth={2} dot={{ r: 2, fill: '#3b82f6' }} connectNulls />
-                <Line yAxisId="waist" type="monotone" dataKey="waist" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, fill: '#f59e0b' }} connectNulls />
-              </ComposedChart>
-            </ResponsiveContainer>
-            {/* Legend */}
-            <div className="flex items-center gap-4 mt-2 justify-center">
-              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span className="w-3 h-0.5 bg-blue-500 inline-block rounded" />
-                Weight (kg)
-              </span>
-              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span className="w-3 h-0.5 bg-amber-500 inline-block rounded" />
-                Waist (cm)
-              </span>
+      {/* Two-column chart grid */}
+      {!historyOnly && (hasWeightWaist || hasSkinfold) && (
+        <div className={`grid gap-4 ${hasWeightWaist && hasSkinfold ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+          {/* Weight + Waist chart */}
+          {hasWeightWaist && (
+            <div>
+              <SectionLabel>Weight &amp; Waist</SectionLabel>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <ResponsiveContainer width="100%" height={200}>
+                  <ComposedChart data={combinedTrendData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                    <XAxis dataKey="date" tick={{ fill: '#666', fontSize: 10 }} interval="preserveStartEnd" />
+                    <YAxis yAxisId="weight" tick={{ fill: '#3b82f6', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
+                    <YAxis yAxisId="waist" orientation="right" tick={{ fill: '#f59e0b', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
+                    <Tooltip
+                      contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 8 }}
+                      labelStyle={{ color: '#fff' }}
+                      formatter={(v: number, name: string) => name === 'weight' ? [`${v} kg`, 'Weight'] : [`${v} cm`, 'Waist']}
+                    />
+                    <Area yAxisId="weight" type="monotone" dataKey="weight" stroke="#3b82f6" fill="#3b82f622" strokeWidth={2} dot={{ r: 2, fill: '#3b82f6' }} connectNulls />
+                    <Line yAxisId="waist" type="monotone" dataKey="waist" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, fill: '#f59e0b' }} connectNulls />
+                  </ComposedChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-4 mt-2 justify-center">
+                  <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <span className="w-3 h-0.5 bg-blue-500 inline-block rounded" />
+                    Weight (kg)
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <span className="w-3 h-0.5 bg-amber-500 inline-block rounded" />
+                    Waist (cm)
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+          {/* Skinfold trend chart */}
+          {hasSkinfold && (
+            <div>
+              <SectionLabel>Skinfold Thickness</SectionLabel>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <ResponsiveContainer width="100%" height={200}>
+                  <ComposedChart data={skinfoldData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                    <XAxis dataKey="date" tick={{ fill: '#666', fontSize: 10 }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fill: '#22c55e', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
+                    <Tooltip
+                      contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 8 }}
+                      labelStyle={{ color: '#fff' }}
+                      formatter={(v: number) => [`${v} mm`, 'Total Skinfold']}
+                    />
+                    <Area type="monotone" dataKey="skinfold" stroke="#22c55e" fill="#22c55e22" strokeWidth={2} dot={{ r: 3, fill: '#22c55e' }} connectNulls />
+                  </ComposedChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-4 mt-2 justify-center">
+                  <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />
+                    Total Skinfold (mm)
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
       {/* Session cards */}
