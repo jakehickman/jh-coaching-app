@@ -117,7 +117,8 @@ function ClientsSection() {
     onError: (e) => toast.error(e.message),
   });
 
-  const clients = (allUsers ?? []).filter(u => u.role !== 'admin');
+  // All users are potential clients (admin users may also be clients)
+  const clients = allUsers ?? [];
   const admins = (allUsers ?? []).filter(u => u.role === 'admin');
 
   // Get server-computed cycle status
@@ -146,9 +147,10 @@ function ClientsSection() {
     return order[getBadge(a.id)] - order[getBadge(b.id)];
   });
 
-  const totalClients = clients.length;
-  const approvedCount = clients.filter(u => (u as any).approved).length;
-  const pendingCount = clients.filter(u => !(u as any).approved).length;
+  const nonAdminClients = clients.filter(u => u.role !== 'admin');
+  const totalClients = nonAdminClients.length;
+  const approvedCount = nonAdminClients.filter(u => (u as any).approved).length;
+  const pendingCount = nonAdminClients.filter(u => !(u as any).approved).length;
   const overdueCount = clients.filter(u => getBadge(u.id) === 'overdue').length;
 
   function StatusBadge({ badge }: { badge: BadgeState }) {
@@ -207,7 +209,10 @@ function ClientsSection() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-foreground">{user.name ?? "Unnamed"}</p>
                     <StatusBadge badge={badge} />
-                    {!(user as any).approved && (
+                    {user.role === 'admin' && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">admin</span>
+                    )}
+                    {!(user as any).approved && user.role !== 'admin' && (
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Pending Approval</span>
                     )}
                   </div>
@@ -269,26 +274,7 @@ function ClientsSection() {
         </div>
       </div>
 
-      {/* Admin accounts (collapsed, below clients) */}
-      {admins.length > 0 && (
-        <div>
-          <SectionLabel>Admin Accounts</SectionLabel>
-          <div className="space-y-1.5">
-            {admins.map(user => (
-              <div key={user.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card/50">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
-                  {user.name?.charAt(0)?.toUpperCase() ?? "?"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{user.name ?? "Unnamed"}</p>
-                  <p className="text-xs text-muted-foreground">{user.email ?? "No email"}</p>
-                </div>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">admin</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* Edit dialog */}
       {editingId && <EditClientDialog userId={editingId} onClose={() => setEditingId(null)} />}
