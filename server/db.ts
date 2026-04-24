@@ -132,6 +132,7 @@ export async function getAllUsers() {
       createdAt: users.createdAt,
       displayName: clientProfiles.displayName,
       checkInDay: clientProfiles.checkInDay,
+      startDate: clientProfiles.startDate,
     })
     .from(users)
     .leftJoin(clientProfiles, eq(clientProfiles.userId, users.id))

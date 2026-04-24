@@ -18,74 +18,75 @@ import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 import { useConfirm } from "@/components/ConfirmDialog";
 
-// ─── Section: Clients ─────────────────────────────────────────────────────────
-function ClientsSection() {
-  const [confirm, ConfirmDialogNode] = useConfirm();
-  const [, navigate] = useLocation();
-  const { data: allUsers, refetch } = trpc.users.list.useQuery();
-  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
-  const [seenKeys, setSeenKeys] = useState<Record<number, number>>(() => {
-    const out: Record<number, number> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k?.startsWith('coach:seen:checkin:')) {
-        const id = parseInt(k.replace('coach:seen:checkin:', ''), 10);
-        out[id] = parseInt(localStorage.getItem(k) ?? '0', 10);
-      }
+// ─── Overdue status helper ────────────────────────────────────────────────────
+const DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+
+function getCheckInStatus(
+  user: any,
+  latestCheckIns: { clientId: number; weekStartDate: string; submittedAt: Date; reviewedAt: Date | null }[]
+): 'overdue' | 'due-today' | 'submitted' | 'no-checkin-day' {
+  const checkInDay = (user as any).checkInDay as string | null | undefined;
+  const startDate = (user as any).startDate as string | null | undefined;
+  if (!checkInDay || !startDate) return 'no-checkin-day';
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayMs = today.getTime();
+
+  const startMs = new Date(startDate + 'T00:00:00').getTime();
+  const targetDow = DAY_NAMES.indexOf(checkInDay.toLowerCase());
+  if (targetDow === -1) return 'no-checkin-day';
+
+  // Find first scheduled check-in on or after startDate
+  const startDay = new Date(startMs);
+  const startDow = startDay.getDay();
+  const daysUntilFirst = (targetDow - startDow + 7) % 7;
+  const firstScheduledMs = startMs + daysUntilFirst * 86400000;
+
+  // Build all scheduled check-in dates up to today
+  const scheduledDates: number[] = [];
+  for (let d = firstScheduledMs; d <= todayMs; d += 7 * 86400000) {
+    scheduledDates.push(d);
+  }
+
+  if (scheduledDates.length === 0) return 'no-checkin-day';
+
+  // Get submitted check-in dates for this client
+  const submitted = latestCheckIns
+    .filter(c => c.clientId === user.id)
+    .map(c => new Date(c.weekStartDate + 'T00:00:00').getTime());
+
+  // Check if any scheduled date older than 7 days has no submission
+  const sevenDaysAgoMs = todayMs - 7 * 86400000;
+  for (const sched of scheduledDates) {
+    if (sched < sevenDaysAgoMs) {
+      // This scheduled date is more than 7 days ago — must have a submission
+      const hasSubmission = submitted.some(s => Math.abs(s - sched) < 86400000 * 3);
+      if (!hasSubmission) return 'overdue';
     }
-    return out;
-  });
-  useEffect(() => {
-    const handler = (e: StorageEvent) => {
-      if (e.key?.startsWith('coach:seen:checkin:')) {
-        const id = parseInt(e.key.replace('coach:seen:checkin:', ''), 10);
-        setSeenKeys(prev => ({ ...prev, [id]: parseInt(e.newValue ?? '0', 10) }));
-      }
-    };
-    window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
-  }, []);
+  }
+
+  // Check if today is a check-in day
+  const todayDow = today.getDay();
+  if (todayDow === targetDow && todayMs >= firstScheduledMs) {
+    const hasToday = submitted.some(s => Math.abs(s - todayMs) < 86400000 * 3);
+    if (!hasToday) return 'due-today';
+  }
+
+  return 'submitted';
+}
+
+// ─── Edit Client Dialog ───────────────────────────────────────────────────────
+function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => void }) {
   const utils = trpc.useUtils();
-  const setApproved = trpc.users.setApproved.useMutation({
-    onSuccess: () => {
-      utils.users.list.invalidate();
-      toast.success("Access updated");
-    },
-  });
-  const deleteUser = trpc.users.delete.useMutation({
-    onSuccess: () => {
-      utils.users.list.invalidate();
-      setSelectedId(null);
-      toast.success("User deleted");
-    },
-    onError: (e) => toast.error(e.message),
-  });
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const { data: profile } = trpc.profile.getById.useQuery(
-    { userId: selectedId! },
-    { enabled: !!selectedId }
-  );
+  const { data: profile } = trpc.profile.getById.useQuery({ userId }, { enabled: !!userId });
   const upsertProfile = trpc.profile.upsertForClient.useMutation({
-    onSuccess: () => {
-      toast.success("Profile updated");
-      utils.profile.getById.invalidate({ userId: selectedId! });
-    }
+    onSuccess: () => { toast.success("Profile updated"); utils.profile.getById.invalidate({ userId }); utils.users.list.invalidate(); onClose(); }
   });
-
   const updateClientConfig = trpc.clientConfig.update.useMutation({
-    onSuccess: () => {
-      toast.success("Config updated");
-      utils.profile.getById.invalidate({ userId: selectedId! });
-    }
+    onSuccess: () => { toast.success("Config updated"); utils.profile.getById.invalidate({ userId }); }
   });
-
-  const [form, setForm] = useState({
-    displayName: "",
-    startDate: "", notes: "",
-    checkInDay: "" as "" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
-    stepGoal: "",
-  });
-
+  const [form, setForm] = useState({ displayName: "", startDate: "", notes: "", checkInDay: "" as any, stepGoal: "" });
   useEffect(() => {
     if (profile) {
       setForm({
@@ -95,200 +96,236 @@ function ClientsSection() {
         checkInDay: ((profile as any).checkInDay ?? "") as any,
         stepGoal: (profile as any).stepGoal?.toString() ?? "",
       });
-    } else {
-      setForm({ displayName: "", startDate: "", notes: "", checkInDay: "", stepGoal: "" });
     }
-  }, [profile, selectedId]);
-
-  const clients = allUsers ?? [];
+  }, [profile]);
 
   return (
-    <div className="space-y-4">
-      {/* Stats row */}
-      <div className="flex items-center gap-3">
-        <div className="bg-card border border-border rounded-lg px-5 py-3 flex items-center gap-3">
-          <Users size={16} className="text-muted-foreground" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold text-foreground">Edit Client Details</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-lg leading-none">&times;</button>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Display Name</label>
+          <input type="text" value={form.displayName} onChange={e => setForm((p: any) => ({ ...p, displayName: e.target.value }))}
+            className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Clients</p>
-            <p className="text-xl font-bold text-foreground">{clients.filter(u => u.role !== 'admin').length}</p>
+            <label className="text-xs text-muted-foreground block mb-1">Start Date</label>
+            <DateInput value={form.startDate} onChange={v => setForm((p: any) => ({ ...p, startDate: v }))} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">Check-in Day</label>
+            <select value={form.checkInDay} onChange={e => setForm((p: any) => ({ ...p, checkInDay: e.target.value as any }))}
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+              <option value="">Not set</option>
+              {['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => (
+                <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
+              ))}
+            </select>
           </div>
         </div>
-        <div className="bg-card border border-border rounded-lg px-5 py-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Approved</p>
-          <p className="text-xl font-bold text-foreground">{clients.filter(u => u.role !== 'admin' && (u as any).approved).length}</p>
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Daily Step Goal</label>
+          <input type="number" value={form.stepGoal} onChange={e => setForm((p: any) => ({ ...p, stepGoal: e.target.value }))}
+            placeholder="e.g. 10000" className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
         </div>
-        <div className="bg-card border border-border rounded-lg px-5 py-3">
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Notes</label>
+          <textarea value={form.notes} onChange={e => setForm((p: any) => ({ ...p, notes: e.target.value }))} rows={3}
+            className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+        </div>
+        <button
+          onClick={() => {
+            upsertProfile.mutate({ userId, displayName: form.displayName || undefined, startDate: form.startDate || undefined, notes: form.notes || null });
+            updateClientConfig.mutate({ userId, checkInDay: form.checkInDay || null, stepGoal: form.stepGoal ? parseInt(form.stepGoal) : null });
+          }}
+          disabled={upsertProfile.isPending || updateClientConfig.isPending}
+          className="w-full py-2 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
+        >
+          {(upsertProfile.isPending || updateClientConfig.isPending) ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Section: Clients ─────────────────────────────────────────────────────────
+function ClientsSection() {
+  const [confirm, ConfirmDialogNode] = useConfirm();
+  const [, navigate] = useLocation();
+  const { data: allUsers } = trpc.users.list.useQuery();
+  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
+  const utils = trpc.useUtils();
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  const setApproved = trpc.users.setApproved.useMutation({
+    onSuccess: () => { utils.users.list.invalidate(); toast.success("Access updated"); },
+  });
+  const deleteUser = trpc.users.delete.useMutation({
+    onSuccess: () => { utils.users.list.invalidate(); toast.success("User deleted"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const clients = (allUsers ?? []).filter(u => u.role !== 'admin');
+  const admins = (allUsers ?? []).filter(u => u.role === 'admin');
+
+  // Sort: overdue first, then due-today, then rest
+  const sortedClients = [...clients].sort((a, b) => {
+    const order = { overdue: 0, 'due-today': 1, submitted: 2, 'no-checkin-day': 3 };
+    const sa = getCheckInStatus(a, latestCheckIns as any);
+    const sb = getCheckInStatus(b, latestCheckIns as any);
+    return order[sa] - order[sb];
+  });
+
+  const totalClients = clients.length;
+  const approvedCount = clients.filter(u => (u as any).approved).length;
+  const pendingCount = clients.filter(u => !(u as any).approved).length;
+  const overdueCount = clients.filter(u => getCheckInStatus(u, latestCheckIns as any) === 'overdue').length;
+
+  function StatusBadge({ status }: { status: ReturnType<typeof getCheckInStatus> }) {
+    if (status === 'overdue') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">Overdue</span>;
+    if (status === 'due-today') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Due Today</span>;
+    if (status === 'submitted') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Up to Date</span>;
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">No Schedule</span>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-card border border-border rounded-xl px-5 py-4 flex items-center gap-3">
+          <Users size={18} className="text-muted-foreground flex-shrink-0" />
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</p>
+            <p className="text-2xl font-bold text-foreground">{totalClients}</p>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl px-5 py-4">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Approved</p>
+          <p className="text-2xl font-bold text-foreground">{approvedCount}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl px-5 py-4">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pending</p>
-          <p className="text-xl font-bold text-foreground">{clients.filter(u => u.role !== 'admin' && !(u as any).approved).length}</p>
+          <p className="text-2xl font-bold text-foreground">{pendingCount}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl px-5 py-4">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Overdue</p>
+          <p className={`text-2xl font-bold ${overdueCount > 0 ? 'text-red-400' : 'text-foreground'}`}>{overdueCount}</p>
         </div>
       </div>
 
-      {/* Two-column desktop layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5 items-start">
-        {/* Left: client list */}
-        <div>
-          <SectionLabel>All Users</SectionLabel>
-          <div className="space-y-1.5">
-            {(allUsers ?? []).map(user => (
+      {/* Client roster */}
+      <div>
+        <SectionLabel>Clients</SectionLabel>
+        <div className="space-y-2">
+          {sortedClients.map(user => {
+            const status = getCheckInStatus(user, latestCheckIns as any);
+            const latest = (latestCheckIns as any[]).find((c: any) => c.clientId === user.id);
+            const checkInDay = (user as any).checkInDay as string | null;
+            return (
               <div
                 key={user.id}
                 onClick={() => navigate(`/coach/client/${user.id}`)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors border-border bg-card hover:border-primary/40 hover:bg-primary/5"
+                className="flex items-center gap-4 px-4 py-3.5 rounded-xl border cursor-pointer transition-all border-border bg-card hover:border-primary/40 hover:bg-primary/5 group"
               >
-                <div className="relative flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
-                    {user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
+                  {user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                </div>
+
+                {/* Main info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-foreground">{user.name ?? "Unnamed"}</p>
+                    <StatusBadge status={status} />
+                    {!(user as any).approved && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Pending Approval</span>
+                    )}
                   </div>
-                  {null}
+                  <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                    <p className="text-xs text-muted-foreground">{user.email ?? "No email"}</p>
+                    {checkInDay && (
+                      <p className="text-xs text-muted-foreground/60">
+                        Check-in: <span className="capitalize">{checkInDay}</span>
+                      </p>
+                    )}
+                    {latest && (
+                      <p className="text-xs text-muted-foreground/60">
+                        Last: {new Date(latest.submittedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                        {latest.reviewedAt ? '' : <span className="text-amber-400/80 ml-1">· Unreviewed</span>}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
+                  {!(user as any).approved && (
+                    <button
+                      onClick={e => { e.stopPropagation(); setApproved.mutate({ userId: user.id, approved: true }); }}
+                      className="text-[10px] px-2.5 py-1.5 rounded-lg border font-medium transition-colors border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 mr-1"
+                    >
+                      Approve
+                    </button>
+                  )}
+                  <button
+                    onClick={e => { e.stopPropagation(); setEditingId(user.id); }}
+                    className="text-muted-foreground hover:text-primary transition-colors p-2 rounded-lg hover:bg-primary/10"
+                    title={`Edit ${user.name ?? 'client'}'s details`}
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); const name = encodeURIComponent(user.name ?? 'Client'); navigate(`/dashboard/overview?viewAs=${user.id}&viewAsName=${name}`); }}
+                    className="text-muted-foreground hover:text-primary transition-colors p-2 rounded-lg hover:bg-primary/10"
+                    title={`View dashboard as ${user.name ?? 'client'}`}
+                  >
+                    <Eye size={14} />
+                  </button>
+                  <button
+                    onClick={async e => {
+                      e.stopPropagation();
+                      const ok = await confirm({ title: `Delete ${user.name ?? 'this user'}?`, description: "This will permanently remove the client and all their data. This cannot be undone.", confirmLabel: "Delete", variant: "destructive" });
+                      if (ok) deleteUser.mutate({ userId: user.id });
+                    }}
+                    className="text-muted-foreground hover:text-destructive transition-colors p-2 rounded-lg hover:bg-destructive/10"
+                    title="Delete user"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Admin accounts (collapsed, below clients) */}
+      {admins.length > 0 && (
+        <div>
+          <SectionLabel>Admin Accounts</SectionLabel>
+          <div className="space-y-1.5">
+            {admins.map(user => (
+              <div key={user.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card/50">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
+                  {user.name?.charAt(0)?.toUpperCase() ?? "?"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{user.name ?? "Unnamed"}</p>
-                  <p className="text-xs text-muted-foreground truncate">{user.email ?? "No email"}</p>
+                  <p className="text-sm font-medium text-foreground">{user.name ?? "Unnamed"}</p>
+                  <p className="text-xs text-muted-foreground">{user.email ?? "No email"}</p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${user.role === "admin" ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
-                    {user.role}
-                  </span>
-                  {user.role !== "admin" && (
-                    <>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          setApproved.mutate({ userId: user.id, approved: !(user as any).approved });
-                        }}
-                        className={`text-[10px] px-2 py-1 rounded-md border font-medium transition-colors ${
-                          (user as any).approved
-                            ? "border-primary/40 text-primary bg-primary/10 hover:bg-primary/20"
-                            : "border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20"
-                        }`}
-                      >
-                        {(user as any).approved ? "✓ Approved" : "Approve"}
-                      </button>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          setSelectedId(user.id === selectedId ? null : user.id);
-                        }}
-                        className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-md hover:bg-primary/10"
-                        title={`Edit ${user.name ?? 'client'}'s details`}
-                      >
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          const name = encodeURIComponent(user.name ?? 'Client');
-                          navigate(`/dashboard/overview?viewAs=${user.id}&viewAsName=${name}`);
-                        }}
-                        className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-md hover:bg-primary/10"
-                        title={`View dashboard as ${user.name ?? 'client'}`}
-                      >
-                        <Eye size={13} />
-                      </button>
-                      <button
-                        onClick={async e => {
-                          e.stopPropagation();
-                          const ok = await confirm({
-                            title: `Delete ${user.name ?? 'this user'}?`,
-                            description: "This will permanently remove the client and all their data. This cannot be undone.",
-                            confirmLabel: "Delete",
-                            variant: "destructive",
-                          });
-                          if (ok) deleteUser.mutate({ userId: user.id });
-                        }}
-                        className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-md hover:bg-destructive/10"
-                        title="Delete user"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </>
-                  )}
-                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">admin</span>
               </div>
             ))}
           </div>
         </div>
+      )}
 
-        {/* Right: profile form */}
-        {selectedId ? (
-          <div className="space-y-4">
-            {(
-              <Card className="space-y-4">
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">Client Name</label>
-                  <input
-                    type="text"
-                    value={form.displayName}
-                    onChange={e => setForm(p => ({ ...p, displayName: e.target.value }))}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2 sm:col-span-1">
-                    <label className="text-xs text-muted-foreground block mb-1">Start Date</label>
-                    <DateInput value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">Check-in Day</label>
-                    <select
-                      value={form.checkInDay}
-                      onChange={e => setForm(p => ({ ...p, checkInDay: e.target.value as any }))}
-                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">Not set</option>
-                      {['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => (
-                        <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1">Daily Step Goal</label>
-                    <input
-                      type="number"
-                      value={form.stepGoal}
-                      onChange={e => setForm(p => ({ ...p, stepGoal: e.target.value }))}
-                      placeholder="e.g. 10000"
-                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">Notes</label>
-                  <textarea
-                    value={form.notes}
-                    onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                    rows={3}
-                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                  />
-                </div>
-                <button
-                  onClick={() => {
-                    upsertProfile.mutate({
-                      userId: selectedId,
-                      displayName: form.displayName || undefined,
-                      startDate: form.startDate || undefined,
-                      notes: form.notes || null,
-                    });
-                    updateClientConfig.mutate({
-                      userId: selectedId,
-                      checkInDay: form.checkInDay || null,
-                      stepGoal: form.stepGoal ? parseInt(form.stepGoal) : null,
-                    });
-                  }}
-                  disabled={upsertProfile.isPending || updateClientConfig.isPending}
-                  className="w-full py-2 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
-                >
-                  {(upsertProfile.isPending || updateClientConfig.isPending) ? 'Saving...' : 'Save Profile'}
-                </button>
-              </Card>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-40 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
-            Select a client to view their profile
-          </div>
-        )}
-      </div>
+      {/* Edit dialog */}
+      {editingId && <EditClientDialog userId={editingId} onClose={() => setEditingId(null)} />}
       {ConfirmDialogNode}
     </div>
   );
