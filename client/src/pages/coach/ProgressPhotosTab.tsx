@@ -308,7 +308,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {POSE_LABELS[pose]}
                     </p>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3 max-w-sm">
                       <div className="rounded-lg overflow-hidden border border-border bg-card">
                         {photoA ? (
                           <img src={photoA.photoUrl} alt={`Week ${compareWeekA} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4] object-cover" />
