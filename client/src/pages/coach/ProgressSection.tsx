@@ -1377,7 +1377,6 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           {/* ── Body Composition: measurements + weight trend ── */}
           <TabsContent value="body-comp">
             <div className="space-y-8">
-              <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Progress Photos</p>
                 <ProgressPhotosTab
@@ -1385,6 +1384,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                   photoType={(clientProfile?.photoType as "standard" | "athlete") ?? "standard"}
                 />
               </div>
+              <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} />
             </div>
           </TabsContent>
 
