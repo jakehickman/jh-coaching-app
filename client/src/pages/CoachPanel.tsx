@@ -20,6 +20,8 @@ import { useConfirm } from "@/components/ConfirmDialog";
 
 // ─── Check-in status type ─────────────────────────────────────────────────────
 type ClientCheckInStatus = 'overdue' | 'upcoming' | 'submitted' | 'no-cycle';
+// Three actionable badge states derived from cycle status + review state
+type BadgeState = 'overdue' | 'unreviewed' | 'up-to-date' | 'none';
 
 // ─── Edit Client Dialog ───────────────────────────────────────────────────────
 function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => void }) {
@@ -118,29 +120,42 @@ function ClientsSection() {
   const clients = (allUsers ?? []).filter(u => u.role !== 'admin');
   const admins = (allUsers ?? []).filter(u => u.role === 'admin');
 
-  // Get status from server-computed clientStatusList
-  function getStatus(userId: number): ClientCheckInStatus {
+  // Get server-computed cycle status
+  function getCycleStatus(userId: number): ClientCheckInStatus {
     const entry = clientStatuses.find((s: any) => s.clientId === userId);
     if (!entry) return 'no-cycle';
     return entry.status as ClientCheckInStatus;
   }
 
-  // Sort: overdue first, then upcoming (due), then submitted, then no-cycle
+  // Derive the three actionable badge states
+  function getBadge(userId: number): BadgeState {
+    const cycleStatus = getCycleStatus(userId);
+    if (cycleStatus === 'overdue') return 'overdue';
+    if (cycleStatus === 'submitted') {
+      const latest = (latestCheckIns as any[]).find((c: any) => c.clientId === userId);
+      if (latest && !latest.reviewedAt) return 'unreviewed';
+      return 'up-to-date';
+    }
+    // upcoming or no-cycle — no actionable badge
+    return 'none';
+  }
+
+  // Sort: overdue first, then unreviewed, then up-to-date, then rest
   const sortedClients = [...clients].sort((a, b) => {
-    const order: Record<ClientCheckInStatus, number> = { overdue: 0, upcoming: 1, submitted: 2, 'no-cycle': 3 };
-    return order[getStatus(a.id)] - order[getStatus(b.id)];
+    const order: Record<BadgeState, number> = { overdue: 0, unreviewed: 1, 'up-to-date': 2, none: 3 };
+    return order[getBadge(a.id)] - order[getBadge(b.id)];
   });
 
   const totalClients = clients.length;
   const approvedCount = clients.filter(u => (u as any).approved).length;
   const pendingCount = clients.filter(u => !(u as any).approved).length;
-  const overdueCount = clients.filter(u => getStatus(u.id) === 'overdue').length;
+  const overdueCount = clients.filter(u => getBadge(u.id) === 'overdue').length;
 
-  function StatusBadge({ status }: { status: ClientCheckInStatus }) {
-    if (status === 'overdue') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">Overdue</span>;
-    if (status === 'upcoming') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Due Soon</span>;
-    if (status === 'submitted') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Up to Date</span>;
-    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">No Cycle</span>;
+  function StatusBadge({ badge }: { badge: BadgeState }) {
+    if (badge === 'overdue') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">Overdue</span>;
+    if (badge === 'unreviewed') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Unreviewed</span>;
+    if (badge === 'up-to-date') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Up to Date</span>;
+    return null;
   }
 
   return (
@@ -173,7 +188,7 @@ function ClientsSection() {
         <SectionLabel>Clients</SectionLabel>
         <div className="space-y-2">
           {sortedClients.map(user => {
-            const status = getStatus(user.id);
+            const badge = getBadge(user.id);
             const latest = (latestCheckIns as any[]).find((c: any) => c.clientId === user.id);
             const checkInDay = (user as any).checkInDay as string | null;
             return (
@@ -191,7 +206,7 @@ function ClientsSection() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-foreground">{user.name ?? "Unnamed"}</p>
-                    <StatusBadge status={status} />
+                    <StatusBadge badge={badge} />
                     {!(user as any).approved && (
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Pending Approval</span>
                     )}
