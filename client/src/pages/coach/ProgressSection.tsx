@@ -19,6 +19,7 @@ import TrainingSection from "./TrainingSection";
 import MealPlansSection from "./MealPlansSection";
 import { ProgressPhotosTab } from "./ProgressPhotosTab";
 import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
+import ProgramChangeLogTab from "./ProgramChangeLogTab";
 
 // ─── Nutrition Tab ───────────────────────────────────────────────────────────
 function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
@@ -1467,6 +1468,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsList className="mb-4">
                 <TabsTrigger value="program">Program</TabsTrigger>
                 <TabsTrigger value="performance">Performance</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
               <TabsContent value="program">
                 <TrainingSection fixedClientId={selectedUserId!} />
@@ -1482,6 +1484,9 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                     <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
                   </div>
                 </div>
+              </TabsContent>
+              <TabsContent value="history">
+                <ProgramChangeLogTab clientId={selectedUserId!} />
               </TabsContent>
             </Tabs>
           </TabsContent>

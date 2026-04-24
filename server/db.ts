@@ -37,6 +37,9 @@ import {
   progressPhotos,
   ProgressPhoto,
   InsertProgressPhoto,
+  programChangeLogs,
+  ProgramChangeEntry,
+  TrainingDay,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -480,6 +483,108 @@ export async function upsertTrainingProgram(data: {
   } else {
     await db.insert(trainingPrograms).values(data as any);
   }
+}
+
+// ─── Program change log helpers ─────────────────────────────────────────────
+
+export function diffTrainingPrograms(
+  oldDays: TrainingDay[],
+  newDays: TrainingDay[]
+): ProgramChangeEntry[] {
+  const changes: ProgramChangeEntry[] = [];
+
+  const oldMap = new Map(oldDays.map(d => [d.name, d]));
+  const newMap = new Map(newDays.map(d => [d.name, d]));
+
+  // Sessions added
+  for (const [name] of newMap) {
+    if (!oldMap.has(name)) {
+      const day = newMap.get(name)!;
+      for (const ex of day.exercises) {
+        changes.push({ type: "add", session: name, exercise: ex.name });
+      }
+    }
+  }
+
+  // Sessions removed
+  for (const [name] of oldMap) {
+    if (!newMap.has(name)) {
+      const day = oldMap.get(name)!;
+      for (const ex of day.exercises) {
+        changes.push({ type: "remove", session: name, exercise: ex.name });
+      }
+    }
+  }
+
+  // Sessions in both — diff exercises
+  for (const [name, newDay] of newMap) {
+    const oldDay = oldMap.get(name);
+    if (!oldDay) continue;
+
+    const oldExMap = new Map(oldDay.exercises.map(e => [e.name, e]));
+    const newExMap = new Map(newDay.exercises.map(e => [e.name, e]));
+
+    // Exercises added
+    for (const [exName] of newExMap) {
+      if (!oldExMap.has(exName)) {
+        changes.push({ type: "add", session: name, exercise: exName });
+      }
+    }
+
+    // Exercises removed
+    for (const [exName] of oldExMap) {
+      if (!newExMap.has(exName)) {
+        changes.push({ type: "remove", session: name, exercise: exName });
+      }
+    }
+
+    // Exercises in both — diff fields
+    for (const [exName, newEx] of newExMap) {
+      const oldEx = oldExMap.get(exName);
+      if (!oldEx) continue;
+      const fields: Array<keyof typeof oldEx> = ["sets", "reps", "notes"];
+      for (const field of fields) {
+        const ov = (oldEx[field] ?? "").toString().trim();
+        const nv = (newEx[field] ?? "").toString().trim();
+        if (ov !== nv) {
+          changes.push({
+            type: "modify",
+            session: name,
+            exercise: exName,
+            field: field as string,
+            oldValue: ov || undefined,
+            newValue: nv || undefined,
+          });
+        }
+      }
+    }
+  }
+
+  return changes;
+}
+
+export async function insertProgramChangeLog(data: {
+  userId: number;
+  coachId?: number;
+  changes: ProgramChangeEntry[];
+}) {
+  const db = await getDb();
+  if (!db || data.changes.length === 0) return;
+  await db.insert(programChangeLogs).values({
+    userId: data.userId,
+    coachId: data.coachId ?? null,
+    changes: data.changes,
+  } as any);
+}
+
+export async function getProgramChangeLogs(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(programChangeLogs)
+    .where(eq(programChangeLogs.userId, userId))
+    .orderBy(programChangeLogs.changedAt);
 }
 
 export async function listAllTrainingPrograms() {

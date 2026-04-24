@@ -551,3 +551,24 @@ export const progressPhotos = mysqlTable("progress_photos", {
 
 export type ProgressPhoto = typeof progressPhotos.$inferSelect;
 export type InsertProgressPhoto = typeof progressPhotos.$inferInsert;
+
+// Program change log — append-only diff of every training program save
+export interface ProgramChangeEntry {
+  type: "add" | "remove" | "modify";
+  session: string;       // session name e.g. "Push A"
+  exercise: string;      // exercise name
+  field?: string;        // e.g. "sets", "reps", "notes"
+  oldValue?: string;
+  newValue?: string;
+}
+
+export const programChangeLogs = mysqlTable("program_change_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),   // client
+  coachId: int("coachId"),           // coach who made the change
+  changes: json("changes").$type<ProgramChangeEntry[]>().notNull(),
+  changedAt: timestamp("changedAt").defaultNow().notNull(),
+});
+
+export type ProgramChangeLog = typeof programChangeLogs.$inferSelect;
+export type InsertProgramChangeLog = typeof programChangeLogs.$inferInsert;

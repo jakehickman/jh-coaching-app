@@ -20,9 +20,26 @@ export const trainingRouter = router({
         notes: z.string().nullable().optional(),
       })
     )
-    .mutation(({ ctx, input }) =>
-      db.upsertTrainingProgram({ coachId: ctx.user.id, ...input })
-    ),
+    .mutation(async ({ ctx, input }) => {
+      // Diff before saving so we can record what changed
+      if (input.days) {
+        const existing = await db.getTrainingProgram(input.userId);
+        const oldDays = (existing?.days as any[]) ?? [];
+        const newDays = input.days as any[];
+        const changes = db.diffTrainingPrograms(oldDays, newDays);
+        if (changes.length > 0) {
+          await db.insertProgramChangeLog({
+            userId: input.userId,
+            coachId: ctx.user.id,
+            changes,
+          });
+        }
+      }
+      return db.upsertTrainingProgram({ coachId: ctx.user.id, ...input });
+    }),
+  getChangeLogs: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(({ input }) => db.getProgramChangeLogs(input.userId)),
   listAll: adminProcedure.query(() => db.listAllTrainingPrograms()),
 });
 
