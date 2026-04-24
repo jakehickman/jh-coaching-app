@@ -18,63 +18,8 @@ import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 import { useConfirm } from "@/components/ConfirmDialog";
 
-// ─── Overdue status helper ────────────────────────────────────────────────────
-const DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-
-function getCheckInStatus(
-  user: any,
-  latestCheckIns: { clientId: number; weekStartDate: string; submittedAt: Date; reviewedAt: Date | null }[]
-): 'overdue' | 'due-today' | 'submitted' | 'no-checkin-day' {
-  const checkInDay = (user as any).checkInDay as string | null | undefined;
-  const startDate = (user as any).startDate as string | null | undefined;
-  if (!checkInDay || !startDate) return 'no-checkin-day';
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayMs = today.getTime();
-
-  const startMs = new Date(startDate + 'T00:00:00').getTime();
-  const targetDow = DAY_NAMES.indexOf(checkInDay.toLowerCase());
-  if (targetDow === -1) return 'no-checkin-day';
-
-  // Find first scheduled check-in on or after startDate
-  const startDay = new Date(startMs);
-  const startDow = startDay.getDay();
-  const daysUntilFirst = (targetDow - startDow + 7) % 7;
-  const firstScheduledMs = startMs + daysUntilFirst * 86400000;
-
-  // Build all scheduled check-in dates up to today
-  const scheduledDates: number[] = [];
-  for (let d = firstScheduledMs; d <= todayMs; d += 7 * 86400000) {
-    scheduledDates.push(d);
-  }
-
-  if (scheduledDates.length === 0) return 'no-checkin-day';
-
-  // Get submitted check-in dates for this client
-  const submitted = latestCheckIns
-    .filter(c => c.clientId === user.id)
-    .map(c => new Date(c.weekStartDate + 'T00:00:00').getTime());
-
-  // Check if any scheduled date older than 7 days has no submission
-  const sevenDaysAgoMs = todayMs - 7 * 86400000;
-  for (const sched of scheduledDates) {
-    if (sched < sevenDaysAgoMs) {
-      // This scheduled date is more than 7 days ago — must have a submission
-      const hasSubmission = submitted.some(s => Math.abs(s - sched) < 86400000 * 3);
-      if (!hasSubmission) return 'overdue';
-    }
-  }
-
-  // Check if today is a check-in day
-  const todayDow = today.getDay();
-  if (todayDow === targetDow && todayMs >= firstScheduledMs) {
-    const hasToday = submitted.some(s => Math.abs(s - todayMs) < 86400000 * 3);
-    if (!hasToday) return 'due-today';
-  }
-
-  return 'submitted';
-}
+// ─── Check-in status type ─────────────────────────────────────────────────────
+type ClientCheckInStatus = 'overdue' | 'upcoming' | 'submitted' | 'no-cycle';
 
 // ─── Edit Client Dialog ───────────────────────────────────────────────────────
 function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => void }) {
@@ -157,6 +102,7 @@ function ClientsSection() {
   const [confirm, ConfirmDialogNode] = useConfirm();
   const [, navigate] = useLocation();
   const { data: allUsers } = trpc.users.list.useQuery();
+  const { data: clientStatuses = [] } = trpc.checkIn.clientStatusList.useQuery();
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const utils = trpc.useUtils();
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -172,24 +118,29 @@ function ClientsSection() {
   const clients = (allUsers ?? []).filter(u => u.role !== 'admin');
   const admins = (allUsers ?? []).filter(u => u.role === 'admin');
 
-  // Sort: overdue first, then due-today, then rest
+  // Get status from server-computed clientStatusList
+  function getStatus(userId: number): ClientCheckInStatus {
+    const entry = clientStatuses.find((s: any) => s.clientId === userId);
+    if (!entry) return 'no-cycle';
+    return entry.status as ClientCheckInStatus;
+  }
+
+  // Sort: overdue first, then upcoming (due), then submitted, then no-cycle
   const sortedClients = [...clients].sort((a, b) => {
-    const order = { overdue: 0, 'due-today': 1, submitted: 2, 'no-checkin-day': 3 };
-    const sa = getCheckInStatus(a, latestCheckIns as any);
-    const sb = getCheckInStatus(b, latestCheckIns as any);
-    return order[sa] - order[sb];
+    const order: Record<ClientCheckInStatus, number> = { overdue: 0, upcoming: 1, submitted: 2, 'no-cycle': 3 };
+    return order[getStatus(a.id)] - order[getStatus(b.id)];
   });
 
   const totalClients = clients.length;
   const approvedCount = clients.filter(u => (u as any).approved).length;
   const pendingCount = clients.filter(u => !(u as any).approved).length;
-  const overdueCount = clients.filter(u => getCheckInStatus(u, latestCheckIns as any) === 'overdue').length;
+  const overdueCount = clients.filter(u => getStatus(u.id) === 'overdue').length;
 
-  function StatusBadge({ status }: { status: ReturnType<typeof getCheckInStatus> }) {
+  function StatusBadge({ status }: { status: ClientCheckInStatus }) {
     if (status === 'overdue') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">Overdue</span>;
-    if (status === 'due-today') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Due Today</span>;
+    if (status === 'upcoming') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Due Soon</span>;
     if (status === 'submitted') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Up to Date</span>;
-    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">No Schedule</span>;
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">No Cycle</span>;
   }
 
   return (
@@ -222,7 +173,7 @@ function ClientsSection() {
         <SectionLabel>Clients</SectionLabel>
         <div className="space-y-2">
           {sortedClients.map(user => {
-            const status = getCheckInStatus(user, latestCheckIns as any);
+            const status = getStatus(user.id);
             const latest = (latestCheckIns as any[]).find((c: any) => c.clientId === user.id);
             const checkInDay = (user as any).checkInDay as string | null;
             return (
