@@ -1159,9 +1159,59 @@ export async function deleteEquipmentPreset(userId: number, id: number) {
 export async function renameEquipmentPreset(userId: number, id: number, newName: string) {
   const db = await getDb();
   if (!db) return;
+
+  // Fetch the current preset name before renaming
+  const existing = await db.select().from(equipmentPresets)
+    .where(and(eq(equipmentPresets.id, id), eq(equipmentPresets.userId, userId)))
+    .limit(1);
+  if (!existing.length) return;
+  const oldName = existing[0].presetName;
+  const exerciseName = existing[0].exerciseName;
+
+  // Rename the preset record
   await db.update(equipmentPresets)
     .set({ presetName: newName })
     .where(and(eq(equipmentPresets.id, id), eq(equipmentPresets.userId, userId)));
+
+  // Backfill historical workout_sessions for this user
+  const wsSessions = await db.select({ id: workoutSessions.id, exercises: workoutSessions.exercises })
+    .from(workoutSessions)
+    .where(eq(workoutSessions.userId, userId));
+  for (const session of wsSessions) {
+    const exs: any[] = Array.isArray(session.exercises) ? session.exercises : [];
+    let changed = false;
+    for (const ex of exs) {
+      if (ex.name === exerciseName && ex.machinePreset === oldName) {
+        ex.machinePreset = newName;
+        changed = true;
+      }
+    }
+    if (changed) {
+      await db.update(workoutSessions)
+        .set({ exercises: exs })
+        .where(eq(workoutSessions.id, session.id));
+    }
+  }
+
+  // Backfill historical meso_sessions for this user
+  const msSessions = await db.select({ id: mesoSessions.id, exercises: mesoSessions.exercises })
+    .from(mesoSessions)
+    .where(eq(mesoSessions.userId, userId));
+  for (const session of msSessions) {
+    const exs: any[] = Array.isArray(session.exercises) ? session.exercises : [];
+    let changed = false;
+    for (const ex of exs) {
+      if (ex.name === exerciseName && ex.machinePreset === oldName) {
+        ex.machinePreset = newName;
+        changed = true;
+      }
+    }
+    if (changed) {
+      await db.update(mesoSessions)
+        .set({ exercises: exs })
+        .where(eq(mesoSessions.id, session.id));
+    }
+  }
 }
 
 // ─── New single-cycle check-in system ────────────────────────────────────────

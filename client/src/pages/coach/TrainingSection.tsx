@@ -955,107 +955,113 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
               </p>
             )}
           </div>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDayDragEnd}>
-            <SortableContext items={days.map((_: any, i: number) => `day-${i}`)} strategy={verticalListSortingStrategy}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                {days.map((day, i) => (
-                  <SortableDayCard
-                    key={`day-${i}`}
-                    id={`day-${i}`}
-                    day={day}
-                    dayIdx={i}
-                    sensors={sensors}
-                    updateDay={updateDay}
-                    removeDay={removeDay}
-                    addExercise={addExercise}
-                    removeExercise={removeExercise}
-                    updateExercise={updateExercise}
-                    handleExDragEnd={handleExDragEnd}
-                    exerciseNames={(exerciseLib as any[]).map((e: any) => e.name).sort()}
-                  />
-                ))}
+          {/* ── Two-column: sessions left, volume summary right ── */}
+          <div className="flex gap-6 items-start">
+            {/* Left: sessions + controls */}
+            <div className="flex-1 min-w-0 space-y-4">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDayDragEnd}>
+                <SortableContext items={days.map((_: any, i: number) => `day-${i}`)} strategy={verticalListSortingStrategy}>
+                  <div className="grid grid-cols-1 gap-4">
+                    {days.map((day, i) => (
+                      <SortableDayCard
+                        key={`day-${i}`}
+                        id={`day-${i}`}
+                        day={day}
+                        dayIdx={i}
+                        sensors={sensors}
+                        updateDay={updateDay}
+                        removeDay={removeDay}
+                        addExercise={addExercise}
+                        removeExercise={removeExercise}
+                        updateExercise={updateExercise}
+                        handleExDragEnd={handleExDragEnd}
+                        exerciseNames={(exerciseLib as any[]).map((e: any) => e.name).sort()}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+              <button onClick={addDay}
+                className="flex items-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors w-full justify-center">
+                <Plus size={14} /> Add Training Day
+              </button>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Coach Notes</label>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
               </div>
-            </SortableContext>
-          </DndContext>
-          <button onClick={addDay}
-            className="flex items-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors w-full justify-center">
-            <Plus size={14} /> Add Training Day
-          </button>
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Coach Notes</label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
-          </div>
-          <div className="space-y-1.5">
-            <button
-              onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || null, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null })}
-              disabled={upsert.isPending}
-              className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <Save size={15} />
-              {upsert.isPending ? "Saving..." : "Save Training Program"}
-            </button>
-            {lastSavedAt && (
-              <p className="text-center text-[11px] text-muted-foreground">
-                Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
+              <div className="space-y-1.5">
+                <button
+                  onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || null, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null })}
+                  disabled={upsert.isPending}
+                  className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Save size={15} />
+                  {upsert.isPending ? "Saving..." : "Save Training Program"}
+                </button>
+                {lastSavedAt && (
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
+              </div>
+            </div>
+            {/* Right: sticky weekly volume summary */}
+            {volumeTable && (
+              <div className="w-80 shrink-0 sticky top-4">
+                <SectionLabel>Weekly Volume</SectionLabel>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Cycle: {schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(3)} · sets/wk
+                </p>
+                <div className="overflow-x-auto rounded-xl border border-border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-secondary/50">
+                        <th className="text-left px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold min-w-[100px]">Muscle</th>
+                        {days.map(d => (
+                          <th key={d.name} className="px-2 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[40px]">{(d.name || 'Day').slice(0, 4)}</th>
+                        ))}
+                        <th className="px-2 py-2 text-[10px] uppercase tracking-wider text-primary font-semibold text-center min-w-[40px]">Wk</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...MUSCLE_GROUPS]
+                        .sort((a, b) => (volumeTable.weeklyTotals[b.key] ?? 0) - (volumeTable.weeklyTotals[a.key] ?? 0))
+                        .map(mg => {
+                        const weekly = volumeTable.weeklyTotals[mg.key] ?? 0;
+                        if (weekly === 0) return null;
+                        return (
+                          <tr key={mg.key} className="border-b border-border/50 hover:bg-secondary/20">
+                            <td className="px-3 py-2 font-medium text-foreground text-xs">{mg.label}</td>
+                            {days.map(d => {
+                              const val = volumeTable.dayTotals[d.name || 'Unnamed']?.[mg.key] ?? 0;
+                              return (
+                                <td key={d.name} className="px-2 py-2 text-center">
+                                  {val > 0 ? (
+                                    <span className="text-xs text-foreground/70">{Math.round(val)}</span>
+                                  ) : (
+                                    <span className="text-muted-foreground/30 text-xs">—</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                            <td className="px-2 py-2 text-center">
+                              <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-bold ${
+                                weekly >= 10 ? "bg-primary/20 text-primary" :
+                                weekly >= 6 ? "bg-primary/10 text-primary/80" :
+                                "bg-secondary text-muted-foreground"
+                              }`}>{weekly}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">Only muscle groups with &gt;0 weekly sets shown.</p>
+              </div>
             )}
           </div>
-          {/* ── Weekly Volume Table ── */}
-          {volumeTable && (
-            <div>
-              <SectionLabel>Weekly Volume Summary</SectionLabel>
-              <p className="text-xs text-muted-foreground mb-3">
-                Cycle: {schedule.length > 0 ? schedule.length : days.length} days · Multiplier: ×{volumeTable.multiplier.toFixed(3)} · Values = sets per week
-              </p>
-              <div className="overflow-x-auto rounded-xl border border-border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-secondary/50">
-                      <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[120px]">Muscle</th>
-                      {days.map(d => (
-                        <th key={d.name} className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[80px]">{d.name || "Unnamed"}</th>
-                      ))}
-                      <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-primary font-semibold text-center min-w-[80px]">Weekly</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...MUSCLE_GROUPS]
-                      .sort((a, b) => (volumeTable.weeklyTotals[b.key] ?? 0) - (volumeTable.weeklyTotals[a.key] ?? 0))
-                      .map(mg => {
-                      const weekly = volumeTable.weeklyTotals[mg.key] ?? 0;
-                      if (weekly === 0) return null;
-                      return (
-                        <tr key={mg.key} className="border-b border-border/50 hover:bg-secondary/20">
-                          <td className="px-4 py-2 font-medium text-foreground text-sm sticky left-0 bg-card">{mg.label}</td>
-                          {days.map(d => {
-                            const val = volumeTable.dayTotals[d.name || "Unnamed"]?.[mg.key] ?? 0;
-                            return (
-                              <td key={d.name} className="px-3 py-2 text-center">
-                                {val > 0 ? (
-                                  <span className="text-sm text-foreground/80">{Math.round(val * 10) / 10}</span>
-                                ) : (
-                                  <span className="text-muted-foreground/30">—</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                          <td className="px-3 py-2 text-center">
-                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
-                              weekly >= 10 ? "bg-primary/20 text-primary" :
-                              weekly >= 6 ? "bg-primary/10 text-primary/80" :
-                              "bg-secondary text-muted-foreground"
-                            }`}>{weekly}</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">Only muscle groups with &gt;0 weekly sets are shown. Match exercise names exactly to the Exercise Library for accurate tracking.</p>
-            </div>
-          )}
         </div>
       )}
     </div>
