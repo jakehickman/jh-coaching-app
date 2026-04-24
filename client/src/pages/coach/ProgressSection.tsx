@@ -159,6 +159,57 @@ function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
   );
 }
 
+// ─── Weekly Calorie Summary ─────────────────────────────────────────────────
+function WeeklyCalorySummary({ clientId }: { clientId: number }) {
+  const { data: trainingPlan } = trpc.mealPlan.getForClient.useQuery(
+    { userId: clientId, dayType: "training" },
+    { enabled: !!clientId }
+  );
+  const { data: restPlan } = trpc.mealPlan.getForClient.useQuery(
+    { userId: clientId, dayType: "rest" },
+    { enabled: !!clientId }
+  );
+  const { data: trainingProgram } = trpc.training.getForClient.useQuery(
+    { userId: clientId },
+    { enabled: !!clientId }
+  );
+
+  const schedule: string[] = (trainingProgram as any)?.schedule ?? [];
+  const cycleLength = schedule.length;
+  const trainingDays = schedule.filter((s: string) => s.toUpperCase() !== "OFF").length;
+  const restDays = cycleLength - trainingDays;
+  const tCal = trainingPlan?.totalCalories ?? null;
+  const rCal = restPlan?.totalCalories ?? null;
+
+  if (!cycleLength || (tCal == null && rCal == null)) return null;
+
+  const tCalVal = tCal ?? rCal!;
+  const rCalVal = rCal ?? tCal!;
+  const avgDaily = Math.round((trainingDays * tCalVal + restDays * rCalVal) / cycleLength);
+  const weeklyTotal = avgDaily * 7;
+  const scheduleLabel = `${trainingDays} training / ${restDays} OFF per ${cycleLength}-day cycle`;
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-5 mb-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly Average</p>
+      <div className="flex items-end gap-3">
+        <div>
+          <span className="text-3xl font-bold tabular-nums text-foreground">
+            {avgDaily.toLocaleString()}
+          </span>
+          <span className="text-sm text-muted-foreground ml-1.5">kcal / day</span>
+        </div>
+        <div className="text-xs text-muted-foreground pb-1">
+          {weeklyTotal >= 1000
+            ? `${(weeklyTotal / 1000).toFixed(1)}k kcal / week`
+            : `${weeklyTotal.toLocaleString()} kcal / week`}
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground/60 mt-2">{scheduleLabel}</p>
+    </div>
+  );
+}
+
 // ─── Nutrition Tab (current plan only) ───────────────────────────────────────
 function NutritionTab({ clientId }: { clientId: number }) {
   const { data: trainingPlan, isLoading: loadingTraining } = trpc.mealPlan.getForClient.useQuery(
@@ -1603,6 +1654,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
               <TabsContent value="meal-plan">
+                <WeeklyCalorySummary clientId={selectedUserId!} />
                 <MealPlansSection fixedClientId={selectedUserId!} />
               </TabsContent>
               <TabsContent value="history">
