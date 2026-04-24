@@ -328,25 +328,38 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
     thigh: '#a855f7',
   };
 
-  // Weekly review data for skinfold vs avg weight chart
-  const tzOffsetMinutes = -new Date().getTimezoneOffset();
-  const { data: weeklyData } = trpc.progress.weeklyReview.useQuery(
-    { clientId: clientId!, tzOffsetMinutes },
-    { enabled: !!clientId && !historyOnly, staleTime: 60_000 }
-  );
+  // Build skinfold data from measurements (oldest first)
+  const skinfoldRaw = [...sorted].reverse()
+    .filter(m => totalSkinfold(m) != null)
+    .map(m => {
+      const iso = toLocalDateStr(m.measureDate);
+      const [, mo, d] = iso.split('-');
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return { isoDate: iso, date: `${parseInt(d)} ${months[parseInt(mo)-1]}`, skinfold: totalSkinfold(m) };
+    });
 
-  // Build skinfold vs avg weight chart data (oldest first, only weeks with both values)
-  const skinfoldWeightData = [...(weeklyData?.weeks ?? [])]
-    .reverse()
-    .filter((w: any) => w.avgSkinfold != null || w.avgWeight != null)
-    .map((w: any) => ({
-      label: `Wk ${w.weekNumber}`,
-      skinfold: w.avgSkinfold ?? null,
-      avgWeight: w.avgWeight ?? null,
-    }));
+  // Merge daily weight + skinfold onto shared date axis (same pattern as weight/waist)
+  const skinfoldWeightData = (() => {
+    const map = new Map<string, { isoDate: string; date: string; weight?: number; skinfold?: number | null }>();
+    for (const w of weightData) {
+      // recover isoDate from logs
+      const log = [...(logs ?? [])].find((l: any) => {
+        const iso = toLocalDateStr(l.logDate);
+        const [, mo, d2] = iso.split('-');
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return `${parseInt(d2)} ${months[parseInt(mo)-1]}` === w.date;
+      });
+      const isoDate = log ? toLocalDateStr(log.logDate) : w.date;
+      map.set(w.date, { ...map.get(w.date), isoDate, date: w.date, weight: w.weight });
+    }
+    for (const s of skinfoldRaw) {
+      map.set(s.date, { ...map.get(s.date), isoDate: s.isoDate, date: s.date, skinfold: s.skinfold });
+    }
+    return Array.from(map.values()).sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+  })();
 
   const hasWeightWaist = weightData.length > 1 || waistData.length > 1;
-  const hasSkinfold = skinfoldWeightData.filter((d: any) => d.skinfold != null).length > 1;
+  const hasSkinfold = skinfoldRaw.length > 1;
 
   return (
     <div className="space-y-5">
@@ -386,7 +399,7 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
               </div>
             </div>
           )}
-          {/* Skinfold vs Avg Weight dual-axis chart */}
+          {/* Skinfold vs Weight dual-axis chart (shared date axis) */}
           {hasSkinfold && (
             <div>
               <SectionLabel>Skinfold vs Weight</SectionLabel>
@@ -394,18 +407,18 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
                 <ResponsiveContainer width="100%" height={200}>
                   <ComposedChart data={skinfoldWeightData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                    <XAxis dataKey="label" tick={{ fill: '#666', fontSize: 10 }} />
+                    <XAxis dataKey="date" tick={{ fill: '#666', fontSize: 10 }} interval="preserveStartEnd" />
                     <YAxis yAxisId="skinfold" tick={{ fill: '#22c55e', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
                     <YAxis yAxisId="weight" orientation="right" tick={{ fill: '#3b82f6', fontSize: 10 }} width={36} domain={['auto', 'auto']} />
                     <Tooltip
                       contentStyle={{ background: '#111', border: '1px solid #222', borderRadius: 8 }}
                       labelStyle={{ color: '#fff' }}
                       formatter={(v: number, name: string) =>
-                        name === 'skinfold' ? [`${v} mm`, 'Total Skinfold'] : [`${v} kg`, 'Avg Weight']
+                        name === 'skinfold' ? [`${v} mm`, 'Total Skinfold'] : [`${v} kg`, 'Weight']
                       }
                     />
-                    <Area yAxisId="skinfold" type="monotone" dataKey="skinfold" stroke="#22c55e" fill="#22c55e22" strokeWidth={2} dot={{ r: 3, fill: '#22c55e' }} connectNulls />
-                    <Line yAxisId="weight" type="monotone" dataKey="avgWeight" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }} strokeDasharray="4 3" connectNulls />
+                    <Area yAxisId="skinfold" type="monotone" dataKey="skinfold" stroke="#22c55e" fill="#22c55e22" strokeWidth={2} dot={(props: any) => props.payload.skinfold != null ? <circle key={props.key} cx={props.cx} cy={props.cy} r={4} fill="#22c55e" stroke="#22c55e" /> : <g key={props.key} />} connectNulls={false} />
+                    <Line yAxisId="weight" type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={1.5} dot={false} connectNulls />
                   </ComposedChart>
                 </ResponsiveContainer>
                 <div className="flex items-center gap-4 mt-2 justify-center">
@@ -414,8 +427,8 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
                     Skinfold (mm)
                   </span>
                   <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <span className="w-5 h-0 border-t-2 border-dashed border-blue-500 inline-block" />
-                    Avg Weight (kg)
+                    <span className="w-3 h-0.5 bg-blue-500 inline-block rounded" />
+                    Weight (kg)
                   </span>
                 </div>
               </div>
