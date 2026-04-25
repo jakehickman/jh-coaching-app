@@ -72,10 +72,14 @@ function MealPlanNoteEditor({ entryId, initialNote }: { entryId: number; initial
 }
 
 function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
+  const utils = trpc.useUtils();
   const { data: history = [], isLoading } = trpc.mealPlan.getHistory.useQuery(
     { userId: clientId },
     { enabled: !!clientId }
   );
+  const deleteEntry = trpc.mealPlan.deleteHistoryEntry.useMutation({
+    onSuccess: () => utils.mealPlan.getHistory.invalidate(),
+  });
 
   if (isLoading) {
     return (
@@ -130,9 +134,23 @@ function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
         ];
         return (
           <div key={entry.id} className="bg-card border border-border rounded-xl p-4">
-            <p className="text-xs font-semibold text-muted-foreground mb-3">
-              {new Date(entry.changedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
-            </p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-muted-foreground">
+                {new Date(entry.changedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+              </p>
+              <button
+                onClick={() => {
+                  if (confirm("Delete this nutrition history entry?")) {
+                    deleteEntry.mutate({ id: entry.id });
+                  }
+                }}
+                disabled={deleteEntry.isPending}
+                className="p-1.5 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-40"
+                title="Delete entry"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <div className="grid grid-cols-5 mb-1.5">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 col-span-1" />
               {cols.map(c => (

@@ -502,3 +502,9 @@
 - [x] Rename "History" sub-tab to "Change Log" in Training section (Program | Performance | Change Log)
 - [x] Rename "History" sub-tab to "Change Log" in Nutrition section (Meal Plan | Change Log)
 - [x] Fix JSX corruption from bad edit in ProgressSection.tsx (lines were merged together)
+
+## Delete Change Log Entries (Apr 2026)
+- [x] Add deleteChangeLogEntry DB helper and tRPC mutation (training router)
+- [x] Add deleteHistoryEntry DB helper and tRPC mutation (mealPlan router)
+- [x] Add delete button to each card in ProgramChangeLogTab (Training Change Log)
+- [x] Add delete button to each card in MacroPlanHistoryTab (Nutrition Change Log)

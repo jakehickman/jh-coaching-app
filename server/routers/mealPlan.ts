@@ -50,6 +50,9 @@ export const mealPlanRouter = router({
   updateHistoryNote: adminProcedure
     .input(z.object({ id: z.number(), note: z.string().nullable() }))
     .mutation(({ input }) => db.updateMealPlanHistoryNote(input.id, input.note)),
+  deleteHistoryEntry: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => db.deleteMealPlanHistoryEntry(input.id)),
 });
 
 export const shoppingRouter = router({

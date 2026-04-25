@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Minus, Pencil, ClipboardList } from "lucide-react";
+import { Plus, Minus, Pencil, ClipboardList, Trash2 } from "lucide-react";
 
 interface ProgramChangeEntry {
   type: "add" | "remove" | "modify";
@@ -129,10 +129,15 @@ function NoteEditor({ logId, initialNote }: { logId: number; initialNote?: strin
 }
 
 export default function ProgramChangeLogTab({ clientId }: { clientId: number }) {
+  const utils = trpc.useUtils();
   const { data: logs, isLoading } = trpc.training.getChangeLogs.useQuery(
     { userId: clientId },
     { enabled: !!clientId }
   );
+
+  const deleteEntry = trpc.training.deleteChangeLogEntry.useMutation({
+    onSuccess: () => utils.training.getChangeLogs.invalidate(),
+  });
 
   if (isLoading) {
     return (
@@ -169,7 +174,21 @@ export default function ProgramChangeLogTab({ clientId }: { clientId: number }) 
         return (
           <Card key={log.id} className="bg-card/60 border-border/50">
             <CardContent className="p-4">
-              <p className="text-sm font-semibold mb-3">{formatDate(log.changedAt)}</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold">{formatDate(log.changedAt)}</p>
+                <button
+                  onClick={() => {
+                    if (confirm("Delete this change log entry?")) {
+                      deleteEntry.mutate({ id: log.id });
+                    }
+                  }}
+                  disabled={deleteEntry.isPending}
+                  className="p-1.5 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-40"
+                  title="Delete entry"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
               <div className="divide-y divide-border/30">
                 {changes.map((entry, i) => (
                   <ChangeRow key={i} entry={entry} />

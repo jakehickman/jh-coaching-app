@@ -406,6 +406,12 @@ export async function updateMealPlanHistoryNote(id: number, note: string | null)
     .where(eq(mealPlanHistory.id, id));
 }
 
+export async function deleteMealPlanHistoryEntry(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(mealPlanHistory).where(eq(mealPlanHistory.id, id));
+}
+
 export async function insertMealPlanHistorySnapshot(data: {
   userId: number;
   coachId?: number;
@@ -603,6 +609,12 @@ export async function updateProgramChangeLogNote(id: number, note: string | null
     .update(programChangeLogs)
     .set({ note })
     .where(eq(programChangeLogs.id, id));
+}
+
+export async function deleteChangeLogEntry(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(programChangeLogs).where(eq(programChangeLogs.id, id));
 }
 
 export async function listAllTrainingPrograms() {
