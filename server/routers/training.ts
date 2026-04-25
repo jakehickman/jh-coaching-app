@@ -123,6 +123,19 @@ export const equipmentPresetsRouter = router({
   rename: protectedProcedure
     .input(z.object({ id: z.number(), newName: z.string().min(1) }))
     .mutation(({ ctx, input }) => db.renameEquipmentPreset(ctx.user.id, input.id, input.newName)),
+  // ─── Coach/admin procedures scoped to a target client ───────────────────────
+  listForClient: adminProcedure
+    .input(z.object({ userId: z.number(), exerciseName: z.string() }))
+    .query(({ input }) => db.getEquipmentPresets(input.userId, input.exerciseName)),
+  upsertForClient: adminProcedure
+    .input(z.object({ userId: z.number(), exerciseName: z.string(), presetName: z.string(), lastSettings: z.string().nullable().optional() }))
+    .mutation(({ input }) => db.upsertEquipmentPreset(input.userId, input.exerciseName, input.presetName, input.lastSettings)),
+  deleteForClient: adminProcedure
+    .input(z.object({ userId: z.number(), id: z.number() }))
+    .mutation(({ input }) => db.deleteEquipmentPreset(input.userId, input.id)),
+  renameForClient: adminProcedure
+    .input(z.object({ userId: z.number(), id: z.number(), newName: z.string().min(1) }))
+    .mutation(({ input }) => db.renameEquipmentPreset(input.userId, input.id, input.newName)),
 });
 
 export const exerciseLibraryRouter = router({

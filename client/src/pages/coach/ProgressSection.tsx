@@ -7,7 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus } from "lucide-react";
 import { useSearch, useLocation } from "wouter";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
@@ -1024,14 +1024,93 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
   );
 }
 
+// ─── Coach Preset Editor ────────────────────────────────────────────────────
+function CoachPresetEditor({ clientId, exerciseName, onClose }: { clientId: number; exerciseName: string; onClose: () => void }) {
+  const utils = trpc.useUtils();
+  const { data: presets = [], isLoading } = trpc.equipmentPresets.listForClient.useQuery({ userId: clientId, exerciseName });
+  const upsert = trpc.equipmentPresets.upsertForClient.useMutation({
+    onSuccess: () => { utils.equipmentPresets.listForClient.invalidate({ userId: clientId, exerciseName }); setNewName(''); toast.success('Preset saved'); },
+  });
+  const del = trpc.equipmentPresets.deleteForClient.useMutation({
+    onSuccess: () => { utils.equipmentPresets.listForClient.invalidate({ userId: clientId, exerciseName }); toast.success('Preset deleted'); },
+  });
+  const rename = trpc.equipmentPresets.renameForClient.useMutation({
+    onSuccess: () => { utils.equipmentPresets.listForClient.invalidate({ userId: clientId, exerciseName }); setRenamingId(null); toast.success('Preset renamed'); },
+  });
+
+  const [newName, setNewName] = useState('');
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renameVal, setRenameVal] = useState('');
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/60 space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Machine Presets</p>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
+      </div>
+      {isLoading ? (
+        <p className="text-xs text-muted-foreground">Loading…</p>
+      ) : presets.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No presets saved yet.</p>
+      ) : (
+        <div className="space-y-1">
+          {presets.map((p: any) => (
+            <div key={p.id} className="flex items-center gap-2">
+              {renamingId === p.id ? (
+                <>
+                  <input
+                    autoFocus
+                    value={renameVal}
+                    onChange={e => setRenameVal(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') rename.mutate({ userId: clientId, id: p.id, newName: renameVal }); if (e.key === 'Escape') setRenamingId(null); }}
+                    className="flex-1 bg-secondary border border-border rounded px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button onClick={() => rename.mutate({ userId: clientId, id: p.id, newName: renameVal })} className="text-primary hover:opacity-80"><Check className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setRenamingId(null)} className="text-muted-foreground hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 text-xs text-foreground truncate">{p.presetName}</span>
+                  {p.lastSettings && <span className="text-[10px] text-muted-foreground/60 truncate max-w-[80px]">{p.lastSettings}</span>}
+                  <button onClick={() => { setRenamingId(p.id); setRenameVal(p.presetName); }} className="text-muted-foreground hover:text-foreground"><Pencil className="w-3 h-3" /></button>
+                  <button onClick={() => del.mutate({ userId: clientId, id: p.id })} className="text-red-400 hover:text-red-300"><Trash2 className="w-3 h-3" /></button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Add new preset */}
+      <div className="flex gap-2 pt-1">
+        <input
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && newName.trim()) upsert.mutate({ userId: clientId, exerciseName, presetName: newName.trim() }); }}
+          placeholder="New preset name…"
+          className="flex-1 bg-secondary border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+        />
+        <button
+          onClick={() => { if (newName.trim()) upsert.mutate({ userId: clientId, exerciseName, presetName: newName.trim() }); }}
+          disabled={!newName.trim() || upsert.isPending}
+          className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground text-xs rounded hover:opacity-90 disabled:opacity-40"
+        >
+          <Plus className="w-3 h-3" /> Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ExerciseProgressTab({
-  workoutSessions, exerciseLib
+  workoutSessions, exerciseLib, clientId
 }: {
   workoutSessions: any[];
   exerciseLib: any[];
+  clientId: number;
 }) {
   const [selectedGroup, setSelectedGroup] = useState<string>('All');
   const [presetFilter, setPresetFilter] = useState<Record<string, string>>({});
+  const [openPresetEditor, setOpenPresetEditor] = useState<string | null>(null); // exerciseName
 
   // Build lookup: exerciseName -> primary muscle label
   const exToMuscle: Record<string, string> = {};
@@ -1134,6 +1213,8 @@ function ExerciseProgressTab({
                 ? latestW > prevW ? 'up' : latestW < prevW ? 'down' : 'flat'
                 : null;
 
+              const isPresetEditorOpen = openPresetEditor === name;
+
               return (
                 <div key={name} className="bg-card border border-border rounded-xl p-4">
                   {/* Header */}
@@ -1142,9 +1223,22 @@ function ExerciseProgressTab({
                       <p className="text-sm font-semibold text-foreground">{name}</p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">{exToMuscle[name] ?? 'Other'} &middot; {history.length} session{history.length !== 1 ? 's' : ''}</p>
                     </div>
-                    {trend === 'up' && <ArrowUp className="w-4 h-4 text-green-400 flex-shrink-0" />}
-                    {trend === 'down' && <ArrowDown className="w-4 h-4 text-red-400 flex-shrink-0" />}
-                    {trend === 'flat' && <Minus className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {trend === 'up' && <ArrowUp className="w-4 h-4 text-green-400" />}
+                      {trend === 'down' && <ArrowDown className="w-4 h-4 text-red-400" />}
+                      {trend === 'flat' && <Minus className="w-4 h-4 text-muted-foreground" />}
+                      <button
+                        onClick={() => setOpenPresetEditor(isPresetEditorOpen ? null : name)}
+                        title="Manage machine presets"
+                        className={`p-1 rounded-md transition-colors ${
+                          isPresetEditorOpen
+                            ? 'bg-primary/20 text-primary'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                        }`}
+                      >
+                        <Settings2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Machine preset filter — only shown when multiple presets exist */}
@@ -1218,6 +1312,14 @@ function ExerciseProgressTab({
                   </div>
 
 
+                  {/* Inline preset editor */}
+                  {isPresetEditorOpen && (
+                    <CoachPresetEditor
+                      clientId={clientId}
+                      exerciseName={name}
+                      onClose={() => setOpenPresetEditor(null)}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -1636,7 +1738,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                   </div>
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Exercise Progress</p>
-                    <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} />
+                    <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} />
                   </div>
                 </div>
               </TabsContent>

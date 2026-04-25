@@ -486,3 +486,7 @@
 ## TypeScript Error Fixes (Apr 2026)
 - [x] Fix server/db.ts Map iteration TS2802 errors (lines 509–551) — use Array.from() wrappers
 - [x] Fix ProgressPhotosTab.tsx TS2345 type mismatch (line 137)
+
+## Machine Preset Management (Apr 2026)
+- [x] Add admin tRPC procedures for equipment presets scoped to a target client (listForClient, upsertForClient, deleteForClient, renameForClient)
+- [x] Add inline CoachPresetEditor component to ExerciseProgressTab exercise cards (gear icon toggle, add/rename/delete presets per client)
