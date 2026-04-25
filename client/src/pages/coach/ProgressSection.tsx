@@ -7,7 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus, Activity } from "lucide-react";
 import { useSearch, useLocation } from "wouter";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
@@ -950,6 +950,11 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                       {(log.offPlanMeals ?? 0) > 0 ? (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400" title="Off-plan meal">
                           <Utensils size={11} />
+                        </span>
+                      ) : null}
+                      {((log as any).lissMinutes ?? 0) > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400" title="LISS Cardio">
+                          <Activity size={11} />{(log as any).lissMinutes}m
                         </span>
                       ) : null}
                     </>

@@ -570,3 +570,4 @@
 - [x] Replace lissMinutes with lissSessionsPerWeek + lissMinutesPerSession in DB and all UI surfaces
 - [x] Scale down oversized text-3xl numbers (step goal, weekly avg calories) to text-xl
 - [x] Fix LISS Cardio card in client weekly summary: show actual logged minutes this week, not the target prescription
+- [x] Add LISS Cardio badge (blue, Lucide icon + minutes) to daily log rows in client and coach recent logs views
