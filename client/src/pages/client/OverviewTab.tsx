@@ -233,6 +233,7 @@ export default function OverviewTab() {
   })();
 
   const stepGoal = (profile as any)?.stepGoal as number | null | undefined;
+  const lissMinutes = (profile as any)?.lissMinutes as number | null | undefined;
   const cur7Steps = cur7Logs.filter(l => l.stepsCount != null).map(l => l.stepsCount as number);
   const avgSteps7 = cur7Steps.length > 0 ? Math.round(cur7Steps.reduce((a, b) => a + b, 0) / cur7Steps.length) : null;
 
@@ -310,6 +311,13 @@ export default function OverviewTab() {
               label="Avg Daily Steps"
               value={avgSteps7 != null ? avgSteps7.toLocaleString() : "—"}
               sub={`Goal: ${stepGoal.toLocaleString()}`}
+            />
+          )}
+          {lissMinutes && (
+            <MetricCard
+              label="LISS Target"
+              value={`${lissMinutes} mins`}
+              sub="per week"
             />
           )}
         </div>

@@ -93,6 +93,7 @@ export const clientProfiles = mysqlTable("client_profiles", {
   notes: text("notes"),
   checkInDay: mysqlEnum("checkInDay", ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]),
   stepGoal: int("stepGoal"), // daily step goal
+  lissMinutes: int("lissMinutes"), // recommended weekly LISS cardio minutes
   photoType: mysqlEnum("photoType", ["standard", "athlete"]).default("standard").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

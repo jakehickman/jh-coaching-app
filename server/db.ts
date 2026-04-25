@@ -1264,6 +1264,7 @@ export async function deleteCheckIn(id: number): Promise<void> {
 export async function updateClientProfileExtended(userId: number, data: {
   checkInDay?: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | null;
   stepGoal?: number | null;
+  lissMinutes?: number | null;
 }, coachId?: number) {
   const db = await getDb();
   if (!db) return;

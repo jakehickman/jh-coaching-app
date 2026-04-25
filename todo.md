@@ -561,3 +561,4 @@
 - [x] Fix broken drag after preview feature — replaced per-card onDragOver index with container-level computeDropIndex that measures visible card midpoints; aligned previewSlots and doReorder to use the same "without" index space
 - [x] Replace HTML5 drag API with pointer events (onPointerDown/Move/Up + setPointerCapture) for reliable cross-browser drag-to-reorder with live ghost preview
 - [x] Add elaboration field to single-choice check-in questions — nullable DB column, textarea in client form, displayed in coach history view
+- [x] Add Cardio & Activity section to client hub: step goal + LISS weekly minutes, inline-editable by coach, visible on client dashboard
