@@ -322,7 +322,7 @@ export default function CheckInQuestionsManager() {
                   key={q.id}
                   data-card-id={q.id}
                   className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 mb-2 transition-opacity duration-100 ${
-                    isDragging ? "opacity-0" : "opacity-100"
+                    isDragging ? "opacity-40" : "opacity-100"
                   }`}
                 >
                   {/* Grip — this is the drag handle */}
