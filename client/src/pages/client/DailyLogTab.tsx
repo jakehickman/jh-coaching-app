@@ -445,7 +445,7 @@ export default function DailyLogTab() {
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm text-muted-foreground">LISS Cardio</label>
                 {(profile as any)?.lissSessionsPerWeek != null && (profile as any)?.lissMinutesPerSession != null && (
-                  <span className="text-xs text-primary font-medium">Target: {(profile as any).lissSessionsPerWeek} × {(profile as any).lissMinutesPerSession} min/session</span>
+                  <span className="text-xs text-primary font-medium">Target: {(profile as any).lissSessionsPerWeek} × {(profile as any).lissMinutesPerSession} min / week</span>
                 )}
               </div>
               <div className="relative">
