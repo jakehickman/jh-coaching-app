@@ -243,7 +243,7 @@ export default function CheckInQuestionsManager() {
 
       {/* Active questions */}
       {activeQuestions.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-3">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             Active ({activeQuestions.length})
           </p>
@@ -255,7 +255,7 @@ export default function CheckInQuestionsManager() {
               onDragOver={(e) => handleDragOver(e, q.id)}
               onDrop={() => handleDrop(q.id)}
               onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-              className={`flex items-center gap-3 bg-card border rounded-lg px-3 py-2.5 transition-all ${
+              className={`flex items-center gap-3 bg-card border rounded-lg px-4 py-4 transition-all ${
                 dragOverId === q.id ? "border-primary/50 bg-primary/5" : "border-border"
               } ${dragId === q.id ? "opacity-40" : ""}`}
             >
@@ -298,14 +298,14 @@ export default function CheckInQuestionsManager() {
 
       {/* Hidden questions */}
       {hiddenQuestions.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-3">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             Hidden ({hiddenQuestions.length})
           </p>
           {hiddenQuestions.map((q) => (
             <div
               key={q.id}
-              className="flex items-center gap-3 bg-card border border-border rounded-lg px-3 py-2.5 opacity-50"
+              className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 opacity-50"
             >
               <GripVertical size={14} className="text-muted-foreground/30 flex-shrink-0" />
               <div className="flex-1 min-w-0">

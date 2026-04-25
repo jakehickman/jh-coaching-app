@@ -544,3 +544,4 @@
 - [x] Remove week number from kanban cards
 - [x] Remove redundant "Upcoming" badge — show just the due date
 - [x] Update Check-ins kanban helper text — clicking a card goes to client hub overview, not check-in view
+- [x] Improve spacing in Check-in Questions panel — increase card padding and row gap
