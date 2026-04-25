@@ -569,3 +569,4 @@
 - [x] Rename LISS to LISS Cardio in weekly review card
 - [x] Replace lissMinutes with lissSessionsPerWeek + lissMinutesPerSession in DB and all UI surfaces
 - [x] Scale down oversized text-3xl numbers (step goal, weekly avg calories) to text-xl
+- [x] Fix LISS Cardio card in client weekly summary: show actual logged minutes this week, not the target prescription

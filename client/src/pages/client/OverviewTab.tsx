@@ -236,6 +236,8 @@ export default function OverviewTab() {
   const lissSessionsPerWeek = (profile as any)?.lissSessionsPerWeek as number | null | undefined;
   const lissMinutesPerSession = (profile as any)?.lissMinutesPerSession as number | null | undefined;
   const lissSet = lissSessionsPerWeek != null && lissMinutesPerSession != null;
+  const lissLoggedMins7 = cur7Logs.reduce((sum, l) => sum + ((l as any).lissMinutes ?? 0), 0);
+  const lissTargetMins = lissSet ? (lissSessionsPerWeek! * lissMinutesPerSession!) : null;
   const cur7Steps = cur7Logs.filter(l => l.stepsCount != null).map(l => l.stepsCount as number);
   const avgSteps7 = cur7Steps.length > 0 ? Math.round(cur7Steps.reduce((a, b) => a + b, 0) / cur7Steps.length) : null;
 
@@ -318,8 +320,8 @@ export default function OverviewTab() {
           {lissSet && (
             <MetricCard
               label="LISS Cardio"
-              value={`${lissSessionsPerWeek} × ${lissMinutesPerSession} min`}
-              sub="sessions / week"
+              value={`${lissLoggedMins7} min`}
+              sub={`target: ${lissTargetMins} min / week`}
             />
           )}
         </div>
