@@ -106,6 +106,16 @@ export const workoutSessionsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(({ ctx, input }) => db.deleteWorkoutSession(input.id, ctx.user.id)),
+  // Coach: patch machinePreset/machineSettings on a specific exercise in a past session
+  patchExercisePreset: adminProcedure
+    .input(z.object({
+      sessionId: z.number(),
+      userId: z.number(),
+      exerciseName: z.string(),
+      machinePreset: z.string().nullable().optional(),
+      machineSettings: z.string().nullable().optional(),
+    }))
+    .mutation(({ input }) => db.patchWorkoutSessionExercisePreset(input.sessionId, input.userId, input.exerciseName, input.machinePreset ?? null, input.machineSettings ?? null)),
 });
 
 export const equipmentPresetsRouter = router({

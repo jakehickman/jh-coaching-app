@@ -490,3 +490,7 @@
 ## Machine Preset Management (Apr 2026)
 - [x] Add admin tRPC procedures for equipment presets scoped to a target client (listForClient, upsertForClient, deleteForClient, renameForClient)
 - [x] Add inline CoachPresetEditor component to ExerciseProgressTab exercise cards (gear icon toggle, add/rename/delete presets per client)
+
+## Backfill Machine Presets on Past Sessions (Apr 2026)
+- [x] Add updateSessionExercisePreset tRPC mutation (admin) to patch machinePreset/machineSettings on a specific exercise in a workout session
+- [x] Add inline preset picker to history rows in ExerciseProgressTab (show preset if set, show "+ Add preset" link if blank)

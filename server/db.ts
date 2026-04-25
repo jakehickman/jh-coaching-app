@@ -878,6 +878,33 @@ export async function saveWorkoutSession(data: {
   return existing.length > 0 ? existing[0].id : undefined;
 }
 
+export async function patchWorkoutSessionExercisePreset(
+  sessionId: number,
+  userId: number,
+  exerciseName: string,
+  machinePreset: string | null,
+  machineSettings: string | null
+) {
+  const db = await getDb();
+  if (!db) return;
+  const [session] = await db
+    .select()
+    .from(workoutSessions)
+    .where(and(eq(workoutSessions.id, sessionId), eq(workoutSessions.userId, userId)))
+    .limit(1);
+  if (!session) return;
+  const exercises: WorkoutExercise[] = (session.exercises as WorkoutExercise[]) ?? [];
+  const updated = exercises.map(ex =>
+    ex.name === exerciseName
+      ? { ...ex, machinePreset: machinePreset ?? ex.machinePreset, machineSettings: machineSettings ?? ex.machineSettings }
+      : ex
+  );
+  await db
+    .update(workoutSessions)
+    .set({ exercises: updated, updatedAt: new Date() })
+    .where(eq(workoutSessions.id, sessionId));
+}
+
 export async function deleteWorkoutSession(id: number, userId: number) {
   const db = await getDb();
   if (!db) return;
