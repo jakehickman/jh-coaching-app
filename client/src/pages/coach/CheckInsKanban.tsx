@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { AlertCircle, CheckCircle2, Calendar, RefreshCw, Settings, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, CheckCircle2, Calendar, RefreshCw, Settings, SlidersHorizontal, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -160,10 +160,6 @@ interface ClientCardProps {
 function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, badgeClass, onCustomise }: ClientCardProps) {
   const [, navigate] = useLocation();
 
-  function handleClick() {
-    navigate(`/coach/client/${clientId}`);
-  }
-
   const initials = name
     .split(" ")
     .map(w => w[0])
@@ -195,14 +191,13 @@ function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, ba
       <div className="flex items-center gap-2.5">
         {/* Avatar */}
         <div
-          className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0 cursor-pointer"
-          onClick={handleClick}
+          className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0"
         >
           {initials}
         </div>
 
         {/* Info */}
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={handleClick}>
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{name}</p>
           {subtext && (
             <p className="text-[11px] text-muted-foreground mt-0.5">{subtext}</p>
@@ -216,14 +211,23 @@ function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, ba
           </span>
         )}
 
-        {/* Customise questions button */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onCustomise(clientId, name); }}
-          title="Customise check-in questions for this client"
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary"
-        >
-          <SlidersHorizontal size={13} />
-        </button>
+        {/* Hover action buttons */}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate(`/coach/client/${clientId}`); }}
+            title="View client hub"
+            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary"
+          >
+            <ExternalLink size={13} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onCustomise(clientId, name); }}
+            title="Customise check-in questions for this client"
+            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary"
+          >
+            <SlidersHorizontal size={13} />
+          </button>
+        </div>
       </div>
     </div>
   );

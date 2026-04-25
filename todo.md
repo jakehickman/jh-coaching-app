@@ -551,3 +551,4 @@
 - [x] Brighten drag handle so it's clearly visible
 - [x] Move delete button into edit dialog (remove from row)
 - [x] Replace drag-over card highlight with insertion line indicator between cards in Questions panel
+- [x] Remove click-to-navigate from check-in kanban client cards; add explicit "View" icon button on hover alongside customise button
