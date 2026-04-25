@@ -1035,7 +1035,12 @@ function CoachPresetEditor({ clientId, exerciseName, onClose }: { clientId: numb
     onSuccess: () => { utils.equipmentPresets.listForClient.invalidate({ userId: clientId, exerciseName }); toast.success('Preset deleted'); },
   });
   const rename = trpc.equipmentPresets.renameForClient.useMutation({
-    onSuccess: () => { utils.equipmentPresets.listForClient.invalidate({ userId: clientId, exerciseName }); setRenamingId(null); toast.success('Preset renamed'); },
+    onSuccess: () => {
+      utils.equipmentPresets.listForClient.invalidate({ userId: clientId, exerciseName });
+      utils.workoutSessions.listForClient.invalidate({ userId: clientId });
+      setRenamingId(null);
+      toast.success('Preset renamed');
+    },
   });
 
   const [newName, setNewName] = useState('');
