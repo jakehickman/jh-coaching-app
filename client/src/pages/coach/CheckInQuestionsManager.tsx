@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,10 +64,24 @@ export default function CheckInQuestionsManager() {
 
   const { data: questions = [], isLoading } = trpc.questions.list.useQuery();
 
+  // Local ordered copy for optimistic reorder
+  const [localOrder, setLocalOrder] = useState<number[] | null>(null);
+
+  const orderedQuestions = useMemo(() => {
+    if (!localOrder) return questions as Question[];
+    const map = new Map((questions as Question[]).map((q) => [q.id, q]));
+    const ordered = localOrder.map((id) => map.get(id)).filter(Boolean) as Question[];
+    // Append any questions not in localOrder (e.g. newly added)
+    const inOrder = new Set(localOrder);
+    (questions as Question[]).forEach((q) => { if (!inOrder.has(q.id)) ordered.push(q); });
+    return ordered;
+  }, [questions, localOrder]);
+
   const upsertMutation = trpc.questions.upsert.useMutation({
     onSuccess: () => {
       utils.questions.list.invalidate();
       utils.questions.listActive.invalidate();
+      setLocalOrder(null); // reset optimistic order after server sync
       setEditOpen(false);
       toast.success("Question saved");
     },
@@ -93,7 +107,14 @@ export default function CheckInQuestionsManager() {
   });
 
   const reorderMutation = trpc.questions.reorder.useMutation({
-    onError: (e) => toast.error("Reorder failed: " + e.message),
+    onSuccess: () => {
+      utils.questions.list.invalidate();
+      utils.questions.listActive.invalidate();
+    },
+    onError: (e) => {
+      toast.error("Reorder failed: " + e.message);
+      setLocalOrder(null); // revert optimistic update on error
+    },
   });
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -113,11 +134,12 @@ export default function CheckInQuestionsManager() {
   const [form, setForm] = useState<EditForm>(emptyForm);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-  const activeQuestions = questions.filter((q) => q.active);
-  const hiddenQuestions = questions.filter((q) => !q.active);
+  const activeQuestions = orderedQuestions.filter((q) => q.active);
+  const hiddenQuestions = orderedQuestions.filter((q) => !q.active);
 
   function openAdd() {
     setForm(emptyForm);
+    setNewOption("");
     setEditOpen(true);
   }
 
@@ -130,6 +152,7 @@ export default function CheckInQuestionsManager() {
       options: q.options ?? [],
       active: q.active,
     });
+    setNewOption("");
     setEditOpen(true);
   }
 
@@ -138,7 +161,7 @@ export default function CheckInQuestionsManager() {
       toast.error("Question text is required");
       return;
     }
-    if (form.type === "single_choice" && form.options.length < 2) {
+    if (form.type === "single_choice" && form.options.filter(o => o.trim()).length < 2) {
       toast.error("Single choice questions need at least 2 options");
       return;
     }
@@ -148,10 +171,10 @@ export default function CheckInQuestionsManager() {
       slug,
       questionText: form.questionText.trim(),
       type: form.type,
-      options: form.type === "single_choice" ? form.options : null,
+      options: form.type === "single_choice" ? form.options.filter(o => o.trim()) : null,
       displayOrder: form.id
-        ? (questions.find((q) => q.id === form.id)?.displayOrder ?? 99)
-        : (questions.length + 1),
+        ? ((questions as Question[]).find((q) => q.id === form.id)?.displayOrder ?? 99)
+        : ((questions as Question[]).length + 1),
       active: form.active,
     });
   }
@@ -187,6 +210,11 @@ export default function CheckInQuestionsManager() {
     if (fromIdx === -1 || toIdx === -1) return;
     const [moved] = active.splice(fromIdx, 1);
     active.splice(toIdx, 0, moved);
+
+    // Optimistic update: rebuild full order (active reordered + hidden appended)
+    const newOrder = [...active.map((q) => q.id), ...hiddenQuestions.map((q) => q.id)];
+    setLocalOrder(newOrder);
+
     reorderMutation.mutate({ orderedIds: active.map((q) => q.id) });
     setDragId(null);
     setDragOverId(null);
@@ -234,16 +262,13 @@ export default function CheckInQuestionsManager() {
               <GripVertical size={14} className="text-muted-foreground/40 cursor-grab flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{q.questionText}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                    q.type === "single_choice"
-                      ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                      : "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                  }`}>
-                    {q.type === "single_choice" ? "Single choice" : "Free text"}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground/50 font-mono">{q.slug}</span>
-                </div>
+                <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded mt-0.5 inline-block ${
+                  q.type === "single_choice"
+                    ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                    : "bg-orange-500/10 text-orange-400 border border-orange-500/20"
+                }`}>
+                  {q.type === "single_choice" ? "Single choice" : "Free text"}
+                </span>
               </div>
               <Switch
                 checked={q.active}
@@ -285,12 +310,9 @@ export default function CheckInQuestionsManager() {
               <GripVertical size={14} className="text-muted-foreground/30 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{q.questionText}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-secondary text-muted-foreground border border-border">
-                    {q.type === "single_choice" ? "Single choice" : "Free text"}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground/40 font-mono">{q.slug}</span>
-                </div>
+                <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded mt-0.5 inline-block bg-secondary text-muted-foreground border border-border">
+                  {q.type === "single_choice" ? "Single choice" : "Free text"}
+                </span>
               </div>
               <Switch
                 checked={q.active}
@@ -339,6 +361,7 @@ export default function CheckInQuestionsManager() {
                   setForm((f) => ({
                     ...f,
                     questionText: text,
+                    // Only auto-update slug for new questions
                     slug: f.id ? f.slug : slugify(text),
                   }));
                 }}
@@ -351,7 +374,7 @@ export default function CheckInQuestionsManager() {
               <label className="text-xs font-medium text-muted-foreground">Type</label>
               <Select
                 value={form.type}
-                onValueChange={(v) => setForm((f) => ({ ...f, type: v as QuestionType }))}
+                onValueChange={(v) => setForm((f) => ({ ...f, type: v as QuestionType, options: v === "free_text" ? [] : f.options }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -370,9 +393,17 @@ export default function CheckInQuestionsManager() {
                 <div className="space-y-1.5">
                   {form.options.map((opt, idx) => (
                     <div key={idx} className="flex items-center gap-2">
-                      <div className="flex-1 text-sm bg-muted/30 border border-border rounded-md px-3 py-1.5 text-foreground">
-                        {opt}
-                      </div>
+                      <Input
+                        value={opt}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            options: f.options.map((o, i) => (i === idx ? e.target.value : o)),
+                          }))
+                        }
+                        className="flex-1 text-sm"
+                        placeholder={`Option ${idx + 1}`}
+                      />
                       <Button
                         size="icon"
                         variant="ghost"
@@ -398,19 +429,6 @@ export default function CheckInQuestionsManager() {
                 </div>
               </div>
             )}
-
-            {/* Slug (advanced) */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Slug <span className="text-muted-foreground/50">(internal identifier, auto-generated)</span>
-              </label>
-              <Input
-                value={form.slug}
-                onChange={(e) => setForm((f) => ({ ...f, slug: slugify(e.target.value) }))}
-                placeholder="e.g. motivation"
-                className="font-mono text-xs"
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
@@ -433,8 +451,8 @@ export default function CheckInQuestionsManager() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => deleteId !== null && deleteMutation.mutate({ id: deleteId })}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>

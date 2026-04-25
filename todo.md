@@ -536,3 +536,6 @@
 
 ## Bug Fixes (Apr 2026)
 - [x] Fix Check-ins kanban client card click — navigate to client hub (/coach/client/:id) instead of old progress page URL
+- [x] Fix question editor: options inputs are read-only — make them editable
+- [x] Remove slug field from question editor UI (internal only, auto-generated)
+- [x] Fix question reorder not updating dynamically — optimistic update now applied immediately on drag-drop
