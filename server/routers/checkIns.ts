@@ -283,23 +283,57 @@ export const checkInRouter = router({
   clientHistory: adminProcedure
     .input(z.object({ clientId: z.number() }))
     .query(async ({ input }) => {
-      const rows = await db.getCycleHistory(input.clientId);
-      const profile = await db.getClientProfile(input.clientId);
-      return rows.map(r => {
+      const [rows, profile, activeCycle] = await Promise.all([
+        db.getCycleHistory(input.clientId),
+        db.getClientProfile(input.clientId),
+        db.getActiveCycle(input.clientId),
+      ]);
+      const startDateStr = profile?.startDate ? toDateStr(profile.startDate) : null;
+      const checkInDay = profile?.checkInDay ?? null;
+
+      // Helper to enrich a row with dynamic answers
+      async function enrichWithAnswers(submissionId: number | null) {
+        if (!submissionId) return [];
+        return db.getAnswersForSubmission(submissionId);
+      }
+
+      const history = await Promise.all(rows.map(async r => {
         const dueDateStr = toDateStr(r.dueDate);
+        const answers = await enrichWithAnswers(r.submissionId ?? null);
         return {
           id: r.id,
           dueDate: dueDateStr,
           completedAt: r.completedAt,
           submissionId: r.submissionId ?? null,
           submission: r.submission,
-          weekNumber: computeWeekNumber(
-            profile?.startDate ? toDateStr(profile.startDate) : null,
-            profile?.checkInDay ?? null,
-            dueDateStr,
-          ),
+          answers,
+          weekNumber: computeWeekNumber(startDateStr, checkInDay, dueDateStr),
         };
-      });
+      }));
+
+      // Also include the current active cycle if it has a submission
+      // (active cycles are not in check_in_history until the coach marks them complete)
+      if (activeCycle?.submissionId) {
+        const dueDateStr = toDateStr(activeCycle.dueDate);
+        const weekNumber = computeWeekNumber(startDateStr, checkInDay, dueDateStr);
+        // Only add if not already present in history
+        if (!history.some(h => h.weekNumber === weekNumber)) {
+          const [submission, answers] = await Promise.all([
+            db.getCheckInForWeek(input.clientId, dueDateStr),
+            enrichWithAnswers(activeCycle.submissionId),
+          ]);
+          history.unshift({
+            id: activeCycle.id,
+            dueDate: dueDateStr,
+            completedAt: null,
+            submissionId: activeCycle.submissionId,
+            submission: submission as any,
+            answers,
+            weekNumber,
+          });
+        }
+      }
+      return history;
     }),
 
   /**

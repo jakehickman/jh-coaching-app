@@ -142,55 +142,48 @@ function MetricGroup({ label, children }: { label: string; children: React.React
 
 // ─── Submission Q&A ───────────────────────────────────────────────────────────
 
-function SubmissionQA({ sub }: { sub: any }) {
-  const sections = [
-    {
-      title: "Diet Execution",
-      rows: [
-        { q: "How often did you weigh all foods raw/uncooked with a digital scale?", val: sub.dietWeighedFoods },
-        { q: "How often did you prepare meals exactly as written in your plan?", val: sub.dietMealPrepAccuracy },
-        { q: "Excluding off-plan meals, how often did you eat/drink anything not in your plan?", val: sub.dietExtrasFrequency },
-        { q: "How do you use added fats when cooking?", val: sub.dietAddedFats },
-        { q: "How often did you eat meals more than 2 hours off schedule?", val: sub.dietMealTiming },
-        { q: "When you had an off-plan meal, how close was it to your plan in calories/macros?", val: sub.dietOffPlanQuality },
-      ].filter(r => r.val),
-    },
-    {
-      title: "Sleep",
-      rows: [
-        { q: "How often did you go to bed more than 1 hour later than your planned bedtime?", val: sub.sleepBedtimeConsistency },
-      ].filter(r => r.val),
-    },
-    {
-      title: "Adherence Barrier",
-      rows: [
-        { q: "What was your biggest barrier to adherence this week?", val: sub.adherenceBarrier ? (BARRIER_LABEL[sub.adherenceBarrier] ?? sub.adherenceBarrier) : null, raw: true },
-        ...(sub.barrierExplain ? [{ q: "Can you explain further?", val: sub.barrierExplain, raw: true }] : []),
-      ].filter(r => r.val),
-    },
-    {
-      title: "Weekly Self-Assessment",
-      rows: [
-        { q: "Overall, how well did you follow your plan this week?", val: sub.weeklyAssessment ? (ASSESSMENT_LABEL[sub.weeklyAssessment] ?? sub.weeklyAssessment) : null, raw: true },
-      ].filter(r => r.val),
-    },
-  ].filter(s => s.rows.length > 0);
-
-  if (sections.length === 0) {
+function SubmissionQA({ answers }: { answers: Array<{ question: { slug: string; questionText: string }; value: string | null; elaboration?: string | null }> }) {
+  if (!answers || answers.length === 0) {
     return <p className="text-xs text-muted-foreground px-4 py-3">No answers recorded.</p>;
   }
+  // Derive category from slug prefix
+  function getCategory(slug: string): string {
+    if (slug.startsWith("diet_")) return "diet";
+    if (slug.startsWith("sleep_")) return "sleep";
+    if (slug.startsWith("adherence_")) return "adherence";
+    if (slug.startsWith("weekly_assessment")) return "assessment";
+    return "general";
+  }
+  const categoryOrder = ["diet", "sleep", "adherence", "assessment", "general"];
+  const categoryLabel: Record<string, string> = {
+    diet: "Diet Execution",
+    sleep: "Sleep",
+    adherence: "Adherence Barrier",
+    assessment: "Weekly Self-Assessment",
+    general: "Other",
+  };
+  const grouped = answers.reduce<Record<string, typeof answers>>((acc, a) => {
+    const cat = getCategory(a.question.slug);
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(a);
+    return acc;
+  }, {});
+  const sortedCategories = categoryOrder.filter(c => grouped[c]?.length > 0);
   return (
     <div className="px-4 pt-3 pb-1 space-y-4">
-      {sections.map(section => (
-        <div key={section.title}>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{section.title}</p>
+      {sortedCategories.map(cat => (
+        <div key={cat}>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+            {categoryLabel[cat]}
+          </p>
           <div className="space-y-3">
-            {section.rows.map((row, i) => (
+            {grouped[cat].map((a, i) => (
               <div key={i} className="space-y-0.5">
-                <p className="text-xs text-muted-foreground">{row.q}</p>
-                <p className="text-sm text-foreground font-medium">
-                  {(row as any).raw ? row.val : (DIET_LABEL_MAP[(row.val as string)!] ?? row.val)}
-                </p>
+                <p className="text-xs text-muted-foreground">{a.question.questionText}</p>
+                <p className="text-sm text-foreground font-medium">{a.value ?? "—"}</p>
+                {a.elaboration && (
+                  <p className="text-xs text-muted-foreground italic">{a.elaboration}</p>
+                )}
               </div>
             ))}
           </div>
@@ -379,7 +372,8 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         const prev: Week | null = weeks[idx + 1] ?? null;
         const historyRow = historyByWeek.get(week.weekNumber);
         const submission = historyRow?.submission ?? null;
-        const hasSubmission = !!submission;
+        const submissionAnswers = historyRow?.answers ?? [];
+        const hasSubmission = !!(historyRow?.submissionId || submission);
         const isReviewed = !!(submission as any)?.reviewedAt;
 
         const stepsAvg = week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—";
@@ -557,7 +551,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                           Submitted {new Date((submission as any).submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
                         </span>
                       </div>
-                      <SubmissionQA sub={submission} />
+                      <SubmissionQA answers={submissionAnswers} />
                       <CoachNotesField submissionId={(submission as any).id} initialNotes={(submission as any).coachNotes} />
                       <ChangesNotesField submissionId={(submission as any).id} initialNotes={(submission as any).changesNotes} />
                       <div className="px-4 py-3 border-t border-border/50">
