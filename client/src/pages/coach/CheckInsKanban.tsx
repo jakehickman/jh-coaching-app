@@ -108,10 +108,10 @@ function ClientQuestionOverridePanel({ clientId, clientName }: { clientId: numbe
   }
 
   return (
-    <div className="space-y-1">
-      <p className="text-xs text-muted-foreground mb-4">
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground mb-5">
         Toggle questions on or off for <span className="font-medium text-foreground">{clientName}</span>.
-        Questions that differ from the global default are marked with a dot.
+        A green dot marks questions that differ from the global default.
       </p>
       {activeQuestions.map((q: any) => {
         const effective = getEffectiveState(q);
@@ -119,23 +119,23 @@ function ClientQuestionOverridePanel({ clientId, clientName }: { clientId: numbe
         return (
           <div
             key={q.id}
-            className="flex items-center gap-3 py-3 px-3 rounded-lg hover:bg-secondary/50 transition-colors"
+            className="flex items-start gap-3 py-3.5 px-3 rounded-lg border border-border bg-card transition-colors"
           >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className={`text-sm ${effective ? "text-foreground" : "text-muted-foreground line-through"}`}>
+            <div className="flex-1 min-w-0 pt-0.5">
+              <div className="flex items-start gap-2">
+                <p className={`text-sm leading-snug transition-opacity ${effective ? "text-foreground" : "text-muted-foreground opacity-50"}`}>
                   {q.questionText}
                 </p>
                 {overridden && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" title="Customised for this client" />
+                  <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1" title="Customised for this client" />
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground mt-0.5 capitalize">{q.type.replace("_", " ")}</p>
             </div>
             <Switch
               checked={effective}
               onCheckedChange={(v) => handleToggle(q, v)}
               disabled={setOverride.isPending}
+              className="flex-shrink-0 mt-0.5"
             />
           </div>
         );
@@ -372,7 +372,7 @@ export default function CheckInsKanban() {
 
       {/* Per-client question customisation sheet */}
       <Sheet open={!!customiseClient} onOpenChange={(o) => !o && setCustomiseClient(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto px-6">
           <SheetHeader className="mb-6">
             <SheetTitle>Customise Questions</SheetTitle>
           </SheetHeader>
