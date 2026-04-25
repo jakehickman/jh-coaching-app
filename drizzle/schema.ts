@@ -602,6 +602,7 @@ export const checkInAnswers = mysqlTable("check_in_answers", {
   submissionId: int("submissionId").notNull(), // FK -> check_in_submissions.id
   questionId: int("questionId").notNull(),     // FK -> check_in_questions.id
   value: text("value"),                        // stored as text; single_choice = option string
+  elaboration: text("elaboration"),            // optional free-text elaboration for single_choice questions
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

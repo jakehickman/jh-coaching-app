@@ -104,6 +104,7 @@ export const questionsRouter = router({
           z.object({
             questionId: z.number(),
             value: z.string().nullable(),
+            elaboration: z.string().nullable().optional(),
           })
         ),
       })

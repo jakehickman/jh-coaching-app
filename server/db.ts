@@ -1690,6 +1690,7 @@ export async function getAnswersForSubmission(
       submissionId: checkInAnswers.submissionId,
       questionId: checkInAnswers.questionId,
       value: checkInAnswers.value,
+      elaboration: checkInAnswers.elaboration,
       createdAt: checkInAnswers.createdAt,
       updatedAt: checkInAnswers.updatedAt,
       question: checkInQuestions,
@@ -1703,7 +1704,7 @@ export async function getAnswersForSubmission(
 
 export async function saveCheckInAnswers(
   submissionId: number,
-  answers: { questionId: number; value: string | null }[]
+  answers: { questionId: number; value: string | null; elaboration?: string | null }[]
 ): Promise<void> {
   const db = await getDb();
   if (!db) return;
@@ -1715,6 +1716,7 @@ export async function saveCheckInAnswers(
       submissionId,
       questionId: a.questionId,
       value: a.value,
+      elaboration: a.elaboration ?? null,
     }))
   );
 }

@@ -15,12 +15,16 @@ function SingleChoiceQuestion({
   question,
   value,
   onChange,
+  elaboration,
+  onElaborationChange,
   hasError,
   scrollRef,
 }: {
   question: { id: number; questionText: string; options: string[] | null };
   value: string;
   onChange: (v: string) => void;
+  elaboration: string;
+  onElaborationChange: (v: string) => void;
   hasError?: boolean;
   scrollRef?: React.RefObject<HTMLDivElement | null>;
 }) {
@@ -50,6 +54,14 @@ function SingleChoiceQuestion({
           </button>
         ))}
       </div>
+      {/* Elaboration textarea — always visible for single_choice questions */}
+      <textarea
+        value={elaboration}
+        onChange={(e) => onElaborationChange(e.target.value)}
+        placeholder="Anything to add? (optional)"
+        className="mt-3 w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+        rows={2}
+      />
     </div>
   );
 }
@@ -111,6 +123,8 @@ function CheckInsTabContent() {
 
   // answers keyed by questionId
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  // elaborations keyed by questionId (only for single_choice questions)
+  const [elaborations, setElaborations] = useState<Record<number, string>>({});
   const [showErrors, setShowErrors] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [subTab, setSubTab] = useState<"form" | "measurements">("form");
@@ -139,12 +153,16 @@ function CheckInsTabContent() {
   useEffect(() => {
     if (existingAnswers.length > 0) {
       const loaded: Record<number, string> = {};
+      const loadedElab: Record<number, string> = {};
       existingAnswers.forEach((a: any) => {
         loaded[a.questionId] = a.value ?? "";
+        if (a.elaboration) loadedElab[a.questionId] = a.elaboration;
       });
       setAnswers(loaded);
+      setElaborations(loadedElab);
     } else if (!existingSubmission) {
       setAnswers({});
+      setElaborations({});
     }
   }, [existingAnswers.length, existingSubmission?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -158,6 +176,7 @@ function CheckInsTabContent() {
         const answerPayload = questions.map((q) => ({
           questionId: q.id,
           value: answers[q.id] ?? null,
+          elaboration: q.type === "single_choice" ? (elaborations[q.id] ?? null) : null,
         }));
         await saveAnswersMutation.mutateAsync({ submissionId: data.id, answers: answerPayload });
       }
@@ -354,6 +373,8 @@ function CheckInsTabContent() {
                             question={q as any}
                             value={answers[q.id] ?? ""}
                             onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
+                            elaboration={elaborations[q.id] ?? ""}
+                            onElaborationChange={(v) => setElaborations((prev) => ({ ...prev, [q.id]: v }))}
                             hasError={showErrors}
                           />
                         ) : (

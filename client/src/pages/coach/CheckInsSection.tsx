@@ -76,6 +76,9 @@ function SubmissionQA({ sub }: { sub: any }) {
           <div key={a.id} className="space-y-0.5">
             <p className="text-xs text-muted-foreground">{a.question.questionText}</p>
             <p className="text-sm text-foreground font-medium">{a.value ?? <span className="text-muted-foreground/50 italic">No answer</span>}</p>
+            {a.elaboration && (
+              <p className="text-xs text-muted-foreground italic mt-0.5">&ldquo;{a.elaboration}&rdquo;</p>
+            )}
           </div>
         ))}
       </div>
