@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,8 +121,11 @@ export default function CheckInQuestionsManager() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [dragId, setDragId] = useState<number | null>(null);
-  const [dragOverId, setDragOverId] = useState<number | null>(null);
+  // dropIndex: the index in activeQuestions where the dragged item will be inserted
+  // e.g. 0 = before first card, 1 = between card 0 and 1, etc.
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [newOption, setNewOption] = useState("");
+  const dragCounter = useRef(0);
 
   const emptyForm: EditForm = {
     slug: "",
@@ -190,22 +193,53 @@ export default function CheckInQuestionsManager() {
     setForm((f) => ({ ...f, options: f.options.filter((_, i) => i !== idx) }));
   }
 
-  // ── Drag-to-reorder ────────────────────────────────────────────────────────
-  function handleDragStart(id: number) { setDragId(id); }
-  function handleDragOver(e: React.DragEvent, id: number) { e.preventDefault(); setDragOverId(id); }
-  function handleDrop(targetId: number) {
-    if (dragId === null || dragId === targetId) { setDragId(null); setDragOverId(null); return; }
+  // ── Drag-to-reorder with insertion line ────────────────────────────────────
+  function handleDragStart(e: React.DragEvent, id: number) {
+    setDragId(id);
+    dragCounter.current = 0;
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  // Calculate drop index based on mouse position relative to the card
+  function getDropIndex(e: React.DragEvent, cardIndex: number): number {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    return e.clientY < midY ? cardIndex : cardIndex + 1;
+  }
+
+  function handleDragOver(e: React.DragEvent, cardIndex: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropIndex(getDropIndex(e, cardIndex));
+  }
+
+  function handleDrop(e: React.DragEvent, cardIndex: number) {
+    e.preventDefault();
+    if (dragId === null) return;
+
+    const insertAt = getDropIndex(e, cardIndex);
     const active = [...activeQuestions];
     const fromIdx = active.findIndex((q) => q.id === dragId);
-    const toIdx = active.findIndex((q) => q.id === targetId);
-    if (fromIdx === -1 || toIdx === -1) return;
+    if (fromIdx === -1) return;
+
     const [moved] = active.splice(fromIdx, 1);
-    active.splice(toIdx, 0, moved);
+    // Adjust insertAt after removal
+    const adjustedInsert = insertAt > fromIdx ? insertAt - 1 : insertAt;
+    active.splice(adjustedInsert, 0, moved);
+
     const newOrder = [...active.map((q) => q.id), ...hiddenQuestions.map((q) => q.id)];
     setLocalOrder(newOrder);
     reorderMutation.mutate({ orderedIds: active.map((q) => q.id) });
+
     setDragId(null);
-    setDragOverId(null);
+    setDropIndex(null);
+    dragCounter.current = 0;
+  }
+
+  function handleDragEnd() {
+    setDragId(null);
+    setDropIndex(null);
+    dragCounter.current = 0;
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -228,47 +262,86 @@ export default function CheckInQuestionsManager() {
 
       {/* Active questions */}
       {activeQuestions.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <div className="space-y-0">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
             Active ({activeQuestions.length})
           </p>
-          {activeQuestions.map((q) => (
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              // Handle drop on the container (after last card)
+              if (dragId === null) return;
+              e.preventDefault();
+              const active = [...activeQuestions];
+              const fromIdx = active.findIndex((q) => q.id === dragId);
+              if (fromIdx === -1) return;
+              const [moved] = active.splice(fromIdx, 1);
+              active.push(moved);
+              const newOrder = [...active.map((q) => q.id), ...hiddenQuestions.map((q) => q.id)];
+              setLocalOrder(newOrder);
+              reorderMutation.mutate({ orderedIds: active.map((q) => q.id) });
+              setDragId(null);
+              setDropIndex(null);
+            }}
+          >
+            {activeQuestions.map((q, idx) => (
+              <div key={q.id}>
+                {/* Insertion line BEFORE this card */}
+                <div
+                  className={`h-0.5 rounded-full mx-1 transition-all duration-100 ${
+                    dropIndex === idx && dragId !== null && dragId !== q.id
+                      ? "bg-primary my-1"
+                      : "bg-transparent my-0"
+                  }`}
+                />
+
+                {/* Card */}
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, q.id)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 mb-2 transition-opacity ${
+                    dragId === q.id ? "opacity-30" : "opacity-100"
+                  }`}
+                >
+                  <GripVertical size={15} className="text-muted-foreground/60 cursor-grab flex-shrink-0" />
+                  <p className="flex-1 text-sm font-medium text-foreground leading-snug min-w-0">
+                    {q.questionText}
+                  </p>
+                  <Switch
+                    checked={q.active}
+                    onCheckedChange={(v) => toggleMutation.mutate({ id: q.id, active: v })}
+                    className="flex-shrink-0"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground flex-shrink-0"
+                    onClick={() => openEdit(q)}
+                  >
+                    <Pencil size={12} />
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {/* Insertion line AFTER last card */}
             <div
-              key={q.id}
-              draggable
-              onDragStart={() => handleDragStart(q.id)}
-              onDragOver={(e) => handleDragOver(e, q.id)}
-              onDrop={() => handleDrop(q.id)}
-              onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-              className={`flex items-center gap-3 bg-card border rounded-lg px-4 py-4 transition-all ${
-                dragOverId === q.id ? "border-primary/50 bg-primary/5" : "border-border"
-              } ${dragId === q.id ? "opacity-40" : ""}`}
-            >
-              <GripVertical size={15} className="text-muted-foreground/60 cursor-grab flex-shrink-0" />
-              <p className="flex-1 text-sm font-medium text-foreground leading-snug min-w-0">
-                {q.questionText}
-              </p>
-              <Switch
-                checked={q.active}
-                onCheckedChange={(v) => toggleMutation.mutate({ id: q.id, active: v })}
-                className="flex-shrink-0"
-              />
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground flex-shrink-0"
-                onClick={() => openEdit(q)}
-              >
-                <Pencil size={12} />
-              </Button>
-            </div>
-          ))}
+              className={`h-0.5 rounded-full mx-1 transition-all duration-100 ${
+                dropIndex === activeQuestions.length && dragId !== null
+                  ? "bg-primary my-1"
+                  : "bg-transparent my-0"
+              }`}
+            />
+          </div>
         </div>
       )}
 
       {/* Hidden questions */}
       {hiddenQuestions.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             Hidden ({hiddenQuestions.length})
           </p>
@@ -310,7 +383,6 @@ export default function CheckInQuestionsManager() {
             <DialogTitle>{form.id ? "Edit question" : "Add question"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            {/* Question text */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Question text</label>
               <Input
@@ -327,7 +399,6 @@ export default function CheckInQuestionsManager() {
               />
             </div>
 
-            {/* Type */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Type</label>
               <Select
@@ -344,7 +415,6 @@ export default function CheckInQuestionsManager() {
               </Select>
             </div>
 
-            {/* Options (single_choice only) */}
             {form.type === "single_choice" && (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Options</label>
@@ -389,7 +459,6 @@ export default function CheckInQuestionsManager() {
             )}
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            {/* Delete button on left for existing questions */}
             {form.id && (
               <Button
                 variant="ghost"

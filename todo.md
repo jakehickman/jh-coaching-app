@@ -550,3 +550,4 @@
 - [x] Remove type badge from question rows in Questions panel
 - [x] Brighten drag handle so it's clearly visible
 - [x] Move delete button into edit dialog (remove from row)
+- [x] Replace drag-over card highlight with insertion line indicator between cards in Questions panel
