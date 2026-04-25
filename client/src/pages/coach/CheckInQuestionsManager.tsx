@@ -71,7 +71,6 @@ export default function CheckInQuestionsManager() {
     if (!localOrder) return questions as Question[];
     const map = new Map((questions as Question[]).map((q) => [q.id, q]));
     const ordered = localOrder.map((id) => map.get(id)).filter(Boolean) as Question[];
-    // Append any questions not in localOrder (e.g. newly added)
     const inOrder = new Set(localOrder);
     (questions as Question[]).forEach((q) => { if (!inOrder.has(q.id)) ordered.push(q); });
     return ordered;
@@ -81,7 +80,7 @@ export default function CheckInQuestionsManager() {
     onSuccess: () => {
       utils.questions.list.invalidate();
       utils.questions.listActive.invalidate();
-      setLocalOrder(null); // reset optimistic order after server sync
+      setLocalOrder(null);
       setEditOpen(false);
       toast.success("Question saved");
     },
@@ -101,6 +100,7 @@ export default function CheckInQuestionsManager() {
       utils.questions.list.invalidate();
       utils.questions.listActive.invalidate();
       setDeleteId(null);
+      setEditOpen(false);
       toast.success("Question deleted");
     },
     onError: (e) => toast.error(e.message),
@@ -113,7 +113,7 @@ export default function CheckInQuestionsManager() {
     },
     onError: (e) => {
       toast.error("Reorder failed: " + e.message);
-      setLocalOrder(null); // revert optimistic update on error
+      setLocalOrder(null);
     },
   });
 
@@ -190,31 +190,19 @@ export default function CheckInQuestionsManager() {
     setForm((f) => ({ ...f, options: f.options.filter((_, i) => i !== idx) }));
   }
 
-  // ── Drag-to-reorder (active questions only) ────────────────────────────────
-  function handleDragStart(id: number) {
-    setDragId(id);
-  }
-  function handleDragOver(e: React.DragEvent, id: number) {
-    e.preventDefault();
-    setDragOverId(id);
-  }
+  // ── Drag-to-reorder ────────────────────────────────────────────────────────
+  function handleDragStart(id: number) { setDragId(id); }
+  function handleDragOver(e: React.DragEvent, id: number) { e.preventDefault(); setDragOverId(id); }
   function handleDrop(targetId: number) {
-    if (dragId === null || dragId === targetId) {
-      setDragId(null);
-      setDragOverId(null);
-      return;
-    }
+    if (dragId === null || dragId === targetId) { setDragId(null); setDragOverId(null); return; }
     const active = [...activeQuestions];
     const fromIdx = active.findIndex((q) => q.id === dragId);
     const toIdx = active.findIndex((q) => q.id === targetId);
     if (fromIdx === -1 || toIdx === -1) return;
     const [moved] = active.splice(fromIdx, 1);
     active.splice(toIdx, 0, moved);
-
-    // Optimistic update: rebuild full order (active reordered + hidden appended)
     const newOrder = [...active.map((q) => q.id), ...hiddenQuestions.map((q) => q.id)];
     setLocalOrder(newOrder);
-
     reorderMutation.mutate({ orderedIds: active.map((q) => q.id) });
     setDragId(null);
     setDragOverId(null);
@@ -256,17 +244,10 @@ export default function CheckInQuestionsManager() {
                 dragOverId === q.id ? "border-primary/50 bg-primary/5" : "border-border"
               } ${dragId === q.id ? "opacity-40" : ""}`}
             >
-              <GripVertical size={14} className="text-muted-foreground/40 cursor-grab flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground leading-snug">{q.questionText}</p>
-                <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded mt-0.5 inline-block ${
-                  q.type === "single_choice"
-                    ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                    : "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                }`}>
-                  {q.type === "single_choice" ? "Single choice" : "Free text"}
-                </span>
-              </div>
+              <GripVertical size={15} className="text-muted-foreground/60 cursor-grab flex-shrink-0" />
+              <p className="flex-1 text-sm font-medium text-foreground leading-snug min-w-0">
+                {q.questionText}
+              </p>
               <Switch
                 checked={q.active}
                 onCheckedChange={(v) => toggleMutation.mutate({ id: q.id, active: v })}
@@ -279,14 +260,6 @@ export default function CheckInQuestionsManager() {
                 onClick={() => openEdit(q)}
               >
                 <Pencil size={12} />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 text-muted-foreground hover:text-destructive flex-shrink-0"
-                onClick={() => setDeleteId(q.id)}
-              >
-                <Trash2 size={12} />
               </Button>
             </div>
           ))}
@@ -304,13 +277,10 @@ export default function CheckInQuestionsManager() {
               key={q.id}
               className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 opacity-50"
             >
-              <GripVertical size={14} className="text-muted-foreground/30 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground leading-snug">{q.questionText}</p>
-                <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded mt-0.5 inline-block bg-secondary text-muted-foreground border border-border">
-                  {q.type === "single_choice" ? "Single choice" : "Free text"}
-                </span>
-              </div>
+              <GripVertical size={15} className="text-muted-foreground/60 flex-shrink-0" />
+              <p className="flex-1 text-sm font-medium text-foreground leading-snug min-w-0">
+                {q.questionText}
+              </p>
               <Switch
                 checked={q.active}
                 onCheckedChange={(v) => toggleMutation.mutate({ id: q.id, active: v })}
@@ -323,14 +293,6 @@ export default function CheckInQuestionsManager() {
                 onClick={() => openEdit(q)}
               >
                 <Pencil size={12} />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 text-muted-foreground hover:text-destructive flex-shrink-0"
-                onClick={() => setDeleteId(q.id)}
-              >
-                <Trash2 size={12} />
               </Button>
             </div>
           ))}
@@ -358,7 +320,6 @@ export default function CheckInQuestionsManager() {
                   setForm((f) => ({
                     ...f,
                     questionText: text,
-                    // Only auto-update slug for new questions
                     slug: f.id ? f.slug : slugify(text),
                   }));
                 }}
@@ -427,7 +388,18 @@ export default function CheckInQuestionsManager() {
               </div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {/* Delete button on left for existing questions */}
+            {form.id && (
+              <Button
+                variant="ghost"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 sm:mr-auto"
+                onClick={() => setDeleteId(form.id!)}
+              >
+                <Trash2 size={14} className="mr-1.5" />
+                Delete question
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={upsertMutation.isPending}>
               {upsertMutation.isPending ? "Saving…" : "Save question"}

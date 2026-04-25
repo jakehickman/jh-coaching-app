@@ -547,3 +547,6 @@
 - [x] Improve spacing in Check-in Questions panel — increase card padding and row gap
 - [x] Remove duplicate "Check-in Questions" heading inside the panel content
 - [x] Add horizontal padding to Questions panel so cards don't touch the window border
+- [x] Remove type badge from question rows in Questions panel
+- [x] Brighten drag handle so it's clearly visible
+- [x] Move delete button into edit dialog (remove from row)
