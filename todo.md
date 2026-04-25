@@ -567,3 +567,5 @@
 - [x] Show LISS progress in weekly review card alongside steps, rename section to Cardio & Activity
 - [x] Redesign CardioActivityCard with stat blocks matching other tabs style
 - [x] Rename LISS to LISS Cardio in weekly review card
+- [x] Replace lissMinutes with lissSessionsPerWeek + lissMinutesPerSession in DB and all UI surfaces
+- [x] Scale down oversized text-3xl numbers (step goal, weekly avg calories) to text-xl

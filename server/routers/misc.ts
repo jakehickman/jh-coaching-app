@@ -102,7 +102,8 @@ export const clientConfigRouter = router({
       userId: z.number(),
       checkInDay: z.enum(["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]).nullable().optional(),
       stepGoal: z.number().int().min(0).nullable().optional(),
-      lissMinutes: z.number().int().min(0).nullable().optional(),
+      lissSessionsPerWeek: z.number().int().min(0).nullable().optional(),
+      lissMinutesPerSession: z.number().int().min(0).nullable().optional(),
     }))
     .mutation(({ ctx, input }) => {
       const { userId, ...data } = input;

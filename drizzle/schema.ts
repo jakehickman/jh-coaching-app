@@ -93,7 +93,8 @@ export const clientProfiles = mysqlTable("client_profiles", {
   notes: text("notes"),
   checkInDay: mysqlEnum("checkInDay", ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]),
   stepGoal: int("stepGoal"), // daily step goal
-  lissMinutes: int("lissMinutes"), // recommended weekly LISS cardio minutes
+  lissSessionsPerWeek: int('liss_sessions_per_week'), // recommended LISS sessions per week
+  lissMinutesPerSession: int('liss_minutes_per_session'), // recommended minutes per LISS session
   photoType: mysqlEnum("photoType", ["standard", "athlete"]).default("standard").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -112,7 +113,7 @@ export const dailyLogs = mysqlTable("daily_logs", {
   trainingCompleted: boolean("trainingCompleted").default(false),
   trainingType: varchar("trainingType", { length: 64 }), // e.g. "Upper", "Lower", "Rest"
   stepsCount: int("stepsCount"),
-  lissMinutes: int("lissMinutes"), // daily LISS cardio minutes logged
+  lissMinutes: int('lissMinutes'), // daily LISS cardio minutes logged by client
   sleepQuality: int("sleepQuality"), // 1-5
   hungerLevel: int("hungerLevel"), // 1-5
   offPlanMeals: int("offPlanMeals").default(0), // number of off-plan meals that day

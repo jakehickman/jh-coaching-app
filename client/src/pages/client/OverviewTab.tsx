@@ -233,7 +233,9 @@ export default function OverviewTab() {
   })();
 
   const stepGoal = (profile as any)?.stepGoal as number | null | undefined;
-  const lissMinutes = (profile as any)?.lissMinutes as number | null | undefined;
+  const lissSessionsPerWeek = (profile as any)?.lissSessionsPerWeek as number | null | undefined;
+  const lissMinutesPerSession = (profile as any)?.lissMinutesPerSession as number | null | undefined;
+  const lissSet = lissSessionsPerWeek != null && lissMinutesPerSession != null;
   const cur7Steps = cur7Logs.filter(l => l.stepsCount != null).map(l => l.stepsCount as number);
   const avgSteps7 = cur7Steps.length > 0 ? Math.round(cur7Steps.reduce((a, b) => a + b, 0) / cur7Steps.length) : null;
 
@@ -313,11 +315,11 @@ export default function OverviewTab() {
               sub={`Goal: ${stepGoal.toLocaleString()}`}
             />
           )}
-          {lissMinutes && (
+          {lissSet && (
             <MetricCard
-              label="LISS Target"
-              value={`${lissMinutes} mins`}
-              sub="per week"
+              label="LISS Cardio"
+              value={`${lissSessionsPerWeek} × ${lissMinutesPerSession} min`}
+              sub="sessions / week"
             />
           )}
         </div>

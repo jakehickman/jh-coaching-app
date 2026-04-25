@@ -32,6 +32,8 @@ type Week = {
   stepGoal: number | null;
   totalLissMinutes: number | null;
   lissTarget: number | null;
+  lissSessionsPerWeek: number | null;
+  lissMinutesPerSession: number | null;
 };
 
 const DEFAULT_VISIBLE = 6;
@@ -539,7 +541,9 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                         label="LISS Cardio"
                         value={week.totalLissMinutes != null && week.totalLissMinutes > 0 ? `${week.totalLissMinutes} mins` : "—"}
                         muted={!week.totalLissMinutes}
-                        subtext={week.lissTarget != null ? `Target: ${week.lissTarget} mins/wk` : undefined}
+                        subtext={week.lissSessionsPerWeek != null && week.lissMinutesPerSession != null
+                          ? `Target: ${week.lissSessionsPerWeek} × ${week.lissMinutesPerSession} min`
+                          : week.lissTarget != null ? `Target: ${week.lissTarget} mins/wk` : undefined}
                       />
                     </MetricGroup>
                   </div>

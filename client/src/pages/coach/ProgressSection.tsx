@@ -31,12 +31,14 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
 
   const [editing, setEditing] = useState(false);
   const [stepGoal, setStepGoal] = useState("");
-  const [lissMinutes, setLissMinutes] = useState("");
+  const [lissSessions, setLissSessions] = useState("");
+  const [lissMinsPer, setLissMinsPer] = useState("");
 
   useEffect(() => {
     if (profile) {
       setStepGoal((profile as any).stepGoal?.toString() ?? "");
-      setLissMinutes((profile as any).lissMinutes?.toString() ?? "");
+      setLissSessions((profile as any).lissSessionsPerWeek?.toString() ?? "");
+      setLissMinsPer((profile as any).lissMinutesPerSession?.toString() ?? "");
     }
   }, [profile]);
 
@@ -53,12 +55,15 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
     updateConfig.mutate({
       userId: clientId,
       stepGoal: stepGoal ? parseInt(stepGoal) : null,
-      lissMinutes: lissMinutes ? parseInt(lissMinutes) : null,
+      lissSessionsPerWeek: lissSessions ? parseInt(lissSessions) : null,
+      lissMinutesPerSession: lissMinsPer ? parseInt(lissMinsPer) : null,
     });
   }
 
   const currentStepGoal = (profile as any)?.stepGoal ?? null;
-  const currentLiss = (profile as any)?.lissMinutes ?? null;
+  const currentLissSessions = (profile as any)?.lissSessionsPerWeek ?? null;
+  const currentLissMinsPer = (profile as any)?.lissMinutesPerSession ?? null;
+  const currentLissSet = currentLissSessions != null && currentLissMinsPer != null;
 
   if (isLoading) return null;
 
@@ -78,7 +83,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
           ) : (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => { setEditing(false); setStepGoal((profile as any)?.stepGoal?.toString() ?? ""); setLissMinutes((profile as any)?.lissMinutes?.toString() ?? ""); }}
+                onClick={() => { setEditing(false); setStepGoal((profile as any)?.stepGoal?.toString() ?? ""); setLissSessions((profile as any)?.lissSessionsPerWeek?.toString() ?? ""); setLissMinsPer((profile as any)?.lissMinutesPerSession?.toString() ?? ""); }}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X size={12} /> Cancel
@@ -96,7 +101,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
 
         {editing ? (
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="col-span-2">
               <label className="text-xs text-muted-foreground block mb-1.5">Daily Step Goal</label>
               <input
                 type="number"
@@ -107,12 +112,22 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1.5">Weekly LISS Cardio (mins)</label>
+              <label className="text-xs text-muted-foreground block mb-1.5">LISS Sessions / Week</label>
               <input
                 type="number"
-                value={lissMinutes}
-                onChange={e => setLissMinutes(e.target.value)}
-                placeholder="e.g. 150"
+                value={lissSessions}
+                onChange={e => setLissSessions(e.target.value)}
+                placeholder="e.g. 3"
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1.5">Mins / Session</label>
+              <input
+                type="number"
+                value={lissMinsPer}
+                onChange={e => setLissMinsPer(e.target.value)}
+                placeholder="e.g. 45"
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -124,7 +139,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Daily Step Goal</p>
               {currentStepGoal ? (
                 <>
-                  <p className="text-3xl font-bold tabular-nums text-foreground leading-none">
+                  <p className="text-base font-bold tabular-nums text-foreground leading-none">
                     {currentStepGoal.toLocaleString()}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1.5">steps / day</p>
@@ -136,12 +151,12 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
             {/* LISS Cardio tile */}
             <div className="bg-secondary/40 rounded-xl p-4 border border-border/50">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">LISS Cardio</p>
-              {currentLiss ? (
+              {currentLissSet ? (
                 <>
-                  <p className="text-3xl font-bold tabular-nums text-foreground leading-none">
-                    {currentLiss}
+                  <p className="text-base font-bold tabular-nums text-foreground leading-none">
+                    {currentLissSessions} × {currentLissMinsPer} min
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1.5">mins / week</p>
+                  <p className="text-xs text-muted-foreground mt-1.5">sessions / week</p>
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground/50 italic">Not set</p>
@@ -152,7 +167,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
       </div>
 
       {/* Weekly LISS history placeholder — will populate once client logs data */}
-      {!editing && currentLiss && (
+      {!editing && currentLissSet && (
         <div className="bg-card border border-border rounded-xl p-5">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly LISS History</p>
           <p className="text-sm text-muted-foreground/60 italic">LISS minutes logged each week will appear here once the client starts logging.</p>
@@ -353,7 +368,7 @@ function WeeklyCalorySummary({ clientId }: { clientId: number }) {
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly Average</p>
       <div className="flex items-end gap-3">
         <div>
-          <span className="text-3xl font-bold tabular-nums text-foreground">
+          <span className="text-xl font-bold tabular-nums text-foreground">
             {avgDaily.toLocaleString()}
           </span>
           <span className="text-sm text-muted-foreground ml-1.5">kcal / day</span>
@@ -480,7 +495,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly Average</p>
               <div className="flex items-end gap-3">
                 <div>
-                  <span className="text-3xl font-bold tabular-nums text-foreground">
+                  <span className="text-xl font-bold tabular-nums text-foreground">
                     {weeklyAvgCalories.toLocaleString()}
                   </span>
                   <span className="text-sm text-muted-foreground ml-1.5">kcal / day</span>

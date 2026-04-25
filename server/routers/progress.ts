@@ -182,7 +182,11 @@ export const progressRouter = router({
         const avgSteps = avg(periodLogs.map((l) => l.stepsCount));
         const stepGoal = profile.stepGoal ?? null;
         const totalLissMinutes = periodLogs.reduce((sum, l) => sum + ((l as any).lissMinutes ?? 0), 0);
-        const lissTarget = (profile as any).lissMinutes ?? null;
+        const lissSessionsPerWeek = (profile as any).lissSessionsPerWeek ?? null;
+        const lissMinutesPerSession = (profile as any).lissMinutesPerSession ?? null;
+        const lissTarget = (lissSessionsPerWeek != null && lissMinutesPerSession != null)
+          ? lissSessionsPerWeek * lissMinutesPerSession
+          : null;
 
         // Raw weigh-ins for expanded view
         const weighIns = periodLogs
@@ -238,6 +242,8 @@ export const progressRouter = router({
           stepGoal,
           totalLissMinutes,
           lissTarget,
+          lissSessionsPerWeek,
+          lissMinutesPerSession,
         };
       });
 
