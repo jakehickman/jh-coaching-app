@@ -45,6 +45,8 @@ import {
   CheckInQuestion,
   CheckInAnswer,
   InsertCheckInQuestion,
+  clientQuestionOverrides,
+  ClientQuestionOverride,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1715,4 +1717,73 @@ export async function saveCheckInAnswers(
       value: a.value,
     }))
   );
+}
+
+// ─── Client Question Overrides ────────────────────────────────────────────────
+
+/** Returns all override rows for a given client */
+export async function getClientQuestionOverrides(
+  clientId: number
+): Promise<ClientQuestionOverride[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(clientQuestionOverrides)
+    .where(eq(clientQuestionOverrides.clientId, clientId));
+}
+
+/** Upsert a single override (insert or update active flag) */
+export async function setClientQuestionOverride(
+  clientId: number,
+  questionId: number,
+  active: boolean
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .insert(clientQuestionOverrides)
+    .values({ clientId, questionId, active })
+    .onDuplicateKeyUpdate({ set: { active } });
+}
+
+/** Delete a client override (revert to global default) */
+export async function deleteClientQuestionOverride(
+  clientId: number,
+  questionId: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .delete(clientQuestionOverrides)
+    .where(
+      and(
+        eq(clientQuestionOverrides.clientId, clientId),
+        eq(clientQuestionOverrides.questionId, questionId)
+      )
+    );
+}
+
+/**
+ * Returns active questions for a client, applying per-client overrides.
+ * Logic: show question if (global active = true AND no client override)
+ *        OR (client override exists AND override.active = true)
+ */
+export async function getActiveQuestionsForClient(
+  clientId: number
+): Promise<CheckInQuestion[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const [allQuestions, overrides] = await Promise.all([
+    db
+      .select()
+      .from(checkInQuestions)
+      .orderBy(asc(checkInQuestions.displayOrder)),
+    getClientQuestionOverrides(clientId),
+  ]);
+  const overrideMap = new Map(overrides.map((o) => [o.questionId, o.active]));
+  return allQuestions.filter((q) => {
+    if (overrideMap.has(q.id)) return overrideMap.get(q.id)!;
+    return q.active;
+  });
 }

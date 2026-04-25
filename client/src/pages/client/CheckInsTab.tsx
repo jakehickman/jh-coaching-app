@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useViewAs } from "@/contexts/ViewAsContext";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { Card } from "./shared";
 import MeasurementsTab from "./MeasurementsTab";
@@ -99,9 +100,14 @@ export default function CheckInsTab() {
 
 function CheckInsTabContent() {
   const utils = trpc.useUtils();
+  const { user } = useAuth();
+  const clientId = user?.id ?? 0;
   const { data: currentCycle, refetch: refetchCycle } = trpc.checkIn.myCurrentCycle.useQuery();
   const { data: history = [] } = trpc.checkIn.myHistory.useQuery();
-  const { data: questions = [], isLoading: questionsLoading } = trpc.questions.listActive.useQuery();
+  const { data: questions = [], isLoading: questionsLoading } = trpc.questions.listActiveForClient.useQuery(
+    { clientId },
+    { enabled: clientId > 0 }
+  );
 
   // answers keyed by questionId
   const [answers, setAnswers] = useState<Record<number, string>>({});

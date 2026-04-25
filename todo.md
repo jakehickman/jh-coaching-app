@@ -523,3 +523,13 @@
 - [x] Coach check-in detail panel: render answers dynamically from check_in_answers (legacy fallback for old submissions)
 - [x] Weekly review: no changes needed — analytics use daily log data, not check-in submission columns
 - [x] Update todo.md and save checkpoint
+
+## Per-Client Check-in Question Overrides (Apr 2026)
+- [x] DB schema: add client_question_overrides table (clientId, questionId, active)
+- [x] Apply migration SQL for client_question_overrides
+- [x] Server DB helpers: getClientQuestionOverrides, setClientQuestionOverride, deleteClientQuestionOverride, getActiveQuestionsForClient
+- [x] tRPC procedures: questions.getClientOverrides, questions.setClientOverride (admin), questions.listActiveForClient (protected)
+- [x] Update questions.listActive to accept clientId and apply overrides (new listActiveForClient procedure)
+- [x] Coach UI: sliders icon button on each client card in Check-ins kanban (hover to reveal)
+- [x] Per-client question panel: toggle list with override indicators (green dot on customised questions)
+- [x] Update todo.md and save checkpoint

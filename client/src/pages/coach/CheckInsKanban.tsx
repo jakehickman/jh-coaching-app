@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { AlertCircle, CheckCircle2, Calendar, RefreshCw, Settings } from "lucide-react";
+import { AlertCircle, CheckCircle2, Calendar, RefreshCw, Settings, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Sheet,
   SheetContent,
@@ -60,6 +61,89 @@ function fmtDate(iso: string | null | undefined): string {
   return `${parseInt(d)} ${months[parseInt(m) - 1]}`;
 }
 
+// ─── Per-client question override panel ───────────────────────────────────────
+
+function ClientQuestionOverridePanel({ clientId, clientName }: { clientId: number; clientName: string }) {
+  const utils = trpc.useUtils();
+  const { data: allQuestions = [] } = trpc.questions.list.useQuery();
+  const { data: overrides = [] } = trpc.questions.getClientOverrides.useQuery({ clientId });
+  const setOverride = trpc.questions.setClientOverride.useMutation({
+    onSuccess: () => {
+      utils.questions.getClientOverrides.invalidate({ clientId });
+      utils.questions.listActiveForClient.invalidate({ clientId });
+    },
+  });
+
+  // Build a map of questionId → override active state
+  const overrideMap = new Map((overrides as any[]).map((o: any) => [o.questionId, o.active]));
+
+  // Active questions only (globally active)
+  const activeQuestions = (allQuestions as any[]).filter((q: any) => q.active);
+
+  function getEffectiveState(q: any): boolean {
+    if (overrideMap.has(q.id)) return overrideMap.get(q.id)!;
+    return q.active; // global default
+  }
+
+  function isOverridden(q: any): boolean {
+    return overrideMap.has(q.id);
+  }
+
+  function handleToggle(q: any, newValue: boolean) {
+    // If toggling back to the global default, clear the override
+    const globalDefault = q.active;
+    if (newValue === globalDefault) {
+      setOverride.mutate({ clientId, questionId: q.id, active: null });
+    } else {
+      setOverride.mutate({ clientId, questionId: q.id, active: newValue });
+    }
+  }
+
+  if (activeQuestions.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground text-center py-6">
+        No active questions. Add questions using the Questions button.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <p className="text-xs text-muted-foreground mb-4">
+        Toggle questions on or off for <span className="font-medium text-foreground">{clientName}</span>.
+        Questions that differ from the global default are marked with a dot.
+      </p>
+      {activeQuestions.map((q: any) => {
+        const effective = getEffectiveState(q);
+        const overridden = isOverridden(q);
+        return (
+          <div
+            key={q.id}
+            className="flex items-center gap-3 py-3 px-3 rounded-lg hover:bg-secondary/50 transition-colors"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className={`text-sm ${effective ? "text-foreground" : "text-muted-foreground line-through"}`}>
+                  {q.questionText}
+                </p>
+                {overridden && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" title="Customised for this client" />
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5 capitalize">{q.type.replace("_", " ")}</p>
+            </div>
+            <Switch
+              checked={effective}
+              onCheckedChange={(v) => handleToggle(q, v)}
+              disabled={setOverride.isPending}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Client card ──────────────────────────────────────────────────────────────
 
 interface ClientCardProps {
@@ -70,9 +154,10 @@ interface ClientCardProps {
   weekNumber: number | null;
   cardClass: string;
   badgeClass: string;
+  onCustomise: (clientId: number, name: string) => void;
 }
 
-function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, badgeClass }: ClientCardProps) {
+function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, badgeClass, onCustomise }: ClientCardProps) {
   const [, navigate] = useLocation();
 
   function handleClick() {
@@ -102,20 +187,22 @@ function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, ba
 
   return (
     <div
-      onClick={handleClick}
       className={`
-        group relative bg-card border rounded-xl p-3 cursor-pointer transition-all duration-150
+        group relative bg-card border rounded-xl p-3 transition-all duration-150
         ${cardClass}
       `}
     >
       <div className="flex items-center gap-2.5">
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
+        <div
+          className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0 cursor-pointer"
+          onClick={handleClick}
+        >
           {initials}
         </div>
 
         {/* Info */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={handleClick}>
           <p className="text-sm font-medium text-foreground truncate">{name}</p>
           {subtext && (
             <p className="text-[11px] text-muted-foreground mt-0.5">{subtext}</p>
@@ -126,6 +213,15 @@ function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, ba
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${badgeClass}`}>
           {statusLabel[status]}
         </span>
+
+        {/* Customise questions button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onCustomise(clientId, name); }}
+          title="Customise check-in questions for this client"
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary"
+        >
+          <SlidersHorizontal size={13} />
+        </button>
       </div>
     </div>
   );
@@ -174,6 +270,9 @@ export default function CheckInsKanban() {
   });
   const { data: allUsers = [] } = trpc.users.list.useQuery();
 
+  const [questionsOpen, setQuestionsOpen] = useState(false);
+  const [customiseClient, setCustomiseClient] = useState<{ id: number; name: string } | null>(null);
+
   // Build a name map from users list
   const nameMap = new Map<number, string>();
   for (const u of allUsers as any[]) {
@@ -184,6 +283,10 @@ export default function CheckInsKanban() {
   const columnCards = new Map<CycleStatus, ClientCardProps[]>(
     COLUMNS.map(c => [c.id, []])
   );
+
+  function handleCustomise(clientId: number, name: string) {
+    setCustomiseClient({ id: clientId, name });
+  }
 
   for (const entry of statusList as any[]) {
     const status = entry.status as CycleStatus;
@@ -197,6 +300,7 @@ export default function CheckInsKanban() {
         weekNumber: entry.weekNumber ?? null,
         cardClass: COLUMNS.find(c => c.id === status)!.cardClass,
         badgeClass: COLUMNS.find(c => c.id === status)!.badgeClass,
+        onCustomise: handleCustomise,
       });
     }
   }
@@ -209,14 +313,12 @@ export default function CheckInsKanban() {
     );
   }
 
-  const [questionsOpen, setQuestionsOpen] = useState(false);
-
   return (
     <>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            Click any client card to view their check-in details and submission.
+            Click a client card to view their check-in. Hover a card to customise their questions.
           </p>
           <Button
             size="sm"
@@ -241,13 +343,28 @@ export default function CheckInsKanban() {
         </div>
       </div>
 
-      {/* Question management side sheet */}
+      {/* Global question management side sheet */}
       <Sheet open={questionsOpen} onOpenChange={setQuestionsOpen}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
           <SheetHeader className="mb-6">
             <SheetTitle>Check-in Questions</SheetTitle>
           </SheetHeader>
           <CheckInQuestionsManager />
+        </SheetContent>
+      </Sheet>
+
+      {/* Per-client question customisation sheet */}
+      <Sheet open={!!customiseClient} onOpenChange={(o) => !o && setCustomiseClient(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader className="mb-6">
+            <SheetTitle>Customise Questions</SheetTitle>
+          </SheetHeader>
+          {customiseClient && (
+            <ClientQuestionOverridePanel
+              clientId={customiseClient.id}
+              clientName={customiseClient.name}
+            />
+          )}
         </SheetContent>
       </Sheet>
     </>

@@ -608,3 +608,16 @@ export const checkInAnswers = mysqlTable("check_in_answers", {
 
 export type CheckInAnswer = typeof checkInAnswers.$inferSelect;
 export type InsertCheckInAnswer = typeof checkInAnswers.$inferInsert;
+
+// Per-client question overrides — only rows that differ from the global active state
+// If no row exists for a (clientId, questionId) pair, the global active flag applies
+export const clientQuestionOverrides = mysqlTable("client_question_overrides", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("clientId").notNull(),         // FK -> users.id
+  questionId: int("questionId").notNull(),      // FK -> check_in_questions.id
+  active: boolean("active").notNull(),          // true = show, false = hide for this client
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ClientQuestionOverride = typeof clientQuestionOverrides.$inferSelect;
+export type InsertClientQuestionOverride = typeof clientQuestionOverrides.$inferInsert;

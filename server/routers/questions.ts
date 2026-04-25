@@ -63,6 +63,38 @@ export const questionsRouter = router({
       return db.getAnswersForSubmission(input.submissionId);
     }),
 
+  /** Get active questions for a specific client (applies per-client overrides) */
+  listActiveForClient: protectedProcedure
+    .input(z.object({ clientId: z.number() }))
+    .query(async ({ input }) => {
+      return db.getActiveQuestionsForClient(input.clientId);
+    }),
+
+  /** ADMIN: get all override rows for a client */
+  getClientOverrides: adminProcedure
+    .input(z.object({ clientId: z.number() }))
+    .query(async ({ input }) => {
+      return db.getClientQuestionOverrides(input.clientId);
+    }),
+
+  /** ADMIN: set or clear a per-client override */
+  setClientOverride: adminProcedure
+    .input(
+      z.object({
+        clientId: z.number(),
+        questionId: z.number(),
+        active: z.boolean().nullable(), // null = revert to global default
+      })
+    )
+    .mutation(async ({ input }) => {
+      if (input.active === null) {
+        await db.deleteClientQuestionOverride(input.clientId, input.questionId);
+      } else {
+        await db.setClientQuestionOverride(input.clientId, input.questionId, input.active);
+      }
+      return { success: true };
+    }),
+
   /** Save answers for a submission */
   saveAnswers: protectedProcedure
     .input(
