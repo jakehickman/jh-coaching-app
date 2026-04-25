@@ -497,3 +497,8 @@
 
 ## Preset Rename Backfill (Apr 2026)
 - [x] When a machine preset is renamed, update the machinePreset string in all past workout sessions for that client
+
+## History → Change Log Rename (Apr 2026)
+- [x] Rename "History" sub-tab to "Change Log" in Training section (Program | Performance | Change Log)
+- [x] Rename "History" sub-tab to "Change Log" in Nutrition section (Meal Plan | Change Log)
+- [x] Fix JSX corruption from bad edit in ProgressSection.tsx (lines were merged together)

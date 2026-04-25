@@ -1706,8 +1706,8 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsList className="mb-4">
                 <TabsTrigger value="program">Program</TabsTrigger>
                 <TabsTrigger value="performance">Performance</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
-              </TabsList>
+                <TabsTrigger value="history">Change Log</TabsTrigger>
+                </TabsList>
               <TabsContent value="program">
                 <TrainingSection fixedClientId={selectedUserId!} />
               </TabsContent>
@@ -1734,7 +1734,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             <Tabs defaultValue="meal-plan" className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="meal-plan">Meal Plan</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
+                <TabsTrigger value="history">Change Log</TabsTrigger>
               </TabsList>
               <TabsContent value="meal-plan">
                 <WeeklyCalorySummary clientId={selectedUserId!} />
