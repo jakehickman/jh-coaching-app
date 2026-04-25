@@ -562,3 +562,4 @@
 - [x] Replace HTML5 drag API with pointer events (onPointerDown/Move/Up + setPointerCapture) for reliable cross-browser drag-to-reorder with live ghost preview
 - [x] Add elaboration field to single-choice check-in questions — nullable DB column, textarea in client form, displayed in coach history view
 - [x] Add Cardio & Activity section to client hub: step goal + LISS weekly minutes, inline-editable by coach, visible on client dashboard
+- [x] Move Cardio & Activity from Overview tab into its own dedicated tab in the client hub

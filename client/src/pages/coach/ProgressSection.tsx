@@ -1794,6 +1794,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+              <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
             </TabsList>
           </div>
 
@@ -1805,9 +1806,8 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                   <SectionLabel>Weekly Review</SectionLabel>
                   <WeeklyReviewTab clientId={selectedUserId!} />
                 </div>
-                <div className="space-y-6">
+                <div>
                   <CoachHabitsPanel clientId={selectedUserId!} />
-                  <CardioActivityCard clientId={selectedUserId!} />
                 </div>
               </div>
               {(logs ?? []).length > 0 && (
@@ -1879,6 +1879,13 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <MacroPlanHistoryTab clientId={selectedUserId!} />
               </TabsContent>
             </Tabs>
+          </TabsContent>
+
+          {/* ── Cardio & Activity ── */}
+          <TabsContent value="cardio">
+            <div className="max-w-xl">
+              <CardioActivityCard clientId={selectedUserId!} />
+            </div>
           </TabsContent>
         </Tabs>
       )}
