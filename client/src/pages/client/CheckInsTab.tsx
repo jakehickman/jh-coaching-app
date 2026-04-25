@@ -193,10 +193,7 @@ function CheckInsTabContent() {
       setIsEditing(false);
       toast.success("Your check-in has been submitted", { duration: 3000 });
     },
-    onError: (err) => {
-      console.error("Check-in submit error:", err);
-      toast.error(`Failed to submit: ${err.message ?? "Please try again."}`);
-    },
+    onError: () => toast.error("Failed to submit. Please try again."),
   });
 
   const saveAnswersMutation = trpc.questions.saveAnswers.useMutation({
@@ -214,24 +211,8 @@ function CheckInsTabContent() {
       return;
     }
 
-    // Map dynamic answers back to legacy named fields for backward compat
-    const getVal = (slug: string) => {
-      const q = questions.find((q) => q.slug === slug);
-      return q ? (answers[q.id] ?? undefined) : undefined;
-    };
-
-    submitMutation.mutate({
-      dietWeighedFoods: getVal("diet_weighed_foods") as any,
-      dietMealPrepAccuracy: getVal("diet_meal_prep_accuracy") as any,
-      dietExtrasFrequency: getVal("diet_extras_frequency") as any,
-      dietAddedFats: getVal("diet_added_fats") as any,
-      dietMealTiming: getVal("diet_meal_timing") as any,
-      dietOffPlanQuality: getVal("diet_off_plan_quality") as any,
-      sleepBedtimeConsistency: getVal("sleep_bedtime_consistency") as any,
-      adherenceBarrier: getVal("adherence_barrier") as any,
-      barrierExplain: getVal("barrier_explain"),
-      weeklyAssessment: getVal("weekly_assessment") as any,
-    });
+    // All answers are saved via saveAnswers after submission — no legacy fields needed
+    submitMutation.mutate({});
   };
 
   const fmtDate = (iso: string | null | undefined) => {
