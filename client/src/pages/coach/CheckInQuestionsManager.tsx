@@ -229,17 +229,11 @@ export default function CheckInQuestionsManager() {
 
   function handleDrop(e: React.DragEvent, cardIndex: number) {
     e.preventDefault();
+    e.stopPropagation(); // prevent container from also firing
     if (dragId === null) return;
 
     const insertAt = getDropIndex(e, cardIndex);
     doReorder(insertAt);
-  }
-
-  function handleDropOnContainer(e: React.DragEvent) {
-    e.preventDefault();
-    if (dragId === null) return;
-    // Dropped after the last card
-    doReorder(activeItems.length);
   }
 
   function doReorder(insertAt: number) {
@@ -302,7 +296,7 @@ export default function CheckInQuestionsManager() {
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
             Active ({activeItems.length})
           </p>
-          <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnContainer}>
+          <div onDragOver={(e) => e.preventDefault()}>
             {activeItems.map((q, idx) => (
               <div key={q.id}>
                 {/* Insertion line before this card */}
@@ -346,14 +340,28 @@ export default function CheckInQuestionsManager() {
               </div>
             ))}
 
-            {/* Insertion line after last card */}
+            {/* Drop zone + insertion line after last card */}
             <div
-              className={`h-0.5 rounded-full mx-1 transition-all duration-100 ${
-                dropIndex === activeItems.length && dragId !== null
-                  ? "bg-primary my-1"
-                  : "bg-transparent my-0"
-              }`}
-            />
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (dragId !== null) setDropIndex(activeItems.length);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                doReorder(activeItems.length);
+              }}
+              className="pt-1 pb-2"
+            >
+              <div
+                className={`h-0.5 rounded-full mx-1 transition-all duration-100 ${
+                  dropIndex === activeItems.length && dragId !== null
+                    ? "bg-primary"
+                    : "bg-transparent"
+                }`}
+              />
+            </div>
           </div>
         </div>
       )}
