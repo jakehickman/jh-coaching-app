@@ -2,6 +2,7 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { adminProcedure } from "./shared";
 import * as db from "../db";
+import { notifyOwner } from "../_core/notification";
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -185,6 +186,19 @@ export const checkInRouter = router({
         weekStartDate: dueDateStr,
         ...input,
       });
+
+      // Notify the coach that a check-in has been submitted
+      try {
+        const clientProfile = await db.getClientProfile(ctx.user.id);
+        const clientName = clientProfile?.displayName ?? ctx.user.name ?? "A client";
+        await notifyOwner({
+          title: "New Check-in Submitted",
+          content: `${clientName} has submitted their weekly check-in.`,
+        });
+      } catch {
+        // Non-critical — don't fail the submission if notification fails
+      }
+
       return { submissionId };
     }),
 
