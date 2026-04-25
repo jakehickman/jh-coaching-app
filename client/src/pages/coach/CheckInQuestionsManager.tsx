@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,25 +62,29 @@ function slugify(text: string): string {
 export default function CheckInQuestionsManager() {
   const utils = trpc.useUtils();
 
-  const { data: questions = [], isLoading } = trpc.questions.list.useQuery();
+  // ── Server query — used ONLY to seed the local items array ──────────────────
+  const { data: serverQuestions, isLoading } = trpc.questions.list.useQuery();
 
-  // Local ordered copy for optimistic reorder
-  const [localOrder, setLocalOrder] = useState<number[] | null>(null);
+  // ── LOCAL ARRAY is the single source of truth for display ──────────────────
+  // Seeded once from the server query; all mutations update it directly.
+  const [items, setItems] = useState<Question[]>([]);
+  const seeded = useRef(false);
 
-  const orderedQuestions = useMemo(() => {
-    if (!localOrder) return questions as Question[];
-    const map = new Map((questions as Question[]).map((q) => [q.id, q]));
-    const ordered = localOrder.map((id) => map.get(id)).filter(Boolean) as Question[];
-    const inOrder = new Set(localOrder);
-    (questions as Question[]).forEach((q) => { if (!inOrder.has(q.id)) ordered.push(q); });
-    return ordered;
-  }, [questions, localOrder]);
+  useEffect(() => {
+    if (serverQuestions && !seeded.current) {
+      setItems(serverQuestions as Question[]);
+      seeded.current = true;
+    }
+  }, [serverQuestions]);
 
+  // ── Mutations ───────────────────────────────────────────────────────────────
   const upsertMutation = trpc.questions.upsert.useMutation({
-    onSuccess: () => {
-      utils.questions.list.invalidate();
+    onSuccess: (saved) => {
+      // Refresh from server after add/edit so we get the real saved row
+      utils.questions.list.invalidate().then(() => {
+        seeded.current = false; // allow re-seed on next query result
+      });
       utils.questions.listActive.invalidate();
-      setLocalOrder(null);
       setEditOpen(false);
       toast.success("Question saved");
     },
@@ -88,16 +92,20 @@ export default function CheckInQuestionsManager() {
   });
 
   const toggleMutation = trpc.questions.toggle.useMutation({
-    onSuccess: () => {
-      utils.questions.list.invalidate();
+    onSuccess: (_data, variables) => {
+      // Update local array immediately
+      setItems((prev) =>
+        prev.map((q) => (q.id === variables.id ? { ...q, active: variables.active } : q))
+      );
       utils.questions.listActive.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
 
   const deleteMutation = trpc.questions.delete.useMutation({
-    onSuccess: () => {
-      utils.questions.list.invalidate();
+    onSuccess: (_data, variables) => {
+      // Remove from local array immediately
+      setItems((prev) => prev.filter((q) => q.id !== variables.id));
       utils.questions.listActive.invalidate();
       setDeleteId(null);
       setEditOpen(false);
@@ -107,37 +115,29 @@ export default function CheckInQuestionsManager() {
   });
 
   const reorderMutation = trpc.questions.reorder.useMutation({
-    onSuccess: (_data, variables) => {
-      // Update the list cache directly with the new order — no refetch, no race condition
-      utils.questions.list.setData(undefined, (old) => {
-        if (!old) return old;
-        const idxMap = new Map(variables.orderedIds.map((id, i) => [id, i]));
-        return [...(old as Question[])].sort((a, b) => {
-          const ai = idxMap.has(a.id) ? idxMap.get(a.id)! : 9999;
-          const bi = idxMap.has(b.id) ? idxMap.get(b.id)! : 9999;
-          return ai - bi;
-        });
-      });
-      // Clear local order state — cache is now the source of truth
-      setLocalOrder(null);
-      // Sync the active list cache too
-      utils.questions.listActive.invalidate();
-    },
+    // Fire-and-forget: local array already updated before this call
     onError: (e) => {
-      toast.error("Reorder failed: " + e.message);
-      setLocalOrder(null);
+      toast.error("Reorder failed — refreshing");
+      // On error, re-seed from server
+      seeded.current = false;
+      utils.questions.list.invalidate();
     },
   });
 
-  // ── State ──────────────────────────────────────────────────────────────────
+  // ── Re-seed when server data refreshes (after upsert invalidate) ────────────
+  useEffect(() => {
+    if (serverQuestions && !seeded.current) {
+      setItems(serverQuestions as Question[]);
+      seeded.current = true;
+    }
+  }, [serverQuestions]);
+
+  // ── UI state ────────────────────────────────────────────────────────────────
   const [editOpen, setEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [dragId, setDragId] = useState<number | null>(null);
-  // dropIndex: the index in activeQuestions where the dragged item will be inserted
-  // e.g. 0 = before first card, 1 = between card 0 and 1, etc.
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [newOption, setNewOption] = useState("");
-  const dragCounter = useRef(0);
 
   const emptyForm: EditForm = {
     slug: "",
@@ -148,10 +148,11 @@ export default function CheckInQuestionsManager() {
   };
   const [form, setForm] = useState<EditForm>(emptyForm);
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-  const activeQuestions = orderedQuestions.filter((q) => q.active);
-  const hiddenQuestions = orderedQuestions.filter((q) => !q.active);
+  // ── Derived lists ───────────────────────────────────────────────────────────
+  const activeItems = items.filter((q) => q.active);
+  const hiddenItems = items.filter((q) => !q.active);
 
+  // ── Edit helpers ────────────────────────────────────────────────────────────
   function openAdd() {
     setForm(emptyForm);
     setNewOption("");
@@ -176,7 +177,7 @@ export default function CheckInQuestionsManager() {
       toast.error("Question text is required");
       return;
     }
-    if (form.type === "single_choice" && form.options.filter(o => o.trim()).length < 2) {
+    if (form.type === "single_choice" && form.options.filter((o) => o.trim()).length < 2) {
       toast.error("Single choice questions need at least 2 options");
       return;
     }
@@ -186,10 +187,10 @@ export default function CheckInQuestionsManager() {
       slug,
       questionText: form.questionText.trim(),
       type: form.type,
-      options: form.type === "single_choice" ? form.options.filter(o => o.trim()) : null,
+      options: form.type === "single_choice" ? form.options.filter((o) => o.trim()) : null,
       displayOrder: form.id
-        ? ((questions as Question[]).find((q) => q.id === form.id)?.displayOrder ?? 99)
-        : ((questions as Question[]).length + 1),
+        ? (items.find((q) => q.id === form.id)?.displayOrder ?? 99)
+        : items.length + 1,
       active: form.active,
     });
   }
@@ -205,18 +206,19 @@ export default function CheckInQuestionsManager() {
     setForm((f) => ({ ...f, options: f.options.filter((_, i) => i !== idx) }));
   }
 
-  // ── Drag-to-reorder with insertion line ────────────────────────────────────
+  // ── Drag-to-reorder ─────────────────────────────────────────────────────────
+  // Strategy: update the local `items` array immediately on drop.
+  // Send the new order to the server as a background sync.
+  // No cache manipulation needed — local array IS the display state.
+
   function handleDragStart(e: React.DragEvent, id: number) {
     setDragId(id);
-    dragCounter.current = 0;
     e.dataTransfer.effectAllowed = "move";
   }
 
-  // Calculate drop index based on mouse position relative to the card
   function getDropIndex(e: React.DragEvent, cardIndex: number): number {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const midY = rect.top + rect.height / 2;
-    return e.clientY < midY ? cardIndex : cardIndex + 1;
+    return e.clientY < rect.top + rect.height / 2 ? cardIndex : cardIndex + 1;
   }
 
   function handleDragOver(e: React.DragEvent, cardIndex: number) {
@@ -230,35 +232,54 @@ export default function CheckInQuestionsManager() {
     if (dragId === null) return;
 
     const insertAt = getDropIndex(e, cardIndex);
-    const active = [...activeQuestions];
-    const fromIdx = active.findIndex((q) => q.id === dragId);
-    if (fromIdx === -1) return;
+    doReorder(insertAt);
+  }
 
-    // Clean array-move: remove from source, insert at target
-    // insertAt is the desired final index in the original array.
-    // After removing the item, the target slot shifts down by 1 if target > source.
-    const targetIdx = insertAt > fromIdx ? insertAt - 1 : insertAt;
+  function handleDropOnContainer(e: React.DragEvent) {
+    e.preventDefault();
+    if (dragId === null) return;
+    // Dropped after the last card
+    doReorder(activeItems.length);
+  }
+
+  function doReorder(insertAt: number) {
+    if (dragId === null) return;
+
+    const active = [...activeItems];
+    const fromIdx = active.findIndex((q) => q.id === dragId);
+    if (fromIdx === -1) {
+      setDragId(null);
+      setDropIndex(null);
+      return;
+    }
+
+    // Remove from source position
     const [moved] = active.splice(fromIdx, 1);
+    // Adjust target index after removal
+    const targetIdx = insertAt > fromIdx ? insertAt - 1 : insertAt;
+    // Insert at target position
     active.splice(targetIdx, 0, moved);
 
-    // Include hidden questions at the end so their displayOrder stays consistent
-    const newOrder = [...active.map((q) => q.id), ...hiddenQuestions.map((q) => q.id)];
-    setLocalOrder(newOrder);
-    reorderMutation.mutate({ orderedIds: newOrder });
+    // Build new full list: reordered active + hidden (hidden order unchanged)
+    const newItems = [...active, ...hiddenItems];
+
+    // 1. Update local array immediately — UI reflects new order right away
+    setItems(newItems);
+
+    // 2. Send to server as background sync
+    reorderMutation.mutate({ orderedIds: newItems.map((q) => q.id) });
 
     setDragId(null);
     setDropIndex(null);
-    dragCounter.current = 0;
   }
 
   function handleDragEnd() {
     setDragId(null);
     setDropIndex(null);
-    dragCounter.current = 0;
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-  if (isLoading) {
+  // ── Render ──────────────────────────────────────────────────────────────────
+  if (isLoading && items.length === 0) {
     return <div className="text-sm text-muted-foreground py-8 text-center">Loading questions…</div>;
   }
 
@@ -276,32 +297,15 @@ export default function CheckInQuestionsManager() {
       </div>
 
       {/* Active questions */}
-      {activeQuestions.length > 0 && (
+      {activeItems.length > 0 && (
         <div className="space-y-0">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-            Active ({activeQuestions.length})
+            Active ({activeItems.length})
           </p>
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              // Handle drop on the container (after last card)
-              if (dragId === null) return;
-              e.preventDefault();
-              const active = [...activeQuestions];
-              const fromIdx = active.findIndex((q) => q.id === dragId);
-              if (fromIdx === -1) return;
-              const [moved] = active.splice(fromIdx, 1);
-              active.push(moved);
-              const newOrder = [...active.map((q) => q.id), ...hiddenQuestions.map((q) => q.id)];
-              setLocalOrder(newOrder);
-              reorderMutation.mutate({ orderedIds: newOrder });
-              setDragId(null);
-              setDropIndex(null);
-            }}
-          >
-            {activeQuestions.map((q, idx) => (
+          <div onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnContainer}>
+            {activeItems.map((q, idx) => (
               <div key={q.id}>
-                {/* Insertion line BEFORE this card */}
+                {/* Insertion line before this card */}
                 <div
                   className={`h-0.5 rounded-full mx-1 transition-all duration-100 ${
                     dropIndex === idx && dragId !== null && dragId !== q.id
@@ -315,7 +319,7 @@ export default function CheckInQuestionsManager() {
                   draggable
                   onDragStart={(e) => handleDragStart(e, q.id)}
                   onDragOver={(e) => handleDragOver(e, idx)}
-                  onDrop={(e) => handleDrop(e, idx)}
+                  onDrop={(e) => { e.stopPropagation(); handleDrop(e, idx); }}
                   onDragEnd={handleDragEnd}
                   className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 mb-2 transition-opacity ${
                     dragId === q.id ? "opacity-30" : "opacity-100"
@@ -342,10 +346,10 @@ export default function CheckInQuestionsManager() {
               </div>
             ))}
 
-            {/* Insertion line AFTER last card */}
+            {/* Insertion line after last card */}
             <div
               className={`h-0.5 rounded-full mx-1 transition-all duration-100 ${
-                dropIndex === activeQuestions.length && dragId !== null
+                dropIndex === activeItems.length && dragId !== null
                   ? "bg-primary my-1"
                   : "bg-transparent my-0"
               }`}
@@ -355,12 +359,12 @@ export default function CheckInQuestionsManager() {
       )}
 
       {/* Hidden questions */}
-      {hiddenQuestions.length > 0 && (
+      {hiddenItems.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Hidden ({hiddenQuestions.length})
+            Hidden ({hiddenItems.length})
           </p>
-          {hiddenQuestions.map((q) => (
+          {hiddenItems.map((q) => (
             <div
               key={q.id}
               className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 opacity-50"
@@ -388,7 +392,9 @@ export default function CheckInQuestionsManager() {
       )}
 
       <p className="text-xs text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-2">
-        <strong className="text-muted-foreground">Note:</strong> Hiding a question removes it from future check-ins but preserves all past answers. Deleting a question is permanent and cannot be undone.
+        <strong className="text-muted-foreground">Note:</strong> Hiding a question removes it from
+        future check-ins but preserves all past answers. Deleting a question is permanent and cannot
+        be undone.
       </p>
 
       {/* Edit / Add dialog */}
@@ -418,7 +424,13 @@ export default function CheckInQuestionsManager() {
               <label className="text-xs font-medium text-muted-foreground">Type</label>
               <Select
                 value={form.type}
-                onValueChange={(v) => setForm((f) => ({ ...f, type: v as QuestionType, options: v === "free_text" ? [] : f.options }))}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    type: v as QuestionType,
+                    options: v === "free_text" ? [] : f.options,
+                  }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -461,11 +473,21 @@ export default function CheckInQuestionsManager() {
                     <Input
                       value={newOption}
                       onChange={(e) => setNewOption(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addOption(); } }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addOption();
+                        }
+                      }}
                       placeholder="Add an option…"
                       className="flex-1"
                     />
-                    <Button size="sm" variant="outline" onClick={addOption} disabled={!newOption.trim()}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={addOption}
+                      disabled={!newOption.trim()}
+                    >
                       Add
                     </Button>
                   </div>
@@ -484,7 +506,9 @@ export default function CheckInQuestionsManager() {
                 Delete question
               </Button>
             )}
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleSave} disabled={upsertMutation.isPending}>
               {upsertMutation.isPending ? "Saving…" : "Save question"}
             </Button>
@@ -493,12 +517,16 @@ export default function CheckInQuestionsManager() {
       </Dialog>
 
       {/* Delete confirm */}
-      <AlertDialog open={deleteId !== null} onOpenChange={(open: boolean) => !open && setDeleteId(null)}>
+      <AlertDialog
+        open={deleteId !== null}
+        onOpenChange={(open: boolean) => !open && setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete question?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the question and all answers associated with it. This cannot be undone.
+              This will permanently delete the question and all answers associated with it. This
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
