@@ -563,3 +563,5 @@
 - [x] Add elaboration field to single-choice check-in questions — nullable DB column, textarea in client form, displayed in coach history view
 - [x] Add Cardio & Activity section to client hub: step goal + LISS weekly minutes, inline-editable by coach, visible on client dashboard
 - [x] Move Cardio & Activity from Overview tab into its own dedicated tab in the client hub
+- [x] Add LISS minutes to client daily log form
+- [x] Show LISS progress in weekly review card alongside steps, rename section to Cardio & Activity

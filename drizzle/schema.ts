@@ -112,6 +112,7 @@ export const dailyLogs = mysqlTable("daily_logs", {
   trainingCompleted: boolean("trainingCompleted").default(false),
   trainingType: varchar("trainingType", { length: 64 }), // e.g. "Upper", "Lower", "Rest"
   stepsCount: int("stepsCount"),
+  lissMinutes: int("lissMinutes"), // daily LISS cardio minutes logged
   sleepQuality: int("sleepQuality"), // 1-5
   hungerLevel: int("hungerLevel"), // 1-5
   offPlanMeals: int("offPlanMeals").default(0), // number of off-plan meals that day

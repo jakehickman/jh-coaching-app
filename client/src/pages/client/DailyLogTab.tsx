@@ -99,6 +99,7 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
                   <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p><p className="text-sm font-semibold text-foreground">{sessionLabel}</p></div>
 
                   {log.stepsCount != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>}
+                  {(log as any).lissMinutes != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">LISS</p><p className="text-sm font-semibold text-foreground">{(log as any).lissMinutes} mins</p></div>}
                   {log.sleepHours != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep</p><p className="text-sm font-semibold text-foreground">{log.sleepHours} hrs</p></div>}
                   {log.sleepQuality != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
                   {log.hungerLevel != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
@@ -223,6 +224,7 @@ type DailyForm = {
   trainingCompleted: boolean;
   trainingType: string;
   stepsCount: string;
+  lissMinutes: string;
   sleepQuality: number | null;
   hungerLevel: number | null;
   offPlanMeals: boolean;
@@ -231,7 +233,7 @@ type DailyForm = {
 
 const blank: DailyForm = {
   weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false,
-  trainingType: "", stepsCount: "", sleepQuality: null, hungerLevel: null,
+  trainingType: "", stepsCount: "", lissMinutes: "", sleepQuality: null, hungerLevel: null,
   offPlanMeals: false, notes: "",
 };
 
@@ -327,6 +329,7 @@ export default function DailyLogTab() {
           trainingCompleted: existing.trainingCompleted ?? false,
           trainingType: existing.trainingType ?? "",
           stepsCount: existing.stepsCount?.toString() ?? "",
+          lissMinutes: (existing as any).lissMinutes?.toString() ?? "",
           sleepQuality: existing.sleepQuality ?? null,
           hungerLevel: existing.hungerLevel ?? null,
           offPlanMeals: (existing.offPlanMeals ?? 0) > 0,
@@ -352,6 +355,7 @@ export default function DailyLogTab() {
         trainingCompleted: existing.trainingCompleted ?? false,
         trainingType: existing.trainingType ?? "",
         stepsCount: existing.stepsCount?.toString() ?? "",
+        lissMinutes: (existing as any).lissMinutes?.toString() ?? "",
         sleepQuality: existing.sleepQuality ?? null,
         hungerLevel: existing.hungerLevel ?? null,
           offPlanMeals: (existing.offPlanMeals ?? 0) > 0,
@@ -386,6 +390,7 @@ export default function DailyLogTab() {
       // trainingCompleted and trainingType are server-controlled (set by workout session sync)
       // Do not send from the form to avoid overriding the synced value
       stepsCount: form.stepsCount ? parseInt(form.stepsCount) : undefined,
+      lissMinutes: form.lissMinutes ? parseInt(form.lissMinutes) : undefined,
       sleepQuality: form.sleepQuality ?? undefined,
       hungerLevel: form.hungerLevel ?? undefined,
       offPlanMeals: form.offPlanMeals ?? false,
@@ -435,6 +440,18 @@ export default function DailyLogTab() {
                 )}
               </div>
               <input type="number" value={form.stepsCount} onChange={f("stepsCount")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm text-muted-foreground">LISS Cardio</label>
+                {(profile as any)?.lissMinutes && (
+                  <span className="text-xs text-primary font-medium">Target: {(profile as any).lissMinutes} mins/wk</span>
+                )}
+              </div>
+              <div className="relative">
+                <input type="number" value={form.lissMinutes} onChange={f("lissMinutes")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary pr-14" />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">mins</span>
+              </div>
             </div>
           </div>
         </Card>

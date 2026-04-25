@@ -30,6 +30,8 @@ type Week = {
   avgSleepHours: number | null;
   avgSteps: number | null;
   stepGoal: number | null;
+  totalLissMinutes: number | null;
+  lissTarget: number | null;
 };
 
 const DEFAULT_VISIBLE = 6;
@@ -526,12 +528,18 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                     </MetricGroup>
 
                     {/* Activity */}
-                    <MetricGroup label="Activity">
+                    <MetricGroup label="Cardio &amp; Activity">
                       <Tile
                         label="Steps"
                         value={stepsValue}
                         muted={week.avgSteps == null}
                         subtext={stepsSubtext}
+                      />
+                      <Tile
+                        label="LISS"
+                        value={week.totalLissMinutes != null && week.totalLissMinutes > 0 ? `${week.totalLissMinutes} mins` : "—"}
+                        muted={!week.totalLissMinutes}
+                        subtext={week.lissTarget != null ? `Target: ${week.lissTarget} mins/wk` : undefined}
                       />
                     </MetricGroup>
                   </div>

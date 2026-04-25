@@ -20,6 +20,7 @@ export const dailyLogRouter = router({
         trainingCompleted: z.boolean().optional(),
         trainingType: z.string().optional(),
         stepsCount: z.number().optional(),
+        lissMinutes: z.number().int().min(0).optional(),
         sleepQuality: z.number().min(1).max(5).optional(),
         hungerLevel: z.number().min(1).max(5).optional(),
         offPlanMeals: z.union([z.boolean(), z.number().int().min(0)]).optional(),

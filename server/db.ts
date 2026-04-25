@@ -274,6 +274,7 @@ export async function upsertDailyLog(data: {
   trainingCompleted?: boolean;
   trainingType?: string;
   stepsCount?: number;
+  lissMinutes?: number;
   sleepQuality?: number;
   hungerLevel?: number;
   offPlanMeals?: number;
