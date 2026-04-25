@@ -229,13 +229,10 @@ export default function CheckInQuestionsManager() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-foreground">Check-in Questions</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Drag to reorder · toggle to show/hide · changes apply to all future check-ins
-          </p>
-        </div>
-        <Button size="sm" variant="outline" onClick={openAdd} className="gap-1.5">
+        <p className="text-xs text-muted-foreground">
+          Drag to reorder · toggle to show/hide · changes apply to all future check-ins
+        </p>
+        <Button size="sm" variant="outline" onClick={openAdd} className="gap-1.5 flex-shrink-0 ml-3">
           <Plus size={13} />
           Add question
         </Button>
@@ -261,7 +258,7 @@ export default function CheckInQuestionsManager() {
             >
               <GripVertical size={14} className="text-muted-foreground/40 cursor-grab flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{q.questionText}</p>
+                <p className="text-sm font-medium text-foreground leading-snug">{q.questionText}</p>
                 <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded mt-0.5 inline-block ${
                   q.type === "single_choice"
                     ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
@@ -309,7 +306,7 @@ export default function CheckInQuestionsManager() {
             >
               <GripVertical size={14} className="text-muted-foreground/30 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{q.questionText}</p>
+                <p className="text-sm font-medium text-foreground leading-snug">{q.questionText}</p>
                 <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded mt-0.5 inline-block bg-secondary text-muted-foreground border border-border">
                   {q.type === "single_choice" ? "Single choice" : "Free text"}
                 </span>

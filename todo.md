@@ -545,3 +545,5 @@
 - [x] Remove redundant "Upcoming" badge — show just the due date
 - [x] Update Check-ins kanban helper text — clicking a card goes to client hub overview, not check-in view
 - [x] Improve spacing in Check-in Questions panel — increase card padding and row gap
+- [x] Remove duplicate "Check-in Questions" heading inside the panel content
+- [x] Add horizontal padding to Questions panel so cards don't touch the window border

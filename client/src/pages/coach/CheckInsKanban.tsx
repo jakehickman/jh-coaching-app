@@ -358,7 +358,7 @@ export default function CheckInsKanban() {
 
       {/* Global question management side sheet */}
       <Sheet open={questionsOpen} onOpenChange={setQuestionsOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto px-6">
           <SheetHeader className="mb-6">
             <SheetTitle>Check-in Questions</SheetTitle>
           </SheetHeader>
