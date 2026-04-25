@@ -222,14 +222,17 @@ export default function CheckInQuestionsManager() {
     const fromIdx = active.findIndex((q) => q.id === dragId);
     if (fromIdx === -1) return;
 
+    // Clean array-move: remove from source, insert at target
+    // insertAt is the desired final index in the original array.
+    // After removing the item, the target slot shifts down by 1 if target > source.
+    const targetIdx = insertAt > fromIdx ? insertAt - 1 : insertAt;
     const [moved] = active.splice(fromIdx, 1);
-    // Adjust insertAt after removal
-    const adjustedInsert = insertAt > fromIdx ? insertAt - 1 : insertAt;
-    active.splice(adjustedInsert, 0, moved);
+    active.splice(targetIdx, 0, moved);
 
+    // Include hidden questions at the end so their displayOrder stays consistent
     const newOrder = [...active.map((q) => q.id), ...hiddenQuestions.map((q) => q.id)];
     setLocalOrder(newOrder);
-    reorderMutation.mutate({ orderedIds: active.map((q) => q.id) });
+    reorderMutation.mutate({ orderedIds: newOrder });
 
     setDragId(null);
     setDropIndex(null);
@@ -279,7 +282,7 @@ export default function CheckInQuestionsManager() {
               active.push(moved);
               const newOrder = [...active.map((q) => q.id), ...hiddenQuestions.map((q) => q.id)];
               setLocalOrder(newOrder);
-              reorderMutation.mutate({ orderedIds: active.map((q) => q.id) });
+              reorderMutation.mutate({ orderedIds: newOrder });
               setDragId(null);
               setDropIndex(null);
             }}

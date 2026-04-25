@@ -553,3 +553,4 @@
 - [x] Replace drag-over card highlight with insertion line indicator between cards in Questions panel
 - [x] Remove click-to-navigate from check-in kanban client cards; add explicit "View" icon button on hover alongside customise button
 - [x] Polish per-client question override panel: add horizontal padding, remove type badge, replace strikethrough with muted/opacity style for disabled questions, fix toggle/dot spacing
+- [x] Fix drag-to-reorder in Questions panel — corrected array-move algorithm and include hidden IDs in server call
