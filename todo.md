@@ -558,3 +558,4 @@
 - [x] Redesign drag-to-reorder: replace dual-source-of-truth (tRPC cache + localOrder state) with single local items array; server query seeds once, all mutations update local array directly, reorder is fire-and-forget background sync
 - [x] Fix drag-to-reorder: question sometimes jumps to bottom — removed container onDrop entirely, each card and end-of-list drop zone handle their own drops with stopPropagation
 - [x] Drag preview: show ghost placeholder in the list while dragging so user sees the final position before dropping
+- [x] Fix broken drag after preview feature — replaced per-card onDragOver index with container-level computeDropIndex that measures visible card midpoints; aligned previewSlots and doReorder to use the same "without" index space

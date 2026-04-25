@@ -163,17 +163,11 @@ export default function CheckInQuestionsManager() {
       return activeItems.map((q) => ({ kind: "question", question: q }));
     }
 
-    const fromIdx = activeItems.findIndex((q) => q.id === dragId);
-    if (fromIdx === -1) {
-      return activeItems.map((q) => ({ kind: "question", question: q }));
-    }
-
-    // Build list without the dragged card
+    // Build list without the dragged card.
+    // dropIndex is already an index into this "without" array (computeDropIndex
+    // counts only visible/non-dragged cards), so use it directly.
     const without = activeItems.filter((q) => q.id !== dragId);
-
-    // Compute insert position in the "without" array
-    const insertAt = dropIndex > fromIdx ? dropIndex - 1 : dropIndex;
-    const clampedInsert = Math.max(0, Math.min(insertAt, without.length));
+    const clampedInsert = Math.max(0, Math.min(dropIndex, without.length));
 
     const result: PreviewSlot[] = without.map((q) => ({ kind: "question", question: q }));
     result.splice(clampedInsert, 0, { kind: "ghost", height: dragCardHeight });
@@ -235,51 +229,67 @@ export default function CheckInQuestionsManager() {
   }
 
   // ── Drag-to-reorder ─────────────────────────────────────────────────────────
+  // We use a container ref to measure card positions at the container level.
+  // This avoids per-card index confusion when the preview list reorders cards.
+  const listContainerRef = useRef<HTMLDivElement>(null);
 
   function handleDragStart(e: React.DragEvent, id: number) {
-    // Capture the card's height so the ghost placeholder matches it
-    const cardEl = (e.currentTarget as HTMLElement);
+    const cardEl = e.currentTarget as HTMLElement;
     setDragCardHeight(cardEl.getBoundingClientRect().height);
     setDragId(id);
     e.dataTransfer.effectAllowed = "move";
   }
 
-  // Returns the insertion index (in activeItems) based on cursor position over a card.
-  // cardIndex is the index of the card being hovered in activeItems.
-  function getDropIndex(e: React.DragEvent, cardIndex: number): number {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    return e.clientY < rect.top + rect.height / 2 ? cardIndex : cardIndex + 1;
+  // Compute insertion index by scanning visible (non-dragged) card elements.
+  // The dragged card is opacity-0 but still in the DOM; we skip it so the
+  // index reflects only the visible cards the cursor is moving between.
+  function computeDropIndex(cursorY: number): number {
+    if (!listContainerRef.current) return 0;
+    const allCards = Array.from(
+      listContainerRef.current.querySelectorAll<HTMLElement>("[data-drag-card]")
+    );
+    // Only count visible cards (exclude the dragged one which has pointer-events-none)
+    const visibleCards = allCards.filter(
+      (el) => !el.classList.contains("pointer-events-none")
+    );
+    for (let i = 0; i < visibleCards.length; i++) {
+      const rect = visibleCards[i].getBoundingClientRect();
+      if (cursorY < rect.top + rect.height / 2) return i;
+    }
+    return visibleCards.length;
   }
 
-  function handleDragOver(e: React.DragEvent, cardIndex: number) {
+  function handleContainerDragOver(e: React.DragEvent) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    setDropIndex(getDropIndex(e, cardIndex));
+    if (dragId !== null) {
+      setDropIndex(computeDropIndex(e.clientY));
+    }
   }
 
-  function handleDrop(e: React.DragEvent, cardIndex: number) {
+  function handleContainerDrop(e: React.DragEvent) {
     e.preventDefault();
-    e.stopPropagation();
     if (dragId === null) return;
-    doReorder(getDropIndex(e, cardIndex));
+    doReorder(computeDropIndex(e.clientY));
   }
 
   function doReorder(insertAt: number) {
     if (dragId === null) return;
 
-    const active = [...activeItems];
-    const fromIdx = active.findIndex((q) => q.id === dragId);
-    if (fromIdx === -1) {
+    // insertAt is an index into the "without" array (activeItems minus the dragged card).
+    // Build the without array, clamp insertAt, then splice the moved card back in.
+    const without = activeItems.filter((q) => q.id !== dragId);
+    const dragged = activeItems.find((q) => q.id === dragId);
+    if (!dragged) {
       setDragId(null);
       setDropIndex(null);
       return;
     }
 
-    const [moved] = active.splice(fromIdx, 1);
-    const targetIdx = insertAt > fromIdx ? insertAt - 1 : insertAt;
-    active.splice(targetIdx, 0, moved);
+    const targetIdx = Math.max(0, Math.min(insertAt, without.length));
+    without.splice(targetIdx, 0, dragged);
 
-    const newItems = [...active, ...hiddenItems];
+    const newItems = [...without, ...hiddenItems];
     setItems(newItems);
     reorderMutation.mutate({ orderedIds: newItems.map((q) => q.id) });
 
@@ -316,70 +326,57 @@ export default function CheckInQuestionsManager() {
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
             Active ({activeItems.length})
           </p>
-          <div onDragOver={(e) => e.preventDefault()}>
-            {previewSlots.map((slot, slotIdx) => {
+          <div
+            ref={listContainerRef}
+            onDragOver={handleContainerDragOver}
+            onDrop={handleContainerDrop}
+            className="pb-4"
+          >
+            {previewSlots.map((slot) => {
               if (slot.kind === "ghost") {
                 return (
                   <div
                     key="ghost-placeholder"
                     style={{ height: slot.height }}
-                    className="mb-2 rounded-lg border-2 border-dashed border-primary/50 bg-primary/5 transition-all duration-150"
+                    className="mb-2 rounded-lg border-2 border-dashed border-primary/50 bg-primary/5"
                   />
                 );
               }
 
               const q = slot.question;
-              // The card's index in the *original* activeItems array (for drop calculation)
-              const originalIdx = activeItems.findIndex((a) => a.id === q.id);
+              const isDragging = dragId === q.id;
 
               return (
-                <div key={q.id}>
-                  <div
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, q.id)}
-                    onDragOver={(e) => handleDragOver(e, originalIdx)}
-                    onDrop={(e) => { e.stopPropagation(); handleDrop(e, originalIdx); }}
-                    onDragEnd={handleDragEnd}
-                    className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 mb-2 transition-opacity duration-150 ${
-                      dragId === q.id ? "opacity-0 pointer-events-none" : "opacity-100"
-                    }`}
+                <div
+                  key={q.id}
+                  data-drag-card
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, q.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 mb-2 transition-opacity duration-150 ${
+                    isDragging ? "opacity-0 pointer-events-none" : "opacity-100"
+                  }`}
+                >
+                  <GripVertical size={15} className="text-muted-foreground/60 cursor-grab flex-shrink-0" />
+                  <p className="flex-1 text-sm font-medium text-foreground leading-snug min-w-0">
+                    {q.questionText}
+                  </p>
+                  <Switch
+                    checked={q.active}
+                    onCheckedChange={(v) => toggleMutation.mutate({ id: q.id, active: v })}
+                    className="flex-shrink-0"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground flex-shrink-0"
+                    onClick={() => openEdit(q)}
                   >
-                    <GripVertical size={15} className="text-muted-foreground/60 cursor-grab flex-shrink-0" />
-                    <p className="flex-1 text-sm font-medium text-foreground leading-snug min-w-0">
-                      {q.questionText}
-                    </p>
-                    <Switch
-                      checked={q.active}
-                      onCheckedChange={(v) => toggleMutation.mutate({ id: q.id, active: v })}
-                      className="flex-shrink-0"
-                    />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 text-muted-foreground hover:text-foreground flex-shrink-0"
-                      onClick={() => openEdit(q)}
-                    >
-                      <Pencil size={12} />
-                    </Button>
-                  </div>
+                    <Pencil size={12} />
+                  </Button>
                 </div>
               );
             })}
-
-            {/* Drop zone after last card (for dropping at the end of the list) */}
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (dragId !== null) setDropIndex(activeItems.length);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                doReorder(activeItems.length);
-              }}
-              className="h-4"
-            />
           </div>
         </div>
       )}
