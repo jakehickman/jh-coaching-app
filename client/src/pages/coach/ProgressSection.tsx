@@ -63,74 +63,99 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
   if (isLoading) return null;
 
   return (
-    <div className="bg-card border border-border rounded-xl p-5">
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Cardio &amp; Activity</p>
-        {!editing ? (
-          <button
-            onClick={() => setEditing(true)}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Pencil size={12} /> Edit
-          </button>
+    <div className="space-y-4">
+      {/* Targets card */}
+      <div className="bg-card border border-border rounded-xl p-5">
+        <div className="flex items-center justify-between mb-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Weekly Targets</p>
+          {!editing ? (
+            <button
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Pencil size={12} /> Edit
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setEditing(false); setStepGoal((profile as any)?.stepGoal?.toString() ?? ""); setLissMinutes((profile as any)?.lissMinutes?.toString() ?? ""); }}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X size={12} /> Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={updateConfig.isPending}
+                className="flex items-center gap-1 text-xs text-primary hover:opacity-80 transition-opacity disabled:opacity-50"
+              >
+                <Save size={12} /> {updateConfig.isPending ? "Saving…" : "Save"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {editing ? (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1.5">Daily Step Goal</label>
+              <input
+                type="number"
+                value={stepGoal}
+                onChange={e => setStepGoal(e.target.value)}
+                placeholder="e.g. 10000"
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1.5">Weekly LISS Cardio (mins)</label>
+              <input
+                type="number"
+                value={lissMinutes}
+                onChange={e => setLissMinutes(e.target.value)}
+                placeholder="e.g. 150"
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { setEditing(false); setStepGoal((profile as any)?.stepGoal?.toString() ?? ""); setLissMinutes((profile as any)?.lissMinutes?.toString() ?? ""); }}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X size={12} /> Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={updateConfig.isPending}
-              className="flex items-center gap-1 text-xs text-primary hover:opacity-80 transition-opacity disabled:opacity-50"
-            >
-              <Save size={12} /> {updateConfig.isPending ? "Saving…" : "Save"}
-            </button>
+          <div className="grid grid-cols-2 gap-6">
+            {/* Step Goal tile */}
+            <div className="bg-secondary/40 rounded-xl p-4 border border-border/50">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Daily Step Goal</p>
+              {currentStepGoal ? (
+                <>
+                  <p className="text-3xl font-bold tabular-nums text-foreground leading-none">
+                    {currentStepGoal.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1.5">steps / day</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground/50 italic">Not set</p>
+              )}
+            </div>
+            {/* LISS Cardio tile */}
+            <div className="bg-secondary/40 rounded-xl p-4 border border-border/50">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">LISS Cardio</p>
+              {currentLiss ? (
+                <>
+                  <p className="text-3xl font-bold tabular-nums text-foreground leading-none">
+                    {currentLiss}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1.5">mins / week</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground/50 italic">Not set</p>
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      {editing ? (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1.5">Daily Step Goal</label>
-            <input
-              type="number"
-              value={stepGoal}
-              onChange={e => setStepGoal(e.target.value)}
-              placeholder="e.g. 10000"
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1.5">Weekly LISS (mins)</label>
-            <input
-              type="number"
-              value={lissMinutes}
-              onChange={e => setLissMinutes(e.target.value)}
-              placeholder="e.g. 150"
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground mb-0.5">Daily Step Goal</p>
-            <p className="text-2xl font-bold text-foreground">
-              {currentStepGoal ? currentStepGoal.toLocaleString() : <span className="text-base text-muted-foreground/50 font-normal">Not set</span>}
-            </p>
-            {currentStepGoal && <p className="text-xs text-muted-foreground">steps / day</p>}
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-0.5">Weekly LISS</p>
-            <p className="text-2xl font-bold text-foreground">
-              {currentLiss ? currentLiss : <span className="text-base text-muted-foreground/50 font-normal">Not set</span>}
-            </p>
-            {currentLiss && <p className="text-xs text-muted-foreground">mins / week</p>}
-          </div>
+      {/* Weekly LISS history placeholder — will populate once client logs data */}
+      {!editing && currentLiss && (
+        <div className="bg-card border border-border rounded-xl p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly LISS History</p>
+          <p className="text-sm text-muted-foreground/60 italic">LISS minutes logged each week will appear here once the client starts logging.</p>
         </div>
       )}
     </div>

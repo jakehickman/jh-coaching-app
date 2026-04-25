@@ -423,12 +423,12 @@
 - [x] Bug: Sam shows as Upcoming on kanban despite having a submitted check-in — fix status computation
 
 ## New Check-in System (full replacement)
-- [ ] Audit existing check-in schema, server, and UI
-- [ ] Design and migrate new data model (check_in_cycles active record + history)
-- [ ] Rewrite server: status computation, submit, advance cycle, history
-- [ ] Rewrite coach kanban (Upcoming/Submitted/Overdue columns)
-- [ ] Rewrite coach Client Progress Check-ins sub-tab
-- [ ] Rewrite client Check-ins tab with new status states
+- [x] Audit existing check-in schema, server, and UI
+- [x] Design and migrate new data model (check_in_cycles active record + history)
+- [x] Rewrite server: status computation, submit, advance cycle, history
+- [x] Rewrite coach kanban (Upcoming/Submitted/Overdue columns)
+- [x] Rewrite coach Client Progress Check-ins sub-tab
+- [x] Rewrite client Check-ins tab with new status states
 
 ## Weekly Recurring Check-in Workflow (Apr 2026)
 - [x] Replace old check-in system with new weekly recurring single-cycle model
@@ -565,3 +565,5 @@
 - [x] Move Cardio & Activity from Overview tab into its own dedicated tab in the client hub
 - [x] Add LISS minutes to client daily log form
 - [x] Show LISS progress in weekly review card alongside steps, rename section to Cardio & Activity
+- [x] Redesign CardioActivityCard with stat blocks matching other tabs style
+- [x] Rename LISS to LISS Cardio in weekly review card

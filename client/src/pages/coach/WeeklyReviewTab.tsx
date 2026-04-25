@@ -536,7 +536,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                         subtext={stepsSubtext}
                       />
                       <Tile
-                        label="LISS"
+                        label="LISS Cardio"
                         value={week.totalLissMinutes != null && week.totalLissMinutes > 0 ? `${week.totalLissMinutes} mins` : "—"}
                         muted={!week.totalLissMinutes}
                         subtext={week.lissTarget != null ? `Target: ${week.lissTarget} mins/wk` : undefined}
