@@ -539,3 +539,8 @@
 - [x] Fix question editor: options inputs are read-only — make them editable
 - [x] Remove slug field from question editor UI (internal only, auto-generated)
 - [x] Fix question reorder not updating dynamically — optimistic update now applied immediately on drag-drop
+- [x] Fix Upcoming column sort — soonest check-in date should appear at the top
+- [x] Sort Upcoming column by soonest due date first
+- [x] Remove week number from kanban cards
+- [x] Remove redundant "Upcoming" badge — show just the due date
+- [x] Update Check-ins kanban helper text — clicking a card goes to client hub overview, not check-in view

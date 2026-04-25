@@ -177,13 +177,13 @@ function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, ba
     upcoming: "Upcoming",
   };
 
-  const weekLabel = weekNumber != null ? `W${weekNumber}` : null;
-  const dateLabel = dueDate
+  const subtext = dueDate
     ? status === "overdue"
       ? `Was due ${fmtDate(dueDate)}`
-      : `Due ${fmtDate(dueDate)}`
+      : status === "upcoming"
+        ? fmtDate(dueDate)
+        : `Due ${fmtDate(dueDate)}`
     : null;
-  const subtext = [weekLabel, dateLabel].filter(Boolean).join(" · ") || null;
 
   return (
     <div
@@ -209,10 +209,12 @@ function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, ba
           )}
         </div>
 
-        {/* Status badge */}
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${badgeClass}`}>
-          {statusLabel[status]}
-        </span>
+        {/* Status badge — hidden for upcoming (due date in subtext is enough) */}
+        {status !== "upcoming" && (
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${badgeClass}`}>
+            {statusLabel[status]}
+          </span>
+        )}
 
         {/* Customise questions button */}
         <button
@@ -305,6 +307,17 @@ export default function CheckInsKanban() {
     }
   }
 
+  // Sort Upcoming column: soonest due date first
+  const upcomingBucket = columnCards.get("upcoming");
+  if (upcomingBucket) {
+    upcomingBucket.sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-40">
@@ -318,7 +331,7 @@ export default function CheckInsKanban() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            Click a client card to view their check-in. Hover a card to customise their questions.
+            Click a client card to open their overview. Hover a card to customise their check-in questions.
           </p>
           <Button
             size="sm"
