@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,11 @@ interface Question {
   active: boolean;
 }
 
+// A slot in the preview list — either a real question or the ghost placeholder
+type PreviewSlot =
+  | { kind: "question"; question: Question }
+  | { kind: "ghost"; height: number };
+
 interface EditForm {
   id?: number;
   slug: string;
@@ -66,7 +71,6 @@ export default function CheckInQuestionsManager() {
   const { data: serverQuestions, isLoading } = trpc.questions.list.useQuery();
 
   // ── LOCAL ARRAY is the single source of truth for display ──────────────────
-  // Seeded once from the server query; all mutations update it directly.
   const [items, setItems] = useState<Question[]>([]);
   const seeded = useRef(false);
 
@@ -79,10 +83,9 @@ export default function CheckInQuestionsManager() {
 
   // ── Mutations ───────────────────────────────────────────────────────────────
   const upsertMutation = trpc.questions.upsert.useMutation({
-    onSuccess: (saved) => {
-      // Refresh from server after add/edit so we get the real saved row
+    onSuccess: () => {
       utils.questions.list.invalidate().then(() => {
-        seeded.current = false; // allow re-seed on next query result
+        seeded.current = false;
       });
       utils.questions.listActive.invalidate();
       setEditOpen(false);
@@ -93,7 +96,6 @@ export default function CheckInQuestionsManager() {
 
   const toggleMutation = trpc.questions.toggle.useMutation({
     onSuccess: (_data, variables) => {
-      // Update local array immediately
       setItems((prev) =>
         prev.map((q) => (q.id === variables.id ? { ...q, active: variables.active } : q))
       );
@@ -104,7 +106,6 @@ export default function CheckInQuestionsManager() {
 
   const deleteMutation = trpc.questions.delete.useMutation({
     onSuccess: (_data, variables) => {
-      // Remove from local array immediately
       setItems((prev) => prev.filter((q) => q.id !== variables.id));
       utils.questions.listActive.invalidate();
       setDeleteId(null);
@@ -115,16 +116,14 @@ export default function CheckInQuestionsManager() {
   });
 
   const reorderMutation = trpc.questions.reorder.useMutation({
-    // Fire-and-forget: local array already updated before this call
     onError: (e) => {
       toast.error("Reorder failed — refreshing");
-      // On error, re-seed from server
       seeded.current = false;
       utils.questions.list.invalidate();
     },
   });
 
-  // ── Re-seed when server data refreshes (after upsert invalidate) ────────────
+  // Re-seed when server data refreshes (after upsert invalidate)
   useEffect(() => {
     if (serverQuestions && !seeded.current) {
       setItems(serverQuestions as Question[]);
@@ -136,7 +135,10 @@ export default function CheckInQuestionsManager() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [dragId, setDragId] = useState<number | null>(null);
+  // dropIndex: insertion position in activeItems (0 = before first, n = after last)
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+  // Height of the dragged card, so the ghost placeholder matches it
+  const [dragCardHeight, setDragCardHeight] = useState(64);
   const [newOption, setNewOption] = useState("");
 
   const emptyForm: EditForm = {
@@ -151,6 +153,32 @@ export default function CheckInQuestionsManager() {
   // ── Derived lists ───────────────────────────────────────────────────────────
   const activeItems = items.filter((q) => q.active);
   const hiddenItems = items.filter((q) => !q.active);
+
+  // ── Live preview list ────────────────────────────────────────────────────────
+  // While dragging, build a preview array that removes the dragged card from its
+  // current position and inserts a ghost placeholder at the current dropIndex.
+  // This gives the user a live preview of where the card will land.
+  const previewSlots: PreviewSlot[] = useMemo(() => {
+    if (dragId === null || dropIndex === null) {
+      return activeItems.map((q) => ({ kind: "question", question: q }));
+    }
+
+    const fromIdx = activeItems.findIndex((q) => q.id === dragId);
+    if (fromIdx === -1) {
+      return activeItems.map((q) => ({ kind: "question", question: q }));
+    }
+
+    // Build list without the dragged card
+    const without = activeItems.filter((q) => q.id !== dragId);
+
+    // Compute insert position in the "without" array
+    const insertAt = dropIndex > fromIdx ? dropIndex - 1 : dropIndex;
+    const clampedInsert = Math.max(0, Math.min(insertAt, without.length));
+
+    const result: PreviewSlot[] = without.map((q) => ({ kind: "question", question: q }));
+    result.splice(clampedInsert, 0, { kind: "ghost", height: dragCardHeight });
+    return result;
+  }, [dragId, dropIndex, activeItems, dragCardHeight]);
 
   // ── Edit helpers ────────────────────────────────────────────────────────────
   function openAdd() {
@@ -207,15 +235,17 @@ export default function CheckInQuestionsManager() {
   }
 
   // ── Drag-to-reorder ─────────────────────────────────────────────────────────
-  // Strategy: update the local `items` array immediately on drop.
-  // Send the new order to the server as a background sync.
-  // No cache manipulation needed — local array IS the display state.
 
   function handleDragStart(e: React.DragEvent, id: number) {
+    // Capture the card's height so the ghost placeholder matches it
+    const cardEl = (e.currentTarget as HTMLElement);
+    setDragCardHeight(cardEl.getBoundingClientRect().height);
     setDragId(id);
     e.dataTransfer.effectAllowed = "move";
   }
 
+  // Returns the insertion index (in activeItems) based on cursor position over a card.
+  // cardIndex is the index of the card being hovered in activeItems.
   function getDropIndex(e: React.DragEvent, cardIndex: number): number {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     return e.clientY < rect.top + rect.height / 2 ? cardIndex : cardIndex + 1;
@@ -229,11 +259,9 @@ export default function CheckInQuestionsManager() {
 
   function handleDrop(e: React.DragEvent, cardIndex: number) {
     e.preventDefault();
-    e.stopPropagation(); // prevent container from also firing
+    e.stopPropagation();
     if (dragId === null) return;
-
-    const insertAt = getDropIndex(e, cardIndex);
-    doReorder(insertAt);
+    doReorder(getDropIndex(e, cardIndex));
   }
 
   function doReorder(insertAt: number) {
@@ -247,20 +275,12 @@ export default function CheckInQuestionsManager() {
       return;
     }
 
-    // Remove from source position
     const [moved] = active.splice(fromIdx, 1);
-    // Adjust target index after removal
     const targetIdx = insertAt > fromIdx ? insertAt - 1 : insertAt;
-    // Insert at target position
     active.splice(targetIdx, 0, moved);
 
-    // Build new full list: reordered active + hidden (hidden order unchanged)
     const newItems = [...active, ...hiddenItems];
-
-    // 1. Update local array immediately — UI reflects new order right away
     setItems(newItems);
-
-    // 2. Send to server as background sync
     reorderMutation.mutate({ orderedIds: newItems.map((q) => q.id) });
 
     setDragId(null);
@@ -297,50 +317,56 @@ export default function CheckInQuestionsManager() {
             Active ({activeItems.length})
           </p>
           <div onDragOver={(e) => e.preventDefault()}>
-            {activeItems.map((q, idx) => (
-              <div key={q.id}>
-                {/* Insertion line before this card */}
-                <div
-                  className={`h-0.5 rounded-full mx-1 transition-all duration-100 ${
-                    dropIndex === idx && dragId !== null && dragId !== q.id
-                      ? "bg-primary my-1"
-                      : "bg-transparent my-0"
-                  }`}
-                />
-
-                {/* Card */}
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, q.id)}
-                  onDragOver={(e) => handleDragOver(e, idx)}
-                  onDrop={(e) => { e.stopPropagation(); handleDrop(e, idx); }}
-                  onDragEnd={handleDragEnd}
-                  className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 mb-2 transition-opacity ${
-                    dragId === q.id ? "opacity-30" : "opacity-100"
-                  }`}
-                >
-                  <GripVertical size={15} className="text-muted-foreground/60 cursor-grab flex-shrink-0" />
-                  <p className="flex-1 text-sm font-medium text-foreground leading-snug min-w-0">
-                    {q.questionText}
-                  </p>
-                  <Switch
-                    checked={q.active}
-                    onCheckedChange={(v) => toggleMutation.mutate({ id: q.id, active: v })}
-                    className="flex-shrink-0"
+            {previewSlots.map((slot, slotIdx) => {
+              if (slot.kind === "ghost") {
+                return (
+                  <div
+                    key="ghost-placeholder"
+                    style={{ height: slot.height }}
+                    className="mb-2 rounded-lg border-2 border-dashed border-primary/50 bg-primary/5 transition-all duration-150"
                   />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground flex-shrink-0"
-                    onClick={() => openEdit(q)}
-                  >
-                    <Pencil size={12} />
-                  </Button>
-                </div>
-              </div>
-            ))}
+                );
+              }
 
-            {/* Drop zone + insertion line after last card */}
+              const q = slot.question;
+              // The card's index in the *original* activeItems array (for drop calculation)
+              const originalIdx = activeItems.findIndex((a) => a.id === q.id);
+
+              return (
+                <div key={q.id}>
+                  <div
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, q.id)}
+                    onDragOver={(e) => handleDragOver(e, originalIdx)}
+                    onDrop={(e) => { e.stopPropagation(); handleDrop(e, originalIdx); }}
+                    onDragEnd={handleDragEnd}
+                    className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 mb-2 transition-opacity duration-150 ${
+                      dragId === q.id ? "opacity-0 pointer-events-none" : "opacity-100"
+                    }`}
+                  >
+                    <GripVertical size={15} className="text-muted-foreground/60 cursor-grab flex-shrink-0" />
+                    <p className="flex-1 text-sm font-medium text-foreground leading-snug min-w-0">
+                      {q.questionText}
+                    </p>
+                    <Switch
+                      checked={q.active}
+                      onCheckedChange={(v) => toggleMutation.mutate({ id: q.id, active: v })}
+                      className="flex-shrink-0"
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground flex-shrink-0"
+                      onClick={() => openEdit(q)}
+                    >
+                      <Pencil size={12} />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Drop zone after last card (for dropping at the end of the list) */}
             <div
               onDragOver={(e) => {
                 e.preventDefault();
@@ -352,16 +378,8 @@ export default function CheckInQuestionsManager() {
                 e.stopPropagation();
                 doReorder(activeItems.length);
               }}
-              className="pt-1 pb-2"
-            >
-              <div
-                className={`h-0.5 rounded-full mx-1 transition-all duration-100 ${
-                  dropIndex === activeItems.length && dragId !== null
-                    ? "bg-primary"
-                    : "bg-transparent"
-                }`}
-              />
-            </div>
+              className="h-4"
+            />
           </div>
         </div>
       )}

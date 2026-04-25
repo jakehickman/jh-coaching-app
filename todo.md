@@ -557,3 +557,4 @@
 - [x] Fix drag-to-reorder race condition — replace invalidate() with direct cache setData() in reorderMutation.onSuccess to prevent refetch overwriting optimistic state
 - [x] Redesign drag-to-reorder: replace dual-source-of-truth (tRPC cache + localOrder state) with single local items array; server query seeds once, all mutations update local array directly, reorder is fire-and-forget background sync
 - [x] Fix drag-to-reorder: question sometimes jumps to bottom — removed container onDrop entirely, each card and end-of-list drop zone handle their own drops with stopPropagation
+- [x] Drag preview: show ghost placeholder in the list while dragging so user sees the final position before dropping
