@@ -257,16 +257,16 @@ export default function CheckInQuestionsManager() {
   // ── Build preview list ───────────────────────────────────────────────────────
   // While dragging, show the list with the dragged card removed and a ghost
   // placeholder inserted at dropIndex.
-  function buildPreview(): Array<{ kind: "question"; q: Question } | { kind: "ghost" }> {
+  function buildPreview(): Array<{ kind: "question"; q: Question }> {
     if (dragId === null || dropIndex === null) {
       return activeItems.map((q) => ({ kind: "question", q }));
     }
+    const dragged = activeItems.find((q) => q.id === dragId);
+    if (!dragged) return activeItems.map((q) => ({ kind: "question", q }));
     const without = activeItems.filter((q) => q.id !== dragId);
     const clamp = Math.max(0, Math.min(dropIndex, without.length));
-    const result: Array<{ kind: "question"; q: Question } | { kind: "ghost" }> =
-      without.map((q) => ({ kind: "question", q }));
-    result.splice(clamp, 0, { kind: "ghost" });
-    return result;
+    without.splice(clamp, 0, dragged);
+    return without.map((q) => ({ kind: "question", q }));
   }
 
   const preview = buildPreview();
@@ -303,17 +303,7 @@ export default function CheckInQuestionsManager() {
             onPointerCancel={onPointerCancel}
             className={dragId !== null ? "select-none" : ""}
           >
-            {preview.map((slot, i) => {
-              if (slot.kind === "ghost") {
-                return (
-                  <div
-                    key="ghost"
-                    style={{ height: cardHeightRef.current }}
-                    className="mb-2 rounded-lg border-2 border-dashed border-primary/50 bg-primary/5"
-                  />
-                );
-              }
-
+            {preview.map((slot) => {
               const { q } = slot;
               const isDragging = dragId === q.id;
 
@@ -321,8 +311,10 @@ export default function CheckInQuestionsManager() {
                 <div
                   key={q.id}
                   data-card-id={q.id}
-                  className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 mb-2 transition-opacity duration-100 ${
-                    isDragging ? "opacity-40" : "opacity-100"
+                  className={`flex items-center gap-3 bg-card border rounded-lg px-4 py-4 mb-2 transition-all duration-100 ${
+                    isDragging
+                      ? "border-primary ring-1 ring-primary shadow-lg scale-[1.01]"
+                      : "border-border"
                   }`}
                 >
                   {/* Grip — this is the drag handle */}
