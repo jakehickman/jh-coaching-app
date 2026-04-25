@@ -172,13 +172,20 @@ function CheckInsTabContent() {
   const submitMutation = trpc.checkIn.submit.useMutation({
     onSuccess: async (data: any) => {
       // Save dynamic answers after submission
-      if (data?.id) {
-        const answerPayload = questions.map((q) => ({
-          questionId: q.id,
-          value: answers[q.id] ?? null,
-          elaboration: q.type === "single_choice" ? (elaborations[q.id] ?? null) : null,
-        }));
-        await saveAnswersMutation.mutateAsync({ submissionId: data.id, answers: answerPayload });
+      // Server returns { submissionId }, not { id }
+      const submissionId = data?.submissionId ?? data?.id;
+      if (submissionId) {
+        try {
+          const answerPayload = questions.map((q) => ({
+            questionId: q.id,
+            value: answers[q.id] ?? null,
+            elaboration: q.type === "single_choice" ? (elaborations[q.id] ?? null) : null,
+          }));
+          await saveAnswersMutation.mutateAsync({ submissionId, answers: answerPayload });
+        } catch (err) {
+          console.error("Failed to save check-in answers:", err);
+          // Non-critical — submission itself succeeded
+        }
       }
       refetchCycle();
       utils.checkIn.myHistory.invalidate();
