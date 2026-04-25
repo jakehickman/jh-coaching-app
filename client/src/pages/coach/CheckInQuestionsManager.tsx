@@ -107,8 +107,20 @@ export default function CheckInQuestionsManager() {
   });
 
   const reorderMutation = trpc.questions.reorder.useMutation({
-    onSuccess: () => {
-      utils.questions.list.invalidate();
+    onSuccess: (_data, variables) => {
+      // Update the list cache directly with the new order — no refetch, no race condition
+      utils.questions.list.setData(undefined, (old) => {
+        if (!old) return old;
+        const idxMap = new Map(variables.orderedIds.map((id, i) => [id, i]));
+        return [...(old as Question[])].sort((a, b) => {
+          const ai = idxMap.has(a.id) ? idxMap.get(a.id)! : 9999;
+          const bi = idxMap.has(b.id) ? idxMap.get(b.id)! : 9999;
+          return ai - bi;
+        });
+      });
+      // Clear local order state — cache is now the source of truth
+      setLocalOrder(null);
+      // Sync the active list cache too
       utils.questions.listActive.invalidate();
     },
     onError: (e) => {
