@@ -161,7 +161,7 @@ function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, ba
   const [, navigate] = useLocation();
 
   function handleClick() {
-    navigate(`/coach/progress?clientId=${clientId}&tab=check-ins`);
+    navigate(`/coach/client/${clientId}`);
   }
 
   const initials = name

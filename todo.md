@@ -533,3 +533,6 @@
 - [x] Coach UI: sliders icon button on each client card in Check-ins kanban (hover to reveal)
 - [x] Per-client question panel: toggle list with override indicators (green dot on customised questions)
 - [x] Update todo.md and save checkpoint
+
+## Bug Fixes (Apr 2026)
+- [x] Fix Check-ins kanban client card click — navigate to client hub (/coach/client/:id) instead of old progress page URL
