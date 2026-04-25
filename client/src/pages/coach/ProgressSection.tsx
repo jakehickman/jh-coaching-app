@@ -1111,18 +1111,6 @@ function ExerciseProgressTab({
   const [selectedGroup, setSelectedGroup] = useState<string>('All');
   const [presetFilter, setPresetFilter] = useState<Record<string, string>>({});
   const [openPresetEditor, setOpenPresetEditor] = useState<string | null>(null);
-  const [patchingRow, setPatchingRow] = useState<string | null>(null);
-  const [patchPresetVal, setPatchPresetVal] = useState('');
-  const utils = trpc.useUtils();
-  const patchPreset = trpc.workoutSessions.patchExercisePreset.useMutation({
-    onSuccess: () => {
-      utils.workoutSessions.listForClient.invalidate({ userId: clientId });
-      setPatchingRow(null);
-      setPatchPresetVal('');
-      toast.success('Preset saved');
-    },
-    onError: () => toast.error('Failed to save preset'),
-  });
 
   // Build lookup: exerciseName -> primary muscle label
   const exToMuscle: Record<string, string> = {};
@@ -1292,75 +1280,29 @@ function ExerciseProgressTab({
                       const presetStr = presets.length <= 1
                         ? (entry.machinePreset || entry.equipmentDetails || null)
                         : null;
-                      const rowKey = `${entry.sessionId}:${name}`;
-                      const isPatching = patchingRow === rowKey;
                       return (
                         <div
                           key={i}
-                          className={`py-1 ${
+                          className={`flex items-center gap-2 py-1 ${
                             i > 0 ? 'border-t border-border/40' : ''
                           } ${isLatest ? 'opacity-100' : 'opacity-60'}`}
                         >
-                          <div className="flex items-center gap-2">
-                            {/* Date */}
-                            <span className="text-xs text-muted-foreground w-[72px] flex-shrink-0">{dateLabel}</span>
-                            {/* Weight × reps */}
-                            <span className={`text-xs font-semibold flex-shrink-0 ${
-                              isLatest ? 'text-foreground' : 'text-muted-foreground'
-                            }`}>{weightStr}{repsStr}</span>
-                            {/* Preset label or add link */}
-                            {presetStr ? (
-                              <button
-                                onClick={() => { setPatchingRow(isPatching ? null : rowKey); setPatchPresetVal(presetStr); }}
-                                className="text-[10px] text-muted-foreground/60 hover:text-primary truncate flex-1 text-left"
-                                title="Edit preset"
-                              >
-                                {presetStr}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => { setPatchingRow(isPatching ? null : rowKey); setPatchPresetVal(''); }}
-                                className="text-[10px] text-muted-foreground/40 hover:text-primary flex-1 text-left"
-                              >
-                                + preset
-                              </button>
-                            )}
-                            {/* Trend arrow */}
-                            <div className="w-4 flex justify-end flex-shrink-0">
-                              {(wUp || rUp) && <ArrowUp className="w-3 h-3 text-green-400" />}
-                              {(wDown || rDown) && <ArrowDown className="w-3 h-3 text-red-400" />}
-                            </div>
-                          </div>
-                          {/* Inline preset picker */}
-                          {isPatching && (
-                            <div className="mt-1.5 flex gap-1.5 items-center">
-                              <input
-                                autoFocus
-                                value={patchPresetVal}
-                                onChange={e => setPatchPresetVal(e.target.value)}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') patchPreset.mutate({ sessionId: entry.sessionId, userId: clientId, exerciseName: name, machinePreset: patchPresetVal.trim() || null });
-                                  if (e.key === 'Escape') setPatchingRow(null);
-                                }}
-                                placeholder="Preset name"
-                                list={`presets-${name}`}
-                                className="flex-1 bg-secondary border border-border rounded px-2 py-0.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                              <datalist id={`presets-${name}`}>
-                                {presets.map(p => <option key={p} value={p} />)}
-                              </datalist>
-                              <button
-                                onClick={() => patchPreset.mutate({ sessionId: entry.sessionId, userId: clientId, exerciseName: name, machinePreset: patchPresetVal.trim() || null })}
-                                disabled={patchPreset.isPending}
-                                className="px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded hover:opacity-90 disabled:opacity-40"
-                              >
-                                <Check className="w-3 h-3" />
-                              </button>
-                              <button onClick={() => setPatchingRow(null)} className="text-muted-foreground hover:text-foreground">
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
+                          {/* Date */}
+                          <span className="text-xs text-muted-foreground w-[72px] flex-shrink-0">{dateLabel}</span>
+                          {/* Weight × reps */}
+                          <span className={`text-xs font-semibold flex-shrink-0 ${
+                            isLatest ? 'text-foreground' : 'text-muted-foreground'
+                          }`}>{weightStr}{repsStr}</span>
+                          {/* Machine preset label (read-only) */}
+                          {presetStr && (
+                            <span className="text-[10px] text-muted-foreground/60 truncate flex-1">{presetStr}</span>
                           )}
+                          {!presetStr && <span className="flex-1" />}
+                          {/* Trend arrow */}
+                          <div className="w-4 flex justify-end flex-shrink-0">
+                            {(wUp || rUp) && <ArrowUp className="w-3 h-3 text-green-400" />}
+                            {(wDown || rDown) && <ArrowDown className="w-3 h-3 text-red-400" />}
+                          </div>
                         </div>
                       );
                     })}

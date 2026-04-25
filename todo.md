@@ -494,3 +494,6 @@
 ## Backfill Machine Presets on Past Sessions (Apr 2026)
 - [x] Add updateSessionExercisePreset tRPC mutation (admin) to patch machinePreset/machineSettings on a specific exercise in a workout session
 - [x] Add inline preset picker to history rows in ExerciseProgressTab (show preset if set, show "+ Add preset" link if blank)
+
+## Preset Rename Backfill (Apr 2026)
+- [ ] When a machine preset is renamed, update the machinePreset string in all past workout sessions for that client
