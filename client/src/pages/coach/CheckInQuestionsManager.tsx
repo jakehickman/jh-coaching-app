@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,11 +42,6 @@ interface Question {
   active: boolean;
 }
 
-// A slot in the preview list — either a real question or the ghost placeholder
-type PreviewSlot =
-  | { kind: "question"; question: Question }
-  | { kind: "ghost"; height: number };
-
 interface EditForm {
   id?: number;
   slug: string;
@@ -67,10 +62,8 @@ function slugify(text: string): string {
 export default function CheckInQuestionsManager() {
   const utils = trpc.useUtils();
 
-  // ── Server query — used ONLY to seed the local items array ──────────────────
+  // ── Server query — seeds local array once ───────────────────────────────────
   const { data: serverQuestions, isLoading } = trpc.questions.list.useQuery();
-
-  // ── LOCAL ARRAY is the single source of truth for display ──────────────────
   const [items, setItems] = useState<Question[]>([]);
   const seeded = useRef(false);
 
@@ -84,9 +77,7 @@ export default function CheckInQuestionsManager() {
   // ── Mutations ───────────────────────────────────────────────────────────────
   const upsertMutation = trpc.questions.upsert.useMutation({
     onSuccess: () => {
-      utils.questions.list.invalidate().then(() => {
-        seeded.current = false;
-      });
+      utils.questions.list.invalidate().then(() => { seeded.current = false; });
       utils.questions.listActive.invalidate();
       setEditOpen(false);
       toast.success("Question saved");
@@ -123,7 +114,6 @@ export default function CheckInQuestionsManager() {
     },
   });
 
-  // Re-seed when server data refreshes (after upsert invalidate)
   useEffect(() => {
     if (serverQuestions && !seeded.current) {
       setItems(serverQuestions as Question[]);
@@ -134,45 +124,90 @@ export default function CheckInQuestionsManager() {
   // ── UI state ────────────────────────────────────────────────────────────────
   const [editOpen, setEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [dragId, setDragId] = useState<number | null>(null);
-  // dropIndex: insertion position in activeItems (0 = before first, n = after last)
-  const [dropIndex, setDropIndex] = useState<number | null>(null);
-  // Height of the dragged card, so the ghost placeholder matches it
-  const [dragCardHeight, setDragCardHeight] = useState(64);
   const [newOption, setNewOption] = useState("");
 
   const emptyForm: EditForm = {
-    slug: "",
-    questionText: "",
-    type: "single_choice",
-    options: [],
-    active: true,
+    slug: "", questionText: "", type: "single_choice", options: [], active: true,
   };
   const [form, setForm] = useState<EditForm>(emptyForm);
+
+  // ── Pointer-based drag state ─────────────────────────────────────────────────
+  // dragId: which question is being dragged
+  // dropIndex: insertion position in the "without" array (activeItems minus dragId)
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  // Store card heights for the ghost placeholder
+  const cardHeightRef = useRef<number>(60);
 
   // ── Derived lists ───────────────────────────────────────────────────────────
   const activeItems = items.filter((q) => q.active);
   const hiddenItems = items.filter((q) => !q.active);
 
-  // ── Live preview list ────────────────────────────────────────────────────────
-  // While dragging, build a preview array that removes the dragged card from its
-  // current position and inserts a ghost placeholder at the current dropIndex.
-  // This gives the user a live preview of where the card will land.
-  const previewSlots: PreviewSlot[] = useMemo(() => {
-    if (dragId === null || dropIndex === null) {
-      return activeItems.map((q) => ({ kind: "question", question: q }));
+  // ── Compute drop index from cursor Y ────────────────────────────────────────
+  // Scans [data-card-id] elements in the list container, skipping the dragged one.
+  const computeDropIndex = useCallback((cursorY: number, excludeId: number): number => {
+    if (!listRef.current) return 0;
+    const cards = Array.from(
+      listRef.current.querySelectorAll<HTMLElement>("[data-card-id]")
+    ).filter((el) => Number(el.dataset.cardId) !== excludeId);
+
+    for (let i = 0; i < cards.length; i++) {
+      const rect = cards[i].getBoundingClientRect();
+      if (cursorY < rect.top + rect.height / 2) return i;
+    }
+    return cards.length;
+  }, []);
+
+  // ── Pointer event handlers ───────────────────────────────────────────────────
+  const onGripPointerDown = useCallback((e: React.PointerEvent, id: number) => {
+    // Only left button
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Capture pointer so we get events even outside the element
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+
+    // Measure card height
+    const card = (e.currentTarget as HTMLElement).closest("[data-card-id]") as HTMLElement;
+    if (card) cardHeightRef.current = card.getBoundingClientRect().height;
+
+    setDragId(id);
+    setDropIndex(computeDropIndex(e.clientY, id));
+  }, [computeDropIndex]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (dragId === null) return;
+    e.preventDefault();
+    setDropIndex(computeDropIndex(e.clientY, dragId));
+  }, [dragId, computeDropIndex]);
+
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
+    if (dragId === null) return;
+    e.preventDefault();
+
+    const finalIndex = computeDropIndex(e.clientY, dragId);
+
+    // Commit the reorder
+    const without = activeItems.filter((q) => q.id !== dragId);
+    const dragged = activeItems.find((q) => q.id === dragId);
+    if (dragged) {
+      const targetIdx = Math.max(0, Math.min(finalIndex, without.length));
+      without.splice(targetIdx, 0, dragged);
+      const newItems = [...without, ...hiddenItems];
+      setItems(newItems);
+      reorderMutation.mutate({ orderedIds: newItems.map((q) => q.id) });
     }
 
-    // Build list without the dragged card.
-    // dropIndex is already an index into this "without" array (computeDropIndex
-    // counts only visible/non-dragged cards), so use it directly.
-    const without = activeItems.filter((q) => q.id !== dragId);
-    const clampedInsert = Math.max(0, Math.min(dropIndex, without.length));
+    setDragId(null);
+    setDropIndex(null);
+  }, [dragId, activeItems, hiddenItems, computeDropIndex, reorderMutation]);
 
-    const result: PreviewSlot[] = without.map((q) => ({ kind: "question", question: q }));
-    result.splice(clampedInsert, 0, { kind: "ghost", height: dragCardHeight });
-    return result;
-  }, [dragId, dropIndex, activeItems, dragCardHeight]);
+  const onPointerCancel = useCallback(() => {
+    setDragId(null);
+    setDropIndex(null);
+  }, []);
 
   // ── Edit helpers ────────────────────────────────────────────────────────────
   function openAdd() {
@@ -183,30 +218,21 @@ export default function CheckInQuestionsManager() {
 
   function openEdit(q: Question) {
     setForm({
-      id: q.id,
-      slug: q.slug,
-      questionText: q.questionText,
-      type: q.type,
-      options: q.options ?? [],
-      active: q.active,
+      id: q.id, slug: q.slug, questionText: q.questionText,
+      type: q.type, options: q.options ?? [], active: q.active,
     });
     setNewOption("");
     setEditOpen(true);
   }
 
   function handleSave() {
-    if (!form.questionText.trim()) {
-      toast.error("Question text is required");
-      return;
-    }
+    if (!form.questionText.trim()) { toast.error("Question text is required"); return; }
     if (form.type === "single_choice" && form.options.filter((o) => o.trim()).length < 2) {
-      toast.error("Single choice questions need at least 2 options");
-      return;
+      toast.error("Single choice questions need at least 2 options"); return;
     }
     const slug = form.slug.trim() || slugify(form.questionText);
     upsertMutation.mutate({
-      id: form.id,
-      slug,
+      id: form.id, slug,
       questionText: form.questionText.trim(),
       type: form.type,
       options: form.type === "single_choice" ? form.options.filter((o) => o.trim()) : null,
@@ -228,79 +254,22 @@ export default function CheckInQuestionsManager() {
     setForm((f) => ({ ...f, options: f.options.filter((_, i) => i !== idx) }));
   }
 
-  // ── Drag-to-reorder ─────────────────────────────────────────────────────────
-  // We use a container ref to measure card positions at the container level.
-  // This avoids per-card index confusion when the preview list reorders cards.
-  const listContainerRef = useRef<HTMLDivElement>(null);
-
-  function handleDragStart(e: React.DragEvent, id: number) {
-    const cardEl = e.currentTarget as HTMLElement;
-    setDragCardHeight(cardEl.getBoundingClientRect().height);
-    setDragId(id);
-    e.dataTransfer.effectAllowed = "move";
-  }
-
-  // Compute insertion index by scanning visible (non-dragged) card elements.
-  // The dragged card is opacity-0 but still in the DOM; we skip it so the
-  // index reflects only the visible cards the cursor is moving between.
-  function computeDropIndex(cursorY: number): number {
-    if (!listContainerRef.current) return 0;
-    const allCards = Array.from(
-      listContainerRef.current.querySelectorAll<HTMLElement>("[data-drag-card]")
-    );
-    // Only count visible cards (exclude the dragged one which has pointer-events-none)
-    const visibleCards = allCards.filter(
-      (el) => !el.classList.contains("pointer-events-none")
-    );
-    for (let i = 0; i < visibleCards.length; i++) {
-      const rect = visibleCards[i].getBoundingClientRect();
-      if (cursorY < rect.top + rect.height / 2) return i;
+  // ── Build preview list ───────────────────────────────────────────────────────
+  // While dragging, show the list with the dragged card removed and a ghost
+  // placeholder inserted at dropIndex.
+  function buildPreview(): Array<{ kind: "question"; q: Question } | { kind: "ghost" }> {
+    if (dragId === null || dropIndex === null) {
+      return activeItems.map((q) => ({ kind: "question", q }));
     }
-    return visibleCards.length;
-  }
-
-  function handleContainerDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (dragId !== null) {
-      setDropIndex(computeDropIndex(e.clientY));
-    }
-  }
-
-  function handleContainerDrop(e: React.DragEvent) {
-    e.preventDefault();
-    if (dragId === null) return;
-    doReorder(computeDropIndex(e.clientY));
-  }
-
-  function doReorder(insertAt: number) {
-    if (dragId === null) return;
-
-    // insertAt is an index into the "without" array (activeItems minus the dragged card).
-    // Build the without array, clamp insertAt, then splice the moved card back in.
     const without = activeItems.filter((q) => q.id !== dragId);
-    const dragged = activeItems.find((q) => q.id === dragId);
-    if (!dragged) {
-      setDragId(null);
-      setDropIndex(null);
-      return;
-    }
-
-    const targetIdx = Math.max(0, Math.min(insertAt, without.length));
-    without.splice(targetIdx, 0, dragged);
-
-    const newItems = [...without, ...hiddenItems];
-    setItems(newItems);
-    reorderMutation.mutate({ orderedIds: newItems.map((q) => q.id) });
-
-    setDragId(null);
-    setDropIndex(null);
+    const clamp = Math.max(0, Math.min(dropIndex, without.length));
+    const result: Array<{ kind: "question"; q: Question } | { kind: "ghost" }> =
+      without.map((q) => ({ kind: "question", q }));
+    result.splice(clamp, 0, { kind: "ghost" });
+    return result;
   }
 
-  function handleDragEnd() {
-    setDragId(null);
-    setDropIndex(null);
-  }
+  const preview = buildPreview();
 
   // ── Render ──────────────────────────────────────────────────────────────────
   if (isLoading && items.length === 0) {
@@ -312,7 +281,7 @@ export default function CheckInQuestionsManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          Drag to reorder · toggle to show/hide · changes apply to all future check-ins
+          Drag the grip to reorder · toggle to show/hide · changes apply to all future check-ins
         </p>
         <Button size="sm" variant="outline" onClick={openAdd} className="gap-1.5 flex-shrink-0 ml-3">
           <Plus size={13} />
@@ -322,42 +291,47 @@ export default function CheckInQuestionsManager() {
 
       {/* Active questions */}
       {activeItems.length > 0 && (
-        <div className="space-y-0">
+        <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
             Active ({activeItems.length})
           </p>
+          {/* Container captures pointer events during drag */}
           <div
-            ref={listContainerRef}
-            onDragOver={handleContainerDragOver}
-            onDrop={handleContainerDrop}
-            className="pb-4"
+            ref={listRef}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            className={dragId !== null ? "select-none" : ""}
           >
-            {previewSlots.map((slot) => {
+            {preview.map((slot, i) => {
               if (slot.kind === "ghost") {
                 return (
                   <div
-                    key="ghost-placeholder"
-                    style={{ height: slot.height }}
+                    key="ghost"
+                    style={{ height: cardHeightRef.current }}
                     className="mb-2 rounded-lg border-2 border-dashed border-primary/50 bg-primary/5"
                   />
                 );
               }
 
-              const q = slot.question;
+              const { q } = slot;
               const isDragging = dragId === q.id;
 
               return (
                 <div
                   key={q.id}
-                  data-drag-card
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, q.id)}
-                  onDragEnd={handleDragEnd}
-                  className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 mb-2 transition-opacity duration-150 ${
-                    isDragging ? "opacity-0 pointer-events-none" : "opacity-100"
+                  data-card-id={q.id}
+                  className={`flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-4 mb-2 transition-opacity duration-100 ${
+                    isDragging ? "opacity-0" : "opacity-100"
                   }`}
                 >
-                  <GripVertical size={15} className="text-muted-foreground/60 cursor-grab flex-shrink-0" />
+                  {/* Grip — this is the drag handle */}
+                  <div
+                    onPointerDown={(e) => onGripPointerDown(e, q.id)}
+                    className="cursor-grab active:cursor-grabbing text-muted-foreground/60 flex-shrink-0 touch-none"
+                  >
+                    <GripVertical size={15} />
+                  </div>
                   <p className="flex-1 text-sm font-medium text-foreground leading-snug min-w-0">
                     {q.questionText}
                   </p>
@@ -433,38 +407,26 @@ export default function CheckInQuestionsManager() {
                 value={form.questionText}
                 onChange={(e) => {
                   const text = e.target.value;
-                  setForm((f) => ({
-                    ...f,
-                    questionText: text,
-                    slug: f.id ? f.slug : slugify(text),
-                  }));
+                  setForm((f) => ({ ...f, questionText: text, slug: f.id ? f.slug : slugify(text) }));
                 }}
                 placeholder="e.g. How was your motivation this week?"
               />
             </div>
-
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Type</label>
               <Select
                 value={form.type}
                 onValueChange={(v) =>
-                  setForm((f) => ({
-                    ...f,
-                    type: v as QuestionType,
-                    options: v === "free_text" ? [] : f.options,
-                  }))
+                  setForm((f) => ({ ...f, type: v as QuestionType, options: v === "free_text" ? [] : f.options }))
                 }
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="single_choice">Single choice</SelectItem>
                   <SelectItem value="free_text">Free text</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
             {form.type === "single_choice" && (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Options</label>
@@ -474,20 +436,14 @@ export default function CheckInQuestionsManager() {
                       <Input
                         value={opt}
                         onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            options: f.options.map((o, i) => (i === idx ? e.target.value : o)),
-                          }))
+                          setForm((f) => ({ ...f, options: f.options.map((o, i) => (i === idx ? e.target.value : o)) }))
                         }
                         className="flex-1 text-sm"
                         placeholder={`Option ${idx + 1}`}
                       />
-                      <Button
-                        size="icon"
-                        variant="ghost"
+                      <Button size="icon" variant="ghost"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeOption(idx)}
-                      >
+                        onClick={() => removeOption(idx)}>
                         <X size={12} />
                       </Button>
                     </div>
@@ -496,21 +452,11 @@ export default function CheckInQuestionsManager() {
                     <Input
                       value={newOption}
                       onChange={(e) => setNewOption(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addOption();
-                        }
-                      }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addOption(); } }}
                       placeholder="Add an option…"
                       className="flex-1"
                     />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={addOption}
-                      disabled={!newOption.trim()}
-                    >
+                    <Button size="sm" variant="outline" onClick={addOption} disabled={!newOption.trim()}>
                       Add
                     </Button>
                   </div>
@@ -520,18 +466,14 @@ export default function CheckInQuestionsManager() {
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             {form.id && (
-              <Button
-                variant="ghost"
+              <Button variant="ghost"
                 className="text-destructive hover:text-destructive hover:bg-destructive/10 sm:mr-auto"
-                onClick={() => setDeleteId(form.id!)}
-              >
+                onClick={() => setDeleteId(form.id!)}>
                 <Trash2 size={14} className="mr-1.5" />
                 Delete question
               </Button>
             )}
-            <Button variant="outline" onClick={() => setEditOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={upsertMutation.isPending}>
               {upsertMutation.isPending ? "Saving…" : "Save question"}
             </Button>
@@ -540,24 +482,19 @@ export default function CheckInQuestionsManager() {
       </Dialog>
 
       {/* Delete confirm */}
-      <AlertDialog
-        open={deleteId !== null}
-        onOpenChange={(open: boolean) => !open && setDeleteId(null)}
-      >
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete question?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the question and all answers associated with it. This
-              cannot be undone.
+              This will permanently delete the question and all answers associated with it. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId !== null && deleteMutation.mutate({ id: deleteId })}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -559,3 +559,4 @@
 - [x] Fix drag-to-reorder: question sometimes jumps to bottom — removed container onDrop entirely, each card and end-of-list drop zone handle their own drops with stopPropagation
 - [x] Drag preview: show ghost placeholder in the list while dragging so user sees the final position before dropping
 - [x] Fix broken drag after preview feature — replaced per-card onDragOver index with container-level computeDropIndex that measures visible card midpoints; aligned previewSlots and doReorder to use the same "without" index space
+- [x] Replace HTML5 drag API with pointer events (onPointerDown/Move/Up + setPointerCapture) for reliable cross-browser drag-to-reorder with live ghost preview
