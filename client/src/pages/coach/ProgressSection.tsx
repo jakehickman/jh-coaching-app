@@ -1115,7 +1115,6 @@ function ExerciseProgressTab({
 }) {
   const [selectedGroup, setSelectedGroup] = useState<string>('All');
   const [presetFilter, setPresetFilter] = useState<Record<string, string>>({});
-  const [openPresetEditor, setOpenPresetEditor] = useState<string | null>(null);
 
   // Build lookup: exerciseName -> primary muscle label
   const exToMuscle: Record<string, string> = {};
@@ -1218,8 +1217,6 @@ function ExerciseProgressTab({
                 ? latestW > prevW ? 'up' : latestW < prevW ? 'down' : 'flat'
                 : null;
 
-              const isPresetEditorOpen = openPresetEditor === name;
-
               return (
                 <div key={name} className="bg-card border border-border rounded-xl p-4">
                   {/* Header */}
@@ -1232,17 +1229,6 @@ function ExerciseProgressTab({
                       {trend === 'up' && <ArrowUp className="w-4 h-4 text-green-400" />}
                       {trend === 'down' && <ArrowDown className="w-4 h-4 text-red-400" />}
                       {trend === 'flat' && <Minus className="w-4 h-4 text-muted-foreground" />}
-                      <button
-                        onClick={() => setOpenPresetEditor(isPresetEditorOpen ? null : name)}
-                        title="Manage machine presets"
-                        className={`p-1 rounded-md transition-colors ${
-                          isPresetEditorOpen
-                            ? 'bg-primary/20 text-primary'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
-                        }`}
-                      >
-                        <Settings2 className="w-3.5 h-3.5" />
-                      </button>
                     </div>
                   </div>
 
@@ -1314,14 +1300,7 @@ function ExerciseProgressTab({
                   </div>
 
 
-                  {/* Inline preset editor */}
-                  {isPresetEditorOpen && (
-                    <CoachPresetEditor
-                      clientId={clientId}
-                      exerciseName={name}
-                      onClose={() => setOpenPresetEditor(null)}
-                    />
-                  )}
+
                 </div>
               );
             })}
