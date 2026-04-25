@@ -22,6 +22,7 @@ import {
   clientConfigRouter,
   progressRouter,
   progressPhotosRouter,
+  questionsRouter,
 } from "./routers/index";
 
 export const appRouter = router({
@@ -47,6 +48,7 @@ export const appRouter = router({
   clientConfig: clientConfigRouter,
   progress: progressRouter,
   progressPhotos: progressPhotosRouter,
+  questions: questionsRouter,
 });
 
 export type AppRouter = typeof appRouter;

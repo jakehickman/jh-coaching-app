@@ -1,6 +1,15 @@
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { AlertCircle, CheckCircle2, Calendar, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle2, Calendar, RefreshCw, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import CheckInQuestionsManager from "./CheckInQuestionsManager";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -200,22 +209,47 @@ export default function CheckInsKanban() {
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">
-        Click any client card to view their check-in details and submission.
-      </p>
+  const [questionsOpen, setQuestionsOpen] = useState(false);
 
-      {/* Kanban board — horizontal scroll on smaller screens */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {COLUMNS.map(col => (
-          <KanbanColumn
-            key={col.id}
-            config={col}
-            cards={columnCards.get(col.id) ?? []}
-          />
-        ))}
+  return (
+    <>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            Click any client card to view their check-in details and submission.
+          </p>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => setQuestionsOpen(true)}
+          >
+            <Settings size={13} />
+            <span className="text-xs">Questions</span>
+          </Button>
+        </div>
+
+        {/* Kanban board — horizontal scroll on smaller screens */}
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {COLUMNS.map(col => (
+            <KanbanColumn
+              key={col.id}
+              config={col}
+              cards={columnCards.get(col.id) ?? []}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+
+      {/* Question management side sheet */}
+      <Sheet open={questionsOpen} onOpenChange={setQuestionsOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader className="mb-6">
+            <SheetTitle>Check-in Questions</SheetTitle>
+          </SheetHeader>
+          <CheckInQuestionsManager />
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

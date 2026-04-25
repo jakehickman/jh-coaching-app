@@ -574,3 +574,37 @@ export const programChangeLogs = mysqlTable("program_change_logs", {
 
 export type ProgramChangeLog = typeof programChangeLogs.$inferSelect;
 export type InsertProgramChangeLog = typeof programChangeLogs.$inferInsert;
+
+// ─── Dynamic check-in question system ────────────────────────────────────────
+
+// Question types: single_choice (radio buttons with defined options) or free_text (textarea)
+export type CheckInQuestionType = "single_choice" | "free_text";
+
+// Master list of check-in questions, ordered and togglable
+export const checkInQuestions = mysqlTable("check_in_questions", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 64 }).notNull().unique(), // stable identifier for analytics
+  questionText: text("questionText").notNull(),
+  type: mysqlEnum("type", ["single_choice", "free_text"]).notNull(),
+  options: json("options").$type<string[]>(), // only for single_choice
+  displayOrder: int("displayOrder").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CheckInQuestion = typeof checkInQuestions.$inferSelect;
+export type InsertCheckInQuestion = typeof checkInQuestions.$inferInsert;
+
+// One row per answer per submission (replaces named columns in check_in_submissions)
+export const checkInAnswers = mysqlTable("check_in_answers", {
+  id: int("id").autoincrement().primaryKey(),
+  submissionId: int("submissionId").notNull(), // FK -> check_in_submissions.id
+  questionId: int("questionId").notNull(),     // FK -> check_in_questions.id
+  value: text("value"),                        // stored as text; single_choice = option string
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CheckInAnswer = typeof checkInAnswers.$inferSelect;
+export type InsertCheckInAnswer = typeof checkInAnswers.$inferInsert;

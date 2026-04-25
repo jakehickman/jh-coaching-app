@@ -508,3 +508,18 @@
 - [x] Add deleteHistoryEntry DB helper and tRPC mutation (mealPlan router)
 - [x] Add delete button to each card in ProgramChangeLogTab (Training Change Log)
 - [x] Add delete button to each card in MacroPlanHistoryTab (Nutrition Change Log)
+
+## Dynamic Check-in Question System (Apr 2026)
+- [x] DB schema: add check_in_questions table (id, slug, text, type, options JSON, displayOrder, active)
+- [x] DB schema: add check_in_answers table (id, submissionId, questionId, value text)
+- [x] Apply migration SQL for both new tables
+- [x] Seed default questions (8 existing questions mapped to new format)
+- [x] Migration script: copy existing named-column answers into check_in_answers rows
+- [x] Server DB helpers: getQuestions, upsertQuestion, deleteQuestion, reorderQuestions, getAnswersForSubmission, saveAnswers
+- [x] tRPC procedures: questions.list, questions.listActive, questions.upsert, questions.delete, questions.reorder, questions.toggle (admin); questions.getAnswers, questions.saveAnswers (protected)
+- [x] Coach: gear icon on Check-ins kanban page opens question management panel
+- [x] Coach question management UI: reorder, add, edit, toggle active, delete
+- [x] Client check-in form: dynamic rendering from question list (single_choice as radio/button group, free_text as textarea)
+- [x] Coach check-in detail panel: render answers dynamically from check_in_answers (legacy fallback for old submissions)
+- [x] Weekly review: no changes needed — analytics use daily log data, not check-in submission columns
+- [x] Update todo.md and save checkpoint

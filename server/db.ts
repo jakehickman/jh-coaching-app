@@ -40,6 +40,11 @@ import {
   programChangeLogs,
   ProgramChangeEntry,
   TrainingDay,
+  checkInQuestions,
+  checkInAnswers,
+  CheckInQuestion,
+  CheckInAnswer,
+  InsertCheckInQuestion,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1587,4 +1592,127 @@ export async function getProgressPhotoWeeks(clientId: number): Promise<number[]>
     .where(eq(progressPhotos.clientId, clientId))
     .orderBy(asc(progressPhotos.weekNumber));
   return rows.map((r) => r.weekNumber);
+}
+
+// ─── Check-in question helpers ────────────────────────────────────────────────
+
+export async function listCheckInQuestions(): Promise<CheckInQuestion[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(checkInQuestions)
+    .orderBy(asc(checkInQuestions.displayOrder), asc(checkInQuestions.id));
+}
+
+export async function listActiveCheckInQuestions(): Promise<CheckInQuestion[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(checkInQuestions)
+    .where(eq(checkInQuestions.active, true))
+    .orderBy(asc(checkInQuestions.displayOrder), asc(checkInQuestions.id));
+}
+
+export async function upsertCheckInQuestion(data: {
+  id?: number;
+  slug: string;
+  questionText: string;
+  type: "single_choice" | "free_text";
+  options?: string[] | null;
+  displayOrder: number;
+  active?: boolean;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  if (data.id) {
+    await db
+      .update(checkInQuestions)
+      .set({
+        slug: data.slug,
+        questionText: data.questionText,
+        type: data.type,
+        options: data.options ?? null,
+        displayOrder: data.displayOrder,
+        active: data.active ?? true,
+      })
+      .where(eq(checkInQuestions.id, data.id));
+  } else {
+    await db.insert(checkInQuestions).values({
+      slug: data.slug,
+      questionText: data.questionText,
+      type: data.type,
+      options: data.options ?? null,
+      displayOrder: data.displayOrder,
+      active: data.active ?? true,
+    });
+  }
+}
+
+export async function toggleCheckInQuestion(id: number, active: boolean): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(checkInQuestions).set({ active }).where(eq(checkInQuestions.id, id));
+}
+
+export async function deleteCheckInQuestion(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // Delete answers for this question first
+  await db.delete(checkInAnswers).where(eq(checkInAnswers.questionId, id));
+  await db.delete(checkInQuestions).where(eq(checkInQuestions.id, id));
+}
+
+export async function reorderCheckInQuestions(orderedIds: number[]): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  for (let i = 0; i < orderedIds.length; i++) {
+    await db
+      .update(checkInQuestions)
+      .set({ displayOrder: i + 1 })
+      .where(eq(checkInQuestions.id, orderedIds[i]));
+  }
+}
+
+// ─── Check-in answer helpers ──────────────────────────────────────────────────
+
+export async function getAnswersForSubmission(
+  submissionId: number
+): Promise<(CheckInAnswer & { question: CheckInQuestion })[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: checkInAnswers.id,
+      submissionId: checkInAnswers.submissionId,
+      questionId: checkInAnswers.questionId,
+      value: checkInAnswers.value,
+      createdAt: checkInAnswers.createdAt,
+      updatedAt: checkInAnswers.updatedAt,
+      question: checkInQuestions,
+    })
+    .from(checkInAnswers)
+    .innerJoin(checkInQuestions, eq(checkInAnswers.questionId, checkInQuestions.id))
+    .where(eq(checkInAnswers.submissionId, submissionId))
+    .orderBy(asc(checkInQuestions.displayOrder));
+  return rows as (CheckInAnswer & { question: CheckInQuestion })[];
+}
+
+export async function saveCheckInAnswers(
+  submissionId: number,
+  answers: { questionId: number; value: string | null }[]
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // Delete existing answers for this submission then re-insert
+  await db.delete(checkInAnswers).where(eq(checkInAnswers.submissionId, submissionId));
+  if (answers.length === 0) return;
+  await db.insert(checkInAnswers).values(
+    answers.map((a) => ({
+      submissionId,
+      questionId: a.questionId,
+      value: a.value,
+    }))
+  );
 }

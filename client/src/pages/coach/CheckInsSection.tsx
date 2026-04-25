@@ -57,7 +57,32 @@ type CycleStatus = "upcoming" | "overdue" | "submitted";
 
 // ─── Submission Q&A display ───────────────────────────────────────────────────
 
+/**
+ * Dynamic Q&A: fetches answers from the new check_in_answers table.
+ * Falls back to rendering legacy named columns if no dynamic answers exist.
+ */
 function SubmissionQA({ sub }: { sub: any }) {
+  const submissionId: number | undefined = sub?.id;
+  const { data: dynamicAnswers = [] } = trpc.questions.getAnswers.useQuery(
+    { submissionId: submissionId ?? 0 },
+    { enabled: !!submissionId }
+  );
+
+  // If we have dynamic answers, render them
+  if (dynamicAnswers.length > 0) {
+    return (
+      <div className="px-4 pt-3 pb-1 space-y-3">
+        {(dynamicAnswers as any[]).map((a: any) => (
+          <div key={a.id} className="space-y-0.5">
+            <p className="text-xs text-muted-foreground">{a.question.questionText}</p>
+            <p className="text-sm text-foreground font-medium">{a.value ?? <span className="text-muted-foreground/50 italic">No answer</span>}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Legacy fallback: render hardcoded named columns
   const sections = [
     {
       title: "Diet Execution",
