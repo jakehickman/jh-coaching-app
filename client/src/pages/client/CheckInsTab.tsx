@@ -193,7 +193,10 @@ function CheckInsTabContent() {
       setIsEditing(false);
       toast.success("Your check-in has been submitted", { duration: 3000 });
     },
-    onError: () => toast.error("Failed to submit. Please try again."),
+    onError: (err) => {
+      console.error("Check-in submit error:", err);
+      toast.error(`Failed to submit: ${err.message ?? "Please try again."}`);
+    },
   });
 
   const saveAnswersMutation = trpc.questions.saveAnswers.useMutation({
