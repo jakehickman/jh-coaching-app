@@ -146,47 +146,15 @@ function SubmissionQA({ answers }: { answers: Array<{ question: { slug: string; 
   if (!answers || answers.length === 0) {
     return <p className="text-xs text-muted-foreground px-4 py-3">No answers recorded.</p>;
   }
-  // Derive category from slug prefix
-  function getCategory(slug: string): string {
-    if (slug.startsWith("diet_")) return "diet";
-    if (slug.startsWith("sleep_")) return "sleep";
-    if (slug.startsWith("adherence_")) return "adherence";
-    if (slug.startsWith("weekly_assessment")) return "assessment";
-    return "general";
-  }
-  const categoryOrder = ["diet", "sleep", "adherence", "assessment", "general"];
-  const categoryLabel: Record<string, string> = {
-    diet: "Diet Execution",
-    sleep: "Sleep",
-    adherence: "Adherence Barrier",
-    assessment: "Weekly Self-Assessment",
-    general: "Other",
-  };
-  const grouped = answers.reduce<Record<string, typeof answers>>((acc, a) => {
-    const cat = getCategory(a.question.slug);
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(a);
-    return acc;
-  }, {});
-  const sortedCategories = categoryOrder.filter(c => grouped[c]?.length > 0);
   return (
-    <div className="px-4 pt-3 pb-1 space-y-4">
-      {sortedCategories.map(cat => (
-        <div key={cat}>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            {categoryLabel[cat]}
-          </p>
-          <div className="space-y-3">
-            {grouped[cat].map((a, i) => (
-              <div key={i} className="space-y-0.5">
-                <p className="text-xs text-muted-foreground">{a.question.questionText}</p>
-                <p className="text-sm text-foreground font-medium">{a.value ?? "—"}</p>
-                {a.elaboration && (
-                  <p className="text-xs text-muted-foreground italic">{a.elaboration}</p>
-                )}
-              </div>
-            ))}
-          </div>
+    <div className="px-4 pt-3 pb-1 space-y-3">
+      {answers.map((a, i) => (
+        <div key={i} className="space-y-0.5">
+          <p className="text-xs text-muted-foreground">{a.question.questionText}</p>
+          <p className="text-sm text-foreground font-medium">{a.value ?? "—"}</p>
+          {a.elaboration && (
+            <p className="text-xs text-muted-foreground italic">{a.elaboration}</p>
+          )}
         </div>
       ))}
     </div>
