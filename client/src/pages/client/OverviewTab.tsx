@@ -83,43 +83,51 @@ function HabitsSummary() {
         </span>
       </div>
       <Card className="p-0 overflow-hidden">
-        <div className="flex items-center gap-3 px-4 pt-3 pb-1.5 border-b border-border/50">
-          <div className="flex-1 min-w-0" />
-          <div className="flex gap-1">
-            {dayLabels.map((lbl, i) => (
-              <div key={i} className="w-6 text-center text-[10px] text-muted-foreground/60 font-medium">{lbl}</div>
-            ))}
-          </div>
+        {/* Column header row — name col + 7 day letters */}
+        <div className="grid items-center px-4 pt-3 pb-1.5 border-b border-border/50" style={{ gridTemplateColumns: '1fr repeat(7, 2rem)' }}>
+          <div />
+          {dayLabels.map((lbl, i) => (
+            <div key={i} className="text-center text-[10px] text-muted-foreground/60 font-medium">{lbl}</div>
+          ))}
         </div>
         {habitStats.map((h: any, idx: number) => {
           const todayComplete = completedSet.has(`${h.id}:${today}`);
           return (
             <div
               key={h.id}
-              className={`flex items-center gap-3 px-4 py-3 ${idx > 0 ? 'border-t border-border/50' : ''}`}
+              className={`grid items-center px-4 py-2.5 ${idx > 0 ? 'border-t border-border/50' : ''}`}
+              style={{ gridTemplateColumns: '1fr repeat(7, 2rem)' }}
             >
-              <div className={`w-2 h-2 rounded-full shrink-0 ${todayComplete ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-              <div className="flex-1 min-w-0 overflow-hidden">
+              {/* Name + streak badge */}
+              <div className="flex items-center gap-2 min-w-0 pr-2">
                 <p className="text-sm font-medium text-foreground leading-snug truncate" title={h.name}>{h.name}</p>
-                {h.streak > 1 && <p className="text-[10px] text-primary/80">{h.streak}-day streak</p>}
+                {h.streak > 1 && (
+                  <span className="shrink-0 text-[10px] font-semibold text-primary bg-primary/10 rounded-full px-1.5 py-0.5 leading-none">
+                    {h.streak}🔥
+                  </span>
+                )}
               </div>
-              <div className="flex gap-1.5 shrink-0">
-                {last7.map(d => {
-                  const assignedDateStr = normDate(h.assignedAt);
-                  const beforeAssignment = d < assignedDateStr;
-                  const done = !beforeAssignment && completedSet.has(`${h.id}:${d}`);
-                  const isToday = d === today;
-                  if (beforeAssignment) return <div key={d} className="w-5 h-5" />;
-                  return (
+              {/* 7-day dot grid — each cell is exactly 2rem wide, centred */}
+              {last7.map(d => {
+                const assignedDateStr = normDate(h.assignedAt);
+                const beforeAssignment = d < assignedDateStr;
+                const done = !beforeAssignment && completedSet.has(`${h.id}:${d}`);
+                const isToday = d === today;
+                if (beforeAssignment) return <div key={d} />;
+                return (
+                  <div key={d} className="flex items-center justify-center">
                     <div
-                      key={d}
-                      className={`w-5 h-5 rounded-full ${
-                        done ? 'bg-primary' : isToday ? 'border-2 border-primary/50' : 'border-2 border-muted-foreground/25'
+                      className={`w-3.5 h-3.5 rounded-sm ${
+                        done
+                          ? 'bg-primary'
+                          : isToday
+                          ? 'border-2 border-primary/40'
+                          : 'bg-muted-foreground/15'
                       }`}
                     />
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
           );
         })}

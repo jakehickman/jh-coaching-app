@@ -604,3 +604,4 @@
 - [x] Client home Habits card: long habit names wrap and misalign the dot grid — fix with truncation or fixed-width name column
 - [x] Client Training Program tab: widen exercise name column so full name fits without wrapping
 - [x] Client Training Program tab: all day cards expanded by default
+- [x] Redesign Habits card row: smaller square dots, wider name, remove redundant left dot, fix day-letter alignment via CSS grid, streak as inline badge
