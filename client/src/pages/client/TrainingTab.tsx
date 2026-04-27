@@ -876,6 +876,9 @@ function WorkoutLogTab() {
                     </div>
                   </div>
 
+                  {isCollapsed && currentPreset && (
+                    <p className="text-[11px] text-muted-foreground/60 pb-1">{currentPreset}</p>
+                  )}
                   {isCollapsed && sets.length > 0 && sets.every(s => s.completed) && (
                     <p className="text-xs font-semibold tracking-widest text-green-500 text-left pt-0 pb-1">COMPLETE</p>
                   )}
