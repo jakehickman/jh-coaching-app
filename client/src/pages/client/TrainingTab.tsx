@@ -886,7 +886,34 @@ function WorkoutLogTab() {
               id="log-date-input"
               type="date"
               value={sessionDate}
-              onChange={v => { setSessionDate(v.target.value); setSelectedDay(null); }}
+              onChange={v => {
+                // Auto-save current session before switching date
+                if (selectedDay) {
+                  const dayDef = days.find(d => d.label === selectedDay);
+                  const exercises = (dayDef?.exercises ?? []).map(ex => {
+                    const subName = substitutions[ex.name];
+                    const nameToUse = subName ?? ex.name;
+                    return {
+                      name: nameToUse,
+                      substitutedFor: subName ? ex.name : undefined,
+                      equipmentDetails: equipmentDetails[nameToUse] || null,
+                      machinePreset: machinePreset[nameToUse] || null,
+                      presetId: machinePresetId[nameToUse] || null,
+                      machineSettings: machineSettings[nameToUse] || null,
+                      exerciseNotes: exerciseNotes[nameToUse] || null,
+                      sets: (exerciseData[nameToUse] ?? []).map(s => ({
+                        weight: s.weight !== "" ? parseFloat(s.weight) : null,
+                        reps: s.reps !== "" ? parseInt(s.reps) : null,
+                        notes: s.notes || null,
+                        completed: s.completed || s.weight !== "" || s.reps !== "",
+                      })),
+                    };
+                  });
+                  saveMutation.mutate({ sessionDate, dayLabel: selectedDay, exercises, notes: sessionNotes || null });
+                }
+                setSessionDate(v.target.value);
+                setSelectedDay(null);
+              }}
               className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
             />
           </div>
