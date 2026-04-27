@@ -834,7 +834,8 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
     trainingServerLoadedRef.current = selectedUserId;
   }, [program, selectedUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const addDay = () => setDays(d => [...d, { name: `Day ${d.length + 1}`, focus: "", exercises: [] }]);
+  const DAY_LETTERS = ["A","B","C","D","E","F","G","H"];
+  const addDay = () => setDays(d => [...d, { name: DAY_LETTERS[d.length] ?? `Day ${d.length + 1}`, focus: "", exercises: [] }]);
   const removeDay = (i: number) => setDays(d => d.filter((_, idx) => idx !== i));
   const updateDay = (i: number, field: string, value: string) => {
     setDays(d => {
@@ -842,8 +843,9 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
       const updated = d.map((day, idx) => idx === i ? { ...day, [field]: value } : day);
       // If the day name changed, cascade the rename into schedule slots
       if (field === 'name' && oldDay) {
-        const oldLabel = oldDay.name || `Day ${i + 1}`;
-        const newLabel = value || `Day ${i + 1}`;
+        const DAY_LETTERS_LOCAL = ["A","B","C","D","E","F","G","H"];
+        const oldLabel = oldDay.name || (DAY_LETTERS_LOCAL[i] ?? `Day ${i + 1}`);
+        const newLabel = value || (DAY_LETTERS_LOCAL[i] ?? `Day ${i + 1}`);
         if (oldLabel !== newLabel) {
           setSchedule(s => s.map(slot => slot === oldLabel ? newLabel : slot));
         }
@@ -903,7 +905,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
   };
   // Schedule helpers
   const dayOptions = ["Off", ...days.map(d => d.name || `Day ${days.indexOf(d) + 1}`)];
-  const addScheduleSlot = () => setSchedule(s => [...s, days[0]?.name || "Day 1"]);
+  const addScheduleSlot = () => setSchedule(s => [...s, days[0]?.name || "A"]);
   const removeScheduleSlot = (i: number) => setSchedule(s => s.filter((_, idx) => idx !== i));
   const updateScheduleSlot = (i: number, val: string) => setSchedule(s => s.map((v, idx) => idx === i ? val : v));
 
