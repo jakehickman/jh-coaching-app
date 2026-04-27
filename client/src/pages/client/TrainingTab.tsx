@@ -86,7 +86,8 @@ function TrainingTab() {
           {expandedDays.has(i) && (
             <div className="mt-4 space-y-2">
               <div className="grid grid-cols-12 gap-2 px-1 mb-1">
-                <p className="col-span-8 text-[10px] text-muted-foreground uppercase tracking-wider">Exercise</p>
+                <p className="col-span-6 text-[10px] text-muted-foreground uppercase tracking-wider">Exercise</p>
+                <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center"></p>
                 <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Sets</p>
                 <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Reps</p>
               </div>
@@ -96,12 +97,12 @@ function TrainingTab() {
                 return (
                   <div key={j} className="border-t border-border">
                     <div className="grid grid-cols-12 gap-2 items-center py-2">
-                      <div className="col-span-8 flex items-center gap-2">
-                        <p className="text-sm text-foreground flex-1 min-w-0">{ex.name}</p>
+                      <p className="col-span-6 text-sm text-foreground min-w-0">{ex.name}</p>
+                      <div className="col-span-2 flex justify-center">
                         {embedUrl && (
                           <button
                             onClick={() => setVideoModal({ name: ex.name, embedUrl })}
-                            className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
                             title="Watch demo"
                           >
                             <Play size={10} />
