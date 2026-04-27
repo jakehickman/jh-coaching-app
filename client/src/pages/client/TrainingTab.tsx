@@ -1150,13 +1150,13 @@ function WorkoutLogTab() {
                                   {/* Tick button — large */}
                                   <button
                                     onClick={() => toggleSetCompleted(displayName, idx)}
-                                    className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-xl border-2 transition-all ${
+                                    className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
                                       s.completed
                                         ? "border-green-500 bg-green-500/20 text-green-400"
                                         : "border-border text-transparent hover:border-primary/60"
                                     }`}
                                   >
-                                    <Check size={18} />
+                                    <Check size={15} />
                                   </button>
                                   {/* Weight input */}
                                   <div className="flex-1">
@@ -1166,7 +1166,7 @@ function WorkoutLogTab() {
                                       onChange={e => setSet(displayName, idx, "weight", e.target.value)}
                                       onWheel={e => (e.target as HTMLInputElement).blur()}
                                       placeholder={prevW != null ? String(prevW) : ""}
-                                      className={`w-full bg-input border border-border rounded-xl px-3 py-3 text-lg font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                                      className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
                                         s.completed ? "opacity-50" : ""
                                       }`}
                                     />
@@ -1179,7 +1179,7 @@ function WorkoutLogTab() {
                                       onChange={e => setSet(displayName, idx, "reps", e.target.value)}
                                       onWheel={e => (e.target as HTMLInputElement).blur()}
                                       placeholder={prevR != null ? String(prevR) : ""}
-                                      className={`w-full bg-input border border-border rounded-xl px-3 py-3 text-lg font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                                      className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
                                         s.completed ? "opacity-50" : ""
                                       }`}
                                     />
