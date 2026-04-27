@@ -303,7 +303,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {POSE_LABELS[pose]}
                     </p>
-                    <div className="grid grid-cols-2 gap-4 max-w-xl">
+                    <div className="grid grid-cols-2 gap-4 max-w-3xl">
                       {/* Week A column */}
                       <div className="space-y-1.5">
                         <p className="text-xs font-semibold text-center text-muted-foreground">Week {compareWeekA}</p>
