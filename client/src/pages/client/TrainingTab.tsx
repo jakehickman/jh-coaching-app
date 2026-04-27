@@ -791,6 +791,9 @@ function WorkoutLogTab() {
                     <div className="flex items-start gap-2 mb-1.5">
                       <div className="flex-1 min-w-0">
                         <p className="text-base font-semibold text-foreground">{displayName}</p>
+                        {currentPreset && (
+                          <p className="text-[11px] text-muted-foreground/60 mt-0.5">{currentPreset}</p>
+                        )}
                         {subName && (
                           <p className="text-xs text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
                         )}
@@ -814,7 +817,7 @@ function WorkoutLogTab() {
                       <div className="min-w-0">
                         {ex.notes && !subName && <p className="text-xs text-muted-foreground">{ex.notes}</p>}
                         <p className="text-sm font-medium text-foreground/80">{ex.sets} sets × {ex.reps}</p>
-                        {prevSets.length > 0 && (
+                        {prevSets.length > 0 && !isCollapsed && (
                           <p className="text-xs text-primary/80 mt-0.5">
                             Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
                             {(prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]) && (
@@ -822,7 +825,7 @@ function WorkoutLogTab() {
                             )}
                           </p>
                         )}
-                        {(() => {
+                        {!isCollapsed && (() => {
                           const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;
                           if (!prevNote) return null;
                           const isNoteOpen = !!prevNoteOpen[displayName];
@@ -876,9 +879,6 @@ function WorkoutLogTab() {
                     </div>
                   </div>
 
-                  {isCollapsed && currentPreset && (
-                    <p className="text-[11px] text-muted-foreground/60 pb-1">{currentPreset}</p>
-                  )}
                   {isCollapsed && sets.length > 0 && sets.every(s => s.completed) && (
                     <p className="text-xs font-semibold tracking-widest text-green-500 text-left pt-0 pb-1">COMPLETE</p>
                   )}
