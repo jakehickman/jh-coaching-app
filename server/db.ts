@@ -39,6 +39,8 @@ import {
   InsertProgressPhoto,
   programChangeLogs,
   ProgramChangeEntry,
+  cardioChangeLogs,
+  CardioChangeEntry,
   TrainingDay,
   checkInQuestions,
   checkInAnswers,
@@ -1346,13 +1348,54 @@ export async function updateClientProfileExtended(userId: number, data: {
   if (!db) return;
   const existing = await db.select().from(clientProfiles).where(eq(clientProfiles.userId, userId)).limit(1);
   if (existing.length > 0) {
+    const prev = existing[0] as any;
+    // Build a diff for cardio-related fields
+    const cardioFields: Array<"stepGoal" | "lissSessionsPerWeek" | "lissMinutesPerSession"> =
+      ["stepGoal", "lissSessionsPerWeek", "lissMinutesPerSession"];
+    const changes: CardioChangeEntry[] = [];
+    for (const field of cardioFields) {
+      if (data[field] !== undefined && data[field] !== prev[field]) {
+        changes.push({
+          field,
+          oldValue: prev[field] != null ? String(prev[field]) : null,
+          newValue: data[field] != null ? String(data[field]) : null,
+        });
+      }
+    }
+    if (changes.length > 0) {
+      await db.insert(cardioChangeLogs).values({ userId, coachId: coachId ?? null, changes });
+    }
     // Also backfill coachId if it's missing
     const updateData: any = { ...data };
-    if (coachId !== undefined && !existing[0].coachId) updateData.coachId = coachId;
+    if (coachId !== undefined && !prev.coachId) updateData.coachId = coachId;
     await db.update(clientProfiles).set(updateData).where(eq(clientProfiles.userId, userId));
   } else {
     await db.insert(clientProfiles).values({ userId, coachId, ...data } as any);
   }
+}
+
+// ─── Cardio Change Log helpers ───────────────────────────────────────────────
+
+export async function getCardioChangeLogs(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(cardioChangeLogs)
+    .where(eq(cardioChangeLogs.userId, userId))
+    .orderBy(cardioChangeLogs.changedAt);
+}
+
+export async function updateCardioChangeLogNote(id: number, note: string | null) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(cardioChangeLogs).set({ note }).where(eq(cardioChangeLogs.id, id));
+}
+
+export async function deleteCardioChangeLog(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(cardioChangeLogs).where(eq(cardioChangeLogs.id, id));
 }
 
 // ─── Equipment Presets ────────────────────────────────────────────────────────

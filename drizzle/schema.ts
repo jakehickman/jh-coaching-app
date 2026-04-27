@@ -579,6 +579,25 @@ export const programChangeLogs = mysqlTable("program_change_logs", {
 export type ProgramChangeLog = typeof programChangeLogs.$inferSelect;
 export type InsertProgramChangeLog = typeof programChangeLogs.$inferInsert;
 
+// Cardio / steps change log — append-only record of every cardio target update
+export interface CardioChangeEntry {
+  field: "stepGoal" | "lissSessionsPerWeek" | "lissMinutesPerSession";
+  oldValue?: string | null;
+  newValue?: string | null;
+}
+
+export const cardioChangeLogs = mysqlTable("cardio_change_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),   // client
+  coachId: int("coachId"),           // coach who made the change
+  changes: json("changes").$type<CardioChangeEntry[]>().notNull(),
+  note: text("note"),
+  changedAt: timestamp("changedAt").defaultNow().notNull(),
+});
+
+export type CardioChangeLog = typeof cardioChangeLogs.$inferSelect;
+export type InsertCardioChangeLog = typeof cardioChangeLogs.$inferInsert;
+
 // ─── Dynamic check-in question system ────────────────────────────────────────
 
 // Question types: single_choice (radio buttons with defined options) or free_text (textarea)

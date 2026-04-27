@@ -20,6 +20,7 @@ import MealPlansSection from "./MealPlansSection";
 import { ProgressPhotosTab } from "./ProgressPhotosTab";
 import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import ProgramChangeLogTab from "./ProgramChangeLogTab";
+import CardioChangeLogTab from "./CardioChangeLogTab";
 
 // ─── Cardio & Activity Card ─────────────────────────────────────────────────
 function CardioActivityCard({ clientId }: { clientId: number }) {
@@ -166,11 +167,11 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
         )}
       </div>
 
-      {/* Weekly LISS history placeholder — will populate once client logs data */}
-      {!editing && currentLissSet && (
+      {/* Cardio Change Log */}
+      {!editing && (
         <div className="bg-card border border-border rounded-xl p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly LISS History</p>
-          <p className="text-sm text-muted-foreground/60 italic">LISS minutes logged each week will appear here once the client starts logging.</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Change Log</p>
+          <CardioChangeLogTab clientId={clientId} />
         </div>
       )}
     </div>

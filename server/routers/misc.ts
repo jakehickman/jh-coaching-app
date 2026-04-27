@@ -109,4 +109,13 @@ export const clientConfigRouter = router({
       const { userId, ...data } = input;
       return db.updateClientProfileExtended(userId, data, ctx.user.id);
     }),
+  getChangeLogs: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(({ input }) => db.getCardioChangeLogs(input.userId)),
+  updateChangeLogNote: adminProcedure
+    .input(z.object({ id: z.number(), note: z.string().nullable() }))
+    .mutation(({ input }) => db.updateCardioChangeLogNote(input.id, input.note)),
+  deleteChangeLogEntry: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => db.deleteCardioChangeLog(input.id)),
 });
