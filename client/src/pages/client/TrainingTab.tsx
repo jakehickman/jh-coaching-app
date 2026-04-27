@@ -335,7 +335,175 @@ function PresetSelector({
   );
 }
 
-// ─── WorkoutLogTab ────────────────────────────────────────────────────────────────────────────────
+// ─── PastSessionsList ────────────────────────────────────────────────────────
+function PastSessionsList({
+  sessions, viewAsUserId, deleting, changingDateId, newDateVal, updateDatePending,
+  onEdit, onChangeDate, onSaveDate, onCancelDate, onNewDateVal, onDelete,
+}: {
+  sessions: any[];
+  viewAsUserId: string | null | undefined;
+  deleting: number | null;
+  changingDateId: number | null;
+  newDateVal: string;
+  updateDatePending: boolean;
+  onEdit: (s: any) => void;
+  onChangeDate: (id: number, val: string) => void;
+  onSaveDate: (id: number) => void;
+  onCancelDate: () => void;
+  onNewDateVal: (v: string) => void;
+  onDelete: (id: number) => void;
+}) {
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [showAll, setShowAll] = useState(false);
+
+  const displayed = showAll ? sessions.slice(0, 50) : sessions.slice(0, 10);
+
+  function toggleExpand(id: number) {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between px-0.5">
+        <p className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">Past Sessions</p>
+        <p className="text-[11px] text-muted-foreground">{sessions.length} session{sessions.length !== 1 ? 's' : ''}</p>
+      </div>
+      {displayed.map(s => {
+        const isExpanded = expandedIds.has(s.id);
+        const dateStr = toLocalDateStr(s.sessionDate);
+        const dateLabel = (() => { const d = new Date(dateStr + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })();
+        const allExercises = (s.exercises as any[]).filter((ex: any) => {
+          const sets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
+          return sets.length > 0;
+        });
+        const totalSets = allExercises.reduce((sum: number, ex: any) => {
+          return sum + (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null).length;
+        }, 0);
+
+        return (
+          <div key={s.id} className="bg-card border border-border rounded-xl overflow-hidden border-l-4 border-l-primary/60">
+            {/* Header row ─ always visible */}
+            <div
+              className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
+              onClick={() => toggleExpand(s.id)}
+            >
+              {/* Day badge */}
+              <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-bold text-primary">{s.dayLabel}</span>
+              </div>
+              {/* Date + summary */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">{dateLabel}</p>
+                <p className="text-xs text-muted-foreground">{allExercises.length} exercise{allExercises.length !== 1 ? 's' : ''} &middot; {totalSets} set{totalSets !== 1 ? 's' : ''}</p>
+              </div>
+              {/* Action buttons (stop propagation so they don't toggle expand) */}
+              {!viewAsUserId && (
+                <div className="flex items-center gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                  <button
+                    onClick={() => onEdit(s)}
+                    title="Edit session"
+                    className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-secondary/70 transition-colors"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    onClick={() => onChangeDate(s.id, dateStr)}
+                    title="Change date"
+                    className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-secondary/70 transition-colors"
+                  >
+                    <Calendar size={15} />
+                  </button>
+                  <button
+                    onClick={() => onDelete(s.id)}
+                    disabled={deleting === s.id}
+                    title="Delete session"
+                    className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              )}
+              <ChevronDown size={15} className={`text-muted-foreground transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+            </div>
+
+            {/* Change date inline row */}
+            {changingDateId === s.id && (
+              <div className="px-4 pb-3 flex items-center gap-2">
+                <input
+                  type="date"
+                  value={newDateVal}
+                  onChange={e => onNewDateVal(e.target.value)}
+                  className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <button
+                  onClick={() => onSaveDate(s.id)}
+                  disabled={!newDateVal || updateDatePending}
+                  className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={onCancelDate}
+                  className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            )}
+
+            {/* Expanded exercise list */}
+            {isExpanded && (
+              <div className="border-t border-border px-4 py-3 space-y-2">
+                {allExercises.map((ex: any, i: number) => {
+                  const completedSets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
+                  const firstSet = completedSets.find((st: any) => st.weight != null || st.reps != null) ?? completedSets[0];
+                  const setCount = completedSets.length;
+                  return (
+                    <div key={i} className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground leading-snug">
+                          {ex.name}
+                          {ex.substitutedFor && (
+                            <span className="ml-1.5 text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded align-middle">SUB</span>
+                          )}
+                        </p>
+                        {ex.machinePreset && (
+                          <p className="text-[11px] text-muted-foreground/60">{ex.machinePreset}</p>
+                        )}
+                        {ex.substitutedFor && (
+                          <p className="text-[11px] text-muted-foreground/50">↳ for {ex.substitutedFor}</p>
+                        )}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm text-muted-foreground">
+                          {firstSet?.weight != null ? `${firstSet.weight}kg` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground/60">{setCount} {setCount === 1 ? 'set' : 'sets'}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {sessions.length > 10 && (
+        <button
+          onClick={() => setShowAll(v => !v)}
+          className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {showAll ? 'Show less ↑' : `View all ${sessions.length} sessions ↓`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function WorkoutLogTab() {
   const { viewAsUserId } = useViewAs();
   const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
@@ -702,33 +870,56 @@ function WorkoutLogTab() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <SectionLabel>Date</SectionLabel>
-        <DateInput value={sessionDate} onChange={v => { setSessionDate(v); setSelectedDay(null); }} />
-      </Card>
-
-      {days.length === 0 ? (
-        <Card><p className="text-sm text-muted-foreground">No training program assigned yet.</p></Card>
-      ) : (
-        <Card>
-          <SectionLabel>Select Session</SectionLabel>
-          <div className="flex flex-wrap gap-2">
-            {days.map(d => (
-              <button
-                key={d.label}
-                onClick={() => selectDay(d.label)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedDay === d.label
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                }`}
-              >
-                {d.label}
-              </button>
-            ))}
+      {/* ── Compact session starter ─────────────────────────────── */}
+      <div className="bg-card border border-border rounded-xl p-4 border-l-4 border-l-primary">
+        {/* Row 1: date button + day pills */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => (document.getElementById('log-date-input') as HTMLInputElement)?.showPicker?.()}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
+            >
+              <Calendar size={14} />
+              <span>{(() => { const d = new Date(sessionDate + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })()}</span>
+            </button>
+            <input
+              id="log-date-input"
+              type="date"
+              value={sessionDate}
+              onChange={v => { setSessionDate(v.target.value); setSelectedDay(null); }}
+              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+            />
           </div>
-        </Card>
-      )}
+          {days.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No program assigned</p>
+          ) : (
+            <div className="flex gap-1.5 flex-wrap">
+              {days.map(d => (
+                <button
+                  key={d.label}
+                  onClick={() => selectDay(d.label)}
+                  className={`w-9 h-9 rounded-lg text-sm font-semibold transition-colors ${
+                    selectedDay === d.label
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* Row 2: Start Session CTA (only when day selected) */}
+        {selectedDay && (
+          <button
+            onClick={() => { window.scrollTo({ top: 200, behavior: 'smooth' }); }}
+            className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+          >
+            Session {selectedDay} ↓
+          </button>
+        )}
+      </div>
 
       {selectedDay && (() => {
         const dayDef = days.find(d => d.label === selectedDay);
@@ -1195,98 +1386,22 @@ function WorkoutLogTab() {
         </div>
       )}
 
-      {/* Past sessions */}
+      {/* Past sessions ─ accordion timeline */}
       {sessions.length > 0 && (
-        <div className="space-y-2">
-          <SectionLabel>Past Sessions</SectionLabel>
-          {sessions.slice(0, 20).map(s => (
-            <Card key={s.id}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{s.dayLabel}</p>
-                  <p className="text-xs text-muted-foreground">{(() => { const d = new Date(toLocalDateStr(s.sessionDate) + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })()}</p>
-                </div>
-                {!viewAsUserId && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => { setSessionDate(toLocalDateStr(s.sessionDate)); selectDay(s.dayLabel); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                      title="Edit session"
-                      className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-secondary/70 transition-colors"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => { setChangingDateId(s.id); setNewDateVal(toLocalDateStr(s.sessionDate)); }}
-                      title="Change date"
-                      className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-secondary/70 transition-colors"
-                    >
-                      <Calendar size={16} />
-                    </button>
-                    <button
-                      onClick={() => { if (confirm("Delete this session?")) { setDeleting(s.id); deleteMutation.mutate({ id: s.id }); } }}
-                      disabled={deleting === s.id}
-                      className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                )}
-              </div>
-              {changingDateId === s.id && (
-                <div className="mt-3 flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={newDateVal}
-                    onChange={e => setNewDateVal(e.target.value)}
-                    className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                  <button
-                    onClick={() => { if (newDateVal) updateDateMutation.mutate({ id: s.id, sessionDate: newDateVal }); }}
-                    disabled={!newDateVal || updateDateMutation.isPending}
-                    className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => setChangingDateId(null)}
-                    className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              )}
-              <div className="mt-2 space-y-1">
-                {(s.exercises as any[]).map((ex: any, i: number) => {
-                  const completedSets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
-                  if (!completedSets.length) return null;
-                  const firstSet = completedSets.find((st: any) => st.weight != null || st.reps != null) ?? completedSets[0];
-                  const setCount = completedSets.length;
-                  return (
-                    <div key={i}>
-                      <p className="text-xs text-muted-foreground">
-                        <span className="text-foreground font-medium">{ex.name}</span>
-                        {ex.substitutedFor && (
-                          <span className="ml-1.5 text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded align-middle">SUB</span>
-                        )}
-                        {': '}
-                        {firstSet.weight != null ? `${firstSet.weight}kg` : '—'}
-                        {' × '}
-                        {firstSet.reps != null ? `${firstSet.reps}` : '—'}
-                        <span className="text-muted-foreground/60 ml-1">({setCount} {setCount === 1 ? 'set' : 'sets'})</span>
-                      </p>
-                      {ex.machinePreset && (
-                        <p className="text-[11px] text-muted-foreground/60 mt-0.5 pl-0.5">{ex.machinePreset}</p>
-                      )}
-                      {ex.substitutedFor && (
-                        <p className="text-[11px] text-muted-foreground/50 mt-0.5 pl-0.5">↳ for {ex.substitutedFor}</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          ))}
-        </div>
+        <PastSessionsList
+          sessions={sessions}
+          viewAsUserId={viewAsUserId}
+          deleting={deleting}
+          changingDateId={changingDateId}
+          newDateVal={newDateVal}
+          updateDatePending={updateDateMutation.isPending}
+          onEdit={(s) => { setSessionDate(toLocalDateStr(s.sessionDate)); selectDay(s.dayLabel); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          onChangeDate={(id, val) => { setChangingDateId(id); setNewDateVal(val); }}
+          onSaveDate={(id) => { if (newDateVal) updateDateMutation.mutate({ id, sessionDate: newDateVal }); }}
+          onCancelDate={() => setChangingDateId(null)}
+          onNewDateVal={setNewDateVal}
+          onDelete={(id) => { if (confirm('Delete this session?')) { setDeleting(id); deleteMutation.mutate({ id }); } }}
+        />
       )}
     </div>
   );

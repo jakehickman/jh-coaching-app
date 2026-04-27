@@ -578,3 +578,4 @@
 - [x] Client Training Log: show machine preset (and settings) under each exercise name in past sessions
 - [x] Remove wrench icon from past session exercise rows (reverted per user request)
 - [x] Remove Equipment sub-tab from Training section (reverted per user request)
+- [x] Redesign Training Log tab: compact session starter (date + day pills in one row + Start Session CTA) and accordion timeline past sessions
