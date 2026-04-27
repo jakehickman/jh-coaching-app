@@ -590,3 +590,4 @@
 - [x] Workout log: always-interactive date picker — auto-save current session when date changes while editing a past session
 - [x] Fix sticky Save Session button hiding the View all sessions button — increase bottom padding
 - [x] Fix workout log date picker — use label+overlay pattern for reliable mobile/iOS tap support
+- [x] Fix workout log date picker — replace native input with custom shadcn Popover + Calendar component that works in iframes and all browsers

@@ -1,7 +1,9 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, Calendar } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
@@ -875,45 +877,55 @@ function WorkoutLogTab() {
         {/* Row 1: date button + day pills */}
         <div className="flex items-center gap-2 mb-3">
           <div className="relative flex-shrink-0">
-            {/* Single native date input styled as a button — most reliable on mobile/iOS */}
-            <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer select-none">
-              <Calendar size={14} className="pointer-events-none" />
-              <span className="pointer-events-none">{(() => { const d = new Date(sessionDate + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })()}</span>
-              <input
-                type="date"
-                value={sessionDate}
-                onChange={v => {
-                  // Auto-save current session before switching date
-                  if (selectedDay) {
-                    const dayDef = days.find(d => d.label === selectedDay);
-                    const exercises = (dayDef?.exercises ?? []).map(ex => {
-                      const subName = substitutions[ex.name];
-                      const nameToUse = subName ?? ex.name;
-                      return {
-                        name: nameToUse,
-                        substitutedFor: subName ? ex.name : undefined,
-                        equipmentDetails: equipmentDetails[nameToUse] || null,
-                        machinePreset: machinePreset[nameToUse] || null,
-                        presetId: machinePresetId[nameToUse] || null,
-                        machineSettings: machineSettings[nameToUse] || null,
-                        exerciseNotes: exerciseNotes[nameToUse] || null,
-                        sets: (exerciseData[nameToUse] ?? []).map(s => ({
-                          weight: s.weight !== "" ? parseFloat(s.weight) : null,
-                          reps: s.reps !== "" ? parseInt(s.reps) : null,
-                          notes: s.notes || null,
-                          completed: s.completed || s.weight !== "" || s.reps !== "",
-                        })),
-                      };
-                    });
-                    saveMutation.mutate({ sessionDate, dayLabel: selectedDay, exercises, notes: sessionNotes || null });
-                  }
-                  setSessionDate(v.target.value);
-                  setSelectedDay(null);
-                }}
-                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                style={{ WebkitAppearance: 'none' }}
-              />
-            </label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer select-none">
+                  <CalendarIcon size={14} />
+                  <span>{(() => { const d = new Date(sessionDate + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })()}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={new Date(sessionDate + 'T12:00:00Z')}
+                  onSelect={(date) => {
+                    if (!date) return;
+                    const newDate = [
+                      date.getFullYear(),
+                      String(date.getMonth() + 1).padStart(2, '0'),
+                      String(date.getDate()).padStart(2, '0'),
+                    ].join('-');
+                    // Auto-save current session before switching date
+                    if (selectedDay) {
+                      const dayDef = days.find(d => d.label === selectedDay);
+                      const exercises = (dayDef?.exercises ?? []).map(ex => {
+                        const subName = substitutions[ex.name];
+                        const nameToUse = subName ?? ex.name;
+                        return {
+                          name: nameToUse,
+                          substitutedFor: subName ? ex.name : undefined,
+                          equipmentDetails: equipmentDetails[nameToUse] || null,
+                          machinePreset: machinePreset[nameToUse] || null,
+                          presetId: machinePresetId[nameToUse] || null,
+                          machineSettings: machineSettings[nameToUse] || null,
+                          exerciseNotes: exerciseNotes[nameToUse] || null,
+                          sets: (exerciseData[nameToUse] ?? []).map(s => ({
+                            weight: s.weight !== '' ? parseFloat(s.weight) : null,
+                            reps: s.reps !== '' ? parseInt(s.reps) : null,
+                            notes: s.notes || null,
+                            completed: s.completed || s.weight !== '' || s.reps !== '',
+                          })),
+                        };
+                      });
+                      saveMutation.mutate({ sessionDate, dayLabel: selectedDay, exercises, notes: sessionNotes || null });
+                    }
+                    setSessionDate(newDate);
+                    setSelectedDay(null);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           {days.length === 0 ? (
             <p className="text-xs text-muted-foreground">No program assigned</p>
