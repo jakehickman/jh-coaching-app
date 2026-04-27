@@ -24,10 +24,13 @@ function TrainingTab() {
   const { data: programAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const program = viewAsUserId ? programAdmin : programOwn;
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
-  const [expandedDay, setExpandedDay] = useState<number | null>(null);
-  const [videoModal, setVideoModal] = useState<{ name: string; embedUrl: string } | null>(null);
-
   const days = (program?.days as any[]) ?? [];
+  const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set());
+  // Expand all days once program loads
+  useEffect(() => {
+    if (days.length > 0) setExpandedDays(new Set(days.map((_: any, i: number) => i)));
+  }, [days.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [videoModal, setVideoModal] = useState<{ name: string; embedUrl: string } | null>(null);
   const schedule = Array.isArray(program?.schedule) ? (program!.schedule as string[]) : [];
 
   const videoMap = Object.fromEntries(
@@ -68,7 +71,7 @@ function TrainingTab() {
       {days.map((day: any, i: number) => (
         <Card key={i} className="overflow-hidden">
           <button
-            onClick={() => setExpandedDay(expandedDay === i ? null : i)}
+            onClick={() => setExpandedDays(prev => { const next = new Set(prev); next.has(i) ? next.delete(i) : next.add(i); return next; })}
             className="w-full flex items-center justify-between"
           >
             <div className="text-left">
@@ -76,16 +79,16 @@ function TrainingTab() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">{(day.exercises ?? []).length} exercises</span>
-              {expandedDay === i ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+              {expandedDays.has(i) ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
             </div>
           </button>
 
-          {expandedDay === i && (
+          {expandedDays.has(i) && (
             <div className="mt-4 space-y-2">
               <div className="grid grid-cols-12 gap-2 px-1 mb-1">
-                <p className="col-span-6 text-[10px] text-muted-foreground uppercase tracking-wider">Exercise</p>
-                <p className="col-span-3 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Sets</p>
-                <p className="col-span-3 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Reps</p>
+                <p className="col-span-8 text-[10px] text-muted-foreground uppercase tracking-wider">Exercise</p>
+                <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Sets</p>
+                <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Reps</p>
               </div>
               {(day.exercises ?? []).map((ex: any, j: number) => {
                 const videoUrl = videoMap[ex.name];
@@ -93,7 +96,7 @@ function TrainingTab() {
                 return (
                   <div key={j} className="border-t border-border">
                     <div className="grid grid-cols-12 gap-2 items-center py-2">
-                      <div className="col-span-6 flex items-center gap-2">
+                      <div className="col-span-8 flex items-center gap-2">
                         <p className="text-sm text-foreground flex-1 min-w-0">{ex.name}</p>
                         {embedUrl && (
                           <button
@@ -106,8 +109,8 @@ function TrainingTab() {
                           </button>
                         )}
                       </div>
-                      <p className="col-span-3 text-sm text-foreground text-center">{ex.sets}</p>
-                      <p className="col-span-3 text-sm text-foreground text-center">{ex.reps}</p>
+                      <p className="col-span-2 text-sm text-foreground text-center">{ex.sets}</p>
+                      <p className="col-span-2 text-sm text-foreground text-center">{ex.reps}</p>
                     </div>
                     {ex.notes && (
                       <p className="text-xs text-muted-foreground pb-2 leading-relaxed">{ex.notes}</p>

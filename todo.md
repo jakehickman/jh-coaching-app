@@ -602,3 +602,5 @@
 - [x] Progress compare photos: make images larger
 - [x] Progress compare photos: photos must sit under their correct week heading (alignment fix)
 - [x] Client home Habits card: long habit names wrap and misalign the dot grid — fix with truncation or fixed-width name column
+- [x] Client Training Program tab: widen exercise name column so full name fits without wrapping
+- [x] Client Training Program tab: all day cards expanded by default
