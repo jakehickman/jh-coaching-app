@@ -1885,42 +1885,37 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             <Tabs defaultValue="program" className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="program">Program</TabsTrigger>
-                <TabsTrigger value="performance">Performance</TabsTrigger>
-                <TabsTrigger value="history">Change Log</TabsTrigger>
-                </TabsList>
+                <TabsTrigger value="session-log">Session Log</TabsTrigger>
+                <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
+                <TabsTrigger value="change-log">Change Log</TabsTrigger>
+              </TabsList>
               <TabsContent value="program">
                 <TrainingSection fixedClientId={selectedUserId!} />
               </TabsContent>
-              <TabsContent value="performance">
-                <div className="flex flex-col gap-8">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Session Log</p>
-                    <WorkoutSessionsTab workoutSessions={workoutSessions} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Exercise Progress</p>
-                    <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} />
-                  </div>
-                </div>
+              <TabsContent value="session-log">
+                <WorkoutSessionsTab workoutSessions={workoutSessions} />
               </TabsContent>
-              <TabsContent value="history">
+              <TabsContent value="exercise-progress">
+                <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} />
+              </TabsContent>
+              <TabsContent value="change-log">
                 <ProgramChangeLogTab clientId={selectedUserId!} />
               </TabsContent>
             </Tabs>
           </TabsContent>
 
-          {/* ── Nutrition: Meal Plan (editor) + History sub-tabs ── */}
+          {/* ── Nutrition: Meal Plan (editor) + Change Log sub-tabs ── */}
           <TabsContent value="nutrition">
             <Tabs defaultValue="meal-plan" className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="meal-plan">Meal Plan</TabsTrigger>
-                <TabsTrigger value="history">Change Log</TabsTrigger>
+                <TabsTrigger value="change-log">Change Log</TabsTrigger>
               </TabsList>
               <TabsContent value="meal-plan">
                 <WeeklyCalorySummary clientId={selectedUserId!} />
                 <MealPlansSection fixedClientId={selectedUserId!} />
               </TabsContent>
-              <TabsContent value="history">
+              <TabsContent value="change-log">
                 <MacroPlanHistoryTab clientId={selectedUserId!} />
               </TabsContent>
             </Tabs>

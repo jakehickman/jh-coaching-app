@@ -591,3 +591,6 @@
 - [x] Fix sticky Save Session button hiding the View all sessions button — increase bottom padding
 - [x] Fix workout log date picker — use label+overlay pattern for reliable mobile/iOS tap support
 - [x] Fix workout log date picker — replace native input with custom shadcn Popover + Calendar component that works in iframes and all browsers
+- [x] Body Composition weekly history: sort cards newest to oldest
+- [x] Training Performance tab: split into Session Log and Exercise Progress sub-tabs
+- [x] Integrate Change Log into Program tab (as a sub-tab) and Meal Plan tab (as a sub-tab)

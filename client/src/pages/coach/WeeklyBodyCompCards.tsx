@@ -227,11 +227,14 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
 
   const weeks: Week[] = (data?.weeks ?? []) as Week[];
 
-  // Filter to only weeks that have body-comp data
-  const bodyCompWeeks = weeks.filter(
-    w => w.avgWeight != null || w.avgWaist != null || w.avgSkinfold != null
-      || w.weighIns?.length > 0 || w.measurementEntries?.length > 0
-  );
+  // Filter to only weeks that have body-comp data, then sort newest-first
+  const bodyCompWeeks = weeks
+    .filter(
+      w => w.avgWeight != null || w.avgWaist != null || w.avgSkinfold != null
+        || w.weighIns?.length > 0 || w.measurementEntries?.length > 0
+    )
+    .slice()
+    .sort((a, b) => b.weekNumber - a.weekNumber);
 
   if (bodyCompWeeks.length === 0) {
     return (
@@ -242,11 +245,14 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
     );
   }
 
+  // Build a lookup so each card can find its previous (older) week for deltas
+  const weekByNumber = Object.fromEntries(bodyCompWeeks.map(w => [w.weekNumber, w]));
+
   return (
     <div className="space-y-3">
-      {bodyCompWeeks.map((week, idx) => {
-        // prevWeek is the next item in the array (older week, since array is newest-first)
-        const prevWeek = bodyCompWeeks[idx + 1] ?? null;
+      {bodyCompWeeks.map((week) => {
+        // prevWeek is the week with weekNumber - 1 (the chronologically earlier week)
+        const prevWeek = weekByNumber[week.weekNumber - 1] ?? null;
         return <WeekCard key={week.weekNumber} week={week} prevWeek={prevWeek} />;
       })}
     </div>
