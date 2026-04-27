@@ -583,3 +583,6 @@
 - [x] Fix meal plan editor: draft changes lost when switching between Training/Rest day sub-tabs
 - [x] Verify meal plan Change Log is recording and displaying correctly
 - [x] Fix updateDate: changing a workout session date should also update the linked daily log entry date AND session type (day letter)
+- [x] Move "Last session" hint above set rows in workout log exercise cards
+- [x] Remove cog icon from "Add machine" button in exercise cards
+- [x] Rename "Settings" label to "Set up" in machine section of exercise cards

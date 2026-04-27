@@ -321,7 +321,7 @@ function PresetSelector({
       )}
       {currentPreset && renamingId === null && (
         <>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Settings</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Set up</p>
           <input
             type="text"
             value={currentSettings}
@@ -1030,7 +1030,7 @@ function WorkoutLogTab() {
                               onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: true })); }}
                               className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                             >
-                              <Settings size={10} /> Add machine
+                              Add machine
                             </button>
                           )
                         )}
@@ -1133,13 +1133,25 @@ function WorkoutLogTab() {
 
                     {sets.length > 0 && (
                       <div className="mb-2">
-                        {/* Column headers */}
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-11 flex-shrink-0" />
-                          <p className="text-[11px] font-medium text-muted-foreground flex-1 text-center uppercase tracking-wide">kg</p>
-                          <p className="text-[11px] font-medium text-muted-foreground flex-1 text-center uppercase tracking-wide">reps</p>
-                          <div className="w-6 flex-shrink-0" />
-                        </div>
+                        {/* Column headers + Last session hint */}
+                        {(() => {
+                          const firstPrevW = prevSets[0]?.weight;
+                          const firstPrevR = prevSets[0]?.reps;
+                          return (
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-9 flex-shrink-0" />
+                              <div className="flex-1 text-center">
+                                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">kg</p>
+                                {firstPrevW != null && <p className="text-[10px] text-muted-foreground/50">Last: {firstPrevW}</p>}
+                              </div>
+                              <div className="flex-1 text-center">
+                                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">reps</p>
+                                {firstPrevR != null && <p className="text-[10px] text-muted-foreground/50">Last: {firstPrevR}</p>}
+                              </div>
+                              <div className="w-6 flex-shrink-0" />
+                            </div>
+                          );
+                        })()}
                         <div className="space-y-2.5">
                           {sets.map((s, idx) => {
                             const prevW = prevSets[idx]?.weight;
@@ -1193,12 +1205,7 @@ function WorkoutLogTab() {
                                     <div className="w-6 flex-shrink-0" />
                                   )}
                                 </div>
-                                {/* Previous performance hint below this set row */}
-                                {(prevW != null || prevR != null) && (
-                                  <p className="text-[11px] text-muted-foreground/50 text-center pl-13">
-                                    Last: {prevW ?? '—'}kg × {prevR ?? '—'}
-                                  </p>
-                                )}
+
                               </div>
                             );
                           })}
