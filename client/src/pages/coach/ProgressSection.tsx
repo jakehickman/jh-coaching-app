@@ -364,6 +364,11 @@ function WeeklyCalorySummary({
   const tCal = (liveTrainingCal != null && liveTrainingCal > 0) ? liveTrainingCal : (trainingPlan?.totalCalories ?? null);
   const rCal = (liveRestCal != null && liveRestCal > 0) ? liveRestCal : (restPlan?.totalCalories ?? null);
 
+  // Is the figure currently showing live/unsaved draft values?
+  const isLive =
+    (liveTrainingCal != null && liveTrainingCal > 0 && liveTrainingCal !== (trainingPlan?.totalCalories ?? null)) ||
+    (liveRestCal != null && liveRestCal > 0 && liveRestCal !== (restPlan?.totalCalories ?? null));
+
   if (!cycleLength || (tCal == null && rCal == null)) return null;
 
   const tCalVal = tCal ?? rCal!;
@@ -374,7 +379,18 @@ function WeeklyCalorySummary({
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 mb-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly Average</p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Weekly Average</p>
+        {isLive && (
+          <span className="flex items-center gap-1.5 text-[10px] text-primary/80 font-medium">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+            </span>
+            unsaved
+          </span>
+        )}
+      </div>
       <div className="flex items-end gap-3">
         <div>
           <span className="text-xl font-bold tabular-nums text-foreground">

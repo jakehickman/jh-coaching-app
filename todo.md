@@ -597,3 +597,4 @@
 - [x] Embed Change Log inline below Program editor (Training tab) and below Meal Plan editor (Nutrition tab), remove standalone Change Log sub-tabs
 - [x] Weekly average calorie figure in Nutrition tab updates dynamically as meal plan is edited (live draft state)
 - [x] Body composition weekly history: sort individual daily weigh-ins and measurement entries within each expanded card newest-to-oldest
+- [x] Show pulsing "live" dot on Weekly Average card when figure differs from last saved value (unsaved draft indicator)
