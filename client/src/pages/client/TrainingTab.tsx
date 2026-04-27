@@ -1044,7 +1044,16 @@ function WorkoutLogTab() {
                       <div className="flex items-center justify-between gap-2 mt-2">
                         <div className="min-w-0">
                           {ex.notes && !subName && <p className="text-xs text-muted-foreground mb-0.5">{ex.notes}</p>}
-                          <p className="text-sm font-medium text-foreground/70">{ex.sets} sets × {ex.reps}</p>
+                          <p className="text-sm font-medium text-foreground/70">
+                            {ex.sets} sets × {ex.reps}
+                            {(() => {
+                              const pw = prevSets[0]?.weight;
+                              const pr = prevSets[0]?.reps;
+                              if (pw == null && pr == null) return null;
+                              const parts = [pw != null ? pw : null, pr != null ? pr : null].filter(Boolean);
+                              return <span className="text-muted-foreground/50 font-normal"> · Last: {parts.join(' × ')}</span>;
+                            })()}
+                          </p>
                           {(() => {
                             const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;
                             if (!prevNote) return null;
@@ -1134,18 +1143,14 @@ function WorkoutLogTab() {
                       <div className="mb-2">
                         {/* Column headers + Last session hint */}
                         {(() => {
-                          const firstPrevW = prevSets[0]?.weight;
-                          const firstPrevR = prevSets[0]?.reps;
                           return (
                             <div className="flex items-center gap-2 mb-2">
                               <div className="w-9 flex-shrink-0" />
                               <div className="flex-1 text-center">
                                 <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Weight</p>
-                                {firstPrevW != null && <p className="text-[10px] text-muted-foreground/50">Last: {firstPrevW}</p>}
                               </div>
                               <div className="flex-1 text-center">
-                                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">reps</p>
-                                {firstPrevR != null && <p className="text-[10px] text-muted-foreground/50">Last: {firstPrevR}</p>}
+                                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Reps</p>
                               </div>
                               <div className="w-6 flex-shrink-0" />
                             </div>
