@@ -417,7 +417,7 @@ function PastSessionsList({
                     title="Change date"
                     className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-secondary/70 transition-colors"
                   >
-                    <Calendar size={15} />
+                    <CalendarIcon size={15} />
                   </button>
                   <button
                     onClick={() => onDelete(s.id)}
