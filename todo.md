@@ -574,3 +574,5 @@
 - [x] Prevent scroll wheel from changing number input values on desktop
 - [x] Add owner notification when a client submits their check-in
 - [x] Allow users to change the date of a logged workout session
+- [x] Client Training tab: add Equipment sub-tab for managing machine presets (rename, delete) per exercise
+- [x] Client Training Log: show machine preset (and settings) under each exercise name in past sessions
