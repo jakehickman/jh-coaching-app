@@ -1469,6 +1469,7 @@ function WorkoutLogTab() {
 
       {/* Past sessions ─ accordion timeline */}
       {sessions.length > 0 && (
+        <div className={selectedDay ? "pb-24" : ""}>
         <PastSessionsList
           sessions={sessions}
           viewAsUserId={viewAsUserId}
@@ -1483,6 +1484,7 @@ function WorkoutLogTab() {
           onNewDateVal={setNewDateVal}
           onDelete={(id) => { if (confirm('Delete this session?')) { setDeleting(id); deleteMutation.mutate({ id }); } }}
         />
+        </div>
       )}
     </div>
   );

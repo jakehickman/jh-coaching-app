@@ -588,3 +588,4 @@
 - [x] Rename "Settings" label to "Set up" in machine section of exercise cards
 - [x] Option D: move last performance inline with sets×reps target in exercise card header, remove separate Last: rows under column headers
 - [x] Workout log: always-interactive date picker — auto-save current session when date changes while editing a past session
+- [x] Fix sticky Save Session button hiding the View all sessions button — increase bottom padding
