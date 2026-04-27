@@ -1140,7 +1140,7 @@ function WorkoutLogTab() {
                             <div className="flex items-center gap-2 mb-2">
                               <div className="w-9 flex-shrink-0" />
                               <div className="flex-1 text-center">
-                                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">kg</p>
+                                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Weight</p>
                                 {firstPrevW != null && <p className="text-[10px] text-muted-foreground/50">Last: {firstPrevW}</p>}
                               </div>
                               <div className="flex-1 text-center">
