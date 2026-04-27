@@ -1887,10 +1887,15 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <TabsTrigger value="program">Program</TabsTrigger>
                 <TabsTrigger value="session-log">Session Log</TabsTrigger>
                 <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
-                <TabsTrigger value="change-log">Change Log</TabsTrigger>
               </TabsList>
               <TabsContent value="program">
-                <TrainingSection fixedClientId={selectedUserId!} />
+                <div className="space-y-8">
+                  <TrainingSection fixedClientId={selectedUserId!} />
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Change Log</p>
+                    <ProgramChangeLogTab clientId={selectedUserId!} />
+                  </div>
+                </div>
               </TabsContent>
               <TabsContent value="session-log">
                 <WorkoutSessionsTab workoutSessions={workoutSessions} />
@@ -1898,25 +1903,26 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsContent value="exercise-progress">
                 <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} />
               </TabsContent>
-              <TabsContent value="change-log">
-                <ProgramChangeLogTab clientId={selectedUserId!} />
-              </TabsContent>
             </Tabs>
           </TabsContent>
 
-          {/* ── Nutrition: Meal Plan (editor) + Change Log sub-tabs ── */}
+          {/* ── Nutrition: Meal Plan (editor) + inline Change Log ── */}
           <TabsContent value="nutrition">
             <Tabs defaultValue="meal-plan" className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="meal-plan">Meal Plan</TabsTrigger>
-                <TabsTrigger value="change-log">Change Log</TabsTrigger>
               </TabsList>
               <TabsContent value="meal-plan">
-                <WeeklyCalorySummary clientId={selectedUserId!} />
-                <MealPlansSection fixedClientId={selectedUserId!} />
-              </TabsContent>
-              <TabsContent value="change-log">
-                <MacroPlanHistoryTab clientId={selectedUserId!} />
+                <div className="space-y-8">
+                  <div>
+                    <WeeklyCalorySummary clientId={selectedUserId!} />
+                    <MealPlansSection fixedClientId={selectedUserId!} />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Change Log</p>
+                    <MacroPlanHistoryTab clientId={selectedUserId!} />
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </TabsContent>

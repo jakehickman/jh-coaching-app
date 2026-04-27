@@ -594,3 +594,4 @@
 - [x] Body Composition weekly history: sort cards newest to oldest
 - [x] Training Performance tab: split into Session Log and Exercise Progress sub-tabs
 - [x] Integrate Change Log into Program tab (as a sub-tab) and Meal Plan tab (as a sub-tab)
+- [x] Embed Change Log inline below Program editor (Training tab) and below Meal Plan editor (Nutrition tab), remove standalone Change Log sub-tabs
