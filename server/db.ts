@@ -1000,6 +1000,15 @@ export async function deleteWorkoutSession(id: number, userId: number) {
   }
 }
 
+export async function updateWorkoutSessionDate(id: number, userId: number, newDate: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(workoutSessions)
+    .set({ sessionDate: newDate })
+    .where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, userId)));
+}
+
 // ── Onboarding submissions ────────────────────────────────────────────────────
 
 export async function createOnboardingSubmission(

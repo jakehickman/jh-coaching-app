@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, Calendar } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
@@ -393,6 +393,8 @@ function WorkoutLogTab() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [substitutions, setSubstitutions] = useState<Record<string, string>>({});
+  const [changingDateId, setChangingDateId] = useState<number | null>(null);
+  const [newDateVal, setNewDateVal] = useState("");
 
   // ── Draft helpers ─────────────────────────────────────────────────────────
   const draftKey = (date: string, day: string) => `draft:workout:${date}:${day}`;
@@ -522,6 +524,10 @@ function WorkoutLogTab() {
   const deleteMutation = trpc.workoutSessions.delete.useMutation({
     onSuccess: () => { utils.workoutSessions.list.invalidate(); setDeleting(null); toast.success("Session deleted."); },
     onError: () => { setDeleting(null); toast.error("Failed to delete."); },
+  });
+  const updateDateMutation = trpc.workoutSessions.updateDate.useMutation({
+    onSuccess: () => { utils.workoutSessions.list.invalidate(); setChangingDateId(null); toast.success("Session date updated."); },
+    onError: () => { toast.error("Failed to update date."); },
   });
 
   // ── Load day ──────────────────────────────────────────────────────────────
@@ -1198,12 +1204,19 @@ function WorkoutLogTab() {
                   <p className="text-xs text-muted-foreground">{(() => { const d = new Date(toLocalDateStr(s.sessionDate) + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })()}</p>
                 </div>
                 {!viewAsUserId && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => { setSessionDate(toLocalDateStr(s.sessionDate)); selectDay(s.dayLabel); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-sm font-medium text-primary hover:bg-secondary/70 transition-colors"
                     >
                       Edit
+                    </button>
+                    <button
+                      onClick={() => { setChangingDateId(s.id); setNewDateVal(toLocalDateStr(s.sessionDate)); }}
+                      title="Change date"
+                      className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-secondary/70 transition-colors"
+                    >
+                      <Calendar size={16} />
                     </button>
                     <button
                       onClick={() => { if (confirm("Delete this session?")) { setDeleting(s.id); deleteMutation.mutate({ id: s.id }); } }}
@@ -1215,6 +1228,29 @@ function WorkoutLogTab() {
                   </div>
                 )}
               </div>
+              {changingDateId === s.id && (
+                <div className="mt-3 flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={newDateVal}
+                    onChange={e => setNewDateVal(e.target.value)}
+                    className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    onClick={() => { if (newDateVal) updateDateMutation.mutate({ id: s.id, sessionDate: newDateVal }); }}
+                    disabled={!newDateVal || updateDateMutation.isPending}
+                    className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setChangingDateId(null)}
+                    className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
               <div className="mt-2 space-y-1">
                 {(s.exercises as any[]).map((ex: any, i: number) => {
                   const completedSets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);

@@ -119,6 +119,9 @@ export const workoutSessionsRouter = router({
       machineSettings: z.string().nullable().optional(),
     }))
     .mutation(({ input }) => db.patchWorkoutSessionExercisePreset(input.sessionId, input.userId, input.exerciseName, input.machinePreset ?? null, input.machineSettings ?? null)),
+  updateDate: protectedProcedure
+    .input(z.object({ id: z.number(), sessionDate: z.string() }))
+    .mutation(({ ctx, input }) => db.updateWorkoutSessionDate(input.id, ctx.user.id, input.sessionDate)),
 });
 
 export const equipmentPresetsRouter = router({

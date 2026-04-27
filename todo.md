@@ -573,3 +573,4 @@
 - [x] Add LISS Cardio badge (blue, Lucide icon + minutes) to daily log rows in client and coach recent logs views
 - [x] Prevent scroll wheel from changing number input values on desktop
 - [x] Add owner notification when a client submits their check-in
+- [x] Allow users to change the date of a logged workout session
