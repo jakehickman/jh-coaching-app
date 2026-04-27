@@ -197,21 +197,64 @@ export default function MealPlansSection({ fixedClientId }: { fixedClientId?: nu
   // Load server data into state and update snapshot when plan or client/dayType changes
   const mealLoadKey = selectedUserId ? `${selectedUserId}:${dayType}` : null;
   const mealServerLoadedRef = useRef<string | null>(null);
+  // Track the previous dayType so we can persist draft before switching
+  const prevDayTypeRef = useRef<"training" | "rest">(dayType);
+  const prevMealsRef = useRef(meals);
+  const prevPlanNotesRef = useRef(planNotes);
+  // Keep refs in sync with latest state
+  useEffect(() => { prevMealsRef.current = meals; }, [meals]);
+  useEffect(() => { prevPlanNotesRef.current = planNotes; }, [planNotes]);
+
   useEffect(() => {
     if (!mealLoadKey) return;
-    if (mealServerLoadedRef.current === mealLoadKey) return; // already loaded for this key
+    // If dayType changed, persist the current in-memory draft for the OLD tab before loading the new one
+    if (prevDayTypeRef.current !== dayType && selectedUserId) {
+      const oldDraftKey = `draft:mealPlan:${selectedUserId}:${prevDayTypeRef.current}`;
+      const snap = mealSavedSnapshot.current;
+      const isDirty = snap && (
+        prevPlanNotesRef.current !== snap.planNotes ||
+        JSON.stringify(prevMealsRef.current) !== JSON.stringify(snap.meals)
+      );
+      if (isDirty) {
+        try { localStorage.setItem(oldDraftKey, JSON.stringify({ planNotes: prevPlanNotesRef.current, meals: prevMealsRef.current })); window.dispatchEvent(new Event("draft-changed")); } catch {}
+      }
+      prevDayTypeRef.current = dayType;
+    }
+
+    if (mealServerLoadedRef.current === mealLoadKey) {
+      // Already loaded server data for this key — check if there's a saved draft to restore
+      const draftRaw = localStorage.getItem(`draft:mealPlan:${mealLoadKey}`);
+      if (draftRaw) {
+        try {
+          const draft = JSON.parse(draftRaw);
+          setPlanNotes(draft.planNotes ?? "");
+          setMeals(draft.meals ?? []);
+        } catch {}
+      }
+      return;
+    }
     if (plan === undefined) return; // still fetching
     const serverNotes = plan?.notes ?? "";
     const serverMeals = (plan?.meals as any[]) ?? [];
-    setPlanNotes(serverNotes);
-    setMeals(serverMeals);
+    // Check if there's a saved draft for this tab — prefer it over server data
+    const draftRaw = localStorage.getItem(`draft:mealPlan:${mealLoadKey}`);
+    if (draftRaw) {
+      try {
+        const draft = JSON.parse(draftRaw);
+        setPlanNotes(draft.planNotes ?? serverNotes);
+        setMeals(draft.meals ?? serverMeals);
+      } catch {
+        setPlanNotes(serverNotes);
+        setMeals(serverMeals);
+      }
+    } else {
+      setPlanNotes(serverNotes);
+      setMeals(serverMeals);
+    }
     setTreatAllowance((plan as any)?.treatAllowanceKcal?.toString() ?? "");
     mealSavedSnapshot.current = { planNotes: serverNotes, meals: serverMeals };
-    // Clear any stale draft for this key since we just loaded fresh server data
-    const draftKey = `draft:mealPlan:${mealLoadKey}`;
-    try { localStorage.removeItem(draftKey); window.dispatchEvent(new Event("draft-changed")); } catch {}
     mealServerLoadedRef.current = mealLoadKey;
-  }, [plan, mealLoadKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [plan, mealLoadKey, dayType, selectedUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Write draft only when state genuinely differs from the saved snapshot
   useEffect(() => {
