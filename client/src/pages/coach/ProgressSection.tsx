@@ -1908,23 +1908,16 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
 
           {/* ── Nutrition: Meal Plan (editor) + inline Change Log ── */}
           <TabsContent value="nutrition">
-            <Tabs defaultValue="meal-plan" className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="meal-plan">Meal Plan</TabsTrigger>
-              </TabsList>
-              <TabsContent value="meal-plan">
-                <div className="space-y-8">
-                  <div>
-                    <WeeklyCalorySummary clientId={selectedUserId!} />
-                    <MealPlansSection fixedClientId={selectedUserId!} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Change Log</p>
-                    <MacroPlanHistoryTab clientId={selectedUserId!} />
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+            <div className="space-y-8">
+              <div>
+                <WeeklyCalorySummary clientId={selectedUserId!} />
+                <MealPlansSection fixedClientId={selectedUserId!} />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Change Log</p>
+                <MacroPlanHistoryTab clientId={selectedUserId!} />
+              </div>
+            </div>
           </TabsContent>
 
           {/* ── Cardio & Activity ── */}
