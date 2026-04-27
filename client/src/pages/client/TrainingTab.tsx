@@ -97,7 +97,7 @@ function TrainingTab() {
                   <div key={j} className="border-t border-border">
                     <div className="grid grid-cols-12 gap-2 items-center py-2">
                       <div className="col-span-8 flex items-center gap-1.5 min-w-0">
-                        <p className="text-xs text-foreground min-w-0">{ex.name}</p>
+                        <p className="text-xs text-foreground min-w-0 truncate" title={ex.name}>{ex.name}</p>
                         {embedUrl && (
                           <button
                             onClick={() => setVideoModal({ name: ex.name, embedUrl })}
