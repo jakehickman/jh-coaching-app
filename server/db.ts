@@ -888,6 +888,12 @@ export async function saveWorkoutSession(data: {
   } else {
     await db.insert(workoutSessions).values(data as any);
   }
+  // Auto-save any machine presets from the exercises
+  for (const ex of data.exercises) {
+    if (ex.machinePreset) {
+      await saveEquipmentPreset(data.userId, ex.name, ex.machinePreset, ex.machineSettings ?? null);
+    }
+  }
   // Always sync trainingCompleted = true to the daily log for this date
   await upsertDailyLog({
     userId: data.userId,
