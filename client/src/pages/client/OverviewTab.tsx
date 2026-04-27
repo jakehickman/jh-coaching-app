@@ -99,8 +99,8 @@ function HabitsSummary() {
               className={`flex items-center gap-3 px-4 py-3 ${idx > 0 ? 'border-t border-border/50' : ''}`}
             >
               <div className={`w-2 h-2 rounded-full shrink-0 ${todayComplete ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground leading-snug">{h.name}</p>
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <p className="text-sm font-medium text-foreground leading-snug truncate" title={h.name}>{h.name}</p>
                 {h.streak > 1 && <p className="text-[10px] text-primary/80">{h.streak}-day streak</p>}
               </div>
               <div className="flex gap-1.5 shrink-0">

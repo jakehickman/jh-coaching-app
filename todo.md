@@ -601,3 +601,4 @@
 - [x] Cardio & Activity tab: replace weekly LISS history with a steps change log (similar to training/nutrition change logs)
 - [x] Progress compare photos: make images larger
 - [x] Progress compare photos: photos must sit under their correct week heading (alignment fix)
+- [x] Client home Habits card: long habit names wrap and misalign the dot grid — fix with truncation or fixed-width name column
