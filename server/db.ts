@@ -888,10 +888,31 @@ export async function saveWorkoutSession(data: {
   } else {
     await db.insert(workoutSessions).values(data as any);
   }
-  // Auto-save any machine presets from the exercises
-  for (const ex of data.exercises) {
+  // Auto-save any machine presets from the exercises and backfill presetId into the JSON
+  let needsPresetIdUpdate = false;
+  const enrichedExercises = [...data.exercises];
+  for (const ex of enrichedExercises) {
     if (ex.machinePreset) {
-      await upsertEquipmentPreset(data.userId, ex.name, ex.machinePreset, ex.machineSettings ?? null);
+      const presetId = await upsertEquipmentPreset(data.userId, ex.name, ex.machinePreset, ex.machineSettings ?? null);
+      if (presetId && !ex.presetId) {
+        ex.presetId = presetId;
+        needsPresetIdUpdate = true;
+      }
+    }
+  }
+  // If we just resolved new presetIds, update the stored exercises JSON
+  if (needsPresetIdUpdate) {
+    const sessionId = existing.length > 0 ? existing[0].id : undefined;
+    if (sessionId) {
+      await db.update(workoutSessions).set({ exercises: enrichedExercises }).where(eq(workoutSessions.id, sessionId));
+    } else {
+      // For newly inserted sessions, fetch the just-created row
+      const newSession = await db.select().from(workoutSessions)
+        .where(and(eq(workoutSessions.userId, data.userId), eq(workoutSessions.sessionDate, data.sessionDate as any), eq(workoutSessions.dayLabel, data.dayLabel)))
+        .limit(1);
+      if (newSession.length > 0) {
+        await db.update(workoutSessions).set({ exercises: enrichedExercises }).where(eq(workoutSessions.id, newSession[0].id));
+      }
     }
   }
   // Always sync trainingCompleted = true to the daily log for this date
@@ -1309,9 +1330,9 @@ export async function getAllEquipmentPresets(userId: number) {
     .orderBy(equipmentPresets.exerciseName, equipmentPresets.presetName);
 }
 
-export async function upsertEquipmentPreset(userId: number, exerciseName: string, presetName: string, lastSettings?: string | null) {
+export async function upsertEquipmentPreset(userId: number, exerciseName: string, presetName: string, lastSettings?: string | null): Promise<number | undefined> {
   const db = await getDb();
-  if (!db) return;
+  if (!db) return undefined;
   const existing = await db
     .select()
     .from(equipmentPresets)
@@ -1323,8 +1344,10 @@ export async function upsertEquipmentPreset(userId: number, exerciseName: string
         .set({ lastSettings: lastSettings ?? null })
         .where(eq(equipmentPresets.id, existing[0].id));
     }
+    return existing[0].id;
   } else {
-    await db.insert(equipmentPresets).values({ userId, exerciseName, presetName, lastSettings: lastSettings ?? null });
+    const [result] = await db.insert(equipmentPresets).values({ userId, exerciseName, presetName, lastSettings: lastSettings ?? null });
+    return (result as any).insertId as number;
   }
 }
 

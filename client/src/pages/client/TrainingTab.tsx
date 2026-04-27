@@ -161,7 +161,7 @@ interface PresetSelectorProps {
   currentSettings: string;
   isAddingNew: boolean;
   newPresetValue: string;
-  onSelectPreset: (presetName: string, lastSettings: string | null) => void;
+  onSelectPreset: (presetName: string, lastSettings: string | null, presetId?: number) => void;
   onStartAddNew: () => void;
   onNewPresetChange: (val: string) => void;
   onSaveNewPreset: (name: string) => void;
@@ -263,7 +263,7 @@ function PresetSelector({
                   onStartAddNew();
                 } else {
                   const preset = (presetList as any[]).find((p: any) => p.presetName === val);
-                  onSelectPreset(val, preset?.lastSettings ?? null);
+                  onSelectPreset(val, preset?.lastSettings ?? null, preset?.id);
                 }
               }}
               className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
@@ -384,6 +384,7 @@ function WorkoutLogTab() {
   const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({});
   const [equipmentDetails, setEquipmentDetails] = useState<Record<string, string>>({});
   const [machinePreset, setMachinePreset] = useState<Record<string, string>>({}); // exerciseName -> preset name
+  const [machinePresetId, setMachinePresetId] = useState<Record<string, number>>({}); // exerciseName -> preset ID
   const [machineSettings, setMachineSettings] = useState<Record<string, string>>({}); // exerciseName -> settings
   const [newPresetInput, setNewPresetInput] = useState<Record<string, string>>({}); // exerciseName -> new preset being typed
   const [exerciseNotes, setExerciseNotes] = useState<Record<string, string>>({});
@@ -568,6 +569,7 @@ function WorkoutLogTab() {
         }));
         if (ex.equipmentDetails) eqData[ex.name] = ex.equipmentDetails;
         if (ex.machinePreset) mpData[ex.name] = ex.machinePreset;
+        if (ex.presetId) { setMachinePresetId(prev => ({ ...prev, [ex.name]: ex.presetId })); }
         if (ex.machineSettings) msData[ex.name] = ex.machineSettings;
         if (ex.exerciseNotes) enData[ex.name] = ex.exerciseNotes;
       }
@@ -676,6 +678,7 @@ function WorkoutLogTab() {
         substitutedFor: subName ? ex.name : undefined,
         equipmentDetails: equipmentDetails[nameToUse] || null,
         machinePreset: machinePreset[nameToUse] || null,
+        presetId: machinePresetId[nameToUse] || null,
         machineSettings: machineSettings[nameToUse] || null,
         exerciseNotes: exerciseNotes[nameToUse] || null,
         sets: (exerciseData[nameToUse] ?? []).map(s => ({
@@ -743,11 +746,10 @@ function WorkoutLogTab() {
               const filteredSets = (ex.sets ?? []).filter((set: any) => set.weight != null || set.reps != null);
               if (filteredSets.length > 0) {
                 prevExMap[ex.name] = filteredSets;
+                // Record the preset from the SAME session as the performance data
+                const preset = ex.machinePreset || ex.equipmentDetails || null;
+                if (preset) prevMachinePresetMap[ex.name] = preset;
               }
-            }
-            const preset = ex.machinePreset || ex.equipmentDetails || null;
-            if (preset && !(ex.name in prevMachinePresetMap)) {
-              prevMachinePresetMap[ex.name] = preset;
             }
           }
         }
@@ -809,8 +811,8 @@ function WorkoutLogTab() {
                         {prevSets.length > 0 && (
                           <p className="text-xs text-primary/80 mt-0.5">
                             Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
-                            {(currentPreset || (prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name])) && (
-                              <span className="text-muted-foreground/60 ml-1">· {currentPreset || (prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name])}</span>
+                            {(prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]) && (
+                              <span className="text-muted-foreground/60 ml-1">· {prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]}</span>
                             )}
                           </p>
                         )}
@@ -888,8 +890,9 @@ function WorkoutLogTab() {
                         currentSettings={currentSettings}
                         isAddingNew={newPresetInput[displayName] !== undefined}
                         newPresetValue={newPresetInput[displayName] ?? ""}
-                        onSelectPreset={(presetName, lastSettings) => {
+                        onSelectPreset={(presetName, lastSettings, presetId) => {
                           setMachinePreset(prev => ({ ...prev, [displayName]: presetName }));
+                          if (presetId) setMachinePresetId(prev => ({ ...prev, [displayName]: presetId }));
                           if (lastSettings != null) setMachineSettings(prev => ({ ...prev, [displayName]: lastSettings }));
                         }}
                         onStartAddNew={() => setNewPresetInput(prev => ({ ...prev, [displayName]: "" }))}

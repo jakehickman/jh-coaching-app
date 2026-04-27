@@ -57,6 +57,7 @@ export interface WorkoutExercise {
   substitutedFor?: string | null;
   equipmentDetails?: string | null; // legacy field, kept for backward compat
   machinePreset?: string | null;    // saved machine preset name e.g. "Prime Pin Loaded"
+  presetId?: number | null;          // FK to equipment_presets.id — links performance to preset permanently
   machineSettings?: string | null;  // session-specific settings e.g. "Seat 4, pad 2"
   exerciseNotes?: string | null;
   sets: WorkoutSet[];
