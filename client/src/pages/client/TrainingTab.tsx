@@ -321,7 +321,7 @@ function PresetSelector({
       )}
       {currentPreset && renamingId === null && (
         <>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Set up</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Setup</p>
           <input
             type="text"
             value={currentSettings}
