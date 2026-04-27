@@ -294,34 +294,37 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
           )}
 
           {compareWeekA && compareWeekB && comparePoses.length > 0 && (
-            <div className="space-y-6">
-              {/* Column headers */}
-              <div className="grid grid-cols-[1fr_1fr] gap-4 ml-0">
-                <div className="text-center text-sm font-semibold text-muted-foreground">Week {compareWeekA}</div>
-                <div className="text-center text-sm font-semibold text-muted-foreground">Week {compareWeekB}</div>
-              </div>
+            <div className="space-y-8">
               {comparePoses.map((pose) => {
                 const photoA = compareByPoseWeek[pose]?.[compareWeekA];
                 const photoB = compareByPoseWeek[pose]?.[compareWeekB];
                 return (
-                  <div key={pose} className="space-y-1">
+                  <div key={pose} className="space-y-2">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {POSE_LABELS[pose]}
                     </p>
-                    <div className="grid grid-cols-2 gap-3 max-w-sm">
-                      <div className="rounded-lg overflow-hidden border border-border bg-card">
-                        {photoA ? (
-                          <img src={photoA.photoUrl} alt={`Week ${compareWeekA} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4] object-cover" />
-                        ) : (
-                          <div className="w-full aspect-[3/4] flex items-center justify-center text-xs text-muted-foreground">No photo</div>
-                        )}
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Week A column */}
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-semibold text-center text-muted-foreground">Week {compareWeekA}</p>
+                        <div className="rounded-lg overflow-hidden border border-border bg-card">
+                          {photoA ? (
+                            <img src={photoA.photoUrl} alt={`Week ${compareWeekA} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4] object-cover" />
+                          ) : (
+                            <div className="w-full aspect-[3/4] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
+                          )}
+                        </div>
                       </div>
-                      <div className="rounded-lg overflow-hidden border border-border bg-card">
-                        {photoB ? (
-                          <img src={photoB.photoUrl} alt={`Week ${compareWeekB} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4] object-cover" />
-                        ) : (
-                          <div className="w-full aspect-[3/4] flex items-center justify-center text-xs text-muted-foreground">No photo</div>
-                        )}
+                      {/* Week B column */}
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-semibold text-center text-muted-foreground">Week {compareWeekB}</p>
+                        <div className="rounded-lg overflow-hidden border border-border bg-card">
+                          {photoB ? (
+                            <img src={photoB.photoUrl} alt={`Week ${compareWeekB} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4] object-cover" />
+                          ) : (
+                            <div className="w-full aspect-[3/4] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
