@@ -135,14 +135,14 @@ function TrainingTab() {
           onClick={() => setVideoModal(null)}
         >
           <div
-            className="relative w-full max-w-2xl bg-card rounded-xl overflow-hidden shadow-2xl"
+            className="relative bg-card rounded-xl overflow-hidden shadow-2xl w-full max-w-xs"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <p className="text-sm font-semibold text-foreground">{videoModal.name}</p>
-              <button onClick={() => setVideoModal(null)} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
+              <p className="text-sm font-semibold text-foreground truncate pr-2">{videoModal.name}</p>
+              <button onClick={() => setVideoModal(null)} className="flex-shrink-0 text-muted-foreground hover:text-foreground"><X size={16} /></button>
             </div>
-            <div className="aspect-video w-full">
+            <div style={{ aspectRatio: '9/16' }} className="w-full">
               <iframe
                 src={videoModal.embedUrl}
                 className="w-full h-full"
@@ -1461,12 +1461,12 @@ function WorkoutLogTab() {
       {/* Video modal */}
       {videoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setVideoModal(null)}>
-          <div className="bg-card rounded-xl overflow-hidden w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-xl overflow-hidden w-full max-w-xs" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <p className="text-sm font-semibold text-foreground">{videoModal.name}</p>
-              <button onClick={() => setVideoModal(null)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+              <p className="text-sm font-semibold text-foreground truncate pr-2">{videoModal.name}</p>
+              <button onClick={() => setVideoModal(null)} className="flex-shrink-0 text-muted-foreground hover:text-foreground"><X size={18} /></button>
             </div>
-            <div className="aspect-video">
+            <div style={{ aspectRatio: '9/16' }} className="w-full">
               <iframe
                 src={videoModal.embedUrl}
                 className="w-full h-full"
