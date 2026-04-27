@@ -576,3 +576,5 @@
 - [x] Allow users to change the date of a logged workout session
 - [x] Client Training tab: add Equipment sub-tab for managing machine presets (rename, delete) per exercise
 - [x] Client Training Log: show machine preset (and settings) under each exercise name in past sessions
+- [x] Remove wrench icon from past session exercise rows (reverted per user request)
+- [x] Remove Equipment sub-tab from Training section (reverted per user request)

@@ -6,7 +6,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { SectionLabel, Card, DateInput } from "./shared";
-import ManageEquipmentTab from "./ManageEquipmentTab";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getYouTubeEmbedUrl(url: string): string | null {
@@ -1271,9 +1270,6 @@ function WorkoutLogTab() {
                         {firstSet.reps != null ? `${firstSet.reps}` : '—'}
                         <span className="text-muted-foreground/60 ml-1">({setCount} {setCount === 1 ? 'set' : 'sets'})</span>
                       </p>
-                      {ex.machinePreset && (
-                        <p className="text-[11px] text-muted-foreground/50 mt-0.5 pl-0.5">🔧 {ex.machinePreset}{ex.machineSettings ? ` · ${ex.machineSettings}` : ''}</p>
-                      )}
                       {ex.substitutedFor && (
                         <p className="text-[11px] text-muted-foreground/50 mt-0.5 pl-0.5">↳ for {ex.substitutedFor}</p>
                       )}
@@ -1290,42 +1286,32 @@ function WorkoutLogTab() {
 }
 
 // ─── CombinedTrainingTab ──────────────────────────────────────────────────────
-export default function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program" | "log" | "equipment" }) {
-  const { viewAsUserId } = useViewAs();
-  const [sub, setSub] = useState<"program" | "log" | "equipment">(() => {
+export default function CombinedTrainingTab({ defaultSub = "program" }: { defaultSub?: "program" | "log" }) {
+  const [sub, setSub] = useState<"program" | "log">(() => {
     try {
-      const stored = sessionStorage.getItem('trainingTab:sub') as "program" | "log" | "equipment" | null;
+      const stored = sessionStorage.getItem('trainingTab:sub') as "program" | "log" | null;
       return stored ?? defaultSub;
     } catch { return defaultSub; }
   });
   useEffect(() => {
     try { sessionStorage.setItem('trainingTab:sub', sub); } catch {}
   }, [sub]);
-
-  const tabs: Array<{ key: "program" | "log" | "equipment"; label: string }> = [
-    { key: "program", label: "Program" },
-    { key: "log", label: "Log" },
-    ...(!viewAsUserId ? [{ key: "equipment" as const, label: "Equipment" }] : []),
-  ];
-
   return (
     <div>
       <div className="flex gap-1 mb-6 bg-secondary rounded-lg p-1 w-fit">
-        {tabs.map(t => (
+        {(["program", "log"] as const).map(s => (
           <button
-            key={t.key}
-            onClick={() => setSub(t.key)}
+            key={s}
+            onClick={() => setSub(s)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              sub === t.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              sub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t.label}
+            {s === "program" ? "Program" : "Log"}
           </button>
         ))}
       </div>
-      {sub === "program" && <TrainingTab />}
-      {sub === "log" && <WorkoutLogTab />}
-      {sub === "equipment" && !viewAsUserId && <ManageEquipmentTab />}
+      {sub === "program" ? <TrainingTab /> : <WorkoutLogTab />}
     </div>
   );
 }
