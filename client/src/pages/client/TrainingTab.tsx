@@ -743,11 +743,12 @@ function WorkoutLogTab() {
               const filteredSets = (ex.sets ?? []).filter((set: any) => set.weight != null || set.reps != null);
               if (filteredSets.length > 0) {
                 prevExMap[ex.name] = filteredSets;
+                // Only record the preset if this session has actual set data for this exercise
+                const preset = ex.machinePreset || ex.equipmentDetails || null;
+                if (preset && !(ex.name in prevMachinePresetMap)) {
+                  prevMachinePresetMap[ex.name] = preset;
+                }
               }
-            }
-            const preset = ex.machinePreset || ex.equipmentDetails || null;
-            if (preset && !(ex.name in prevMachinePresetMap)) {
-              prevMachinePresetMap[ex.name] = preset;
             }
           }
         }
