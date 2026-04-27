@@ -582,3 +582,4 @@
 - [x] Redesign active workout logging experience: larger set inputs with kg/reps labels, machine preset as tappable chip, sticky Save Session button, session progress bar
 - [x] Fix meal plan editor: draft changes lost when switching between Training/Rest day sub-tabs
 - [x] Verify meal plan Change Log is recording and displaying correctly
+- [x] Fix updateDate: changing a workout session date should also update the linked daily log entry date AND session type (day letter)

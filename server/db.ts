@@ -1003,10 +1003,48 @@ export async function deleteWorkoutSession(id: number, userId: number) {
 export async function updateWorkoutSessionDate(id: number, userId: number, newDate: string) {
   const db = await getDb();
   if (!db) return;
+
+  // Fetch the session before updating so we know the old date and dayLabel
+  const [session] = await db
+    .select()
+    .from(workoutSessions)
+    .where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, userId)))
+    .limit(1);
+  if (!session) return;
+
+  const oldDate = session.sessionDate as string;
+  const dayLabel = session.dayLabel as string;
+
+  // Update the workout session date
   await db
     .update(workoutSessions)
     .set({ sessionDate: newDate })
     .where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, userId)));
+
+  // Clear training from the old date's daily log (only if no other session exists on that date)
+  const otherSessionsOnOldDate = await db
+    .select()
+    .from(workoutSessions)
+    .where(and(eq(workoutSessions.userId, userId), eq(workoutSessions.sessionDate, oldDate as any)))
+    .limit(1);
+  if (otherSessionsOnOldDate.length === 0) {
+    // No other sessions on the old date — clear trainingCompleted and trainingType
+    await upsertDailyLog({
+      userId,
+      logDate: oldDate,
+      trainingCompleted: false,
+      trainingType: null as any,
+      force: true,
+    });
+  }
+
+  // Upsert the new date's daily log with trainingCompleted = true and correct session type
+  await upsertDailyLog({
+    userId,
+    logDate: newDate,
+    trainingCompleted: true,
+    trainingType: dayLabel,
+  });
 }
 
 // ── Onboarding submissions ────────────────────────────────────────────────────
