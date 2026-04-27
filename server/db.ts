@@ -891,7 +891,7 @@ export async function saveWorkoutSession(data: {
   // Auto-save any machine presets from the exercises
   for (const ex of data.exercises) {
     if (ex.machinePreset) {
-      await saveEquipmentPreset(data.userId, ex.name, ex.machinePreset, ex.machineSettings ?? null);
+      await upsertEquipmentPreset(data.userId, ex.name, ex.machinePreset, ex.machineSettings ?? null);
     }
   }
   // Always sync trainingCompleted = true to the daily log for this date
