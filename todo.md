@@ -579,3 +579,4 @@
 - [x] Remove wrench icon from past session exercise rows (reverted per user request)
 - [x] Remove Equipment sub-tab from Training section (reverted per user request)
 - [x] Redesign Training Log tab: compact session starter (date + day pills in one row + Start Session CTA) and accordion timeline past sessions
+- [x] Redesign active workout logging experience: larger set inputs with kg/reps labels, machine preset as tappable chip, sticky Save Session button, session progress bar

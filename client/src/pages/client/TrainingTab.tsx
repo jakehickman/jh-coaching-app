@@ -953,8 +953,27 @@ function WorkoutLogTab() {
         // Keep a reference to the single most recent session for prev-note lookups
         const prevSession = pastSessions[0] ?? null;
 
+        const totalExercises = (dayDef?.exercises ?? []).length;
+        const completedExercises = (dayDef?.exercises ?? []).filter(ex => {
+          const subName = substitutions[ex.name];
+          const displayName = subName ?? ex.name;
+          const sets = exerciseData[displayName] ?? [];
+          return sets.length > 0 && sets.every(s => s.completed);
+        }).length;
+        const progressPct = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
+
         return (
-          <div className="space-y-3">
+          <div className="space-y-3 pb-24">
+            {/* Session progress bar */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-500"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground flex-shrink-0">{completedExercises}/{totalExercises}</span>
+            </div>
             {(dayDef?.exercises ?? []).map((ex, i) => {
               const subName = substitutions[ex.name];
               const displayName = subName ?? ex.name;
@@ -978,96 +997,92 @@ function WorkoutLogTab() {
                     onClick={() => toggleExerciseCollapse(displayName)}
                     className="w-full mb-3 text-left cursor-pointer"
                   >
-                    {/* Row 1: exercise name + Demo pill + chevron */}
-                    <div className="flex items-start gap-2 mb-1.5">
+                    {/* Header row: name + chevron */}
+                    <div className="flex items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-base font-semibold text-foreground">{displayName}</p>
-                        {currentPreset && (
-                          <p className="text-[11px] text-muted-foreground/60 mt-0.5">{currentPreset}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-base font-semibold text-foreground leading-snug">{displayName}</p>
+                          {subName && (
+                            <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded">SUB</span>
+                          )}
+                          {exEmbedUrl && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setVideoModal({ name: displayName, embedUrl: exEmbedUrl }); }}
+                              title="Demo video"
+                              className="flex items-center gap-1 text-[10px] font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-400/10 px-1.5 py-0.5 rounded"
+                            >
+                              <Play size={10} fill="currentColor" /> Demo
+                            </button>
+                          )}
+                        </div>
+                        {/* Machine preset chip */}
+                        {currentPreset ? (
+                          <button
+                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
+                            className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[11px] text-primary/80 hover:bg-primary/20 transition-colors"
+                          >
+                            <Settings size={10} />
+                            {currentPreset}
+                          </button>
+                        ) : (
+                          !isCollapsed && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: true })); }}
+                              className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Settings size={10} /> Add machine
+                            </button>
+                          )
                         )}
                         {subName && (
                           <p className="text-xs text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
                         )}
                       </div>
-                      {subName && (
-                        <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">SUB</span>
-                      )}
-                      {exEmbedUrl && (
-                        <button
-                          onClick={e => { e.stopPropagation(); setVideoModal({ name: displayName, embedUrl: exEmbedUrl }); }}
-                          title="Demo video"
-                          className="flex items-center gap-1 text-[10px] font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-400/10 px-1.5 py-0.5 rounded flex-shrink-0"
-                        >
-                          <Play size={10} fill="currentColor" /> Demo
-                        </button>
-                      )}
-                      <ChevronDown size={16} className={`text-muted-foreground transition-transform flex-shrink-0 ${isCollapsed ? '' : 'rotate-180'}`} />
+                      <ChevronDown size={16} className={`text-muted-foreground transition-transform flex-shrink-0 mt-1 ${isCollapsed ? '' : 'rotate-180'}`} />
                     </div>
-                    {/* Row 2: meta info (left) + icon buttons (right) */}
-                    <div className="flex items-end justify-between gap-2">
-                      <div className="min-w-0">
-                        {ex.notes && !subName && <p className="text-xs text-muted-foreground">{ex.notes}</p>}
-                        <p className="text-sm font-medium text-foreground/80">{ex.sets} sets × {ex.reps}</p>
-                        {prevSets.length > 0 && !isCollapsed && (
-                          <p className="text-xs text-primary/80 mt-0.5">
-                            Last: {prevSets[0].weight ?? '—'}kg × {prevSets[0].reps ?? '—'}
-                            {(prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]) && (
-                              <span className="text-muted-foreground/60 ml-1">· {prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name]}</span>
-                            )}
-                          </p>
-                        )}
-                        {!isCollapsed && (() => {
-                          const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;
-                          if (!prevNote) return null;
-                          const isNoteOpen = !!prevNoteOpen[displayName];
-                          return (
-                            <>
-                              <button
-                                onClick={e => { e.stopPropagation(); setPrevNoteOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
-                                className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                              >
-                                Note {isNoteOpen ? '↑' : '↓'}
-                              </button>
-                              {isNoteOpen && (
-                                <p className="text-xs text-muted-foreground/70 italic mt-0.5">{prevNote}</p>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <button
-                          onClick={e => { e.stopPropagation(); setHistorySheet(displayName); }}
-                          title="Exercise history"
-                          className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <History size={15} />
-                        </button>
-
-                        {!isCollapsed && !hasEquipment && (
+                    {/* Meta row: sets×reps target + action buttons */}
+                    {!isCollapsed && (
+                      <div className="flex items-center justify-between gap-2 mt-2">
+                        <div className="min-w-0">
+                          {ex.notes && !subName && <p className="text-xs text-muted-foreground mb-0.5">{ex.notes}</p>}
+                          <p className="text-sm font-medium text-foreground/70">{ex.sets} sets × {ex.reps}</p>
+                          {(() => {
+                            const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;
+                            if (!prevNote) return null;
+                            const isNoteOpen = !!prevNoteOpen[displayName];
+                            return (
+                              <>
+                                <button
+                                  onClick={e => { e.stopPropagation(); setPrevNoteOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
+                                  className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  Prev note {isNoteOpen ? '↑' : '↓'}
+                                </button>
+                                {isNoteOpen && (
+                                  <p className="text-xs text-muted-foreground/70 italic mt-0.5">{prevNote}</p>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
                           <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setEquipmentOpen(prev => ({ ...prev, [displayName]: true }));
-                            }}
-                            title="Add machine"
-                            className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors bg-secondary text-muted-foreground hover:text-foreground"
+                            onClick={e => { e.stopPropagation(); setHistorySheet(displayName); }}
+                            title="Exercise history"
+                            className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                           >
-                            <Settings size={15} />
+                            <History size={15} />
                           </button>
-                        )}
-
-                        {!isCollapsed && (
                           <button
                             onClick={e => { e.stopPropagation(); setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
                             title="Substitute exercise"
-                            className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                            className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                           >
                             <Shuffle size={15} />
                           </button>
-                        )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {isCollapsed && sets.length > 0 && sets.every(s => s.completed) && (
@@ -1118,50 +1133,75 @@ function WorkoutLogTab() {
 
                     {sets.length > 0 && (
                       <div className="mb-2">
-                        <div className="flex items-center gap-2 mb-1.5">
+                        {/* Column headers */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-11 flex-shrink-0" />
+                          <p className="text-[11px] font-medium text-muted-foreground flex-1 text-center uppercase tracking-wide">kg</p>
+                          <p className="text-[11px] font-medium text-muted-foreground flex-1 text-center uppercase tracking-wide">reps</p>
                           <div className="w-6 flex-shrink-0" />
-                          <p className="text-[10px] text-muted-foreground flex-1 text-center">Weight (kg)</p>
-                          <p className="text-[10px] text-muted-foreground flex-1 text-center">Reps</p>
-                          <div className="w-5 flex-shrink-0" />
                         </div>
-                        <div className="space-y-1.5">
-                          {sets.map((s, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <button
-                                onClick={() => toggleSetCompleted(displayName, idx)}
-                                className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded border-2 transition-colors ${
-                                  s.completed
-                                    ? "border-green-500 bg-green-500/20 text-green-400"
-                                    : "border-border text-transparent hover:border-primary"
-                                }`}
-                              >
-                                <Check size={12} />
-                              </button>
-                              <div className="flex-1">
-                                <input
-                                  type="number" inputMode="decimal"
-                                  value={s.weight ?? ""}
-                                  onChange={e => setSet(displayName, idx, "weight", e.target.value)}
-                                  className={inputCls}
-                                />
+                        <div className="space-y-2.5">
+                          {sets.map((s, idx) => {
+                            const prevW = prevSets[idx]?.weight;
+                            const prevR = prevSets[idx]?.reps;
+                            return (
+                              <div key={idx} className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  {/* Tick button — large */}
+                                  <button
+                                    onClick={() => toggleSetCompleted(displayName, idx)}
+                                    className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-xl border-2 transition-all ${
+                                      s.completed
+                                        ? "border-green-500 bg-green-500/20 text-green-400"
+                                        : "border-border text-transparent hover:border-primary/60"
+                                    }`}
+                                  >
+                                    <Check size={18} />
+                                  </button>
+                                  {/* Weight input */}
+                                  <div className="flex-1">
+                                    <input
+                                      type="number" inputMode="decimal"
+                                      value={s.weight ?? ""}
+                                      onChange={e => setSet(displayName, idx, "weight", e.target.value)}
+                                      onWheel={e => (e.target as HTMLInputElement).blur()}
+                                      placeholder={prevW != null ? String(prevW) : ""}
+                                      className={`w-full bg-input border border-border rounded-xl px-3 py-3 text-lg font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                                        s.completed ? "opacity-50" : ""
+                                      }`}
+                                    />
+                                  </div>
+                                  {/* Reps input */}
+                                  <div className="flex-1">
+                                    <input
+                                      type="number" inputMode="numeric"
+                                      value={s.reps ?? ""}
+                                      onChange={e => setSet(displayName, idx, "reps", e.target.value)}
+                                      onWheel={e => (e.target as HTMLInputElement).blur()}
+                                      placeholder={prevR != null ? String(prevR) : ""}
+                                      className={`w-full bg-input border border-border rounded-xl px-3 py-3 text-lg font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                                        s.completed ? "opacity-50" : ""
+                                      }`}
+                                    />
+                                  </div>
+                                  {/* Remove set */}
+                                  {sets.length > 1 ? (
+                                    <button onClick={() => removeSet(displayName, idx)} className="w-6 flex-shrink-0 flex items-center justify-center text-muted-foreground/50 hover:text-destructive transition-colors">
+                                      <Minus size={14} />
+                                    </button>
+                                  ) : (
+                                    <div className="w-6 flex-shrink-0" />
+                                  )}
+                                </div>
+                                {/* Previous performance hint below this set row */}
+                                {(prevW != null || prevR != null) && (
+                                  <p className="text-[11px] text-muted-foreground/50 text-center pl-13">
+                                    Last: {prevW ?? '—'}kg × {prevR ?? '—'}
+                                  </p>
+                                )}
                               </div>
-                              <div className="flex-1">
-                                <input
-                                  type="number" inputMode="numeric"
-                                  value={s.reps ?? ""}
-                                  onChange={e => setSet(displayName, idx, "reps", e.target.value)}
-                                  className={inputCls}
-                                />
-                              </div>
-                              {sets.length > 1 ? (
-                                <button onClick={() => removeSet(displayName, idx)} className="w-5 flex-shrink-0 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
-                                  <Minus size={14} />
-                                </button>
-                              ) : (
-                                <div className="w-5 flex-shrink-0" />
-                              )}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -1197,20 +1237,23 @@ function WorkoutLogTab() {
               />
             </Card>
 
+            {/* Sticky save button rendered via portal-like fixed positioning */}
             {!viewAsUserId && (
-              <div className="space-y-2">
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
-                >
-                  {saving ? "Saving..." : "Save Session"}
-                </button>
-                {lastSaved && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    Last saved: {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                )}
+              <div className="fixed bottom-16 left-0 right-0 z-40 px-4 pb-2 pointer-events-none">
+                <div className="max-w-lg mx-auto pointer-events-auto">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="w-full py-4 bg-primary text-primary-foreground font-bold text-base rounded-2xl shadow-2xl hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : `Save Session ${selectedDay}`}
+                  </button>
+                  {lastSaved && (
+                    <p className="text-center text-xs text-muted-foreground mt-1">
+                      Last saved: {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>
