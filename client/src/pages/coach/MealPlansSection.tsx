@@ -125,7 +125,7 @@ function MacroChip({ label, value, unit = "g", highlight = false }: { label: str
   );
 }
 
-export default function MealPlansSection({ fixedClientId }: { fixedClientId?: number } = {}) {
+export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixedClientId?: number; onLiveTotals?: (dayType: "training" | "rest", calories: number) => void } = {}) {
   const { clients, selectedUserId: selectorUserId, setSelectedUserId } = useClientSelector();
   const selectedUserId = fixedClientId ?? selectorUserId;
   const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
@@ -291,6 +291,11 @@ export default function MealPlansSection({ fixedClientId }: { fixedClientId?: nu
     fiber: Math.round(acc.fiber + m.fiber),
     fat: Math.round(acc.fat + m.fat),
   }), { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 });
+
+  // Notify parent of live calorie total whenever it changes
+  useEffect(() => {
+    if (onLiveTotals) onLiveTotals(dayType, dailyTotals.calories);
+  }, [dailyTotals.calories, dayType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const doSave = () => {
     if (!selectedUserId || upsert.isPending) return;

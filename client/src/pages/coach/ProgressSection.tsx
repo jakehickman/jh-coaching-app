@@ -334,7 +334,15 @@ function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
 }
 
 // ─── Weekly Calorie Summary ─────────────────────────────────────────────────
-function WeeklyCalorySummary({ clientId }: { clientId: number }) {
+function WeeklyCalorySummary({
+  clientId,
+  liveTrainingCal,
+  liveRestCal,
+}: {
+  clientId: number;
+  liveTrainingCal?: number | null;
+  liveRestCal?: number | null;
+}) {
   const { data: trainingPlan } = trpc.mealPlan.getForClient.useQuery(
     { userId: clientId, dayType: "training" },
     { enabled: !!clientId }
@@ -352,8 +360,9 @@ function WeeklyCalorySummary({ clientId }: { clientId: number }) {
   const cycleLength = schedule.length;
   const trainingDays = schedule.filter((s: string) => s.toUpperCase() !== "OFF").length;
   const restDays = cycleLength - trainingDays;
-  const tCal = trainingPlan?.totalCalories ?? null;
-  const rCal = restPlan?.totalCalories ?? null;
+  // Prefer live (draft) values over saved server values
+  const tCal = (liveTrainingCal != null && liveTrainingCal > 0) ? liveTrainingCal : (trainingPlan?.totalCalories ?? null);
+  const rCal = (liveRestCal != null && liveRestCal > 0) ? liveRestCal : (restPlan?.totalCalories ?? null);
 
   if (!cycleLength || (tCal == null && rCal == null)) return null;
 
@@ -1686,6 +1695,22 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
   // allExpandedState: null = no global action, true/false = last global action
   const [globalToggle, setGlobalToggle] = useState<{ expanded: boolean; gen: number } | null>(null);
 
+  // Live calorie overrides from MealPlansSection draft — reset when client changes
+  const [liveTrainingCal, setLiveTrainingCal] = useState<number | null>(null);
+  const [liveRestCal, setLiveRestCal] = useState<number | null>(null);
+  const prevLiveClientId = React.useRef<number | null>(null);
+  useEffect(() => {
+    if (selectedUserId !== prevLiveClientId.current) {
+      setLiveTrainingCal(null);
+      setLiveRestCal(null);
+      prevLiveClientId.current = selectedUserId ?? null;
+    }
+  }, [selectedUserId]);
+  const handleLiveTotals = React.useCallback((dayType: "training" | "rest", calories: number) => {
+    if (dayType === "training") setLiveTrainingCal(calories);
+    else setLiveRestCal(calories);
+  }, []);
+
   // ── Calendar-day helpers ────────────────────────────────────────────────────
   const DAY = 86400000;
   function localDateStr(offsetDays: number): string {
@@ -1910,8 +1935,8 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           <TabsContent value="nutrition">
             <div className="space-y-8">
               <div>
-                <WeeklyCalorySummary clientId={selectedUserId!} />
-                <MealPlansSection fixedClientId={selectedUserId!} />
+                <WeeklyCalorySummary clientId={selectedUserId!} liveTrainingCal={liveTrainingCal} liveRestCal={liveRestCal} />
+                <MealPlansSection fixedClientId={selectedUserId!} onLiveTotals={handleLiveTotals} />
               </div>
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Change Log</p>

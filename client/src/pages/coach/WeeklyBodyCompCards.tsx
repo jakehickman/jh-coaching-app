@@ -159,12 +159,12 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
       {/* ── Expanded detail ── */}
       {expanded && (
         <div className="px-4 pb-4 space-y-4 border-t border-border/40 pt-3">
-          {/* Weigh-ins */}
+          {/* Weigh-ins — newest first */}
           {week.weighIns.length > 0 && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Daily Weigh-ins</p>
               <div className="space-y-0">
-                {week.weighIns.map((w) => (
+                {[...week.weighIns].sort((a, b) => b.logDate.localeCompare(a.logDate)).map((w) => (
                   <div key={w.logDate} className="flex items-center py-1 border-b border-border/40 last:border-0">
                     <span className="text-xs text-muted-foreground flex-1">{fmtDate(w.logDate)}</span>
                     <span className="text-xs font-medium tabular-nums text-right w-20">{w.weight.toFixed(1)} kg</span>
@@ -174,8 +174,8 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
             </div>
           )}
 
-          {/* Measurement entries */}
-          {week.measurementEntries.map((entry) => (
+          {/* Measurement entries — newest first */}
+          {[...week.measurementEntries].sort((a, b) => b.measureDate.localeCompare(a.measureDate)).map((entry) => (
             <div key={entry.id}>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                 Measurements — {fmtDate(entry.measureDate)}
