@@ -875,47 +875,45 @@ function WorkoutLogTab() {
         {/* Row 1: date button + day pills */}
         <div className="flex items-center gap-2 mb-3">
           <div className="relative flex-shrink-0">
-            <button
-              onClick={() => (document.getElementById('log-date-input') as HTMLInputElement)?.showPicker?.()}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
-            >
-              <Calendar size={14} />
-              <span>{(() => { const d = new Date(sessionDate + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })()}</span>
-            </button>
-            <input
-              id="log-date-input"
-              type="date"
-              value={sessionDate}
-              onChange={v => {
-                // Auto-save current session before switching date
-                if (selectedDay) {
-                  const dayDef = days.find(d => d.label === selectedDay);
-                  const exercises = (dayDef?.exercises ?? []).map(ex => {
-                    const subName = substitutions[ex.name];
-                    const nameToUse = subName ?? ex.name;
-                    return {
-                      name: nameToUse,
-                      substitutedFor: subName ? ex.name : undefined,
-                      equipmentDetails: equipmentDetails[nameToUse] || null,
-                      machinePreset: machinePreset[nameToUse] || null,
-                      presetId: machinePresetId[nameToUse] || null,
-                      machineSettings: machineSettings[nameToUse] || null,
-                      exerciseNotes: exerciseNotes[nameToUse] || null,
-                      sets: (exerciseData[nameToUse] ?? []).map(s => ({
-                        weight: s.weight !== "" ? parseFloat(s.weight) : null,
-                        reps: s.reps !== "" ? parseInt(s.reps) : null,
-                        notes: s.notes || null,
-                        completed: s.completed || s.weight !== "" || s.reps !== "",
-                      })),
-                    };
-                  });
-                  saveMutation.mutate({ sessionDate, dayLabel: selectedDay, exercises, notes: sessionNotes || null });
-                }
-                setSessionDate(v.target.value);
-                setSelectedDay(null);
-              }}
-              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-            />
+            {/* Single native date input styled as a button — most reliable on mobile/iOS */}
+            <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer select-none">
+              <Calendar size={14} className="pointer-events-none" />
+              <span className="pointer-events-none">{(() => { const d = new Date(sessionDate + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })()}</span>
+              <input
+                type="date"
+                value={sessionDate}
+                onChange={v => {
+                  // Auto-save current session before switching date
+                  if (selectedDay) {
+                    const dayDef = days.find(d => d.label === selectedDay);
+                    const exercises = (dayDef?.exercises ?? []).map(ex => {
+                      const subName = substitutions[ex.name];
+                      const nameToUse = subName ?? ex.name;
+                      return {
+                        name: nameToUse,
+                        substitutedFor: subName ? ex.name : undefined,
+                        equipmentDetails: equipmentDetails[nameToUse] || null,
+                        machinePreset: machinePreset[nameToUse] || null,
+                        presetId: machinePresetId[nameToUse] || null,
+                        machineSettings: machineSettings[nameToUse] || null,
+                        exerciseNotes: exerciseNotes[nameToUse] || null,
+                        sets: (exerciseData[nameToUse] ?? []).map(s => ({
+                          weight: s.weight !== "" ? parseFloat(s.weight) : null,
+                          reps: s.reps !== "" ? parseInt(s.reps) : null,
+                          notes: s.notes || null,
+                          completed: s.completed || s.weight !== "" || s.reps !== "",
+                        })),
+                      };
+                    });
+                    saveMutation.mutate({ sessionDate, dayLabel: selectedDay, exercises, notes: sessionNotes || null });
+                  }
+                  setSessionDate(v.target.value);
+                  setSelectedDay(null);
+                }}
+                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                style={{ WebkitAppearance: 'none' }}
+              />
+            </label>
           </div>
           {days.length === 0 ? (
             <p className="text-xs text-muted-foreground">No program assigned</p>
