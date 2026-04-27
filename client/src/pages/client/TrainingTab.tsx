@@ -1271,9 +1271,7 @@ function WorkoutLogTab() {
                         <span className="text-muted-foreground/60 ml-1">({setCount} {setCount === 1 ? 'set' : 'sets'})</span>
                       </p>
                       {ex.machinePreset && (
-                        <p className="text-[11px] text-muted-foreground/60 mt-0.5 pl-0.5">
-                          {ex.machinePreset}{ex.machineSettings ? ` · ${ex.machineSettings}` : ''}
-                        </p>
+                        <p className="text-[11px] text-muted-foreground/60 mt-0.5 pl-0.5">{ex.machinePreset}</p>
                       )}
                       {ex.substitutedFor && (
                         <p className="text-[11px] text-muted-foreground/50 mt-0.5 pl-0.5">↳ for {ex.substitutedFor}</p>
