@@ -605,3 +605,9 @@
 - [x] Client Training Program tab: widen exercise name column so full name fits without wrapping
 - [x] Client Training Program tab: all day cards expanded by default
 - [x] Redesign Habits card row: smaller square dots, wider name, remove redundant left dot, fix day-letter alignment via CSS grid, streak as inline badge
+
+- [ ] Weekly review accordion: only one week expanded at a time (single-expand)
+- [ ] Training sub-tabs: reorder to Session Log > Exercise Progress > Program
+- [ ] Session Log: add "Last 7 days" label/indicator to clarify the default date range
+- [ ] Weekly review coach notes and changes made: auto-expanding textarea
+- [ ] Weekly review coach notes and changes made: basic markdown formatting toolbar (bullet points, headings)

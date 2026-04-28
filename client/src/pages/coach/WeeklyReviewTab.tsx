@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ArrowUp, ArrowDown, Minus, ChevronDown, CheckCircle2 } from "lucide-react";
+import { AlertCircle, ArrowUp, ArrowDown, Minus, ChevronDown, CheckCircle2, Bold, List, Heading2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -161,85 +161,157 @@ function SubmissionQA({ answers }: { answers: Array<{ question: { slug: string; 
   );
 }
 
-// ─── Coach Notes Field ────────────────────────────────────────────────────────
+//// ─── Shared auto-expanding markdown notes field ──────────────────────────────
 
-function CoachNotesField({ submissionId, initialNotes }: { submissionId: number; initialNotes: string | null | undefined }) {
+function NotesField({
+  label,
+  placeholder,
+  initialNotes,
+  onSave,
+  isPending,
+}: {
+  label: string;
+  placeholder: string;
+  initialNotes: string | null | undefined;
+  onSave: (notes: string) => void;
+  isPending: boolean;
+}) {
   const [value, setValue] = useState(initialNotes ?? "");
   const [saved, setSaved] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const saveNotes = trpc.checkIn.saveCoachNotes.useMutation({
-    onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 2000); },
-    onError: () => toast.error("Failed to save notes"),
-  });
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-expand textarea height
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+
+  const triggerSave = useCallback((v: string) => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => { onSave(v); setSaved(true); setTimeout(() => setSaved(false), 2000); }, 1200);
+  }, [onSave]);
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value);
-    setSaved(false);
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveNotes.mutate({ submissionId, notes: e.target.value });
-    }, 1200);
+    triggerSave(e.target.value);
   };
+
   const handleBlur = () => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveNotes.mutate({ submissionId, notes: value });
+    onSave(value);
   };
+
+  // Insert markdown at cursor
+  const insertMarkdown = (prefix: string, suffix = "", block = false) => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = value.slice(start, end);
+    let insert: string;
+    if (block) {
+      // For headings/bullets: insert at start of line
+      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+      const before = value.slice(0, lineStart);
+      const line = value.slice(lineStart, end || value.indexOf("\n", lineStart) === -1 ? value.length : value.indexOf("\n", lineStart));
+      const after = value.slice(end || (value.indexOf("\n", lineStart) === -1 ? value.length : value.indexOf("\n", lineStart)));
+      insert = before + prefix + line + after;
+      setValue(insert);
+      triggerSave(insert);
+      return;
+    }
+    insert = value.slice(0, start) + prefix + (selected || "text") + suffix + value.slice(end);
+    setValue(insert);
+    triggerSave(insert);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + prefix.length, start + prefix.length + (selected || "text").length);
+    }, 0);
+  };
+
   return (
     <div className="px-4 py-3 border-t border-border/50 space-y-1.5">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Coach Notes</p>
-        {saved && <span className="text-[10px] text-green-400">Saved</span>}
-        {saveNotes.isPending && <span className="text-[10px] text-muted-foreground">Saving…</span>}
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+        <div className="flex items-center gap-2">
+          {saved && <span className="text-[10px] text-green-400">Saved</span>}
+          {isPending && <span className="text-[10px] text-muted-foreground">Saving…</span>}
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              title="Heading"
+              onClick={() => insertMarkdown("## ", "", true)}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Heading2 size={13} />
+            </button>
+            <button
+              type="button"
+              title="Bold"
+              onClick={() => insertMarkdown("**", "**")}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Bold size={13} />
+            </button>
+            <button
+              type="button"
+              title="Bullet list"
+              onClick={() => insertMarkdown("- ", "", true)}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <List size={13} />
+            </button>
+          </div>
+        </div>
       </div>
       <textarea
+        ref={textareaRef}
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
-        placeholder="Add feedback, program adjustments, or observations…"
+        placeholder={placeholder}
         rows={3}
-        className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 transition-colors"
+        className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 transition-colors overflow-hidden"
+        style={{ minHeight: '4.5rem' }}
       />
     </div>
+  );
+}
+
+// ─── Coach Notes Field ──────────────────────────────────────────────────────
+
+function CoachNotesField({ submissionId, initialNotes }: { submissionId: number; initialNotes: string | null | undefined }) {
+  const saveNotes = trpc.checkIn.saveCoachNotes.useMutation({
+    onError: () => toast.error("Failed to save notes"),
+  });
+  return (
+    <NotesField
+      label="Coach Notes"
+      placeholder="Add feedback, program adjustments, or observations…"
+      initialNotes={initialNotes}
+      onSave={(notes) => saveNotes.mutate({ submissionId, notes })}
+      isPending={saveNotes.isPending}
+    />
   );
 }
 
 // ─── Changes Notes Field ──────────────────────────────────────────────────────
 
 function ChangesNotesField({ submissionId, initialNotes }: { submissionId: number; initialNotes: string | null | undefined }) {
-  const [value, setValue] = useState(initialNotes ?? "");
-  const [saved, setSaved] = useState(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveNotes = trpc.checkIn.saveChangesNotes.useMutation({
-    onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 2000); },
     onError: () => toast.error("Failed to save changes"),
   });
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(e.target.value);
-    setSaved(false);
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveNotes.mutate({ submissionId, notes: e.target.value });
-    }, 1200);
-  };
-  const handleBlur = () => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveNotes.mutate({ submissionId, notes: value });
-  };
   return (
-    <div className="px-4 py-3 border-t border-border/50 space-y-1.5">
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Changes Made</p>
-        {saved && <span className="text-[10px] text-green-400">Saved</span>}
-        {saveNotes.isPending && <span className="text-[10px] text-muted-foreground">Saving…</span>}
-      </div>
-      <textarea
-        value={value}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder="Record any adjustments made to meal plan, training, or other changes…"
-        rows={3}
-        className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 transition-colors"
-      />
-    </div>
+    <NotesField
+      label="Changes Made"
+      placeholder="Record any adjustments made to meal plan, training, or other changes…"
+      initialNotes={initialNotes}
+      onSave={(notes) => saveNotes.mutate({ submissionId, notes })}
+      isPending={saveNotes.isPending}
+    />
   );
 }
 
@@ -293,10 +365,9 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
 
   function toggleCard(weekStart: string) {
     setExpanded(prev => {
-      const next = new Set(prev);
-      if (next.has(weekStart)) next.delete(weekStart);
-      else next.add(weekStart);
-      return next;
+      // Single-expand: if already open, close it; otherwise open only this one
+      if (prev.has(weekStart)) return new Set<string>();
+      return new Set<string>([weekStart]);
     });
   }
 

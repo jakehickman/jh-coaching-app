@@ -1124,7 +1124,12 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
   const visible = showAll ? sorted : recent;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {showAll ? `All sessions (${sorted.length})` : `Last 7 days${recent.length > 0 ? ` · ${recent.length} session${recent.length !== 1 ? 's' : ''}` : ''}`}
+        </p>
+      </div>
       {visible.length === 0 && (
         <p className="text-sm text-muted-foreground">No sessions in the last 7 days.</p>
       )}
@@ -1924,12 +1929,18 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
 
           {/* ── Training: Program (editor) + Performance (history) sub-tabs ── */}
           <TabsContent value="training">
-            <Tabs defaultValue="program" className="w-full">
+            <Tabs defaultValue="session-log" className="w-full">
               <TabsList className="mb-4">
-                <TabsTrigger value="program">Program</TabsTrigger>
                 <TabsTrigger value="session-log">Session Log</TabsTrigger>
                 <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
+                <TabsTrigger value="program">Program</TabsTrigger>
               </TabsList>
+              <TabsContent value="session-log">
+                <WorkoutSessionsTab workoutSessions={workoutSessions} />
+              </TabsContent>
+              <TabsContent value="exercise-progress">
+                <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} />
+              </TabsContent>
               <TabsContent value="program">
                 <div className="space-y-8">
                   <TrainingSection fixedClientId={selectedUserId!} />
@@ -1938,12 +1949,6 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                     <ProgramChangeLogTab clientId={selectedUserId!} />
                   </div>
                 </div>
-              </TabsContent>
-              <TabsContent value="session-log">
-                <WorkoutSessionsTab workoutSessions={workoutSessions} />
-              </TabsContent>
-              <TabsContent value="exercise-progress">
-                <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} />
               </TabsContent>
             </Tabs>
           </TabsContent>
