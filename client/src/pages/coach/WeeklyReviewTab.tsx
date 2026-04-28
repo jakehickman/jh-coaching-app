@@ -262,8 +262,12 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
     { enabled: !!clientId, staleTime: 30_000 }
   );
 
+  const utils = trpc.useUtils();
   const markReviewed = trpc.checkIn.markReviewed.useMutation({
-    onSuccess: () => trpc.useUtils().checkIn.clientHistory.invalidate(),
+    onSuccess: () => {
+      utils.checkIn.clientHistory.invalidate();
+      utils.progress.weeklyReview.invalidate();
+    },
     onError: () => toast.error("Failed to update review status"),
   });
 
