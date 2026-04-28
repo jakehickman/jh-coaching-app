@@ -530,7 +530,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                         <Button
                           size="sm"
                           variant={isReviewed ? "outline" : "default"}
-                          onClick={() => markReviewed.mutate({ id: (submission as any).id, reviewed: !isReviewed })}
+                          onClick={() => markReviewed.mutate({ id: (submission as any).id, reviewed: !isReviewed, clientId })}
                           disabled={markReviewed.isPending}
                           className="gap-1.5"
                         >

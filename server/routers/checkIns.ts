@@ -351,8 +351,14 @@ export const checkInRouter = router({
    * COACH: Mark a submission as reviewed / unreviewed.
    */
   markReviewed: adminProcedure
-    .input(z.object({ id: z.number(), reviewed: z.boolean() }))
-    .mutation(({ input }) => db.markCheckInReviewed(input.id, input.reviewed)),
+    .input(z.object({ id: z.number(), reviewed: z.boolean(), clientId: z.number().optional() }))
+    .mutation(async ({ input }) => {
+      await db.markCheckInReviewed(input.id, input.reviewed);
+      // When marking as reviewed, advance the cycle so client moves back to Upcoming
+      if (input.reviewed && input.clientId) {
+        await db.completeCycle(input.clientId);
+      }
+    }),
 
   /**
    * COACH: Save notes for a specific check-in submission.
