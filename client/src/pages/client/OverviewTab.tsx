@@ -94,7 +94,7 @@ function HabitsSummary() {
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm font-medium text-foreground leading-snug">{h.name}</p>
                 {h.streak > 1 && (
-                  <span className="shrink-0 text-[10px] font-semibold text-primary/80">{h.streak}-day streak</span>
+                  <span className="shrink-0 text-[10px] font-semibold text-primary/80">{h.streak} day streak</span>
                 )}
               </div>
               {/* Row 2: day letters + dots aligned via grid */}
