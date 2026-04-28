@@ -611,3 +611,7 @@
 - [ ] Session Log: add "Last 7 days" label/indicator to clarify the default date range
 - [ ] Weekly review coach notes and changes made: auto-expanding textarea
 - [ ] Weekly review coach notes and changes made: basic markdown formatting toolbar (bullet points, headings)
+- [x] Move check-in submission answers, Coach Notes, Changes Made, and Mark as Reviewed out of Weekly Review cards into new dedicated Check-ins tab
+- [x] Weekly Review cards now show metrics only (clean for client-facing sessions)
+- [x] New Check-ins tab: weekly accordion (submissions only), Tiptap WYSIWYG notes for Coach Notes and Changes Made, Mark as Reviewed button with success toast
+- [x] Replace raw markdown textarea + toolbar with Tiptap WYSIWYG editor (bold, heading, bullet list)

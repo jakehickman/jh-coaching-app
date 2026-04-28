@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ArrowUp, ArrowDown, Minus, ChevronDown, CheckCircle2, Bold, List, Heading2 } from "lucide-react";
-import { toast } from "sonner";
+import { AlertCircle, ArrowUp, ArrowDown, Minus, ChevronDown } from "lucide-react";
 
 interface Props {
   clientId: number;
@@ -140,181 +139,6 @@ function MetricGroup({ label, children }: { label: string; children: React.React
   );
 }
 
-// ─── Submission Q&A ───────────────────────────────────────────────────────────
-
-function SubmissionQA({ answers }: { answers: Array<{ question: { slug: string; questionText: string }; value: string | null; elaboration?: string | null }> }) {
-  if (!answers || answers.length === 0) {
-    return <p className="text-xs text-muted-foreground px-4 py-3">No answers recorded.</p>;
-  }
-  return (
-    <div className="px-4 pt-3 pb-1 space-y-3">
-      {answers.map((a, i) => (
-        <div key={i} className="space-y-0.5">
-          <p className="text-xs text-muted-foreground">{a.question.questionText}</p>
-          <p className="text-sm text-foreground font-medium">{a.value ?? "—"}</p>
-          {a.elaboration && (
-            <p className="text-xs text-muted-foreground italic">{a.elaboration}</p>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-//// ─── Shared auto-expanding markdown notes field ──────────────────────────────
-
-function NotesField({
-  label,
-  placeholder,
-  initialNotes,
-  onSave,
-  isPending,
-}: {
-  label: string;
-  placeholder: string;
-  initialNotes: string | null | undefined;
-  onSave: (notes: string) => void;
-  isPending: boolean;
-}) {
-  const [value, setValue] = useState(initialNotes ?? "");
-  const [saved, setSaved] = useState(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Auto-expand textarea height
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [value]);
-
-  const triggerSave = useCallback((v: string) => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => { onSave(v); setSaved(true); setTimeout(() => setSaved(false), 2000); }, 1200);
-  }, [onSave]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(e.target.value);
-    triggerSave(e.target.value);
-  };
-
-  const handleBlur = () => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    onSave(value);
-  };
-
-  // Insert markdown at cursor
-  const insertMarkdown = (prefix: string, suffix = "", block = false) => {
-    const el = textareaRef.current;
-    if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const selected = value.slice(start, end);
-    let insert: string;
-    if (block) {
-      // For headings/bullets: insert at start of line
-      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-      const before = value.slice(0, lineStart);
-      const line = value.slice(lineStart, end || value.indexOf("\n", lineStart) === -1 ? value.length : value.indexOf("\n", lineStart));
-      const after = value.slice(end || (value.indexOf("\n", lineStart) === -1 ? value.length : value.indexOf("\n", lineStart)));
-      insert = before + prefix + line + after;
-      setValue(insert);
-      triggerSave(insert);
-      return;
-    }
-    insert = value.slice(0, start) + prefix + (selected || "text") + suffix + value.slice(end);
-    setValue(insert);
-    triggerSave(insert);
-    setTimeout(() => {
-      el.focus();
-      el.setSelectionRange(start + prefix.length, start + prefix.length + (selected || "text").length);
-    }, 0);
-  };
-
-  return (
-    <div className="px-4 py-3 border-t border-border/50 space-y-1.5">
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-        <div className="flex items-center gap-2">
-          {saved && <span className="text-[10px] text-green-400">Saved</span>}
-          {isPending && <span className="text-[10px] text-muted-foreground">Saving…</span>}
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              title="Heading"
-              onClick={() => insertMarkdown("## ", "", true)}
-              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Heading2 size={13} />
-            </button>
-            <button
-              type="button"
-              title="Bold"
-              onClick={() => insertMarkdown("**", "**")}
-              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Bold size={13} />
-            </button>
-            <button
-              type="button"
-              title="Bullet list"
-              onClick={() => insertMarkdown("- ", "", true)}
-              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <List size={13} />
-            </button>
-          </div>
-        </div>
-      </div>
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder={placeholder}
-        rows={3}
-        className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 transition-colors overflow-hidden"
-        style={{ minHeight: '4.5rem' }}
-      />
-    </div>
-  );
-}
-
-// ─── Coach Notes Field ──────────────────────────────────────────────────────
-
-function CoachNotesField({ submissionId, initialNotes }: { submissionId: number; initialNotes: string | null | undefined }) {
-  const saveNotes = trpc.checkIn.saveCoachNotes.useMutation({
-    onError: () => toast.error("Failed to save notes"),
-  });
-  return (
-    <NotesField
-      label="Coach Notes"
-      placeholder="Add feedback, program adjustments, or observations…"
-      initialNotes={initialNotes}
-      onSave={(notes) => saveNotes.mutate({ submissionId, notes })}
-      isPending={saveNotes.isPending}
-    />
-  );
-}
-
-// ─── Changes Notes Field ──────────────────────────────────────────────────────
-
-function ChangesNotesField({ submissionId, initialNotes }: { submissionId: number; initialNotes: string | null | undefined }) {
-  const saveNotes = trpc.checkIn.saveChangesNotes.useMutation({
-    onError: () => toast.error("Failed to save changes"),
-  });
-  return (
-    <NotesField
-      label="Changes Made"
-      placeholder="Record any adjustments made to meal plan, training, or other changes…"
-      initialNotes={initialNotes}
-      onSave={(notes) => saveNotes.mutate({ submissionId, notes })}
-      isPending={saveNotes.isPending}
-    />
-  );
-}
-
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
@@ -328,31 +152,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
     { enabled: !!clientId, staleTime: 0, retry: 1 }
   );
 
-  // Fetch check-in history to match submissions to weeks
-  const { data: checkInHistory } = trpc.checkIn.clientHistory.useQuery(
-    { clientId },
-    { enabled: !!clientId, staleTime: 30_000 }
-  );
-
-  const utils = trpc.useUtils();
-  const markReviewed = trpc.checkIn.markReviewed.useMutation({
-    onSuccess: () => {
-      utils.checkIn.clientHistory.invalidate();
-      utils.progress.weeklyReview.invalidate();
-    },
-    onError: () => toast.error("Failed to update review status"),
-  });
-
   const weeks = data?.weeks ?? [];
-
-  // Build a map from weekNumber → history row
-  const historyByWeek = useMemo(() => {
-    const map = new Map<number, any>();
-    for (const row of checkInHistory ?? []) {
-      if (row.weekNumber != null) map.set(row.weekNumber, row);
-    }
-    return map;
-  }, [checkInHistory]);
 
   // Initialise: expand only the most recent week once data loads
   useEffect(() => {
@@ -413,11 +213,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         const hasData = week.daysLogged > 0;
         const isExpanded = expanded.has(week.weekStart);
         const prev: Week | null = weeks[idx + 1] ?? null;
-        const historyRow = historyByWeek.get(week.weekNumber);
-        const submission = historyRow?.submission ?? null;
-        const submissionAnswers = historyRow?.answers ?? [];
-        const hasSubmission = !!(historyRow?.submissionId || submission);
-        const isReviewed = !!(submission as any)?.reviewedAt;
 
         const stepsAvg = week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—";
         const stepsValue = week.avgSteps != null ? stepsAvg : "—";
@@ -457,16 +252,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                     Current
                   </Badge>
                 )}
-                {hasSubmission && !isReviewed && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-blue-500/50 text-blue-400 bg-blue-500/10 flex-shrink-0">
-                    Unreviewed
-                  </Badge>
-                )}
-                {hasSubmission && isReviewed && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-green-500/50 text-green-400 bg-green-500/10 flex-shrink-0">
-                    Reviewed
-                  </Badge>
-                )}
+
               </div>
               <div className="flex items-center gap-3 flex-shrink-0 ml-2">
                 {/* Avg weight + delta */}
@@ -585,39 +371,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                     </MetricGroup>
                   </div>
 
-                  {/* Check-in submission section */}
-                  {hasSubmission && (
-                    <div className="border-t border-border/40">
-                      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">Check-in Submission</p>
-                        <span className="text-[10px] text-muted-foreground">
-                          Submitted {new Date((submission as any).submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
-                        </span>
-                      </div>
-                      <SubmissionQA answers={submissionAnswers} />
-                      <CoachNotesField submissionId={(submission as any).id} initialNotes={(submission as any).coachNotes} />
-                      <ChangesNotesField submissionId={(submission as any).id} initialNotes={(submission as any).changesNotes} />
-                      <div className="px-4 py-3 border-t border-border/50">
-                        <Button
-                          size="sm"
-                          variant={isReviewed ? "outline" : "default"}
-                          onClick={() => markReviewed.mutate({ id: (submission as any).id, reviewed: !isReviewed, clientId })}
-                          disabled={markReviewed.isPending}
-                          className="gap-1.5"
-                        >
-                          <CheckCircle2 size={13} />
-                          {isReviewed ? "Mark as Unreviewed" : "Mark as Reviewed"}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
 
-                  {/* No submission note */}
-                  {!hasSubmission && (
-                    <div className="px-4 py-3 border-t border-border/40">
-                      <p className="text-xs text-muted-foreground/60 italic">No check-in submitted for this week.</p>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground italic px-4 pb-4 border-t border-border/40 pt-3">

@@ -188,3 +188,54 @@
     }
   }
 }
+/* ─── Tiptap / ProseMirror editor styles ─────────────────────────────────── */
+.ProseMirror {
+  outline: none;
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  min-height: 4.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.ProseMirror p {
+  margin: 0 0 0.4em;
+}
+
+.ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
+.ProseMirror h2 {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+  color: var(--foreground);
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin: 0.3em 0;
+}
+
+.ProseMirror li {
+  margin: 0.15em 0;
+}
+
+.ProseMirror strong {
+  font-weight: 700;
+}
+
+.ProseMirror.ProseMirror-focused {
+  outline: none;
+}
+
+/* Placeholder text */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}

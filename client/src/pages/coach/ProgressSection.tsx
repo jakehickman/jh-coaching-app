@@ -21,6 +21,7 @@ import { ProgressPhotosTab } from "./ProgressPhotosTab";
 import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import ProgramChangeLogTab from "./ProgramChangeLogTab";
 import CardioChangeLogTab from "./CardioChangeLogTab";
+import { CoachCheckInsTab } from "./CoachCheckInsTab";
 
 // ─── Cardio & Activity Card ─────────────────────────────────────────────────
 function CardioActivityCard({ clientId }: { clientId: number }) {
@@ -1883,6 +1884,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           <div className="sticky top-[48px] z-20 bg-background -mx-4 px-4 lg:-mx-6 lg:px-6 pt-2 pb-2 border-b border-border/40">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
               <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
@@ -1907,6 +1909,11 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               )}
 
             </div>
+          </TabsContent>
+
+          {/* ── Check-ins: submission Q&A, coach notes, mark as reviewed ── */}
+          <TabsContent value="check-ins">
+            <CoachCheckInsTab clientId={selectedUserId!} />
           </TabsContent>
 
           {/* ── Body Composition: measurements + weight trend ── */}
