@@ -325,7 +325,7 @@ export const checkInRouter = router({
           history.unshift({
             id: activeCycle.id,
             dueDate: dueDateStr,
-            completedAt: null,
+            completedAt: null as any,
             submissionId: activeCycle.submissionId,
             submission: submission as any,
             answers,

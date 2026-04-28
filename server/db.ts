@@ -1014,13 +1014,13 @@ export async function updateWorkoutSessionDate(id: number, userId: number, newDa
     .limit(1);
   if (!session) return;
 
-  const oldDate = session.sessionDate as string;
+  const oldDate = session.sessionDate as unknown as string;
   const dayLabel = session.dayLabel as string;
 
   // Update the workout session date
   await db
     .update(workoutSessions)
-    .set({ sessionDate: newDate })
+    .set({ sessionDate: newDate as any })
     .where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, userId)));
 
   // Clear training from the old date's daily log (only if no other session exists on that date)

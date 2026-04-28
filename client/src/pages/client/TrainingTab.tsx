@@ -345,7 +345,7 @@ function PastSessionsList({
   onEdit, onChangeDate, onSaveDate, onCancelDate, onNewDateVal, onDelete,
 }: {
   sessions: any[];
-  viewAsUserId: string | null | undefined;
+  viewAsUserId: number | null | undefined;
   deleting: number | null;
   changingDateId: number | null;
   newDateVal: string;
