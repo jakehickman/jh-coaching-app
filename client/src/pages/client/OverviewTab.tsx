@@ -113,7 +113,7 @@ function HabitsSummary() {
                         <div className="w-3 h-3" />
                       ) : (
                         <div
-                          className={`w-4 h-4 rounded-sm ${
+                          className={`w-4 h-4 rounded-full ${
                             done
                               ? 'bg-primary'
                               : isToday
