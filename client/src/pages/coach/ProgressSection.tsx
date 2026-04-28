@@ -1680,6 +1680,13 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
   const selectedUserId = fixedClientId ?? selectorUserId;
   const [activeTab, setActiveTab] = useState(urlTab);
 
+  // Sync tab from URL when navigating via deep-link (e.g. from Check-ins kanban)
+  useEffect(() => {
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [urlTab]);
+
   // Sync URL clientId into selector once clients load (only in standalone mode)
   const [urlSynced, setUrlSynced] = useState(false);
   useEffect(() => {

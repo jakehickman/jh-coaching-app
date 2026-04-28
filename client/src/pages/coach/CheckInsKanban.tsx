@@ -214,8 +214,8 @@ function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, ba
         {/* Hover action buttons */}
         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
           <button
-            onClick={(e) => { e.stopPropagation(); navigate(`/coach/client/${clientId}`); }}
-            title="View client hub"
+            onClick={(e) => { e.stopPropagation(); navigate(`/coach/client/${clientId}?tab=check-ins`); }}
+            title="View check-ins"
             className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary"
           >
             <ExternalLink size={13} />
