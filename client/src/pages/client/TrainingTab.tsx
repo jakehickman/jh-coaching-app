@@ -1430,7 +1430,7 @@ function WorkoutLogTab() {
                     <div key={s.id} className="bg-secondary rounded-xl px-4 py-3 space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-xs font-semibold text-foreground">{dateStr}</p>
-                        <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">Day {s.dayLabel}</span>
+                        <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">{s.dayLabel}</span>
                       </div>
                       {(exEntry.machinePreset || exEntry.equipmentDetails) && (
                         <p className="text-xs text-muted-foreground">{exEntry.machinePreset ?? exEntry.equipmentDetails}</p>
