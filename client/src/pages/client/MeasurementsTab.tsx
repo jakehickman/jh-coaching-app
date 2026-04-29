@@ -75,7 +75,7 @@ export default function MeasurementsTab() {
   };
 
   const waistData = (measurements ?? []).slice(0, 8).reverse().map(m => ({
-    date: String(m.measureDate).slice(5, 10),
+    date: (() => { const d = new Date(String(m.measureDate).slice(0, 10) + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }); })(),
     waist: m.waist,
   }));
 
