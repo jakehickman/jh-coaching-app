@@ -59,6 +59,15 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
     )
   ).sort((a, b) => a - b);
 
+  // Fetch weekly progress data for weight overlays
+  const { data: progressData } = trpc.progress.weeklyReview.useQuery({ clientId });
+  // Build a map of weekNumber -> avgWeight
+  const weekWeightMap = Object.fromEntries(
+    (progressData?.weeks ?? [])
+      .filter((w) => w.weekNumber != null && w.avgWeight != null)
+      .map((w) => [w.weekNumber!, w.avgWeight!])
+  );
+
   const [uploadWeek, setUploadWeek] = useState<number | null>(null);
   const [compareWeekA, setCompareWeekA] = useState<number | null>(null);
   const [compareWeekB, setCompareWeekB] = useState<number | null>(null);
@@ -208,7 +217,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                         <img
                           src={existing.photoUrl}
                           alt={POSE_LABELS[pose]}
-                          className="w-full aspect-[3/4] object-cover cursor-zoom-in"
+                          className="w-full aspect-[9/16] object-cover cursor-zoom-in"
                           onClick={() => setLightboxSrc(existing.photoUrl)}
                         />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -235,7 +244,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                       <button
                         onClick={() => handleUploadClick(pose)}
                         disabled={isUploading}
-                        className="w-full aspect-[3/4] flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                        className="w-full aspect-[9/16] flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                       >
                         {isUploading ? (
                           <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -314,22 +323,32 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                       {/* Week A column */}
                       <div className="space-y-1.5">
                         <p className="text-xs font-semibold text-center text-muted-foreground">Week {compareWeekA}</p>
-                        <div className="rounded-lg overflow-hidden border border-border bg-card">
+                        <div className="rounded-lg overflow-hidden border border-border bg-card relative">
                           {photoA ? (
-                            <InlineZoomPhoto src={photoA.photoUrl} alt={`Week ${compareWeekA} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4]" />
+                            <InlineZoomPhoto src={photoA.photoUrl} alt={`Week ${compareWeekA} ${POSE_LABELS[pose]}`} className="w-full aspect-[9/16]" />
                           ) : (
-                            <div className="w-full aspect-[3/4] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
+                            <div className="w-full aspect-[9/16] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
+                          )}
+                          {weekWeightMap[compareWeekA!] != null && (
+                            <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[11px] font-semibold px-2 py-0.5 rounded pointer-events-none">
+                              {weekWeightMap[compareWeekA!].toFixed(1)} kg
+                            </div>
                           )}
                         </div>
                       </div>
                       {/* Week B column */}
                       <div className="space-y-1.5">
                         <p className="text-xs font-semibold text-center text-muted-foreground">Week {compareWeekB}</p>
-                        <div className="rounded-lg overflow-hidden border border-border bg-card">
+                        <div className="rounded-lg overflow-hidden border border-border bg-card relative">
                           {photoB ? (
-                            <InlineZoomPhoto src={photoB.photoUrl} alt={`Week ${compareWeekB} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4]" />
+                            <InlineZoomPhoto src={photoB.photoUrl} alt={`Week ${compareWeekB} ${POSE_LABELS[pose]}`} className="w-full aspect-[9/16]" />
                           ) : (
-                            <div className="w-full aspect-[3/4] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
+                            <div className="w-full aspect-[9/16] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
+                          )}
+                          {weekWeightMap[compareWeekB!] != null && (
+                            <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[11px] font-semibold px-2 py-0.5 rounded pointer-events-none">
+                              {weekWeightMap[compareWeekB!].toFixed(1)} kg
+                            </div>
                           )}
                         </div>
                       </div>
