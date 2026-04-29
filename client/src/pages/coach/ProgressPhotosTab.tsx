@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Upload, Trash2, GitCompare, Camera } from "lucide-react";
 import { toast } from "sonner";
+import { PhotoLightbox } from "@/components/PhotoLightbox";
+import { InlineZoomPhoto } from "@/components/InlineZoomPhoto";
 import { STANDARD_POSES, ATHLETE_POSES } from "../../../../drizzle/schema";
 
 const POSE_LABELS: Record<string, string> = {
@@ -63,6 +65,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
   const [uploadingPose, setUploadingPose] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingPose, setPendingPose] = useState<string | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const { data: weekPhotos, isLoading: loadingWeekPhotos } = trpc.progressPhotos.getByWeek.useQuery(
     { clientId, weekNumber: uploadWeek! },
@@ -140,6 +143,9 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
 
   return (
     <div className="space-y-6">
+      {lightboxSrc && (
+        <PhotoLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+      )}
       <input
         ref={fileInputRef}
         type="file"
@@ -202,7 +208,8 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                         <img
                           src={existing.photoUrl}
                           alt={POSE_LABELS[pose]}
-                          className="w-full aspect-[3/4] object-cover"
+                          className="w-full aspect-[3/4] object-cover cursor-zoom-in"
+                          onClick={() => setLightboxSrc(existing.photoUrl)}
                         />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                           <Button
@@ -309,7 +316,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                         <p className="text-xs font-semibold text-center text-muted-foreground">Week {compareWeekA}</p>
                         <div className="rounded-lg overflow-hidden border border-border bg-card">
                           {photoA ? (
-                            <img src={photoA.photoUrl} alt={`Week ${compareWeekA} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4] object-cover" />
+                            <InlineZoomPhoto src={photoA.photoUrl} alt={`Week ${compareWeekA} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4]" />
                           ) : (
                             <div className="w-full aspect-[3/4] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
                           )}
@@ -320,7 +327,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                         <p className="text-xs font-semibold text-center text-muted-foreground">Week {compareWeekB}</p>
                         <div className="rounded-lg overflow-hidden border border-border bg-card">
                           {photoB ? (
-                            <img src={photoB.photoUrl} alt={`Week ${compareWeekB} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4] object-cover" />
+                            <InlineZoomPhoto src={photoB.photoUrl} alt={`Week ${compareWeekB} ${POSE_LABELS[pose]}`} className="w-full aspect-[3/4]" />
                           ) : (
                             <div className="w-full aspect-[3/4] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
                           )}
