@@ -61,11 +61,26 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
 
   // Fetch weekly progress data for weight overlays
   const { data: progressData } = trpc.progress.weeklyReview.useQuery({ clientId });
-  // Build a map of weekNumber -> avgWeight
+  // Build a map of weekNumber -> dueDate from history
+  const weekDueDateMap = Object.fromEntries(
+    (historyData ?? [])
+      .filter((h) => h.weekNumber != null)
+      .map((h) => [h.weekNumber!, h.dueDate as string])
+  );
+  // Build a map of weekNumber -> weight logged on the check-in due date
+  // We look through each week's weighIns for an entry matching the dueDate
   const weekWeightMap = Object.fromEntries(
     (progressData?.weeks ?? [])
-      .filter((w) => w.weekNumber != null && w.avgWeight != null)
-      .map((w) => [w.weekNumber!, w.avgWeight!])
+      .filter((w) => w.weekNumber != null)
+      .flatMap((w) => {
+        const dueDate = weekDueDateMap[w.weekNumber!];
+        if (!dueDate) return [];
+        // Find the weigh-in on the due date
+        const entry = (w.weighIns as Array<{ logDate: string; weight: number }>)
+          .find((wi) => wi.logDate === dueDate);
+        if (!entry) return [];
+        return [[w.weekNumber!, entry.weight]];
+      })
   );
 
   const [uploadWeek, setUploadWeek] = useState<number | null>(null);
