@@ -1094,7 +1094,10 @@ function WorkoutLogTab() {
                             })()}
                           </p>
                           {(() => {
-                            const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === displayName || e.name === ex.name)?.exerciseNotes;
+                            // When a substitution is active, only look up by the substitute name.
+                            // Never fall back to the original exercise's note — different movement.
+                            const prevNoteSearchName = subName ? displayName : ex.name;
+                            const prevNote = prevSession?.exercises && (prevSession.exercises as any[]).find((e: any) => e.name === prevNoteSearchName)?.exerciseNotes;
                             if (!prevNote) return null;
                             const isNoteOpen = !!prevNoteOpen[displayName];
                             return (
