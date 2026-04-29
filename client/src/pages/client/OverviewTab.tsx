@@ -333,16 +333,6 @@ export default function OverviewTab() {
         </div>
       </div>
 
-      <div>
-        <SectionLabel>Streaks</SectionLabel>
-        <div className="grid grid-cols-2 gap-3">
-          <MetricCard
-            label="Meal Streak"
-            value={onPlanStreak === 0 ? "0" : `${onPlanStreak} day${onPlanStreak > 1 ? 's' : ''}`}
-          />
-        </div>
-      </div>
-
       {weightData.length > 0 && (
         <div>
           <SectionLabel>Weight Trend (14 Days)</SectionLabel>
