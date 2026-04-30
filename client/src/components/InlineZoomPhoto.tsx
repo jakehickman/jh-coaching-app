@@ -2,14 +2,14 @@
  * InlineZoomPhoto
  *
  * Renders a photo inside a fixed-size container with:
- *  - Scroll-wheel zoom (desktop)
+ *  - Scroll-wheel zoom (desktop) — uses native non-passive listener so preventDefault works
  *  - Pinch-to-zoom (mobile)
  *  - Click-and-drag pan when zoomed in
  *  - Double-click / double-tap to reset
  *
  * The container clips overflow so the rest of the page is unaffected.
  */
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 
 interface Props {
   src: string;
@@ -28,6 +28,9 @@ export function InlineZoomPhoto({ src, alt = "", className = "" }: Props) {
   const lastMouse = useRef({ x: 0, y: 0 });
   const lastPinchDist = useRef<number | null>(null);
   const lastTap = useRef(0);
+  // Keep a ref to scale so the native wheel handler can read the latest value
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
 
   const clamp = useCallback((ox: number, oy: number, s: number) => {
     const el = containerRef.current;
@@ -46,32 +49,38 @@ export function InlineZoomPhoto({ src, alt = "", className = "" }: Props) {
     setOffset({ x: 0, y: 0 });
   }, []);
 
-  // ── Wheel ────────────────────────────────────────────────────────────────────
-  const onWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setScale((prev) => {
-      const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev - e.deltaY * 0.005));
-      if (next <= MIN_SCALE) { setOffset({ x: 0, y: 0 }); return MIN_SCALE; }
-      return next;
-    });
+  // ── Wheel — native non-passive so preventDefault() actually works ─────────────
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setScale((prev) => {
+        const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev - e.deltaY * 0.005));
+        if (next <= MIN_SCALE) { setOffset({ x: 0, y: 0 }); return MIN_SCALE; }
+        return next;
+      });
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
   }, []);
 
   // ── Mouse drag ───────────────────────────────────────────────────────────────
   const onMouseDown = useCallback((e: React.MouseEvent) => {
-    if (scale <= 1) return;
+    if (scaleRef.current <= 1) return;
     isDragging.current = true;
     lastMouse.current = { x: e.clientX, y: e.clientY };
     e.preventDefault();
-  }, [scale]);
+  }, []);
 
   const onMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging.current) return;
     const dx = e.clientX - lastMouse.current.x;
     const dy = e.clientY - lastMouse.current.y;
     lastMouse.current = { x: e.clientX, y: e.clientY };
-    setOffset((prev) => clamp(prev.x + dx, prev.y + dy, scale));
-  }, [scale, clamp]);
+    setOffset((prev) => clamp(prev.x + dx, prev.y + dy, scaleRef.current));
+  }, [clamp]);
 
   const onMouseUp = useCallback(() => { isDragging.current = false; }, []);
 
@@ -108,13 +117,13 @@ export function InlineZoomPhoto({ src, alt = "", className = "" }: Props) {
         });
       }
       lastPinchDist.current = dist;
-    } else if (e.touches.length === 1 && scale > 1) {
+    } else if (e.touches.length === 1 && scaleRef.current > 1) {
       const dx = e.touches[0].clientX - lastMouse.current.x;
       const dy = e.touches[0].clientY - lastMouse.current.y;
       lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      setOffset((prev) => clamp(prev.x + dx, prev.y + dy, scale));
+      setOffset((prev) => clamp(prev.x + dx, prev.y + dy, scaleRef.current));
     }
-  }, [scale, clamp]);
+  }, [clamp]);
 
   const onTouchEnd = useCallback(() => { lastPinchDist.current = null; }, []);
 
@@ -123,7 +132,6 @@ export function InlineZoomPhoto({ src, alt = "", className = "" }: Props) {
       ref={containerRef}
       className={`overflow-hidden relative ${className}`}
       style={{ cursor: scale > 1 ? (isDragging.current ? "grabbing" : "grab") : "zoom-in", touchAction: "none" }}
-      onWheel={onWheel}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}

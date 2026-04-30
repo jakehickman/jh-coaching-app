@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { trpc } from "@/lib/trpc";
+import { InlineZoomPhoto } from "@/components/InlineZoomPhoto";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, CalendarDays, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -712,36 +713,26 @@ function PhaseSummaryCard({
                               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                                 {pose.replace(/_/g, " ")}
                               </p>
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <p className="text-xs text-center text-muted-foreground mb-1">Week {firstPhotoWeek}</p>
-                                  {photoA ? (
-                                    <button
-                                      className="w-full block focus:outline-none"
-                                      onClick={() => setLightbox({ src: photoA.url, alt: `Week ${firstPhotoWeek} ${pose}` })}
-                                    >
-                                      <img src={photoA.url} alt={`Week ${firstPhotoWeek} ${pose}`} className="w-full aspect-[9/16] object-cover rounded-xl cursor-zoom-in hover:opacity-90 transition-opacity" />
-                                    </button>
-                                  ) : (
-                                    <div className="w-full aspect-[9/16] bg-secondary rounded-xl flex items-center justify-center">
-                                      <span className="text-xs text-muted-foreground">No photo</span>
-                                    </div>
-                                  )}
+                              <div className="grid grid-cols-2 gap-4 max-w-3xl">
+                                <div className="space-y-1.5">
+                                  <p className="text-xs font-semibold text-center text-muted-foreground">Week {firstPhotoWeek}</p>
+                                  <div className="rounded-lg overflow-hidden border border-border bg-card relative">
+                                    {photoA ? (
+                                      <InlineZoomPhoto src={photoA.url} alt={`Week ${firstPhotoWeek} ${pose}`} className="w-full aspect-[9/16]" />
+                                    ) : (
+                                      <div className="w-full aspect-[9/16] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
+                                    )}
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="text-xs text-center text-muted-foreground mb-1">Week {lastPhotoWeek}</p>
-                                  {photoB ? (
-                                    <button
-                                      className="w-full block focus:outline-none"
-                                      onClick={() => setLightbox({ src: photoB.url, alt: `Week ${lastPhotoWeek} ${pose}` })}
-                                    >
-                                      <img src={photoB.url} alt={`Week ${lastPhotoWeek} ${pose}`} className="w-full aspect-[9/16] object-cover rounded-xl cursor-zoom-in hover:opacity-90 transition-opacity" />
-                                    </button>
-                                  ) : (
-                                    <div className="w-full aspect-[9/16] bg-secondary rounded-xl flex items-center justify-center">
-                                      <span className="text-xs text-muted-foreground">No photo</span>
-                                    </div>
-                                  )}
+                                <div className="space-y-1.5">
+                                  <p className="text-xs font-semibold text-center text-muted-foreground">Week {lastPhotoWeek}</p>
+                                  <div className="rounded-lg overflow-hidden border border-border bg-card relative">
+                                    {photoB ? (
+                                      <InlineZoomPhoto src={photoB.url} alt={`Week ${lastPhotoWeek} ${pose}`} className="w-full aspect-[9/16]" />
+                                    ) : (
+                                      <div className="w-full aspect-[9/16] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
