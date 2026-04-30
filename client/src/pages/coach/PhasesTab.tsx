@@ -522,6 +522,14 @@ function PhaseSummaryCard({
 
           <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
 
+          {/* Target rate */}
+          <div className="flex-none w-28 px-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Target Rate</p>
+            <p className="text-xs text-foreground font-medium whitespace-nowrap">{phase.targetRate || "—"}</p>
+          </div>
+
+          <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
+
           {/* Actual rate */}
           <div className="flex-none w-28 px-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Actual Rate</p>
@@ -568,11 +576,11 @@ function PhaseSummaryCard({
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-3">
                     <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate of Gain / Loss</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate</p>
                       <p className="text-sm font-semibold text-foreground">{phase.targetRate || "—"}</p>
                     </div>
                     <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Actual Rate of Gain / Loss</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Actual Rate</p>
                       <p className="text-sm font-semibold text-foreground">{actualRate ?? "—"}</p>
                     </div>
                   </div>
@@ -598,11 +606,11 @@ function PhaseSummaryCard({
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-3">
                     <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate of Gain / Loss</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate</p>
                       <p className="text-sm font-semibold text-foreground">{phase.targetRate || "—"}</p>
                     </div>
                     <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Actual Rate of Gain / Loss</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Actual Rate</p>
                       <p className="text-sm font-semibold text-foreground">{actualRate ?? "—"}</p>
                     </div>
                   </div>
