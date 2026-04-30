@@ -400,8 +400,20 @@ function PhaseSummaryCard({
   }, [firstWeek, lastWeek]);
 
   // Photo weeks within this phase
-  const phasePhotoWeekNumbers = phaseWeeks.map(w => w.weekNumber);
-  const availablePhotoWeeks = photoWeeks.filter(wn => phasePhotoWeekNumbers.includes(wn));
+  // Filter by date range: a photo week is "in phase" if its week's dates overlap the phase,
+  // or if we have no date info for that week (include as fallback).
+  const availablePhotoWeeks = useMemo(() => {
+    return photoWeeks.filter(wn => {
+      const weekData = weeks.find(w => w.weekNumber === wn);
+      if (!weekData) {
+        // No date info — include it (conservative fallback)
+        return true;
+      }
+      const afterStart = weekData.weekEnd >= startDate;
+      const beforeEnd = !endDate || weekData.weekStart <= endDate;
+      return afterStart && beforeEnd;
+    });
+  }, [photoWeeks, weeks, startDate, endDate]);
   const firstPhotoWeek = availablePhotoWeeks[0] ?? null;
   const lastPhotoWeek = availablePhotoWeeks[availablePhotoWeeks.length - 1] ?? null;
   const hasPhotos = firstPhotoWeek != null && lastPhotoWeek != null && firstPhotoWeek !== lastPhotoWeek;

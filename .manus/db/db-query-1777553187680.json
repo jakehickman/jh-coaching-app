@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, label, startDate, endDate FROM client_phases WHERE clientId = 1 ORDER BY startDate",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT id, label, startDate, endDate FROM client_phases WHERE clientId = 1 ORDER BY startDate",
+  "rows": [
+    {
+      "id": "30002",
+      "label": "Fat Loss",
+      "startDate": "2026-04-09",
+      "endDate": "2026-06-03"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlabel\tstartDate\tendDate\n30002\tFat Loss\t2026-04-09\t2026-06-03\n",
+  "stderr": "",
+  "execution_time_ms": 1589
+}
