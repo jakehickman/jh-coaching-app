@@ -720,9 +720,8 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
         <div className="grid gap-4 grid-cols-1">
           {/* Weight + Waist chart */}
           {hasWeightWaist && (
-            <div>
-              <SectionLabel>Weight &amp; Waist</SectionLabel>
-              <div className="bg-card border border-border rounded-xl p-4">
+            <div className="bg-card border border-border rounded-xl p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Weight &amp; Waist</p>
                 <ResponsiveContainer width="100%" height={200}>
                   <ComposedChart data={combinedTrendData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
@@ -748,14 +747,12 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
                     Waist (cm)
                   </span>
                 </div>
-              </div>
             </div>
           )}
           {/* Skinfold vs Weight dual-axis chart (shared date axis) */}
           {hasSkinfold && (
-            <div>
-              <SectionLabel>Skinfold vs Weight</SectionLabel>
-              <div className="bg-card border border-border rounded-xl p-4">
+            <div className="bg-card border border-border rounded-xl p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Skinfold vs Weight</p>
                 <ResponsiveContainer width="100%" height={200}>
                   <ComposedChart data={skinfoldWeightData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
@@ -783,7 +780,6 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
                     Avg Weight (kg)
                   </span>
                 </div>
-              </div>
             </div>
           )}
         </div>
@@ -1899,38 +1895,38 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </TabsList>
           </div>
 
-          {/* ── Overview: This Week / Timeline sub-tabs ── */}
+          {/* ── Overview: weekly review, habits, recent logs ── */}
           <TabsContent value="overview">
-            <Tabs defaultValue="this-week" className="w-full">
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <div>
+                  <SectionLabel>Weekly Review</SectionLabel>
+                  <WeeklyReviewTab clientId={selectedUserId!} />
+                </div>
+                <div>
+                  <CoachHabitsPanel clientId={selectedUserId!} />
+                </div>
+              </div>
+              {(logs ?? []).length > 0 && (
+                <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ── Check-ins: Q&A + Timeline sub-tabs ── */}
+          <TabsContent value="check-ins">
+            <Tabs defaultValue="check-ins-list" className="w-full">
               <TabsList className="mb-4">
-                <TabsTrigger value="this-week">This Week</TabsTrigger>
+                <TabsTrigger value="check-ins-list">Check-ins</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
               </TabsList>
-              <TabsContent value="this-week">
-                <div className="space-y-8">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                    <div>
-                      <SectionLabel>Weekly Review</SectionLabel>
-                      <WeeklyReviewTab clientId={selectedUserId!} />
-                    </div>
-                    <div>
-                      <CoachHabitsPanel clientId={selectedUserId!} />
-                    </div>
-                  </div>
-                  {(logs ?? []).length > 0 && (
-                    <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
-                  )}
-                </div>
+              <TabsContent value="check-ins-list">
+                <CoachCheckInsTab clientId={selectedUserId!} />
               </TabsContent>
               <TabsContent value="timeline">
                 <PhasesTab clientId={selectedUserId!} />
               </TabsContent>
             </Tabs>
-          </TabsContent>
-
-          {/* ── Check-ins: submission Q&A, coach notes, mark as reviewed ── */}
-          <TabsContent value="check-ins">
-            <CoachCheckInsTab clientId={selectedUserId!} />
           </TabsContent>
 
           {/* ── Body Composition: Data / Photos sub-tabs ── */}
