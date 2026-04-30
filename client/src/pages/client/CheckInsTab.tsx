@@ -58,7 +58,7 @@ function SingleChoiceQuestion({
       <textarea
         value={elaboration}
         onChange={(e) => onElaborationChange(e.target.value)}
-        placeholder="Anything to add? (optional)"
+        placeholder=""
         className="mt-3 w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
         rows={2}
       />
@@ -81,7 +81,7 @@ function FreeTextQuestion({
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Optional — type your answer here"
+        placeholder=""
         className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
         rows={3}
       />

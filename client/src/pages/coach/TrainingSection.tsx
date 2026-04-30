@@ -543,7 +543,7 @@ function ClientsSection() {
                       type="number"
                       value={form.stepGoal}
                       onChange={e => setForm(p => ({ ...p, stepGoal: e.target.value }))}
-                      placeholder="e.g. 10000"
+                      placeholder=""
                       className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>

@@ -181,7 +181,7 @@ function CoachNotesField({ submissionId, initialNotes }: { submissionId: number;
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
-        placeholder="Add feedback, program adjustments, or observations…"
+        placeholder=""
         rows={3}
         className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 transition-colors"
       />
@@ -226,7 +226,7 @@ function ChangesNotesField({ submissionId, initialNotes }: { submissionId: numbe
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
-        placeholder="Record any adjustments made to meal plan, training, or other changes…"
+        placeholder=""
         rows={3}
         className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 transition-colors"
       />

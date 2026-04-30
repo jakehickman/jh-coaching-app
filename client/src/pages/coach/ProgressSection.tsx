@@ -110,7 +110,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
                 type="number"
                 value={stepGoal}
                 onChange={e => setStepGoal(e.target.value)}
-                placeholder="e.g. 10000"
+                placeholder=""
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -120,7 +120,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
                 type="number"
                 value={lissSessions}
                 onChange={e => setLissSessions(e.target.value)}
-                placeholder="e.g. 3"
+                placeholder=""
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -130,7 +130,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
                 type="number"
                 value={lissMinsPer}
                 onChange={e => setLissMinsPer(e.target.value)}
-                placeholder="e.g. 45"
+                placeholder=""
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -221,7 +221,7 @@ function MealPlanNoteEditor({ entryId, initialNote }: { entryId: number; initial
         onChange={e => setNote(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        placeholder="Add a note about this plan change..."
+        placeholder=""
         rows={2}
         className="w-full resize-none rounded-md bg-muted/30 border border-border/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring/50 transition-colors"
       />
@@ -1299,7 +1299,7 @@ function CoachPresetEditor({ clientId, exerciseName, onClose }: { clientId: numb
           value={newName}
           onChange={e => setNewName(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && newName.trim()) upsert.mutate({ userId: clientId, exerciseName, presetName: newName.trim() }); }}
-          placeholder="New preset name…"
+          placeholder=""
           className="flex-1 bg-secondary border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <button

@@ -181,7 +181,7 @@ function CoachNotesField({ submissionId, initialNotes }: { submissionId: number;
   return (
     <TiptapNotesField
       label="Coach Notes"
-      placeholder="Add feedback, program adjustments, or observations…"
+      placeholder=""
       initialContent={initialNotes}
       onSave={(html) => saveNotes.mutate({ submissionId, notes: html })}
       isPending={saveNotes.isPending}
@@ -198,7 +198,7 @@ function ChangesNotesField({ submissionId, initialNotes }: { submissionId: numbe
   return (
     <TiptapNotesField
       label="Changes Made"
-      placeholder="Record any adjustments made to meal plan, training, or other changes…"
+      placeholder=""
       initialContent={initialNotes}
       onSave={(html) => saveNotes.mutate({ submissionId, notes: html })}
       isPending={saveNotes.isPending}

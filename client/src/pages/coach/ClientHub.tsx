@@ -54,7 +54,7 @@ export default function ClientHub() {
   const today = new Date().toISOString().slice(0, 10);
   const activePhase = (phases as any[]).find((p) => p.startDate <= today && (!p.endDate || p.endDate >= today)) ?? null;
   const startDateMs = activePhase ? new Date(activePhase.startDate + "T00:00:00").getTime() : null;
-  const weeksIn = startDateMs ? Math.max(1, Math.round((Date.now() - startDateMs) / (7 * 24 * 60 * 60 * 1000))) : null;
+  const weeksIn = startDateMs ? Math.floor((Date.now() - startDateMs) / (7 * 24 * 60 * 60 * 1000)) + 1 : null;
   const totalWeeks = activePhase?.endDate && activePhase?.startDate
     ? Math.round((new Date(activePhase.endDate + "T00:00:00").getTime() - new Date(activePhase.startDate + "T00:00:00").getTime()) / (7 * 24 * 60 * 60 * 1000))
     : null;
@@ -90,7 +90,7 @@ export default function ClientHub() {
               const c = PHASE_COLORS[activePhase.label] ?? { bg: "bg-secondary", text: "text-muted-foreground" };
               return (
                 <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${c.bg} ${c.text}`}>
-                  {activePhase.label}{weeksIn != null ? ` · ${weeksIn}${totalWeeks != null ? `/${totalWeeks}` : ""}` : ""}
+                  {activePhase.label}{weeksIn != null ? ` - Week ${weeksIn}${totalWeeks != null ? `/${totalWeeks}` : ""}` : ""}
                 </span>
               );
             })()}

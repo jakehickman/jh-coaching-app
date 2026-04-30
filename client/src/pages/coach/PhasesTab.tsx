@@ -296,7 +296,7 @@ function PhaseFormDialog({
                 step="1"
                 value={form.durationWeeks}
                 onChange={(e) => setForm(f => ({ ...f, durationWeeks: e.target.value }))}
-                placeholder="e.g. 12"
+                placeholder=""
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50"
               />
             </div>
@@ -323,7 +323,7 @@ function PhaseFormDialog({
                 min="0"
                 value={form.startWeight}
                 onChange={(e) => setForm(f => ({ ...f, startWeight: e.target.value }))}
-                placeholder="e.g. 82.5"
+                placeholder=""
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50"
               />
             </div>
@@ -337,7 +337,7 @@ function PhaseFormDialog({
                 min="0"
                 value={form.targetWeight}
                 onChange={(e) => setForm(f => ({ ...f, targetWeight: e.target.value }))}
-                placeholder="e.g. 78.0"
+                placeholder=""
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50"
               />
             </div>
@@ -384,7 +384,7 @@ function PhaseFormDialog({
               value={form.notes}
               onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
               rows={2}
-              placeholder="e.g. Aggressive deficit, target -0.5kg/week"
+              placeholder=""
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground resize-none placeholder:text-muted-foreground/50"
             />
           </div>
@@ -447,8 +447,10 @@ function PhaseSummaryCard({
   const firstSkinfoldWeek = weeksWithSkinfold[0] ?? null;
   const lastSkinfoldWeek = weeksWithSkinfold[weeksWithSkinfold.length - 1] ?? null;
 
-  // Weeks elapsed so far (start → today, capped at planned duration)
-  const weeksElapsed = startDate ? Math.max(1, weeksBetween(startDate, today)) : 0;
+  // Weeks elapsed so far: floor(days/7)+1 to match weekly card numbering (W1 on day 0, W4 on day 21)
+  const weeksElapsed = startDate
+    ? Math.floor((new Date(today + "T00:00:00").getTime() - new Date(startDate + "T00:00:00").getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
+    : 0;
   // Total planned duration (start → end)
   const durationWeeks = startDate && endDate ? weeksBetween(startDate, endDate) : startDate ? weeksBetween(startDate, today) : 0;
   // Planned duration alias (used for display)

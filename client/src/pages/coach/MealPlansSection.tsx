@@ -550,7 +550,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                 min={0}
                 value={treatAllowance}
                 onChange={e => setTreatAllowance(e.target.value)}
-                placeholder="e.g. 200"
+                placeholder=""
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>

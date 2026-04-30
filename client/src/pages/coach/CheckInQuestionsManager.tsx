@@ -401,7 +401,7 @@ export default function CheckInQuestionsManager() {
                   const text = e.target.value;
                   setForm((f) => ({ ...f, questionText: text, slug: f.id ? f.slug : slugify(text) }));
                 }}
-                placeholder="e.g. How was your motivation this week?"
+                placeholder=""
               />
             </div>
             <div className="space-y-1.5">
@@ -431,7 +431,7 @@ export default function CheckInQuestionsManager() {
                           setForm((f) => ({ ...f, options: f.options.map((o, i) => (i === idx ? e.target.value : o)) }))
                         }
                         className="flex-1 text-sm"
-                        placeholder={`Option ${idx + 1}`}
+                        placeholder=""
                       />
                       <Button size="icon" variant="ghost"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive"
@@ -445,7 +445,7 @@ export default function CheckInQuestionsManager() {
                       value={newOption}
                       onChange={(e) => setNewOption(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addOption(); } }}
-                      placeholder="Add an option…"
+                      placeholder=""
                       className="flex-1"
                     />
                     <Button size="sm" variant="outline" onClick={addOption} disabled={!newOption.trim()}>

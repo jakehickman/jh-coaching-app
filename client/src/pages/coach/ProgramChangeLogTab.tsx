@@ -117,7 +117,7 @@ function NoteEditor({ logId, initialNote }: { logId: number; initialNote?: strin
         onChange={e => setNote(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        placeholder="Add a note about why this change was made..."
+        placeholder=""
         rows={2}
         className="w-full resize-none rounded-md bg-muted/30 border border-border/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring/50 transition-colors"
       />
