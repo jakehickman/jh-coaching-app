@@ -656,7 +656,7 @@ export const clientPhases = mysqlTable("client_phases", {
     "Mini Cut",
     "Fat Loss",
     "Contest Prep",
-    "Vacation",
+    "Maintenance",
   ]).notNull(),
   startDate: date("startDate").notNull(),       // ISO date string YYYY-MM-DD
   endDate: date("endDate"),                     // null = active or upcoming
