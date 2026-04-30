@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, CalendarDays, X } from "lucide-react";
@@ -6,11 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-// Simple full-screen lightbox for photo zoom
+// Simple full-screen lightbox for photo zoom — rendered via portal to escape card clipping
 function PhaseLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
       onClick={onClose}
     >
       <button
@@ -25,7 +26,8 @@ function PhaseLightbox({ src, alt, onClose }: { src: string; alt: string; onClos
         className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl"
         onClick={(e) => e.stopPropagation()}
       />
-    </div>
+    </div>,
+    document.body
   );
 }
 
