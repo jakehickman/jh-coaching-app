@@ -1896,28 +1896,36 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-              <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
-              <TabsTrigger value="phases">Phases</TabsTrigger>
             </TabsList>
           </div>
 
-          {/* ── Overview: weekly review, habits, logs, check-ins ── */}
+          {/* ── Overview: This Week / Timeline sub-tabs ── */}
           <TabsContent value="overview">
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <div>
-                  <SectionLabel>Weekly Review</SectionLabel>
-                  <WeeklyReviewTab clientId={selectedUserId!} />
+            <Tabs defaultValue="this-week" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="this-week">This Week</TabsTrigger>
+                <TabsTrigger value="timeline">Timeline</TabsTrigger>
+              </TabsList>
+              <TabsContent value="this-week">
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    <div>
+                      <SectionLabel>Weekly Review</SectionLabel>
+                      <WeeklyReviewTab clientId={selectedUserId!} />
+                    </div>
+                    <div>
+                      <CoachHabitsPanel clientId={selectedUserId!} />
+                    </div>
+                  </div>
+                  {(logs ?? []).length > 0 && (
+                    <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
+                  )}
                 </div>
-                <div>
-                  <CoachHabitsPanel clientId={selectedUserId!} />
-                </div>
-              </div>
-              {(logs ?? []).length > 0 && (
-                <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
-              )}
-
-            </div>
+              </TabsContent>
+              <TabsContent value="timeline">
+                <PhasesTab clientId={selectedUserId!} />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* ── Check-ins: submission Q&A, coach notes, mark as reviewed ── */}
@@ -1925,31 +1933,37 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             <CoachCheckInsTab clientId={selectedUserId!} />
           </TabsContent>
 
-          {/* ── Body Composition: measurements + weight trend ── */}
+          {/* ── Body Composition: Measurements / Photos / History sub-tabs ── */}
           <TabsContent value="body-comp">
-            <div className="space-y-8">
-              <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Progress Photos</p>
+            <Tabs defaultValue="measurements" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="measurements">Measurements</TabsTrigger>
+                <TabsTrigger value="photos">Photos</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
+              </TabsList>
+              <TabsContent value="measurements">
+                <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
+              </TabsContent>
+              <TabsContent value="photos">
                 <ProgressPhotosTab
                   clientId={selectedUserId!}
                   photoType={(clientProfile?.photoType as "standard" | "athlete") ?? "standard"}
                 />
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly History</p>
+              </TabsContent>
+              <TabsContent value="history">
                 <WeeklyBodyCompCards clientId={selectedUserId!} />
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
-          {/* ── Training: Program (editor) + Performance (history) sub-tabs ── */}
+          {/* ── Training: Session Log, Exercise Progress, Program, Cardio sub-tabs ── */}
           <TabsContent value="training">
             <Tabs defaultValue="session-log" className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="session-log">Session Log</TabsTrigger>
                 <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
                 <TabsTrigger value="program">Program</TabsTrigger>
+                <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
               </TabsList>
               <TabsContent value="session-log">
                 <WorkoutSessionsTab workoutSessions={workoutSessions} />
@@ -1964,6 +1978,11 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Change Log</p>
                     <ProgramChangeLogTab clientId={selectedUserId!} />
                   </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="cardio">
+                <div className="max-w-xl">
+                  <CardioActivityCard clientId={selectedUserId!} />
                 </div>
               </TabsContent>
             </Tabs>
@@ -1983,17 +2002,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </div>
           </TabsContent>
 
-          {/* ── Phases ── */}
-          <TabsContent value="phases">
-            <PhasesTab clientId={selectedUserId!} />
-          </TabsContent>
 
-          {/* ── Cardio & Activity ── */}
-          <TabsContent value="cardio">
-            <div className="max-w-xl">
-              <CardioActivityCard clientId={selectedUserId!} />
-            </div>
-          </TabsContent>
         </Tabs>
       )}
     </div>

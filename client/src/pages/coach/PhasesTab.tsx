@@ -537,7 +537,12 @@ function PhaseSummaryCard({
           <div className="flex-none w-20 px-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Weeks</p>
             {plannedDurationWeeks != null && plannedDurationWeeks > 0 ? (
-              <p className="text-xs text-foreground font-medium">{plannedDurationWeeks}</p>
+              <p className="text-xs text-foreground font-medium">
+                {status === "active" && durationWeeks > 0
+                  ? <><span className="text-primary font-semibold">Wk {durationWeeks}</span><span className="text-muted-foreground font-normal"> / {plannedDurationWeeks}</span></>
+                  : plannedDurationWeeks
+                }
+              </p>
             ) : durationWeeks > 0 ? (
               <p className="text-xs text-foreground font-medium">{durationWeeks} <span className="text-muted-foreground font-normal">so far</span></p>
             ) : (
@@ -831,16 +836,12 @@ export function PhasesTab({ clientId }: { clientId: number }) {
   const [editPhase, setEditPhase] = useState<Phase | null>(null);
   const [deletePhaseId, setDeletePhaseId] = useState<number | null>(null);
 
-  // Sort phases: active first, then upcoming, then completed (newest first within each group)
+  // Sort phases chronologically (oldest first)
   const today = new Date().toISOString().slice(0, 10);
   const sortedPhases = [...(phases as unknown as Phase[])].sort((a, b) => {
-    const statusOrder = { active: 0, upcoming: 1, completed: 2 };
-    const sa = statusOrder[getPhaseStatus(a, today)];
-    const sb = statusOrder[getPhaseStatus(b, today)];
-    if (sa !== sb) return sa - sb;
     const aStart = toIsoDate(a.startDate) ?? "";
     const bStart = toIsoDate(b.startDate) ?? "";
-    return bStart.localeCompare(aStart);
+    return aStart.localeCompare(bStart);
   });
 
   /** Convert form data to the endDate string to store */
