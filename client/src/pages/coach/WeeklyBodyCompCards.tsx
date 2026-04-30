@@ -145,7 +145,7 @@ function WeekCard({ week, prevWeek, phases }: { week: Week; prevWeek: Week | nul
             <span className="text-xs font-bold text-foreground">
               {(() => {
                 const phaseWk = getPhaseWeekNumber(phases, week.weekStart);
-                return phaseWk != null ? `Wk ${phaseWk}` : `Week ${week.weekNumber}`;
+                return phaseWk != null ? `Week ${phaseWk}` : `Week ${week.weekNumber}`;
               })()}
             </span>
             {week.isInProgress && (

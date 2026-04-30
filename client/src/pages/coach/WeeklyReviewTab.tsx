@@ -282,7 +282,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                   const phaseWk = getPhaseWeekNumber(phases, week.weekStart);
                   return phaseWk != null ? (
                     <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                      Wk {phaseWk}
+                      W{phaseWk}
                     </span>
                   ) : (
                     <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">

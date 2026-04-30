@@ -8,6 +8,23 @@ import { eq, desc, asc, or, and } from "drizzle-orm";
 const PHASE_LABELS = ["Gaining", "Mini Cut", "Fat Loss", "Contest Prep", "Maintenance"] as const;
 
 export const phasesRouter = router({
+  // List phases for the currently authenticated client (self-service)
+  listMine: protectedProcedure
+    .query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const rows = await db
+        .select()
+        .from(clientPhases)
+        .where(eq(clientPhases.clientId, ctx.user.id))
+        .orderBy(asc(clientPhases.startDate));
+      return rows.map((r) => ({
+        ...r,
+        startDate: r.startDate instanceof Date ? r.startDate.toISOString().slice(0, 10) : String(r.startDate),
+        endDate: r.endDate == null ? null : r.endDate instanceof Date ? r.endDate.toISOString().slice(0, 10) : String(r.endDate),
+      }));
+    }),
+
   // List all phases for a client (newest first)
   list: protectedProcedure
     .input(z.object({ clientId: z.number().int().positive() }))

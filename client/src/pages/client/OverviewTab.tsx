@@ -135,6 +135,13 @@ function HabitsSummary() {
 }
 
 // ─── OverviewTab ──────────────────────────────────────────────────────────────
+const PHASE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  "Fat Loss":     { bg: "bg-emerald-500/10",  text: "text-emerald-400",  border: "border-emerald-500/30" },
+  "Contest Prep": { bg: "bg-purple-500/10",   text: "text-purple-400",   border: "border-purple-500/30" },
+  "Gaining":      { bg: "bg-blue-500/10",     text: "text-blue-400",     border: "border-blue-500/30" },
+  "Maintenance":  { bg: "bg-slate-500/10",    text: "text-slate-400",    border: "border-slate-500/30" },
+};
+
 export default function OverviewTab() {
   const { viewAsUserId } = useViewAs();
   const { data: logsOwn } = trpc.dailyLog.list.useQuery({ limit: 30 }, { enabled: !viewAsUserId });
@@ -146,6 +153,21 @@ export default function OverviewTab() {
   const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
   const { data: programAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const program = viewAsUserId ? programAdmin : programOwn;
+
+  // Active phase for the phase banner
+  const { data: phasesOwn } = trpc.phases.listMine.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: phasesAdmin } = trpc.phases.list.useQuery(
+    { clientId: viewAsUserId! },
+    { enabled: !!viewAsUserId }
+  );
+  const phases = ((viewAsUserId ? phasesAdmin : phasesOwn) as any[]) ?? [];
+  const today2 = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+  const activePhase = phases.find((p: any) => p.startDate <= today2 && (!p.endDate || p.endDate >= today2)) ?? null;
+  const activePhaseWeek = activePhase ? Math.floor((new Date(today2 + 'T00:00:00').getTime() - new Date(activePhase.startDate + 'T00:00:00').getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1 : null;
+  const activePhaseTotalWeeks = activePhase?.endDate
+    ? Math.round((new Date(activePhase.endDate + 'T00:00:00').getTime() - new Date(activePhase.startDate + 'T00:00:00').getTime()) / (7 * 24 * 60 * 60 * 1000))
+    : null;
+  const activePhaseColor = activePhase ? (PHASE_COLORS[activePhase.label] ?? { bg: "bg-secondary", text: "text-muted-foreground", border: "border-border" }) : null;
 
   const weightData = (logs ?? [])
     .filter(l => l.weight)
@@ -292,6 +314,18 @@ export default function OverviewTab() {
 
   return (
     <div className="space-y-6">
+      {activePhase && activePhaseColor && (
+        <div className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${activePhaseColor.bg} ${activePhaseColor.border}`}>
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-bold ${activePhaseColor.text}`}>{activePhase.label}</span>
+            {activePhaseWeek != null && activePhaseTotalWeeks != null && (
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${activePhaseColor.bg} ${activePhaseColor.text} ${activePhaseColor.border}`}>
+                Week {activePhaseWeek} / {activePhaseTotalWeeks}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
       {isCheckInDay && !alreadySubmittedThisWeek && (
         <div className="bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 flex items-center gap-3">
           <span className="text-xl">📋</span>
