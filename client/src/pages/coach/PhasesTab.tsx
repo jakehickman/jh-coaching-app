@@ -149,9 +149,9 @@ function calcRateOfChange(startWeight: number | string | null, targetWeight: num
   const tw = targetWeight == null ? null : typeof targetWeight === "string" ? parseFloat(targetWeight) : targetWeight;
   if (sw == null || tw == null || isNaN(sw) || isNaN(tw) || sw <= 0 || durationWeeks <= 0) return null;
   const rate = ((tw - sw) / sw / durationWeeks) * 100;
-  if (Math.abs(rate) < 0.001) return "0% / wk";
+  if (Math.abs(rate) < 0.001) return "0%";
   const sign = rate > 0 ? "+" : "";
-  return `${sign}${rate.toFixed(2)}% / wk`;
+  return `${sign}${rate.toFixed(2)}%`;
 }
 
 // ── Phase Form ────────────────────────────────────────────────────────────────
