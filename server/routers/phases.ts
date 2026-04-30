@@ -2,8 +2,8 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
-import { clientPhases } from "../../drizzle/schema";
-import { eq, desc } from "drizzle-orm";
+import { clientPhases, dailyLogs } from "../../drizzle/schema";
+import { eq, desc, or, and } from "drizzle-orm";
 
 const PHASE_LABELS = ["Gaining", "Mini Cut", "General Fat Loss", "Contest Prep"] as const;
 
@@ -89,6 +89,47 @@ export const phasesRouter = router({
       if (fields.targetWeight !== undefined) updateFields.targetWeight = fields.targetWeight;
       await db.update(clientPhases).set(updateFields as any).where(eq(clientPhases.id, id));
       return { success: true };
+    }),
+
+  // Get the weight logged on or within ±1 day of a given date for a client
+  weightForDate: protectedProcedure
+    .input(z.object({ clientId: z.number().int().positive(), date: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      // Build ±1 day date strings
+      const d = new Date(input.date + "T00:00:00Z");
+      const prev = new Date(d.getTime() - 86400000).toISOString().slice(0, 10);
+      const next = new Date(d.getTime() + 86400000).toISOString().slice(0, 10);
+
+      const rows = await db
+        .select({ logDate: dailyLogs.logDate, weight: dailyLogs.weight })
+        .from(dailyLogs)
+        .where(
+          and(
+            eq(dailyLogs.userId, input.clientId),
+            or(
+              eq(dailyLogs.logDate, input.date as any),
+              eq(dailyLogs.logDate, prev as any),
+              eq(dailyLogs.logDate, next as any),
+            )
+          )
+        );
+
+      // Pick the closest row with a weight value
+      const targetMs = d.getTime();
+      let best: { weight: number } | null = null;
+      let bestDiff = Infinity;
+      for (const row of rows) {
+        if (row.weight == null) continue;
+        const rowDate = row.logDate instanceof Date ? row.logDate.toISOString().slice(0, 10) : String(row.logDate);
+        const diff = Math.abs(new Date(rowDate + "T00:00:00Z").getTime() - targetMs);
+        if (diff < bestDiff) { bestDiff = diff; best = { weight: row.weight }; }
+      }
+
+      return best ? { weight: parseFloat(best.weight.toFixed(1)) } : { weight: null };
     }),
 
   // Delete a phase
