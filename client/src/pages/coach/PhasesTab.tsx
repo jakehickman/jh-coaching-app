@@ -419,7 +419,7 @@ function PhaseSummaryCard({
   const hasPhotos = firstPhotoWeek != null && lastPhotoWeek != null && firstPhotoWeek !== lastPhotoWeek;
 
   // Fetch comparison photos only when expanded and photos exist
-  const { data: comparePhotos } = trpc.progressPhotos.getForCompare.useQuery(
+  const { data: comparePhotos } = trpc.progressPhotos.getForCompareGrouped.useQuery(
     { clientId, weekA: firstPhotoWeek!, weekB: lastPhotoWeek! },
     { enabled: expanded && hasPhotos && firstPhotoWeek != null && lastPhotoWeek != null }
   );

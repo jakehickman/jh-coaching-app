@@ -57,7 +57,7 @@ export const progressPhotosRouter = router({
       return getProgressPhotosByWeek(input.clientId, input.weekNumber);
     }),
 
-  // Get photos for two weeks (for comparison)
+  // Get photos for two weeks (for comparison) - flat array (used by ProgressPhotosTab)
   getForCompare: protectedProcedure
     .input(
       z.object({
@@ -69,6 +69,28 @@ export const progressPhotosRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       return getProgressPhotosForCompare(input.clientId, input.weekA, input.weekB);
+    }),
+
+  // Get photos for two weeks grouped by week then pose (used by PhaseSummaryCard)
+  getForCompareGrouped: protectedProcedure
+    .input(
+      z.object({
+        clientId: z.number().int().positive(),
+        weekA: z.number().int().positive(),
+        weekB: z.number().int().positive(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const photos = await getProgressPhotosForCompare(input.clientId, input.weekA, input.weekB);
+      const weekA: Record<string, { id: number; url: string; pose: string }> = {};
+      const weekB: Record<string, { id: number; url: string; pose: string }> = {};
+      for (const p of photos) {
+        const entry = { id: p.id, url: p.photoUrl, pose: p.pose };
+        if (p.weekNumber === input.weekA) weekA[p.pose] = entry;
+        else if (p.weekNumber === input.weekB) weekB[p.pose] = entry;
+      }
+      return { weekA, weekB };
     }),
 
   // Delete a photo
