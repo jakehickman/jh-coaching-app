@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, CalendarDays } from "lucide-react";
@@ -152,6 +152,17 @@ function PhaseFormDialog({
     startWeight: initial?.startWeight ?? (defaultStartWeight != null ? String(defaultStartWeight) : ""),
     targetWeight: initial?.targetWeight ?? "",
   });
+
+  // Sync defaults if they arrive after the dialog has already opened (async data)
+  useEffect(() => {
+    if (!open) return;
+    setForm(f => ({
+      ...f,
+      startWeight: f.startWeight === "" && defaultStartWeight != null ? String(defaultStartWeight) : f.startWeight,
+      startDate: (f.startDate === today || f.startDate === "") && defaultStartDate ? defaultStartDate : f.startDate,
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, defaultStartWeight, defaultStartDate]);
 
   // Derived end date preview
   const endDatePreview = useMemo(() => {
