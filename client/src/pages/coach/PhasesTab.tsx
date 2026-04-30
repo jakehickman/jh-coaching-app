@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Minus, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, CalendarDays } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -47,9 +47,28 @@ function fmt(val: number | null | undefined, decimals = 1): string {
   return val.toFixed(decimals);
 }
 
-function fmtDate(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
+function toIsoDate(val: string | Date | null | undefined): string | null {
+  if (val == null) return null;
+  if (val instanceof Date) return val.toISOString().slice(0, 10);
+  // Already a YYYY-MM-DD string
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(val))) return String(val);
+  // Fallback: parse and re-format
+  const d = new Date(String(val));
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10);
+}
+
+function fmtDate(iso: string | null | undefined): string {
+  const safe = toIsoDate(iso);
+  if (!safe) return "—";
+  const d = new Date(safe + "T00:00:00");
   return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function addWeeks(isoDate: string, weeks: number): string {
+  const d = new Date(isoDate + "T00:00:00");
+  d.setDate(d.getDate() + weeks * 7);
+  return d.toISOString().slice(0, 10);
 }
 
 function weeksBetween(startDate: string, endDate: string): number {
@@ -60,8 +79,10 @@ function weeksBetween(startDate: string, endDate: string): number {
 }
 
 function getPhaseStatus(phase: Phase, today: string): "active" | "upcoming" | "completed" {
-  if (phase.startDate > today) return "upcoming";
-  if (!phase.endDate || phase.endDate >= today) return "active";
+  const start = toIsoDate(phase.startDate) ?? "";
+  const end = toIsoDate(phase.endDate);
+  if (start > today) return "upcoming";
+  if (!end || end >= today) return "active";
   return "completed";
 }
 
@@ -95,7 +116,7 @@ function calcRateOfChange(startWeight: number | null, targetWeight: number | nul
 type PhaseFormState = {
   label: PhaseLabel;
   startDate: string;
-  endDate: string;
+  durationWeeks: string; // "" = ongoing / no fixed end
   notes: string;
   startWeight: string;
   targetWeight: string;
@@ -120,11 +141,18 @@ function PhaseFormDialog({
   const [form, setForm] = useState<PhaseFormState>({
     label: initial?.label ?? "Gaining",
     startDate: initial?.startDate ?? today,
-    endDate: initial?.endDate ?? "",
+    durationWeeks: initial?.durationWeeks ?? "",
     notes: initial?.notes ?? "",
     startWeight: initial?.startWeight ?? (defaultStartWeight != null ? String(defaultStartWeight) : ""),
     targetWeight: initial?.targetWeight ?? "",
   });
+
+  // Derived end date preview
+  const endDatePreview = useMemo(() => {
+    const weeks = parseInt(form.durationWeeks, 10);
+    if (!form.startDate || isNaN(weeks) || weeks <= 0) return null;
+    return addWeeks(form.startDate, weeks);
+  }, [form.startDate, form.durationWeeks]);
 
   function handleSave() {
     if (!form.startDate) {
@@ -165,29 +193,41 @@ function PhaseFormDialog({
             </div>
           </div>
 
-          {/* Start date */}
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">Start Date</label>
-            <input
-              type="date"
-              value={form.startDate}
-              onChange={(e) => setForm(f => ({ ...f, startDate: e.target.value }))}
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground"
-            />
+          {/* Start date + Duration side by side */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">Start Date</label>
+              <input
+                type="date"
+                value={form.startDate}
+                onChange={(e) => setForm(f => ({ ...f, startDate: e.target.value }))}
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                Duration (weeks)
+              </label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={form.durationWeeks}
+                onChange={(e) => setForm(f => ({ ...f, durationWeeks: e.target.value }))}
+                placeholder="e.g. 12"
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50"
+              />
+            </div>
           </div>
 
-          {/* End date */}
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
-              End Date <span className="text-muted-foreground font-normal normal-case">(leave blank if ongoing or upcoming)</span>
-            </label>
-            <input
-              type="date"
-              value={form.endDate}
-              onChange={(e) => setForm(f => ({ ...f, endDate: e.target.value }))}
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground"
-            />
-          </div>
+          {/* End date preview */}
+          {endDatePreview ? (
+            <p className="text-xs text-muted-foreground -mt-1">
+              End date: <span className="text-foreground font-medium">{fmtDate(endDatePreview)}</span>
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground -mt-1">Leave duration blank for an ongoing phase with no fixed end.</p>
+          )}
 
           {/* Weight targets */}
           <div className="grid grid-cols-2 gap-3">
@@ -264,15 +304,18 @@ function PhaseSummaryCard({
   const status = getPhaseStatus(phase, today);
   const c = PHASE_COLORS[phase.label];
 
+  // Normalise dates (guard against Date objects coming through)
+  const startDate = toIsoDate(phase.startDate) ?? "";
+  const endDate = toIsoDate(phase.endDate);
+
   // Filter weeks that fall within this phase's date range
   const phaseWeeks = useMemo(() => {
     return weeks.filter((w) => {
-      // A week is "in" the phase if its weekEnd >= startDate and weekStart <= endDate (or endDate is null)
-      const afterStart = w.weekEnd >= phase.startDate;
-      const beforeEnd = !phase.endDate || w.weekStart <= phase.endDate;
+      const afterStart = w.weekEnd >= startDate;
+      const beforeEnd = !endDate || w.weekStart <= endDate;
       return afterStart && beforeEnd;
     }).sort((a, b) => a.weekNumber - b.weekNumber);
-  }, [weeks, phase]);
+  }, [weeks, startDate, endDate]);
 
   // First and last week with body comp data
   const weeksWithWeight = phaseWeeks.filter(w => w.avgWeight != null);
@@ -287,12 +330,18 @@ function PhaseSummaryCard({
   const firstSkinfoldWeek = weeksWithSkinfold[0] ?? null;
   const lastSkinfoldWeek = weeksWithSkinfold[weeksWithSkinfold.length - 1] ?? null;
 
-  // Duration
-  const endForDuration = phase.endDate ?? today;
-  const durationWeeks = weeksBetween(phase.startDate, endForDuration);
+  // Duration: use endDate if set, otherwise today for active phases
+  const endForDuration = endDate ?? today;
+  const durationWeeks = startDate ? weeksBetween(startDate, endForDuration) : 0;
+  // Planned duration (from endDate only, not today)
+  const plannedDurationWeeks = endDate && startDate ? weeksBetween(startDate, endDate) : null;
 
   // Rate of change from planned weights
-  const rateOfChange = calcRateOfChange(phase.startWeight, phase.targetWeight, durationWeeks);
+  const rateOfChange = calcRateOfChange(
+    phase.startWeight,
+    phase.targetWeight,
+    plannedDurationWeeks ?? durationWeeks
+  );
 
   // Photo weeks within this phase
   const phasePhotoWeekNumbers = phaseWeeks.map(w => w.weekNumber);
@@ -330,14 +379,18 @@ function PhaseSummaryCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium text-foreground">
-              {fmtDate(phase.startDate)}
-              {phase.endDate ? ` → ${fmtDate(phase.endDate)}` : status === "active" ? " → Present" : ""}
+              {fmtDate(startDate)}
+              {endDate ? ` → ${fmtDate(endDate)}` : status === "active" ? " → Present" : ""}
             </span>
-            {durationWeeks > 0 && (
+            {plannedDurationWeeks != null && plannedDurationWeeks > 0 ? (
               <span className="text-xs text-muted-foreground">
-                ({durationWeeks} {durationWeeks === 1 ? "week" : "weeks"}{status !== "completed" ? " so far" : ""})
+                ({plannedDurationWeeks} {plannedDurationWeeks === 1 ? "week" : "weeks"})
               </span>
-            )}
+            ) : durationWeeks > 0 && status === "active" ? (
+              <span className="text-xs text-muted-foreground">
+                ({durationWeeks} {durationWeeks === 1 ? "week" : "weeks"} so far)
+              </span>
+            ) : null}
           </div>
           {phase.notes && (
             <p className="text-xs text-muted-foreground mt-0.5 truncate">{phase.notes}</p>
@@ -636,8 +689,32 @@ export function PhasesTab({ clientId }: { clientId: number }) {
     const sa = statusOrder[getPhaseStatus(a, today)];
     const sb = statusOrder[getPhaseStatus(b, today)];
     if (sa !== sb) return sa - sb;
-    return b.startDate.localeCompare(a.startDate);
+    const aStart = toIsoDate(a.startDate) ?? "";
+    const bStart = toIsoDate(b.startDate) ?? "";
+    return bStart.localeCompare(aStart);
   });
+
+  /** Convert form data to the endDate string to store */
+  function formToEndDate(data: PhaseFormState): string | null {
+    const weeks = parseInt(data.durationWeeks, 10);
+    if (!data.startDate || isNaN(weeks) || weeks <= 0) return null;
+    return addWeeks(data.startDate, weeks);
+  }
+
+  /** Convert a stored phase back to form state for editing */
+  function phaseToFormInitial(phase: Phase): Partial<PhaseFormState> {
+    const start = toIsoDate(phase.startDate) ?? "";
+    const end = toIsoDate(phase.endDate);
+    const durationWeeks = start && end ? String(weeksBetween(start, end)) : "";
+    return {
+      label: phase.label,
+      startDate: start,
+      durationWeeks,
+      notes: phase.notes ?? "",
+      startWeight: phase.startWeight != null ? String(phase.startWeight) : "",
+      targetWeight: phase.targetWeight != null ? String(phase.targetWeight) : "",
+    };
+  }
 
   if (phasesLoading) {
     return (
@@ -702,7 +779,7 @@ export function PhasesTab({ clientId }: { clientId: number }) {
               clientId,
               label: data.label,
               startDate: data.startDate,
-              endDate: data.endDate || null,
+              endDate: formToEndDate(data),
               notes: data.notes || null,
               startWeight: data.startWeight ? parseFloat(data.startWeight) : null,
               targetWeight: data.targetWeight ? parseFloat(data.targetWeight) : null,
@@ -717,20 +794,13 @@ export function PhasesTab({ clientId }: { clientId: number }) {
           open={!!editPhase}
           onClose={() => setEditPhase(null)}
           title="Edit Phase"
-          initial={{
-            label: editPhase.label,
-            startDate: editPhase.startDate,
-            endDate: editPhase.endDate ?? "",
-            notes: editPhase.notes ?? "",
-            startWeight: editPhase.startWeight != null ? String(editPhase.startWeight) : "",
-            targetWeight: editPhase.targetWeight != null ? String(editPhase.targetWeight) : "",
-          }}
+          initial={phaseToFormInitial(editPhase)}
           onSave={(data) => {
             updatePhase.mutate({
               id: editPhase.id,
               label: data.label,
               startDate: data.startDate,
-              endDate: data.endDate || null,
+              endDate: formToEndDate(data),
               notes: data.notes || null,
               startWeight: data.startWeight ? parseFloat(data.startWeight) : null,
               targetWeight: data.targetWeight ? parseFloat(data.targetWeight) : null,
