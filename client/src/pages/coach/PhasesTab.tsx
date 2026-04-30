@@ -566,12 +566,16 @@ function PhaseSummaryCard({
                       <p className="text-sm font-semibold text-foreground">{phase.targetWeight != null ? `${fmt(phase.targetWeight)} kg` : "—"}</p>
                     </div>
                   </div>
-                  {phase.targetRate && (
-                    <div className="mt-3 bg-secondary/40 rounded-xl p-4">
+                  <div className="grid grid-cols-2 gap-4 mt-3">
+                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate of Gain / Loss</p>
-                      <p className="text-sm font-semibold text-foreground">{phase.targetRate}</p>
+                      <p className="text-sm font-semibold text-foreground">{phase.targetRate || "—"}</p>
                     </div>
-                  )}
+                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Actual Rate of Gain / Loss</p>
+                      <p className="text-sm font-semibold text-foreground">{actualRate ?? "—"}</p>
+                    </div>
+                  </div>
                 </div>
               )}
               <p className="text-sm text-muted-foreground">This phase hasn't started yet. Body composition data will appear here once the phase begins.</p>
@@ -593,18 +597,14 @@ function PhaseSummaryCard({
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-3">
-                    {phase.targetRate && (
-                      <div className="bg-secondary/40 rounded-xl p-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate of Gain / Loss</p>
-                        <p className="text-sm font-semibold text-foreground">{phase.targetRate}</p>
-                      </div>
-                    )}
-                    {actualRate && (
-                      <div className="bg-secondary/40 rounded-xl p-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Actual Rate of Gain / Loss</p>
-                        <p className="text-sm font-semibold text-foreground">{actualRate}</p>
-                      </div>
-                    )}
+                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate of Gain / Loss</p>
+                      <p className="text-sm font-semibold text-foreground">{phase.targetRate || "—"}</p>
+                    </div>
+                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Actual Rate of Gain / Loss</p>
+                      <p className="text-sm font-semibold text-foreground">{actualRate ?? "—"}</p>
+                    </div>
                   </div>
                 </div>
               )}
