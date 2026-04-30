@@ -367,65 +367,70 @@ function PhaseSummaryCard({
 
   return (
     <div className={`border rounded-xl overflow-hidden ${c.border} bg-card`}>
-      {/* Header row */}
+      {/* Compact data row */}
       <div
-        className="flex items-center gap-3 px-5 py-4 cursor-pointer select-none"
+        className="grid cursor-pointer select-none px-4 py-3 gap-x-4 gap-y-1 items-center"
+        style={{ gridTemplateColumns: "auto 1fr auto" }}
         onClick={() => setExpanded(!expanded)}
       >
-        {/* Phase label pill */}
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${c.bg} ${c.text} ${c.border} flex-shrink-0`}>
-          {phase.label}
-        </span>
-
-        {/* Dates & duration */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-foreground">
-              {fmtDate(startDate)}
-              {endDate ? ` → ${fmtDate(endDate)}` : status === "active" ? " → Present" : ""}
-            </span>
-            {plannedDurationWeeks != null && plannedDurationWeeks > 0 ? (
-              <span className="text-xs text-muted-foreground">
-                ({plannedDurationWeeks} {plannedDurationWeeks === 1 ? "week" : "weeks"})
-              </span>
-            ) : durationWeeks > 0 && status === "active" ? (
-              <span className="text-xs text-muted-foreground">
-                ({durationWeeks} {durationWeeks === 1 ? "week" : "weeks"} so far)
-              </span>
-            ) : null}
-          </div>
-          {phase.notes && (
-            <p className="text-xs text-muted-foreground mt-0.5 truncate">{phase.notes}</p>
-          )}
+        {/* Row 1: phase pill + data columns + actions */}
+        {/* Phase label + status */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${c.bg} ${c.text} ${c.border} whitespace-nowrap`}>
+            {phase.label}
+          </span>
+          <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border whitespace-nowrap ${statusClass}`}>
+            {statusLabel}
+          </span>
         </div>
 
-        {/* Status badge */}
-        <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border flex-shrink-0 ${statusClass}`}>
-          {statusLabel}
-        </span>
+        {/* Data columns */}
+        <div className="grid grid-cols-5 gap-x-6 gap-y-0.5 min-w-0">
+          {/* Dates */}
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Dates</p>
+            <p className="text-xs text-foreground font-medium whitespace-nowrap">
+              {fmtDate(startDate)}
+            </p>
+            <p className="text-xs text-muted-foreground whitespace-nowrap">
+              {endDate ? `→ ${fmtDate(endDate)}` : status === "active" ? "→ Present" : "—"}
+            </p>
+          </div>
 
-        {/* Rate of change badge */}
-        {rateOfChange && (
-          <span className="hidden sm:inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-secondary text-muted-foreground border-border flex-shrink-0">
-            {rateOfChange}
-          </span>
-        )}
-
-        {/* Quick body comp summary (collapsed) */}
-        {status !== "upcoming" && firstWeek && lastWeek && firstWeek !== lastWeek && (
-          <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
-            <div className="text-center">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Weight</p>
-              <DeltaVal val={lastWeek.avgWeight} prev={firstWeek.avgWeight} unit=" kg" invert />
-            </div>
-            {firstWaistWeek && lastWaistWeek && firstWaistWeek !== lastWaistWeek && (
-              <div className="text-center">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Waist</p>
-                <DeltaVal val={lastWaistWeek.avgWaist} prev={firstWaistWeek.avgWaist} unit=" cm" invert />
-              </div>
+          {/* Weeks */}
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Weeks</p>
+            {plannedDurationWeeks != null && plannedDurationWeeks > 0 ? (
+              <p className="text-xs text-foreground font-medium">{plannedDurationWeeks}</p>
+            ) : durationWeeks > 0 ? (
+              <p className="text-xs text-foreground font-medium">{durationWeeks} <span className="text-muted-foreground font-normal">so far</span></p>
+            ) : (
+              <p className="text-xs text-muted-foreground">—</p>
             )}
           </div>
-        )}
+
+          {/* Start weight */}
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Start</p>
+            <p className="text-xs text-foreground font-medium">
+              {phase.startWeight != null ? `${fmt(phase.startWeight)} kg` : "—"}
+            </p>
+          </div>
+
+          {/* Target weight */}
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Target</p>
+            <p className="text-xs text-foreground font-medium">
+              {phase.targetWeight != null ? `${fmt(phase.targetWeight)} kg` : "—"}
+            </p>
+          </div>
+
+          {/* Rate */}
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Rate</p>
+            <p className="text-xs text-foreground font-medium whitespace-nowrap">{rateOfChange ?? "—"}</p>
+          </div>
+        </div>
 
         {/* Actions */}
         <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
