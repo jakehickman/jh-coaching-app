@@ -211,6 +211,30 @@ function PhaseFormDialog({
     return addWeeks(form.startDate, weeks);
   }, [form.startDate, form.durationWeeks]);
 
+  // Live implied rate from start weight, target weight, and duration
+  const impliedRate = useMemo(() => {
+    const sw = parseFloat(form.startWeight);
+    const tw = parseFloat(form.targetWeight);
+    const weeks = parseInt(form.durationWeeks, 10);
+    if (isNaN(sw) || isNaN(tw) || isNaN(weeks) || sw <= 0 || weeks <= 0) return null;
+    return ((tw - sw) / sw / weeks) * 100;
+  }, [form.startWeight, form.targetWeight, form.durationWeeks]);
+
+  // Check if implied rate falls within the selected target range
+  const rateInRange = useMemo(() => {
+    if (impliedRate == null || !form.targetRate) return null;
+    const ranges: Record<string, [number, number]> = {
+      "-0 – 0.5%":   [-0.5, 0],
+      "-0.5 – 1%":   [-1, -0.5],
+      "-1 – 1.5%":   [-1.5, -1],
+      "+0 – 0.25%":  [0, 0.25],
+      "+0.25 – 0.5%": [0.25, 0.5],
+    };
+    const range = ranges[form.targetRate];
+    if (!range) return null;
+    return impliedRate >= range[0] && impliedRate <= range[1];
+  }, [impliedRate, form.targetRate]);
+
   function handleSave() {
     if (!form.startDate) {
       toast.error("Start date is required");
@@ -333,6 +357,24 @@ function PhaseFormDialog({
               ))}
             </select>
           </div>
+
+          {/* Implied rate indicator */}
+          {impliedRate != null && (
+            <div className={`rounded-lg px-4 py-3 flex items-center justify-between text-sm border ${
+              rateInRange === true
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                : rateInRange === false
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                : "bg-secondary border-border text-muted-foreground"
+            }`}>
+              <span className="font-medium">
+                Implied rate: {impliedRate > 0 ? "+" : ""}{impliedRate.toFixed(2)}% / wk
+              </span>
+              {rateInRange === true && <span className="text-xs font-semibold">Within target range</span>}
+              {rateInRange === false && <span className="text-xs font-semibold">Outside target range</span>}
+              {rateInRange === null && form.targetRate === "" && <span className="text-xs">Select a target range to check</span>}
+            </div>
+          )}
 
           {/* Notes */}
           <div>
