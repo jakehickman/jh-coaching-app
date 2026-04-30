@@ -15,6 +15,13 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import ProgressSection from "./ProgressSection";
 
+const PHASE_COLORS: Record<string, { bg: string; text: string }> = {
+  "Gaining":          { bg: "bg-blue-500/15",   text: "text-blue-400" },
+  "Mini Cut":         { bg: "bg-orange-500/15",  text: "text-orange-400" },
+  "General Fat Loss": { bg: "bg-emerald-500/15", text: "text-emerald-400" },
+  "Contest Prep":     { bg: "bg-purple-500/15",  text: "text-purple-400" },
+};
+
 export default function ClientHub() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -38,6 +45,16 @@ export default function ClientHub() {
   const checkInDay = (clientUser as any)?.checkInDay
     ? ((clientUser as any).checkInDay as string).charAt(0).toUpperCase() + ((clientUser as any).checkInDay as string).slice(1)
     : null;
+
+  // Current phase badge
+  const { data: phases = [] } = trpc.phases.list.useQuery(
+    { clientId },
+    { enabled: clientId > 0 }
+  );
+  const today = new Date().toISOString().slice(0, 10);
+  const activePhase = (phases as any[]).find((p) => p.startDate <= today && (!p.endDate || p.endDate >= today)) ?? null;
+  const startDateMs = activePhase ? new Date(activePhase.startDate + "T00:00:00").getTime() : null;
+  const weeksIn = startDateMs ? Math.floor((Date.now() - startDateMs) / (7 * 24 * 60 * 60 * 1000)) + 1 : null;
 
   return (
     <DashboardShell mode="coach">
@@ -66,6 +83,14 @@ export default function ClientHub() {
                 Check-in: {checkInDay}
               </span>
             )}
+            {activePhase && (() => {
+              const c = PHASE_COLORS[activePhase.label] ?? { bg: "bg-secondary", text: "text-muted-foreground" };
+              return (
+                <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${c.bg} ${c.text}`}>
+                  {activePhase.label}{weeksIn != null ? ` · Wk ${weeksIn}` : ""}
+                </span>
+              );
+            })()}
           </div>
         </div>
       </div>

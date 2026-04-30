@@ -23,6 +23,7 @@ import {
   progressRouter,
   progressPhotosRouter,
   questionsRouter,
+  phasesRouter,
 } from "./routers/index";
 
 export const appRouter = router({
@@ -49,6 +50,7 @@ export const appRouter = router({
   progress: progressRouter,
   progressPhotos: progressPhotosRouter,
   questions: questionsRouter,
+  phases: phasesRouter,
 });
 
 export type AppRouter = typeof appRouter;

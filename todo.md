@@ -615,3 +615,11 @@
 - [x] Weekly Review cards now show metrics only (clean for client-facing sessions)
 - [x] New Check-ins tab: weekly accordion (submissions only), Tiptap WYSIWYG notes for Coach Notes and Changes Made, Mark as Reviewed button with success toast
 - [x] Replace raw markdown textarea + toolbar with Tiptap WYSIWYG editor (bold, heading, bullet list)
+
+## Phases Feature
+- [ ] Phases: add phases table to DB schema and run migration
+- [ ] Phases: tRPC procedures (list, create, update, delete)
+- [ ] Phases: PhasesTab component with timeline (past/active/upcoming), add/edit/delete phase UI
+- [ ] Phases: phase summary card (body comp changes + bracketing photos) for completed phases
+- [ ] Phases: Current Phase badge in client header (visible on all tabs)
+- [ ] Phases: wire Phases tab into ProgressSection tab bar

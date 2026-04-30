@@ -645,3 +645,23 @@ export const clientQuestionOverrides = mysqlTable("client_question_overrides", {
 });
 export type ClientQuestionOverride = typeof clientQuestionOverrides.$inferSelect;
 export type InsertClientQuestionOverride = typeof clientQuestionOverrides.$inferInsert;
+
+// ─── Client Phases ────────────────────────────────────────────────────────────
+
+export const clientPhases = mysqlTable("client_phases", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("clientId").notNull(),          // FK -> users.id
+  label: mysqlEnum("label", [
+    "Gaining",
+    "Mini Cut",
+    "General Fat Loss",
+    "Contest Prep",
+  ]).notNull(),
+  startDate: date("startDate").notNull(),       // ISO date string YYYY-MM-DD
+  endDate: date("endDate"),                     // null = active or upcoming
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ClientPhase = typeof clientPhases.$inferSelect;
+export type InsertClientPhase = typeof clientPhases.$inferInsert;

@@ -11,3 +11,4 @@ export { timelineRouter, notesRouter, nutritionFoodsRouter, onboardingRouter, cl
 export { progressRouter } from "./progress";
 export { progressPhotosRouter } from "./progressPhotos";
 export { questionsRouter } from "./questions";
+export { phasesRouter } from "./phases";

@@ -22,6 +22,7 @@ import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import ProgramChangeLogTab from "./ProgramChangeLogTab";
 import CardioChangeLogTab from "./CardioChangeLogTab";
 import { CoachCheckInsTab } from "./CoachCheckInsTab";
+import { PhasesTab } from "./PhasesTab";
 
 // ─── Cardio & Activity Card ─────────────────────────────────────────────────
 function CardioActivityCard({ clientId }: { clientId: number }) {
@@ -1896,6 +1897,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
               <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
+              <TabsTrigger value="phases">Phases</TabsTrigger>
             </TabsList>
           </div>
 
@@ -1979,6 +1981,11 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <MacroPlanHistoryTab clientId={selectedUserId!} />
               </div>
             </div>
+          </TabsContent>
+
+          {/* ── Phases ── */}
+          <TabsContent value="phases">
+            <PhasesTab clientId={selectedUserId!} />
           </TabsContent>
 
           {/* ── Cardio & Activity ── */}
