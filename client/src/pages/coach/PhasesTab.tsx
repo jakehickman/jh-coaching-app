@@ -1,10 +1,33 @@
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, CalendarDays, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
+// Simple full-screen lightbox for photo zoom
+function PhaseLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+      >
+        <X size={20} />
+      </button>
+      <img
+        src={src}
+        alt={alt}
+        className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -20,14 +43,14 @@ const PHASE_COLORS: Record<PhaseLabel, { bg: string; text: string; border: strin
 
 // Target rate options — stored as the display string
 const TARGET_RATE_OPTIONS = [
-  { value: "",                    label: "— Not set —" },
+  { value: "",              label: "— Not set —" },
   // Loss
-  { value: "0% – 0.5% loss/wk",  label: "0% – 0.5% loss / wk" },
-  { value: "0.5% – 1% loss/wk",  label: "0.5% – 1% loss / wk" },
-  { value: "1% – 1.5% loss/wk",  label: "1% – 1.5% loss / wk" },
+  { value: "-0 – 0.5%",   label: "-0 – 0.5%" },
+  { value: "-0.5 – 1%",   label: "-0.5 – 1%" },
+  { value: "-1 – 1.5%",   label: "-1 – 1.5%" },
   // Gain
-  { value: "0% – 0.25% gain/wk", label: "0% – 0.25% gain / wk" },
-  { value: "0.25% – 0.5% gain/wk", label: "0.25% – 0.5% gain / wk" },
+  { value: "+0 – 0.25%",  label: "+0 – 0.25%" },
+  { value: "+0.25 – 0.5%", label: "+0.25 – 0.5%" },
 ] as const;
 
 type Phase = {
@@ -296,7 +319,7 @@ function PhaseFormDialog({
           {/* Target rate */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
-              Target Rate of Gain / Loss
+              Target Rate of Gain / Loss <span className="normal-case font-normal">(per week)</span>
             </label>
             <select
               value={form.targetRate}
@@ -348,6 +371,7 @@ function PhaseSummaryCard({
   onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const today = new Date().toISOString().slice(0, 10);
   const status = getPhaseStatus(phase, today);
   const c = PHASE_COLORS[phase.label];
@@ -640,19 +664,22 @@ function PhaseSummaryCard({
               )}
 
               {/* Phase photos: start vs end */}
+              {lightbox && <PhaseLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
               {hasPhotos && comparePhotos && (
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                     Photos: Week {firstPhotoWeek} vs Week {lastPhotoWeek}
                   </p>
                   {(() => {
-                    const poses = Object.keys((comparePhotos as any).weekA ?? {});
+                    const weekAPhotos = (comparePhotos as any).weekA ?? {};
+                    const weekBPhotos = (comparePhotos as any).weekB ?? {};
+                    const poses = Array.from(new Set([...Object.keys(weekAPhotos), ...Object.keys(weekBPhotos)]));
                     if (poses.length === 0) return <p className="text-xs text-muted-foreground">No photos available for this phase.</p>;
                     return (
                       <div className="space-y-4">
                         {poses.map((pose) => {
-                          const photoA = ((comparePhotos as any).weekA as any)?.[pose];
-                          const photoB = ((comparePhotos as any).weekB as any)?.[pose];
+                          const photoA = weekAPhotos[pose];
+                          const photoB = weekBPhotos[pose];
                           if (!photoA && !photoB) return null;
                           return (
                             <div key={pose}>
@@ -663,7 +690,12 @@ function PhaseSummaryCard({
                                 <div>
                                   <p className="text-xs text-center text-muted-foreground mb-1">Week {firstPhotoWeek}</p>
                                   {photoA ? (
-                                    <img src={photoA.url} alt={`Week ${firstPhotoWeek} ${pose}`} className="w-full aspect-[9/16] object-cover rounded-xl" />
+                                    <button
+                                      className="w-full block focus:outline-none"
+                                      onClick={() => setLightbox({ src: photoA.url, alt: `Week ${firstPhotoWeek} ${pose}` })}
+                                    >
+                                      <img src={photoA.url} alt={`Week ${firstPhotoWeek} ${pose}`} className="w-full aspect-[9/16] object-cover rounded-xl cursor-zoom-in hover:opacity-90 transition-opacity" />
+                                    </button>
                                   ) : (
                                     <div className="w-full aspect-[9/16] bg-secondary rounded-xl flex items-center justify-center">
                                       <span className="text-xs text-muted-foreground">No photo</span>
@@ -673,7 +705,12 @@ function PhaseSummaryCard({
                                 <div>
                                   <p className="text-xs text-center text-muted-foreground mb-1">Week {lastPhotoWeek}</p>
                                   {photoB ? (
-                                    <img src={photoB.url} alt={`Week ${lastPhotoWeek} ${pose}`} className="w-full aspect-[9/16] object-cover rounded-xl" />
+                                    <button
+                                      className="w-full block focus:outline-none"
+                                      onClick={() => setLightbox({ src: photoB.url, alt: `Week ${lastPhotoWeek} ${pose}` })}
+                                    >
+                                      <img src={photoB.url} alt={`Week ${lastPhotoWeek} ${pose}`} className="w-full aspect-[9/16] object-cover rounded-xl cursor-zoom-in hover:opacity-90 transition-opacity" />
+                                    </button>
                                   ) : (
                                     <div className="w-full aspect-[9/16] bg-secondary rounded-xl flex items-center justify-center">
                                       <span className="text-xs text-muted-foreground">No photo</span>
