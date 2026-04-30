@@ -1933,25 +1933,28 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             <CoachCheckInsTab clientId={selectedUserId!} />
           </TabsContent>
 
-          {/* ── Body Composition: Measurements / Photos / History sub-tabs ── */}
+          {/* ── Body Composition: Data / Photos sub-tabs ── */}
           <TabsContent value="body-comp">
-            <Tabs defaultValue="measurements" className="w-full">
+            <Tabs defaultValue="data" className="w-full">
               <TabsList className="mb-4">
-                <TabsTrigger value="measurements">Measurements</TabsTrigger>
+                <TabsTrigger value="data">Data</TabsTrigger>
                 <TabsTrigger value="photos">Photos</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
-              <TabsContent value="measurements">
-                <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
+              <TabsContent value="data">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                  <div>
+                    <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
+                  </div>
+                  <div>
+                    <WeeklyBodyCompCards clientId={selectedUserId!} />
+                  </div>
+                </div>
               </TabsContent>
               <TabsContent value="photos">
                 <ProgressPhotosTab
                   clientId={selectedUserId!}
                   photoType={(clientProfile?.photoType as "standard" | "athlete") ?? "standard"}
                 />
-              </TabsContent>
-              <TabsContent value="history">
-                <WeeklyBodyCompCards clientId={selectedUserId!} />
               </TabsContent>
             </Tabs>
           </TabsContent>
