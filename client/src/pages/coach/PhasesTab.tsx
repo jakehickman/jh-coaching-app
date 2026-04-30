@@ -31,6 +31,8 @@ type Phase = {
   updatedAt: Date;
 };
 
+type WeighIn = { logDate: string; weight: number };
+
 type WeekData = {
   weekNumber: number;
   weekStart: string;
@@ -38,6 +40,7 @@ type WeekData = {
   avgWeight: number | null;
   avgWaist: number | null;
   avgSkinfold: number | null;
+  weighIns?: WeighIn[];
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -126,25 +129,25 @@ type PhaseFormState = {
   targetWeight: string;
 };
 
-/** Find the weekly avg weight closest to a given date (within 7 days), preferring the week that contains it */
+/** Find the exact daily log weight for a date, falling back to ±1 day, rounded to 1dp */
 function weightForDate(weeks: WeekData[], isoDate: string): number | null {
   if (!isoDate || weeks.length === 0) return null;
-  const target = new Date(isoDate + "T00:00:00").getTime();
-  let best: WeekData | null = null;
+  // Flatten all weigh-ins from all weeks
+  const allWeighIns: WeighIn[] = weeks.flatMap(w => w.weighIns ?? []);
+  if (allWeighIns.length === 0) return null;
+  // Exact match first
+  const exact = allWeighIns.find(w => w.logDate === isoDate);
+  if (exact != null) return parseFloat(exact.weight.toFixed(1));
+  // ±1 day fallback
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const targetMs = new Date(isoDate + "T00:00:00").getTime();
+  let best: WeighIn | null = null;
   let bestDiff = Infinity;
-  for (const w of weeks) {
-    if (w.avgWeight == null) continue;
-    const start = new Date(w.weekStart + "T00:00:00").getTime();
-    const end = new Date(w.weekEnd + "T00:00:00").getTime();
-    // If date falls inside the week, use it directly
-    if (target >= start && target <= end) return w.avgWeight;
-    // Otherwise track closest week boundary
-    const diff = Math.min(Math.abs(target - start), Math.abs(target - end));
-    if (diff < bestDiff) { bestDiff = diff; best = w; }
+  for (const w of allWeighIns) {
+    const diff = Math.abs(new Date(w.logDate + "T00:00:00").getTime() - targetMs);
+    if (diff <= oneDayMs && diff < bestDiff) { bestDiff = diff; best = w; }
   }
-  // Only use closest week if within 7 days
-  if (best && bestDiff <= 7 * 24 * 60 * 60 * 1000) return best.avgWeight;
-  return null;
+  return best != null ? parseFloat(best.weight.toFixed(1)) : null;
 }
 
 function PhaseFormDialog({
