@@ -126,43 +126,75 @@ type PhaseFormState = {
   targetWeight: string;
 };
 
+/** Find the weekly avg weight closest to a given date (within 7 days), preferring the week that contains it */
+function weightForDate(weeks: WeekData[], isoDate: string): number | null {
+  if (!isoDate || weeks.length === 0) return null;
+  const target = new Date(isoDate + "T00:00:00").getTime();
+  let best: WeekData | null = null;
+  let bestDiff = Infinity;
+  for (const w of weeks) {
+    if (w.avgWeight == null) continue;
+    const start = new Date(w.weekStart + "T00:00:00").getTime();
+    const end = new Date(w.weekEnd + "T00:00:00").getTime();
+    // If date falls inside the week, use it directly
+    if (target >= start && target <= end) return w.avgWeight;
+    // Otherwise track closest week boundary
+    const diff = Math.min(Math.abs(target - start), Math.abs(target - end));
+    if (diff < bestDiff) { bestDiff = diff; best = w; }
+  }
+  // Only use closest week if within 7 days
+  if (best && bestDiff <= 7 * 24 * 60 * 60 * 1000) return best.avgWeight;
+  return null;
+}
+
 function PhaseFormDialog({
   open,
   onClose,
   onSave,
   initial,
   title,
-  defaultStartWeight,
   defaultStartDate,
+  weeks,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (data: PhaseFormState) => void;
   initial?: Partial<PhaseFormState>;
   title: string;
-  defaultStartWeight?: number | null;
   defaultStartDate?: string | null;
+  weeks: WeekData[];
 }) {
   const today = new Date().toISOString().slice(0, 10);
+  const initialStartDate = initial?.startDate ?? defaultStartDate ?? today;
+  const initialWeight = initial?.startWeight ?? (weightForDate(weeks, initialStartDate) != null ? String(weightForDate(weeks, initialStartDate)) : "");
   const [form, setForm] = useState<PhaseFormState>({
     label: initial?.label ?? "Gaining",
-    startDate: initial?.startDate ?? defaultStartDate ?? today,
+    startDate: initialStartDate,
     durationWeeks: initial?.durationWeeks ?? "",
     notes: initial?.notes ?? "",
-    startWeight: initial?.startWeight ?? (defaultStartWeight != null ? String(defaultStartWeight) : ""),
+    startWeight: initialWeight,
     targetWeight: initial?.targetWeight ?? "",
   });
 
-  // Sync defaults if they arrive after the dialog has already opened (async data)
+  // When start date changes, look up the closest weekly avg weight and auto-fill (only if user hasn't typed their own value)
+  const [userEditedWeight, setUserEditedWeight] = useState(initialWeight !== "");
+  useEffect(() => {
+    if (!open) return;
+    if (userEditedWeight) return;
+    const w = weightForDate(weeks, form.startDate);
+    setForm(f => ({ ...f, startWeight: w != null ? String(w) : "" }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.startDate, weeks, open]);
+
+  // Sync defaultStartDate if it arrives after dialog opens
   useEffect(() => {
     if (!open) return;
     setForm(f => ({
       ...f,
-      startWeight: f.startWeight === "" && defaultStartWeight != null ? String(defaultStartWeight) : f.startWeight,
       startDate: (f.startDate === today || f.startDate === "") && defaultStartDate ? defaultStartDate : f.startDate,
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, defaultStartWeight, defaultStartDate]);
+  }, [open, defaultStartDate]);
 
   // Derived end date preview
   const endDatePreview = useMemo(() => {
@@ -257,8 +289,8 @@ function PhaseFormDialog({
                 step="0.1"
                 min="0"
                 value={form.startWeight}
-                onChange={(e) => setForm(f => ({ ...f, startWeight: e.target.value }))}
-                placeholder={defaultStartWeight != null ? String(defaultStartWeight) : "e.g. 82.5"}
+                onChange={(e) => { setUserEditedWeight(true); setForm(f => ({ ...f, startWeight: e.target.value })); }}
+                placeholder="e.g. 82.5"
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50"
               />
             </div>
@@ -804,7 +836,7 @@ export function PhasesTab({ clientId }: { clientId: number }) {
           open={addOpen}
           onClose={() => setAddOpen(false)}
           title="Add Phase"
-          defaultStartWeight={latestWeight}
+          weeks={weeks}
           defaultStartDate={latestPhaseEndDate}
           onSave={(data) => {
             createPhase.mutate({
@@ -826,6 +858,7 @@ export function PhasesTab({ clientId }: { clientId: number }) {
           open={!!editPhase}
           onClose={() => setEditPhase(null)}
           title="Edit Phase"
+          weeks={weeks}
           initial={phaseToFormInitial(editPhase)}
           onSave={(data) => {
             updatePhase.mutate({
