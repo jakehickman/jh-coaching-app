@@ -1958,7 +1958,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 </div>
               </div>
               {(logs ?? []).length > 0 && (
-                <div className="max-w-[50%]">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
                 </div>
               )}
