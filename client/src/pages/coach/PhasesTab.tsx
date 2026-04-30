@@ -33,7 +33,7 @@ function PhaseLightbox({ src, alt, onClose }: { src: string; alt: string; onClos
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-const PHASE_LABELS = ["Gaining", "Mini Cut", "Fat Loss", "Contest Prep"] as const;
+const PHASE_LABELS = ["Gaining", "Mini Cut", "Fat Loss", "Contest Prep", "Vacation"] as const;
 type PhaseLabel = typeof PHASE_LABELS[number];
 
 const PHASE_COLORS: Record<PhaseLabel, { bg: string; text: string; border: string }> = {
@@ -41,6 +41,7 @@ const PHASE_COLORS: Record<PhaseLabel, { bg: string; text: string; border: strin
   "Mini Cut":     { bg: "bg-orange-500/15",  text: "text-orange-400", border: "border-orange-500/30" },
   "Fat Loss":     { bg: "bg-emerald-500/15", text: "text-emerald-400",border: "border-emerald-500/30" },
   "Contest Prep": { bg: "bg-purple-500/15",  text: "text-purple-400", border: "border-purple-500/30" },
+  "Vacation":     { bg: "bg-sky-500/15",     text: "text-sky-400",    border: "border-sky-500/30" },
 };
 
 // Target rate options — stored as the display string
