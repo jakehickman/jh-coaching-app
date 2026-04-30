@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { localToday, fmtDate, toUTCDateStr as toLocalDateStr } from "@/lib/dates";
@@ -7,7 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus, Activity } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus, Activity, History } from "lucide-react";
 import { useSearch, useLocation } from "wouter";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
@@ -21,11 +21,36 @@ import { ProgressPhotosTab } from "./ProgressPhotosTab";
 import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import ProgramChangeLogTab from "./ProgramChangeLogTab";
 import CardioChangeLogTab from "./CardioChangeLogTab";
+
 import { CoachCheckInsTab } from "./CoachCheckInsTab";
 import { UnifiedChangeLog } from "./UnifiedChangeLog";
 import { PhasesTab } from "./PhasesTab";
 
-// ─── Cardio & Activity Card ─────────────────────────────────────────────────
+// ─── Collapsible Change History Panel ───────────────────────────────────────
+function ChangeHistoryPanel({ children, label = "Change History" }: { children: React.ReactNode; label?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border border-border/50 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/20 transition-colors"
+      >
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <History size={14} />
+          {label}
+        </div>
+        <ChevronDown size={14} className={`text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="px-4 pb-4 border-t border-border/40">
+          <div className="pt-4">{children}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Cardio & Activity Card ───────────────────────────────────────────
 function CardioActivityCard({ clientId }: { clientId: number }) {
   const utils = trpc.useUtils();
   const { data: profile, isLoading } = trpc.profile.getById.useQuery(
@@ -1944,16 +1969,12 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsList className="mb-4">
                 <TabsTrigger value="check-ins-list">Check-ins</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                <TabsTrigger value="change-log">Change Log</TabsTrigger>
               </TabsList>
               <TabsContent value="check-ins-list">
                 <CoachCheckInsTab clientId={selectedUserId!} />
               </TabsContent>
               <TabsContent value="timeline">
                 <PhasesTab clientId={selectedUserId!} />
-              </TabsContent>
-              <TabsContent value="change-log">
-                <UnifiedChangeLog clientId={selectedUserId!} />
               </TabsContent>
             </Tabs>
           </TabsContent>
@@ -2000,11 +2021,19 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} />
               </TabsContent>
               <TabsContent value="program">
-                <TrainingSection fixedClientId={selectedUserId!} />
+                <div className="space-y-6">
+                  <TrainingSection fixedClientId={selectedUserId!} />
+                  <ChangeHistoryPanel label="Program Change History">
+                    <ProgramChangeLogTab clientId={selectedUserId!} />
+                  </ChangeHistoryPanel>
+                </div>
               </TabsContent>
               <TabsContent value="cardio">
-                <div className="max-w-xl">
+                <div className="max-w-xl space-y-6">
                   <CardioActivityCard clientId={selectedUserId!} />
+                  <ChangeHistoryPanel label="Cardio & Activity Change History">
+                    <CardioChangeLogTab clientId={selectedUserId!} />
+                  </ChangeHistoryPanel>
                 </div>
               </TabsContent>
             </Tabs>
@@ -2015,6 +2044,9 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             <div className="space-y-4">
               <WeeklyCalorySummary clientId={selectedUserId!} liveTrainingCal={liveTrainingCal} liveRestCal={liveRestCal} />
               <MealPlansSection fixedClientId={selectedUserId!} onLiveTotals={handleLiveTotals} />
+              <ChangeHistoryPanel label="Nutrition Change History">
+                <MacroPlanHistoryTab clientId={selectedUserId!} />
+              </ChangeHistoryPanel>
             </div>
           </TabsContent>
 
