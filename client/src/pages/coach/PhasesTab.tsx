@@ -129,6 +129,7 @@ function PhaseFormDialog({
   initial,
   title,
   defaultStartWeight,
+  defaultStartDate,
 }: {
   open: boolean;
   onClose: () => void;
@@ -136,11 +137,12 @@ function PhaseFormDialog({
   initial?: Partial<PhaseFormState>;
   title: string;
   defaultStartWeight?: number | null;
+  defaultStartDate?: string | null;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState<PhaseFormState>({
     label: initial?.label ?? "Gaining",
-    startDate: initial?.startDate ?? today,
+    startDate: initial?.startDate ?? defaultStartDate ?? today,
     durationWeeks: initial?.durationWeeks ?? "",
     notes: initial?.notes ?? "",
     startWeight: initial?.startWeight ?? (defaultStartWeight != null ? String(defaultStartWeight) : ""),
@@ -649,6 +651,15 @@ export function PhasesTab({ clientId }: { clientId: number }) {
     return weeksWithWeight[0]?.avgWeight ?? null;
   }, [weeks]);
 
+  // Derive the latest phase end date for auto-filling the next phase's start date
+  const latestPhaseEndDate = useMemo(() => {
+    const phasesWithEnd = (phases as unknown as Phase[])
+      .map(p => toIsoDate(p.endDate))
+      .filter((d): d is string => d != null)
+      .sort();
+    return phasesWithEnd[phasesWithEnd.length - 1] ?? null;
+  }, [phases]);
+
   // ── Mutations ──
   const createPhase = trpc.phases.create.useMutation({
     onSuccess: () => {
@@ -774,6 +785,7 @@ export function PhasesTab({ clientId }: { clientId: number }) {
           onClose={() => setAddOpen(false)}
           title="Add Phase"
           defaultStartWeight={latestWeight}
+          defaultStartDate={latestPhaseEndDate}
           onSave={(data) => {
             createPhase.mutate({
               clientId,
