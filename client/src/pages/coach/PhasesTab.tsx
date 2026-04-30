@@ -580,6 +580,17 @@ function PhaseSummaryCard({
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Actual Rate</p>
             <p className="text-xs text-foreground font-medium whitespace-nowrap">{actualRate ?? "—"}</p>
           </div>
+
+          {phase.notes && (
+            <>
+              <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
+              {/* Notes */}
+              <div className="flex-1 min-w-0 px-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Notes</p>
+                <p className="text-xs text-muted-foreground italic truncate">{phase.notes}</p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Actions */}

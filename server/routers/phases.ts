@@ -3,7 +3,7 @@ import { protectedProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
 import { clientPhases, dailyLogs } from "../../drizzle/schema";
-import { eq, desc, or, and } from "drizzle-orm";
+import { eq, desc, asc, or, and } from "drizzle-orm";
 
 const PHASE_LABELS = ["Gaining", "Mini Cut", "Fat Loss", "Contest Prep", "Maintenance"] as const;
 
@@ -19,7 +19,7 @@ export const phasesRouter = router({
         .select()
         .from(clientPhases)
         .where(eq(clientPhases.clientId, input.clientId))
-        .orderBy(desc(clientPhases.startDate));
+       .orderBy(asc(clientPhases.startDate));
       // Drizzle returns date columns as Date objects from MySQL — serialize to YYYY-MM-DD strings
       return rows.map((r) => ({
         ...r,
