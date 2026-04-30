@@ -459,13 +459,11 @@ function PhaseSummaryCard({
     <div className={`border rounded-xl overflow-hidden ${c.border} bg-card`}>
       {/* Compact data row */}
       <div
-        className="grid cursor-pointer select-none px-4 py-3 gap-x-4 gap-y-1 items-center"
-        style={{ gridTemplateColumns: "auto 1fr auto" }}
+        className="flex cursor-pointer select-none px-4 py-3 gap-3 items-center"
         onClick={() => setExpanded(!expanded)}
       >
-        {/* Row 1: phase pill + data columns + actions */}
         {/* Phase label + status */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 w-44">
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${c.bg} ${c.text} ${c.border} whitespace-nowrap`}>
             {phase.label}
           </span>
@@ -474,22 +472,25 @@ function PhaseSummaryCard({
           </span>
         </div>
 
-        {/* Data columns */}
-        <div className="grid grid-cols-5 gap-x-6 gap-y-0.5 min-w-0">
+        {/* Divider */}
+        <div className="w-px self-stretch bg-border/50 flex-shrink-0" />
+
+        {/* Data columns — each fixed width, top-aligned */}
+        <div className="flex flex-1 items-start gap-0 min-w-0">
           {/* Dates */}
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Dates</p>
-            <p className="text-xs text-foreground font-medium whitespace-nowrap">
-              {fmtDate(startDate)}
-            </p>
+          <div className="flex-none w-36 px-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Dates</p>
+            <p className="text-xs text-foreground font-medium whitespace-nowrap">{fmtDate(startDate)}</p>
             <p className="text-xs text-muted-foreground whitespace-nowrap">
               {endDate ? `→ ${fmtDate(endDate)}` : status === "active" ? "→ Present" : "—"}
             </p>
           </div>
 
+          <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
+
           {/* Weeks */}
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Weeks</p>
+          <div className="flex-none w-20 px-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Weeks</p>
             {plannedDurationWeeks != null && plannedDurationWeeks > 0 ? (
               <p className="text-xs text-foreground font-medium">{plannedDurationWeeks}</p>
             ) : durationWeeks > 0 ? (
@@ -499,31 +500,37 @@ function PhaseSummaryCard({
             )}
           </div>
 
+          <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
+
           {/* Start weight */}
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Start</p>
+          <div className="flex-none w-24 px-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Start</p>
             <p className="text-xs text-foreground font-medium">
               {phase.startWeight != null ? `${fmt(phase.startWeight)} kg` : "—"}
             </p>
           </div>
 
+          <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
+
           {/* Target weight */}
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Target</p>
+          <div className="flex-none w-24 px-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Target</p>
             <p className="text-xs text-foreground font-medium">
               {phase.targetWeight != null ? `${fmt(phase.targetWeight)} kg` : "—"}
             </p>
           </div>
 
+          <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
+
           {/* Actual rate */}
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Actual Rate</p>
+          <div className="flex-none w-28 px-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Actual Rate</p>
             <p className="text-xs text-foreground font-medium whitespace-nowrap">{actualRate ?? "—"}</p>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1 flex-shrink-0 ml-auto" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={onEdit}
             className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
