@@ -5,7 +5,7 @@ import { getDb } from "../db";
 import { clientPhases, dailyLogs } from "../../drizzle/schema";
 import { eq, desc, or, and } from "drizzle-orm";
 
-const PHASE_LABELS = ["Gaining", "Mini Cut", "Fat Loss", "Contest Prep"] as const;
+const PHASE_LABELS = ["Gaining", "Mini Cut", "Fat Loss", "Contest Prep", "Vacation"] as const;
 
 export const phasesRouter = router({
   // List all phases for a client (newest first)
