@@ -22,6 +22,7 @@ import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import ProgramChangeLogTab from "./ProgramChangeLogTab";
 import CardioChangeLogTab from "./CardioChangeLogTab";
 import { CoachCheckInsTab } from "./CoachCheckInsTab";
+import { UnifiedChangeLog } from "./UnifiedChangeLog";
 import { PhasesTab } from "./PhasesTab";
 
 // ─── Cardio & Activity Card ─────────────────────────────────────────────────
@@ -169,13 +170,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
         )}
       </div>
 
-      {/* Cardio Change Log */}
-      {!editing && (
-        <div className="bg-card border border-border rounded-xl p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Change Log</p>
-          <CardioChangeLogTab clientId={clientId} />
-        </div>
-      )}
+
     </div>
   );
 }
@@ -1133,9 +1128,11 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
       )}
       {visible.map((session) => {
         const dateStr = toLocalDateStr(session.sessionDate);
-        const [y, m, d] = dateStr.split('-');
-        const weekday = new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-AU', { weekday: 'short' });
-        const dateLabel = `${weekday} ${d}/${m}/${y}`;
+        const dateObj = new Date(`${dateStr}T00:00:00`);
+        const weekday = dateObj.toLocaleDateString('en-AU', { weekday: 'short' });
+        const day = dateObj.getDate();
+        const month = dateObj.toLocaleDateString('en-AU', { month: 'short' });
+        const dateLabel = `${weekday} ${day} ${month}`;
         const isOpen = expandedId === session.id;
         const exercises = (session.exercises as any[]) ?? [];
         const sessionNotes = session.notes as string | null;
@@ -1947,12 +1944,16 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsList className="mb-4">
                 <TabsTrigger value="check-ins-list">Check-ins</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                <TabsTrigger value="change-log">Change Log</TabsTrigger>
               </TabsList>
               <TabsContent value="check-ins-list">
                 <CoachCheckInsTab clientId={selectedUserId!} />
               </TabsContent>
               <TabsContent value="timeline">
                 <PhasesTab clientId={selectedUserId!} />
+              </TabsContent>
+              <TabsContent value="change-log">
+                <UnifiedChangeLog clientId={selectedUserId!} />
               </TabsContent>
             </Tabs>
           </TabsContent>
@@ -1999,13 +2000,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} />
               </TabsContent>
               <TabsContent value="program">
-                <div className="space-y-8">
-                  <TrainingSection fixedClientId={selectedUserId!} />
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Change Log</p>
-                    <ProgramChangeLogTab clientId={selectedUserId!} />
-                  </div>
-                </div>
+                <TrainingSection fixedClientId={selectedUserId!} />
               </TabsContent>
               <TabsContent value="cardio">
                 <div className="max-w-xl">
@@ -2015,17 +2010,11 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </Tabs>
           </TabsContent>
 
-          {/* ── Nutrition: Meal Plan (editor) + inline Change Log ── */}
+          {/* ── Nutrition: Meal Plan (editor) ── */}
           <TabsContent value="nutrition">
-            <div className="space-y-8">
-              <div>
-                <WeeklyCalorySummary clientId={selectedUserId!} liveTrainingCal={liveTrainingCal} liveRestCal={liveRestCal} />
-                <MealPlansSection fixedClientId={selectedUserId!} onLiveTotals={handleLiveTotals} />
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Change Log</p>
-                <MacroPlanHistoryTab clientId={selectedUserId!} />
-              </div>
+            <div className="space-y-4">
+              <WeeklyCalorySummary clientId={selectedUserId!} liveTrainingCal={liveTrainingCal} liveRestCal={liveRestCal} />
+              <MealPlansSection fixedClientId={selectedUserId!} onLiveTotals={handleLiveTotals} />
             </div>
           </TabsContent>
 

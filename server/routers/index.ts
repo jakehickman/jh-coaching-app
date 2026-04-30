@@ -7,7 +7,7 @@ export { mealPlanRouter, shoppingRouter } from "./mealPlan";
 export { trainingRouter, mesoRouter, workoutSessionsRouter, exerciseLibraryRouter, equipmentPresetsRouter } from "./training";
 export { checkInRouter } from "./checkIns";
 export { habitsRouter } from "./habits";
-export { timelineRouter, notesRouter, nutritionFoodsRouter, onboardingRouter, clientConfigRouter } from "./misc";
+export { timelineRouter, notesRouter, nutritionFoodsRouter, onboardingRouter, clientConfigRouter, changeLogRouter } from "./misc";
 export { progressRouter } from "./progress";
 export { progressPhotosRouter } from "./progressPhotos";
 export { questionsRouter } from "./questions";

@@ -96,6 +96,61 @@ export const onboardingRouter = router({
     .mutation(({ input }) => db.markOnboardingReviewed(input.id, input.reviewed)),
 });
 
+export const changeLogRouter = router({
+  getUnified: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(async ({ input }) => {
+      const [training, nutrition, cardio] = await Promise.all([
+        db.getProgramChangeLogs(input.userId),
+        db.getMealPlanHistory(input.userId),
+        db.getCardioChangeLogs(input.userId),
+      ]);
+
+      const entries: Array<{
+        id: string;
+        type: "training" | "nutrition" | "cardio";
+        changedAt: Date;
+        note: string | null;
+        changes: unknown;
+      }> = [
+        ...training.map((e) => ({
+          id: `training-${e.id}`,
+          type: "training" as const,
+          changedAt: e.changedAt,
+          note: e.note ?? null,
+          changes: e.changes,
+        })),
+        ...nutrition.map((e) => ({
+          id: `nutrition-${e.id}`,
+          type: "nutrition" as const,
+          changedAt: e.changedAt,
+          note: e.note ?? null,
+          changes: {
+            trainingCalories: e.trainingCalories,
+            trainingProtein: e.trainingProtein,
+            trainingCarbs: e.trainingCarbs,
+            trainingFat: e.trainingFat,
+            restCalories: e.restCalories,
+            restProtein: e.restProtein,
+            restCarbs: e.restCarbs,
+            restFat: e.restFat,
+          },
+        })),
+        ...cardio.map((e) => ({
+          id: `cardio-${e.id}`,
+          type: "cardio" as const,
+          changedAt: e.changedAt,
+          note: e.note ?? null,
+          changes: e.changes,
+        })),
+      ];
+
+      // Sort newest first
+      entries.sort((a, b) => b.changedAt.getTime() - a.changedAt.getTime());
+      return entries;
+    }),
+});
+
 export const clientConfigRouter = router({
   update: adminProcedure
     .input(z.object({
