@@ -560,63 +560,10 @@ function PhaseSummaryCard({
         <div className="border-t border-border/40 px-5 py-5 space-y-5">
           {status === "upcoming" ? (
             <div className="space-y-4">
-              {/* Weight plan for upcoming phases */}
-              {(phase.startWeight != null || phase.targetWeight != null || phase.targetRate) && (
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Weight Plan</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Start Weight</p>
-                      <p className="text-sm font-semibold text-foreground">{phase.startWeight != null ? `${fmt(phase.startWeight)} kg` : "—"}</p>
-                    </div>
-                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Target Weight</p>
-                      <p className="text-sm font-semibold text-foreground">{phase.targetWeight != null ? `${fmt(phase.targetWeight)} kg` : "—"}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 mt-3">
-                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate</p>
-                      <p className="text-sm font-semibold text-foreground">{phase.targetRate || "—"}</p>
-                    </div>
-                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Actual Rate</p>
-                      <p className="text-sm font-semibold text-foreground">{actualRate ?? "—"}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
               <p className="text-sm text-muted-foreground">This phase hasn't started yet. Body composition data will appear here once the phase begins.</p>
             </div>
           ) : (
             <>
-              {/* Weight plan row (if set) */}
-              {(phase.startWeight != null || phase.targetWeight != null || phase.targetRate || actualRate) && (
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Weight Plan</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Start Weight</p>
-                      <p className="text-sm font-semibold text-foreground">{phase.startWeight != null ? `${fmt(phase.startWeight)} kg` : "—"}</p>
-                    </div>
-                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Target Weight</p>
-                      <p className="text-sm font-semibold text-foreground">{phase.targetWeight != null ? `${fmt(phase.targetWeight)} kg` : "—"}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 mt-3">
-                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate</p>
-                      <p className="text-sm font-semibold text-foreground">{phase.targetRate || "—"}</p>
-                    </div>
-                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Actual Rate</p>
-                      <p className="text-sm font-semibold text-foreground">{actualRate ?? "—"}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Body comp changes */}
               {(firstWeek || firstWaistWeek || firstSkinfoldWeek) ? (
                 <div>
