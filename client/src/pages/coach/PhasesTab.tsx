@@ -447,10 +447,11 @@ function PhaseSummaryCard({
   const firstSkinfoldWeek = weeksWithSkinfold[0] ?? null;
   const lastSkinfoldWeek = weeksWithSkinfold[weeksWithSkinfold.length - 1] ?? null;
 
-  // Duration: use endDate if set, otherwise today for active phases
-  const endForDuration = endDate ?? today;
-  const durationWeeks = startDate ? weeksBetween(startDate, endForDuration) : 0;
-  // Planned duration (from endDate only, not today)
+  // Weeks elapsed so far (start → today, capped at planned duration)
+  const weeksElapsed = startDate ? Math.max(1, weeksBetween(startDate, today)) : 0;
+  // Total planned duration (start → end)
+  const durationWeeks = startDate && endDate ? weeksBetween(startDate, endDate) : startDate ? weeksBetween(startDate, today) : 0;
+  // Planned duration alias (used for display)
   const plannedDurationWeeks = endDate && startDate ? weeksBetween(startDate, endDate) : null;
 
   // Planned rate of change (from start/target weights)
@@ -538,8 +539,8 @@ function PhaseSummaryCard({
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Weeks</p>
             {plannedDurationWeeks != null && plannedDurationWeeks > 0 ? (
               <p className="text-xs text-foreground font-medium">
-                {status === "active" && durationWeeks > 0
-                  ? <><span className="text-primary font-semibold">Wk {durationWeeks}</span><span className="text-muted-foreground font-normal"> / {plannedDurationWeeks}</span></>
+                {status === "active" && weeksElapsed > 0
+                  ? <><span className="text-primary font-semibold">{weeksElapsed}</span><span className="text-muted-foreground font-normal"> / {plannedDurationWeeks}</span></>
                   : plannedDurationWeeks
                 }
               </p>
