@@ -25,6 +25,8 @@ type Phase = {
   startDate: string;
   endDate: string | null;
   notes: string | null;
+  startWeight: number | null;
+  targetWeight: number | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -79,6 +81,15 @@ function DeltaVal({ val, prev, unit = "", invert = false }: { val: number | null
   );
 }
 
+/** Calculate rate of change as % body weight per week */
+function calcRateOfChange(startWeight: number | null, targetWeight: number | null, durationWeeks: number): string | null {
+  if (startWeight == null || targetWeight == null || startWeight <= 0 || durationWeeks <= 0) return null;
+  const rate = ((targetWeight - startWeight) / startWeight / durationWeeks) * 100;
+  if (Math.abs(rate) < 0.001) return "0% / wk";
+  const sign = rate > 0 ? "+" : "";
+  return `${sign}${rate.toFixed(2)}% / wk`;
+}
+
 // ── Phase Form ────────────────────────────────────────────────────────────────
 
 type PhaseFormState = {
@@ -86,6 +97,8 @@ type PhaseFormState = {
   startDate: string;
   endDate: string;
   notes: string;
+  startWeight: string;
+  targetWeight: string;
 };
 
 function PhaseFormDialog({
@@ -94,12 +107,14 @@ function PhaseFormDialog({
   onSave,
   initial,
   title,
+  defaultStartWeight,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (data: PhaseFormState) => void;
   initial?: Partial<PhaseFormState>;
   title: string;
+  defaultStartWeight?: number | null;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState<PhaseFormState>({
@@ -107,6 +122,8 @@ function PhaseFormDialog({
     startDate: initial?.startDate ?? today,
     endDate: initial?.endDate ?? "",
     notes: initial?.notes ?? "",
+    startWeight: initial?.startWeight ?? (defaultStartWeight != null ? String(defaultStartWeight) : ""),
+    targetWeight: initial?.targetWeight ?? "",
   });
 
   function handleSave() {
@@ -170,6 +187,38 @@ function PhaseFormDialog({
               onChange={(e) => setForm(f => ({ ...f, endDate: e.target.value }))}
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground"
             />
+          </div>
+
+          {/* Weight targets */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                Start Weight (kg)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={form.startWeight}
+                onChange={(e) => setForm(f => ({ ...f, startWeight: e.target.value }))}
+                placeholder={defaultStartWeight != null ? String(defaultStartWeight) : "e.g. 82.5"}
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                Target Weight (kg)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={form.targetWeight}
+                onChange={(e) => setForm(f => ({ ...f, targetWeight: e.target.value }))}
+                placeholder="e.g. 78.0"
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50"
+              />
+            </div>
           </div>
 
           {/* Notes */}
@@ -242,6 +291,9 @@ function PhaseSummaryCard({
   const endForDuration = phase.endDate ?? today;
   const durationWeeks = weeksBetween(phase.startDate, endForDuration);
 
+  // Rate of change from planned weights
+  const rateOfChange = calcRateOfChange(phase.startWeight, phase.targetWeight, durationWeeks);
+
   // Photo weeks within this phase
   const phasePhotoWeekNumbers = phaseWeeks.map(w => w.weekNumber);
   const availablePhotoWeeks = photoWeeks.filter(wn => phasePhotoWeekNumbers.includes(wn));
@@ -297,6 +349,13 @@ function PhaseSummaryCard({
           {statusLabel}
         </span>
 
+        {/* Rate of change badge */}
+        {rateOfChange && (
+          <span className="hidden sm:inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-secondary text-muted-foreground border-border flex-shrink-0">
+            {rateOfChange}
+          </span>
+        )}
+
         {/* Quick body comp summary (collapsed) */}
         {status !== "upcoming" && firstWeek && lastWeek && firstWeek !== lastWeek && (
           <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
@@ -335,9 +394,52 @@ function PhaseSummaryCard({
       {expanded && (
         <div className="border-t border-border/40 px-5 py-5 space-y-5">
           {status === "upcoming" ? (
-            <p className="text-sm text-muted-foreground">This phase hasn't started yet. Body composition data will appear here once the phase begins.</p>
+            <div className="space-y-4">
+              {/* Weight plan for upcoming phases */}
+              {(phase.startWeight != null || phase.targetWeight != null) && (
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Weight Plan</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Start Weight</p>
+                      <p className="text-sm font-semibold text-foreground">{fmt(phase.startWeight)} kg</p>
+                    </div>
+                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Target Weight</p>
+                      <p className="text-sm font-semibold text-foreground">{fmt(phase.targetWeight)} kg</p>
+                    </div>
+                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Rate</p>
+                      <p className="text-sm font-semibold text-foreground">{rateOfChange ?? "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground">This phase hasn't started yet. Body composition data will appear here once the phase begins.</p>
+            </div>
           ) : (
             <>
+              {/* Weight plan row (if set) */}
+              {(phase.startWeight != null || phase.targetWeight != null) && (
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Weight Plan</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Start Weight</p>
+                      <p className="text-sm font-semibold text-foreground">{fmt(phase.startWeight)} kg</p>
+                    </div>
+                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Target Weight</p>
+                      <p className="text-sm font-semibold text-foreground">{fmt(phase.targetWeight)} kg</p>
+                    </div>
+                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Rate</p>
+                      <p className="text-sm font-semibold text-foreground">{rateOfChange ?? "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Body comp changes */}
               {(firstWeek || firstWaistWeek || firstSkinfoldWeek) ? (
                 <div>
@@ -488,6 +590,12 @@ export function PhasesTab({ clientId }: { clientId: number }) {
 
   const weeks: WeekData[] = (weeklyData?.weeks ?? []) as WeekData[];
 
+  // Derive the most recent logged weight for auto-fill
+  const latestWeight = useMemo(() => {
+    const weeksWithWeight = [...weeks].filter(w => w.avgWeight != null).sort((a, b) => b.weekNumber - a.weekNumber);
+    return weeksWithWeight[0]?.avgWeight ?? null;
+  }, [weeks]);
+
   // ── Mutations ──
   const createPhase = trpc.phases.create.useMutation({
     onSuccess: () => {
@@ -588,6 +696,7 @@ export function PhasesTab({ clientId }: { clientId: number }) {
           open={addOpen}
           onClose={() => setAddOpen(false)}
           title="Add Phase"
+          defaultStartWeight={latestWeight}
           onSave={(data) => {
             createPhase.mutate({
               clientId,
@@ -595,6 +704,8 @@ export function PhasesTab({ clientId }: { clientId: number }) {
               startDate: data.startDate,
               endDate: data.endDate || null,
               notes: data.notes || null,
+              startWeight: data.startWeight ? parseFloat(data.startWeight) : null,
+              targetWeight: data.targetWeight ? parseFloat(data.targetWeight) : null,
             });
           }}
         />
@@ -611,6 +722,8 @@ export function PhasesTab({ clientId }: { clientId: number }) {
             startDate: editPhase.startDate,
             endDate: editPhase.endDate ?? "",
             notes: editPhase.notes ?? "",
+            startWeight: editPhase.startWeight != null ? String(editPhase.startWeight) : "",
+            targetWeight: editPhase.targetWeight != null ? String(editPhase.targetWeight) : "",
           }}
           onSave={(data) => {
             updatePhase.mutate({
@@ -619,6 +732,8 @@ export function PhasesTab({ clientId }: { clientId: number }) {
               startDate: data.startDate,
               endDate: data.endDate || null,
               notes: data.notes || null,
+              startWeight: data.startWeight ? parseFloat(data.startWeight) : null,
+              targetWeight: data.targetWeight ? parseFloat(data.targetWeight) : null,
             });
           }}
         />

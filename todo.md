@@ -623,3 +623,8 @@
 - [ ] Phases: phase summary card (body comp changes + bracketing photos) for completed phases
 - [ ] Phases: Current Phase badge in client header (visible on all tabs)
 - [ ] Phases: wire Phases tab into ProgressSection tab bar
+
+## Phase Weight Planning
+- [ ] Add startWeight and targetWeight columns to client_phases table
+- [ ] Auto-populate startWeight from most recent logged weight when creating a phase
+- [ ] Show calculated rate of change (% body weight per week) on phase cards

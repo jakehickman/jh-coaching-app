@@ -32,6 +32,8 @@ export const phasesRouter = router({
         startDate: z.string(), // YYYY-MM-DD
         endDate: z.string().nullable().optional(),
         notes: z.string().nullable().optional(),
+        startWeight: z.number().nullable().optional(),
+        targetWeight: z.number().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -44,6 +46,8 @@ export const phasesRouter = router({
         startDate: input.startDate as any,
         endDate: (input.endDate ?? null) as any,
         notes: input.notes ?? null,
+        startWeight: input.startWeight ?? null,
+        targetWeight: input.targetWeight ?? null,
       });
       return { id: Number((result as any).insertId) };
     }),
@@ -57,6 +61,8 @@ export const phasesRouter = router({
         startDate: z.string().optional(),
         endDate: z.string().nullable().optional(),
         notes: z.string().nullable().optional(),
+        startWeight: z.number().nullable().optional(),
+        targetWeight: z.number().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -69,6 +75,8 @@ export const phasesRouter = router({
       if (fields.startDate !== undefined) updateFields.startDate = fields.startDate as any;
       if (fields.endDate !== undefined) updateFields.endDate = fields.endDate as any;
       if (fields.notes !== undefined) updateFields.notes = fields.notes;
+      if (fields.startWeight !== undefined) updateFields.startWeight = fields.startWeight;
+      if (fields.targetWeight !== undefined) updateFields.targetWeight = fields.targetWeight;
       await db.update(clientPhases).set(updateFields as any).where(eq(clientPhases.id, id));
       return { success: true };
     }),

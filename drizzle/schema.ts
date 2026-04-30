@@ -660,6 +660,8 @@ export const clientPhases = mysqlTable("client_phases", {
   startDate: date("startDate").notNull(),       // ISO date string YYYY-MM-DD
   endDate: date("endDate"),                     // null = active or upcoming
   notes: text("notes"),
+  startWeight: float("start_weight"),              // kg at phase start
+  targetWeight: float("target_weight"),            // kg target at phase end
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
