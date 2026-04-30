@@ -158,6 +158,16 @@ function getPhaseForWeek(phases: any[], weekStart: string, weekEnd: string): str
   return phase?.label ?? null;
 }
 
+function getPhaseWeekNumber(phases: any[], weekStart: string): number | null {
+  const mid = new Date(weekStart + "T00:00:00").getTime() + 3 * 86400000;
+  const midDate = new Date(mid).toISOString().slice(0, 10);
+  const phase = phases.find((p: any) => p.startDate <= midDate && (!p.endDate || p.endDate >= midDate));
+  if (!phase) return null;
+  const phaseStart = new Date(phase.startDate + "T00:00:00").getTime();
+  const weekStartMs = new Date(weekStart + "T00:00:00").getTime();
+  return Math.floor((weekStartMs - phaseStart) / (7 * 24 * 60 * 60 * 1000)) + 1;
+}
+
 export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -268,9 +278,18 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
               onClick={() => toggleCard(week.weekStart)}
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                  W{week.weekNumber}
-                </span>
+                {(() => {
+                  const phaseWk = getPhaseWeekNumber(phases, week.weekStart);
+                  return phaseWk != null ? (
+                    <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                      Wk {phaseWk}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                      W{week.weekNumber}
+                    </span>
+                  );
+                })()}
                 <span className="text-sm font-semibold text-foreground truncate">{week.label}</span>
                 {week.isInProgress && (
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-400 bg-amber-500/10 flex-shrink-0">

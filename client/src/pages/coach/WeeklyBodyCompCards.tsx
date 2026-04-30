@@ -70,6 +70,16 @@ function getPhaseForWeek(phases: any[], weekStart: string): string | null {
   return phase?.label ?? null;
 }
 
+function getPhaseWeekNumber(phases: any[], weekStart: string): number | null {
+  const mid = new Date(weekStart + "T00:00:00").getTime() + 3 * 86400000;
+  const midDate = new Date(mid).toISOString().slice(0, 10);
+  const phase = phases.find((p: any) => p.startDate <= midDate && (!p.endDate || p.endDate >= midDate));
+  if (!phase) return null;
+  const phaseStart = new Date(phase.startDate + "T00:00:00").getTime();
+  const weekStartMs = new Date(weekStart + "T00:00:00").getTime();
+  return Math.floor((weekStartMs - phaseStart) / (7 * 24 * 60 * 60 * 1000)) + 1;
+}
+
 // ── Single week card ──────────────────────────────────────────────────────────
 
 type Week = {
@@ -132,7 +142,12 @@ function WeekCard({ week, prevWeek, phases }: { week: Week; prevWeek: Week | nul
         {/* Week label */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-xs font-bold text-foreground">Week {week.weekNumber}</span>
+            <span className="text-xs font-bold text-foreground">
+              {(() => {
+                const phaseWk = getPhaseWeekNumber(phases, week.weekStart);
+                return phaseWk != null ? `Wk ${phaseWk}` : `Week ${week.weekNumber}`;
+              })()}
+            </span>
             {week.isInProgress && (
               <span className="text-[10px] font-medium text-primary bg-primary/10 rounded px-1.5 py-0.5">In Progress</span>
             )}
