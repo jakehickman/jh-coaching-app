@@ -717,7 +717,7 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
     <div className="space-y-5">
       {/* Two-column chart grid */}
       {!historyOnly && (hasWeightWaist || hasSkinfold) && (
-        <div className={`grid gap-4 ${hasWeightWaist && hasSkinfold ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+        <div className="grid gap-4 grid-cols-1">
           {/* Weight + Waist chart */}
           {hasWeightWaist && (
             <div>
@@ -1943,10 +1943,10 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsContent value="data">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                   <div>
-                    <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
-                  </div>
-                  <div>
                     <WeeklyBodyCompCards clientId={selectedUserId!} />
+                  </div>
+                  <div className="flex flex-col gap-6">
+                    <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
                   </div>
                 </div>
               </TabsContent>
