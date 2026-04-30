@@ -1670,19 +1670,47 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
   const searchParams = new URLSearchParams(search);
   const urlClientId = searchParams.get("clientId") ? parseInt(searchParams.get("clientId")!, 10) : null;
   const urlTab = searchParams.get("tab") ?? "overview";
+  const urlSubTab = searchParams.get("sub") ?? "";
   const [, navigate] = useLocation();
 
   const { clients, selectedUserId: selectorUserId, setSelectedUserId } = useClientSelector();
   // In hub mode, use the fixed clientId directly without a selector
   const selectedUserId = fixedClientId ?? selectorUserId;
   const [activeTab, setActiveTab] = useState(urlTab);
+  // Per-tab sub-tab state so switching top-level tabs doesn't bleed sub-tab selection
+  const [subTabs, setSubTabs] = useState<Record<string, string>>(
+    urlSubTab ? { [urlTab]: urlSubTab } : {}
+  );
+
+  const getSubTab = (tab: string) => subTabs[tab] ?? "";
+
+  // Helper to update URL when tab or sub-tab changes
+  const updateTabUrl = (tab: string, sub?: string) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", tab);
+    if (sub) params.set("sub", sub); else params.delete("sub");
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    updateTabUrl(tab, subTabs[tab]);
+  };
+
+  const handleSubTabChange = (sub: string) => {
+    setSubTabs(prev => ({ ...prev, [activeTab]: sub }));
+    updateTabUrl(activeTab, sub);
+  };
 
   // Sync tab from URL when navigating via deep-link (e.g. from Check-ins kanban)
   useEffect(() => {
     if (urlTab && urlTab !== activeTab) {
       setActiveTab(urlTab);
     }
-  }, [urlTab]);
+    if (urlSubTab) {
+      setSubTabs(prev => ({ ...prev, [urlTab]: urlSubTab }));
+    }
+  }, [urlTab, urlSubTab]);
 
   // Sync URL clientId into selector once clients load (only in standalone mode)
   const [urlSynced, setUrlSynced] = useState(false);
@@ -1884,7 +1912,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
 
 
       {selectedUserId && (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div className="sticky top-[48px] z-20 bg-background -mx-4 px-4 lg:-mx-6 lg:px-6 pt-2 pb-2 border-b border-border/40">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -1915,7 +1943,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
 
           {/* ── Check-ins: Q&A + Timeline sub-tabs ── */}
           <TabsContent value="check-ins">
-            <Tabs defaultValue="check-ins-list" className="w-full">
+            <Tabs value={getSubTab("check-ins") || "check-ins-list"} onValueChange={handleSubTabChange} className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="check-ins-list">Check-ins</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -1931,7 +1959,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
 
           {/* ── Body Composition: Data / Photos sub-tabs ── */}
           <TabsContent value="body-comp">
-            <Tabs defaultValue="data" className="w-full">
+            <Tabs value={getSubTab("body-comp") || "data"} onValueChange={handleSubTabChange} className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="data">Data</TabsTrigger>
                 <TabsTrigger value="photos">Photos</TabsTrigger>
@@ -1957,7 +1985,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
 
           {/* ── Training: Session Log, Exercise Progress, Program, Cardio sub-tabs ── */}
           <TabsContent value="training">
-            <Tabs defaultValue="session-log" className="w-full">
+            <Tabs value={getSubTab("training") || "session-log"} onValueChange={handleSubTabChange} className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="session-log">Session Log</TabsTrigger>
                 <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
