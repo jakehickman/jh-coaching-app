@@ -104,6 +104,7 @@
   select {
     background-color: var(--input);
     border-color: var(--border);
+    color: oklch(0.97 0 0);
   }
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
   textarea:focus,
