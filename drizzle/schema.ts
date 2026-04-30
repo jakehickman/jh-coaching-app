@@ -654,7 +654,7 @@ export const clientPhases = mysqlTable("client_phases", {
   label: mysqlEnum("label", [
     "Gaining",
     "Mini Cut",
-    "General Fat Loss",
+    "Fat Loss",
     "Contest Prep",
   ]).notNull(),
   startDate: date("startDate").notNull(),       // ISO date string YYYY-MM-DD
@@ -662,6 +662,7 @@ export const clientPhases = mysqlTable("client_phases", {
   notes: text("notes"),
   startWeight: float("start_weight"),              // kg at phase start
   targetWeight: float("target_weight"),            // kg target at phase end
+  targetRate: varchar("target_rate", { length: 32 }), // e.g. "0.5%-1.0% loss/wk"
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -8,15 +8,27 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-const PHASE_LABELS = ["Gaining", "Mini Cut", "General Fat Loss", "Contest Prep"] as const;
+const PHASE_LABELS = ["Gaining", "Mini Cut", "Fat Loss", "Contest Prep"] as const;
 type PhaseLabel = typeof PHASE_LABELS[number];
 
 const PHASE_COLORS: Record<PhaseLabel, { bg: string; text: string; border: string }> = {
-  "Gaining":          { bg: "bg-blue-500/15",   text: "text-blue-400",   border: "border-blue-500/30" },
-  "Mini Cut":         { bg: "bg-orange-500/15",  text: "text-orange-400", border: "border-orange-500/30" },
-  "General Fat Loss": { bg: "bg-emerald-500/15", text: "text-emerald-400",border: "border-emerald-500/30" },
-  "Contest Prep":     { bg: "bg-purple-500/15",  text: "text-purple-400", border: "border-purple-500/30" },
+  "Gaining":      { bg: "bg-blue-500/15",   text: "text-blue-400",   border: "border-blue-500/30" },
+  "Mini Cut":     { bg: "bg-orange-500/15",  text: "text-orange-400", border: "border-orange-500/30" },
+  "Fat Loss":     { bg: "bg-emerald-500/15", text: "text-emerald-400",border: "border-emerald-500/30" },
+  "Contest Prep": { bg: "bg-purple-500/15",  text: "text-purple-400", border: "border-purple-500/30" },
 };
+
+// Target rate options — stored as the display string
+const TARGET_RATE_OPTIONS = [
+  { value: "",                    label: "— Not set —" },
+  // Loss
+  { value: "0% – 0.5% loss/wk",  label: "0% – 0.5% loss / wk" },
+  { value: "0.5% – 1% loss/wk",  label: "0.5% – 1% loss / wk" },
+  { value: "1% – 1.5% loss/wk",  label: "1% – 1.5% loss / wk" },
+  // Gain
+  { value: "0% – 0.25% gain/wk", label: "0% – 0.25% gain / wk" },
+  { value: "0.25% – 0.5% gain/wk", label: "0.25% – 0.5% gain / wk" },
+] as const;
 
 type Phase = {
   id: number;
@@ -27,6 +39,7 @@ type Phase = {
   notes: string | null;
   startWeight: number | string | null;
   targetWeight: number | string | null;
+  targetRate: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -127,6 +140,7 @@ type PhaseFormState = {
   notes: string;
   startWeight: string;
   targetWeight: string;
+  targetRate: string; // one of TARGET_RATE_OPTIONS values or ""
 };
 
 function PhaseFormDialog({
@@ -152,6 +166,7 @@ function PhaseFormDialog({
     notes: initial?.notes ?? "",
     startWeight: initial?.startWeight ?? "",
     targetWeight: initial?.targetWeight ?? "",
+    targetRate: initial?.targetRate ?? "",
   });
 
   // Sync defaultStartDate if it arrives after dialog opens
@@ -278,6 +293,22 @@ function PhaseFormDialog({
             </div>
           </div>
 
+          {/* Target rate */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+              Target Rate of Gain / Loss
+            </label>
+            <select
+              value={form.targetRate}
+              onChange={(e) => setForm(f => ({ ...f, targetRate: e.target.value }))}
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground"
+            >
+              {TARGET_RATE_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Notes */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">Notes (optional)</label>
@@ -353,12 +384,20 @@ function PhaseSummaryCard({
   // Planned duration (from endDate only, not today)
   const plannedDurationWeeks = endDate && startDate ? weeksBetween(startDate, endDate) : null;
 
-  // Rate of change from planned weights
-  const rateOfChange = calcRateOfChange(
+  // Planned rate of change (from start/target weights)
+  const plannedRate = calcRateOfChange(
     phase.startWeight,
     phase.targetWeight,
     plannedDurationWeeks ?? durationWeeks
   );
+
+  // Actual rate of change (from real body comp weekly averages)
+  const actualRate = useMemo(() => {
+    if (!firstWeek || !lastWeek || firstWeek === lastWeek) return null;
+    const weekSpan = lastWeek.weekNumber - firstWeek.weekNumber;
+    if (weekSpan <= 0) return null;
+    return calcRateOfChange(firstWeek.avgWeight, lastWeek.avgWeight, weekSpan);
+  }, [firstWeek, lastWeek]);
 
   // Photo weeks within this phase
   const phasePhotoWeekNumbers = phaseWeeks.map(w => w.weekNumber);
@@ -440,10 +479,10 @@ function PhaseSummaryCard({
             </p>
           </div>
 
-          {/* Rate */}
+          {/* Actual rate */}
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Rate</p>
-            <p className="text-xs text-foreground font-medium whitespace-nowrap">{rateOfChange ?? "—"}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Actual Rate</p>
+            <p className="text-xs text-foreground font-medium whitespace-nowrap">{actualRate ?? "—"}</p>
           </div>
         </div>
 
@@ -471,23 +510,25 @@ function PhaseSummaryCard({
           {status === "upcoming" ? (
             <div className="space-y-4">
               {/* Weight plan for upcoming phases */}
-              {(phase.startWeight != null || phase.targetWeight != null) && (
+              {(phase.startWeight != null || phase.targetWeight != null || phase.targetRate) && (
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Weight Plan</p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="bg-secondary/40 rounded-xl p-4 text-center">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Start Weight</p>
-                      <p className="text-sm font-semibold text-foreground">{fmt(phase.startWeight)} kg</p>
+                      <p className="text-sm font-semibold text-foreground">{phase.startWeight != null ? `${fmt(phase.startWeight)} kg` : "—"}</p>
                     </div>
                     <div className="bg-secondary/40 rounded-xl p-4 text-center">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Target Weight</p>
-                      <p className="text-sm font-semibold text-foreground">{fmt(phase.targetWeight)} kg</p>
-                    </div>
-                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Rate</p>
-                      <p className="text-sm font-semibold text-foreground">{rateOfChange ?? "—"}</p>
+                      <p className="text-sm font-semibold text-foreground">{phase.targetWeight != null ? `${fmt(phase.targetWeight)} kg` : "—"}</p>
                     </div>
                   </div>
+                  {phase.targetRate && (
+                    <div className="mt-3 bg-secondary/40 rounded-xl p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate of Gain / Loss</p>
+                      <p className="text-sm font-semibold text-foreground">{phase.targetRate}</p>
+                    </div>
+                  )}
                 </div>
               )}
               <p className="text-sm text-muted-foreground">This phase hasn't started yet. Body composition data will appear here once the phase begins.</p>
@@ -495,22 +536,32 @@ function PhaseSummaryCard({
           ) : (
             <>
               {/* Weight plan row (if set) */}
-              {(phase.startWeight != null || phase.targetWeight != null) && (
+              {(phase.startWeight != null || phase.targetWeight != null || phase.targetRate || actualRate) && (
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Weight Plan</p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="bg-secondary/40 rounded-xl p-4 text-center">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Start Weight</p>
-                      <p className="text-sm font-semibold text-foreground">{fmt(phase.startWeight)} kg</p>
+                      <p className="text-sm font-semibold text-foreground">{phase.startWeight != null ? `${fmt(phase.startWeight)} kg` : "—"}</p>
                     </div>
                     <div className="bg-secondary/40 rounded-xl p-4 text-center">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Target Weight</p>
-                      <p className="text-sm font-semibold text-foreground">{fmt(phase.targetWeight)} kg</p>
+                      <p className="text-sm font-semibold text-foreground">{phase.targetWeight != null ? `${fmt(phase.targetWeight)} kg` : "—"}</p>
                     </div>
-                    <div className="bg-secondary/40 rounded-xl p-4 text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Rate</p>
-                      <p className="text-sm font-semibold text-foreground">{rateOfChange ?? "—"}</p>
-                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-3">
+                    {phase.targetRate && (
+                      <div className="bg-secondary/40 rounded-xl p-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Target Rate of Gain / Loss</p>
+                        <p className="text-sm font-semibold text-foreground">{phase.targetRate}</p>
+                      </div>
+                    )}
+                    {actualRate && (
+                      <div className="bg-secondary/40 rounded-xl p-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Actual Rate of Gain / Loss</p>
+                        <p className="text-sm font-semibold text-foreground">{actualRate}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -744,6 +795,7 @@ export function PhasesTab({ clientId }: { clientId: number }) {
       notes: phase.notes ?? "",
       startWeight: phase.startWeight != null && phase.startWeight !== "" ? String(phase.startWeight) : "",
       targetWeight: phase.targetWeight != null && phase.targetWeight !== "" ? String(phase.targetWeight) : "",
+      targetRate: phase.targetRate ?? "",
     };
   }
 
@@ -814,6 +866,7 @@ export function PhasesTab({ clientId }: { clientId: number }) {
               notes: data.notes || null,
               startWeight: data.startWeight ? parseFloat(data.startWeight) : null,
               targetWeight: data.targetWeight ? parseFloat(data.targetWeight) : null,
+              targetRate: data.targetRate || null,
             });
           }}
         />
@@ -835,6 +888,7 @@ export function PhasesTab({ clientId }: { clientId: number }) {
               notes: data.notes || null,
               startWeight: data.startWeight ? parseFloat(data.startWeight) : null,
               targetWeight: data.targetWeight ? parseFloat(data.targetWeight) : null,
+              targetRate: data.targetRate || null,
             });
           }}
         />

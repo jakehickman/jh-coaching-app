@@ -5,7 +5,7 @@ import { getDb } from "../db";
 import { clientPhases, dailyLogs } from "../../drizzle/schema";
 import { eq, desc, or, and } from "drizzle-orm";
 
-const PHASE_LABELS = ["Gaining", "Mini Cut", "General Fat Loss", "Contest Prep"] as const;
+const PHASE_LABELS = ["Gaining", "Mini Cut", "Fat Loss", "Contest Prep"] as const;
 
 export const phasesRouter = router({
   // List all phases for a client (newest first)
@@ -44,6 +44,7 @@ export const phasesRouter = router({
         notes: z.string().nullable().optional(),
         startWeight: z.number().nullable().optional(),
         targetWeight: z.number().nullable().optional(),
+        targetRate: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -58,6 +59,7 @@ export const phasesRouter = router({
         notes: input.notes ?? null,
         startWeight: input.startWeight ?? null,
         targetWeight: input.targetWeight ?? null,
+        targetRate: input.targetRate ?? null,
       });
       return { id: Number((result as any).insertId) };
     }),
@@ -73,6 +75,7 @@ export const phasesRouter = router({
         notes: z.string().nullable().optional(),
         startWeight: z.number().nullable().optional(),
         targetWeight: z.number().nullable().optional(),
+        targetRate: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -87,6 +90,7 @@ export const phasesRouter = router({
       if (fields.notes !== undefined) updateFields.notes = fields.notes;
       if (fields.startWeight !== undefined) updateFields.startWeight = fields.startWeight;
       if (fields.targetWeight !== undefined) updateFields.targetWeight = fields.targetWeight;
+      if (fields.targetRate !== undefined) updateFields.targetRate = fields.targetRate;
       await db.update(clientPhases).set(updateFields as any).where(eq(clientPhases.id, id));
       return { success: true };
     }),
