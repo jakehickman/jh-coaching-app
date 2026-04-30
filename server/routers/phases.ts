@@ -20,7 +20,17 @@ export const phasesRouter = router({
         .from(clientPhases)
         .where(eq(clientPhases.clientId, input.clientId))
         .orderBy(desc(clientPhases.startDate));
-      return rows;
+      // Drizzle returns date columns as Date objects from MySQL — serialize to YYYY-MM-DD strings
+      return rows.map((r) => ({
+        ...r,
+        startDate: r.startDate instanceof Date
+          ? r.startDate.toISOString().slice(0, 10)
+          : String(r.startDate),
+        endDate: r.endDate == null ? null
+          : r.endDate instanceof Date
+          ? r.endDate.toISOString().slice(0, 10)
+          : String(r.endDate),
+      }));
     }),
 
   // Create a new phase
