@@ -25,8 +25,8 @@ type Phase = {
   startDate: string;
   endDate: string | null;
   notes: string | null;
-  startWeight: number | null;
-  targetWeight: number | null;
+  startWeight: number | string | null;
+  targetWeight: number | string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -42,9 +42,11 @@ type WeekData = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function fmt(val: number | null | undefined, decimals = 1): string {
+function fmt(val: number | string | null | undefined, decimals = 1): string {
   if (val == null) return "—";
-  return val.toFixed(decimals);
+  const n = typeof val === "string" ? parseFloat(val) : val;
+  if (isNaN(n)) return "—";
+  return n.toFixed(decimals);
 }
 
 function toIsoDate(val: string | Date | null | undefined): string | null {
@@ -103,9 +105,11 @@ function DeltaVal({ val, prev, unit = "", invert = false }: { val: number | null
 }
 
 /** Calculate rate of change as % body weight per week */
-function calcRateOfChange(startWeight: number | null, targetWeight: number | null, durationWeeks: number): string | null {
-  if (startWeight == null || targetWeight == null || startWeight <= 0 || durationWeeks <= 0) return null;
-  const rate = ((targetWeight - startWeight) / startWeight / durationWeeks) * 100;
+function calcRateOfChange(startWeight: number | string | null, targetWeight: number | string | null, durationWeeks: number): string | null {
+  const sw = startWeight == null ? null : typeof startWeight === "string" ? parseFloat(startWeight) : startWeight;
+  const tw = targetWeight == null ? null : typeof targetWeight === "string" ? parseFloat(targetWeight) : targetWeight;
+  if (sw == null || tw == null || isNaN(sw) || isNaN(tw) || sw <= 0 || durationWeeks <= 0) return null;
+  const rate = ((tw - sw) / sw / durationWeeks) * 100;
   if (Math.abs(rate) < 0.001) return "0% / wk";
   const sign = rate > 0 ? "+" : "";
   return `${sign}${rate.toFixed(2)}% / wk`;
@@ -727,8 +731,8 @@ export function PhasesTab({ clientId }: { clientId: number }) {
       startDate: start,
       durationWeeks,
       notes: phase.notes ?? "",
-      startWeight: phase.startWeight != null ? String(phase.startWeight) : "",
-      targetWeight: phase.targetWeight != null ? String(phase.targetWeight) : "",
+      startWeight: phase.startWeight != null && phase.startWeight !== "" ? String(phase.startWeight) : "",
+      targetWeight: phase.targetWeight != null && phase.targetWeight !== "" ? String(phase.targetWeight) : "",
     };
   }
 
