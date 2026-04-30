@@ -141,12 +141,34 @@ function MetricGroup({ label, children }: { label: string; children: React.React
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
+const PHASE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  "Fat Loss":          { bg: "bg-emerald-500/10",  text: "text-emerald-400",  border: "border-emerald-500/30" },
+  "General Fat Loss":  { bg: "bg-emerald-500/10",  text: "text-emerald-400",  border: "border-emerald-500/30" },
+  "Mini Cut":          { bg: "bg-orange-500/10",   text: "text-orange-400",   border: "border-orange-500/30" },
+  "Contest Prep":      { bg: "bg-purple-500/10",   text: "text-purple-400",   border: "border-purple-500/30" },
+  "Gaining":           { bg: "bg-blue-500/10",     text: "text-blue-400",     border: "border-blue-500/30" },
+  "Maintenance":       { bg: "bg-slate-500/10",    text: "text-slate-400",    border: "border-slate-500/30" },
+};
+
+function getPhaseForWeek(phases: any[], weekStart: string, weekEnd: string): string | null {
+  // Find the phase that overlaps with this week (use midpoint of week)
+  const mid = new Date(weekStart + "T00:00:00").getTime() + 3 * 86400000;
+  const midDate = new Date(mid).toISOString().slice(0, 10);
+  const phase = phases.find((p: any) => p.startDate <= midDate && (!p.endDate || p.endDate >= midDate));
+  return phase?.label ?? null;
+}
+
 export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [expandedInit, setExpandedInit] = useState(false);
 
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
+  const { data: phasesData } = trpc.phases.list.useQuery(
+    { clientId },
+    { enabled: !!clientId }
+  );
+  const phases = (phasesData as any[]) ?? [];
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
     { clientId, tzOffsetMinutes },
     { enabled: !!clientId, staleTime: 0, retry: 1 }
@@ -224,6 +246,9 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
           ? parseFloat(((weightDeltaKg / prev.avgWeight) * 100).toFixed(1))
           : null;
 
+        const phaseLabel = getPhaseForWeek(phases, week.weekStart, week.weekEnd);
+        const phaseColor = phaseLabel ? (PHASE_COLORS[phaseLabel] ?? { bg: "bg-secondary", text: "text-muted-foreground", border: "border-border" }) : null;
+
         return (
           <div
             key={week.weekStart}
@@ -252,7 +277,11 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                     Current
                   </Badge>
                 )}
-
+                {phaseLabel && phaseColor && (
+                  <span className={`text-[10px] font-semibold px-1.5 py-0 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
+                    {phaseLabel}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-3 flex-shrink-0 ml-2">
                 {/* Avg weight + delta */}

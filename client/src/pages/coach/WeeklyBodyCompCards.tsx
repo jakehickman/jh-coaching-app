@@ -52,6 +52,24 @@ function SiteRow({ label, avg, readings }: { label: string; avg: number | null; 
   );
 }
 
+// ── Phase helpers ───────────────────────────────────────────────────────────
+
+const PHASE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  "Fat Loss":          { bg: "bg-emerald-500/10",  text: "text-emerald-400",  border: "border-emerald-500/30" },
+  "General Fat Loss":  { bg: "bg-emerald-500/10",  text: "text-emerald-400",  border: "border-emerald-500/30" },
+  "Mini Cut":          { bg: "bg-orange-500/10",   text: "text-orange-400",   border: "border-orange-500/30" },
+  "Contest Prep":      { bg: "bg-purple-500/10",   text: "text-purple-400",   border: "border-purple-500/30" },
+  "Gaining":           { bg: "bg-blue-500/10",     text: "text-blue-400",     border: "border-blue-500/30" },
+  "Maintenance":       { bg: "bg-slate-500/10",    text: "text-slate-400",    border: "border-slate-500/30" },
+};
+
+function getPhaseForWeek(phases: any[], weekStart: string): string | null {
+  const mid = new Date(weekStart + "T00:00:00").getTime() + 3 * 86400000;
+  const midDate = new Date(mid).toISOString().slice(0, 10);
+  const phase = phases.find((p: any) => p.startDate <= midDate && (!p.endDate || p.endDate >= midDate));
+  return phase?.label ?? null;
+}
+
 // ── Single week card ──────────────────────────────────────────────────────────
 
 type Week = {
@@ -80,7 +98,7 @@ type Week = {
   }[];
 };
 
-function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
+function WeekCard({ week, prevWeek, phases }: { week: Week; prevWeek: Week | null; phases: any[] }) {
   const [expanded, setExpanded] = useState(false);
 
   const weightDeltaKg = week.avgWeight != null && prevWeek?.avgWeight != null
@@ -100,6 +118,9 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
   const hasAnyData = week.avgWeight != null || week.avgWaist != null || week.avgSkinfold != null;
   const hasDetail = week.weighIns.length > 0 || week.measurementEntries.length > 0;
 
+  const phaseLabel = getPhaseForWeek(phases, week.weekStart);
+  const phaseColor = phaseLabel ? (PHASE_COLORS[phaseLabel] ?? { bg: "bg-secondary", text: "text-muted-foreground", border: "border-border" }) : null;
+
   return (
     <div className={`rounded-xl border ${week.isInProgress ? "border-primary/30 bg-primary/5" : "border-border bg-card"} overflow-hidden`}>
       {/* ── Collapsed header ── */}
@@ -114,6 +135,11 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
             <span className="text-xs font-bold text-foreground">Week {week.weekNumber}</span>
             {week.isInProgress && (
               <span className="text-[10px] font-medium text-primary bg-primary/10 rounded px-1.5 py-0.5">In Progress</span>
+            )}
+            {phaseLabel && phaseColor && (
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
+                {phaseLabel}
+              </span>
             )}
           </div>
           <span className="text-[11px] text-muted-foreground">{week.label}</span>
@@ -210,6 +236,11 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
 
 export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
   const tzOffsetMinutes = -new Date().getTimezoneOffset();
+  const { data: phasesData } = trpc.phases.list.useQuery(
+    { clientId },
+    { enabled: !!clientId }
+  );
+  const phases = (phasesData as any[]) ?? [];
   const { data, isLoading } = trpc.progress.weeklyReview.useQuery(
     { clientId, tzOffsetMinutes },
     { enabled: !!clientId, staleTime: 60_000 }
@@ -253,7 +284,7 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
       {bodyCompWeeks.map((week) => {
         // prevWeek is the week with weekNumber - 1 (the chronologically earlier week)
         const prevWeek = weekByNumber[week.weekNumber - 1] ?? null;
-        return <WeekCard key={week.weekNumber} week={week} prevWeek={prevWeek} />;
+        return <WeekCard key={week.weekNumber} week={week} prevWeek={prevWeek} phases={phases} />;
       })}
     </div>
   );
