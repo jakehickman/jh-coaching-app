@@ -136,7 +136,6 @@ function PhaseFormDialog({
   initial,
   title,
   defaultStartDate,
-  clientId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -144,7 +143,6 @@ function PhaseFormDialog({
   initial?: Partial<PhaseFormState>;
   title: string;
   defaultStartDate?: string | null;
-  clientId: number;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState<PhaseFormState>({
@@ -156,9 +154,6 @@ function PhaseFormDialog({
     targetWeight: initial?.targetWeight ?? "",
   });
 
-  // Track whether the coach has manually typed a weight (stops auto-fill overwriting it)
-  const [userEditedWeight, setUserEditedWeight] = useState(!!(initial?.startWeight));
-
   // Sync defaultStartDate if it arrives after dialog opens
   useEffect(() => {
     if (!open) return;
@@ -168,24 +163,6 @@ function PhaseFormDialog({
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultStartDate]);
-
-  // Fetch weight for the current start date from the server
-  const { data: weightData } = trpc.phases.weightForDate.useQuery(
-    { clientId, date: form.startDate },
-    { enabled: open && !!form.startDate && clientId > 0, staleTime: 30_000 }
-  );
-
-  // Auto-fill start weight when server returns a value (only if user hasn't typed their own)
-  useEffect(() => {
-    if (userEditedWeight) return;
-    if (weightData?.weight != null) {
-      setForm(f => ({ ...f, startWeight: String(weightData.weight) }));
-    } else if (weightData !== undefined) {
-      // Query resolved but no weight found — clear the field so it's obviously empty
-      setForm(f => ({ ...f, startWeight: "" }));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weightData]);
 
   // Derived end date preview
   const endDatePreview = useMemo(() => {
@@ -280,7 +257,7 @@ function PhaseFormDialog({
                 step="0.1"
                 min="0"
                 value={form.startWeight}
-                onChange={(e) => { setUserEditedWeight(true); setForm(f => ({ ...f, startWeight: e.target.value })); }}
+                onChange={(e) => setForm(f => ({ ...f, startWeight: e.target.value }))}
                 placeholder="e.g. 82.5"
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50"
               />
@@ -827,7 +804,6 @@ export function PhasesTab({ clientId }: { clientId: number }) {
           open={addOpen}
           onClose={() => setAddOpen(false)}
           title="Add Phase"
-          clientId={clientId}
           defaultStartDate={latestPhaseEndDate}
           onSave={(data) => {
             createPhase.mutate({
@@ -849,7 +825,6 @@ export function PhasesTab({ clientId }: { clientId: number }) {
           open={!!editPhase}
           onClose={() => setEditPhase(null)}
           title="Edit Phase"
-          clientId={clientId}
           initial={phaseToFormInitial(editPhase)}
           onSave={(data) => {
             updatePhase.mutate({
