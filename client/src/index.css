@@ -112,6 +112,11 @@
     outline: none;
     box-shadow: 0 0 0 1px var(--primary);
   }
+  /* Placeholder text — clearly visible but distinct from filled values */
+  ::placeholder {
+    color: oklch(0.50 0 0);
+    opacity: 1;
+  }
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: oklch(0.13 0 0); }
   ::-webkit-scrollbar-thumb { background: oklch(0.25 0 0); border-radius: 3px; }
