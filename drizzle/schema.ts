@@ -117,6 +117,7 @@ export const dailyLogs = mysqlTable("daily_logs", {
   lissMinutes: int('lissMinutes'), // daily LISS cardio minutes logged by client
   sleepQuality: int("sleepQuality"), // 1-5
   hungerLevel: int("hungerLevel"), // 1-5
+  stressLevel: int("stressLevel"), // 1-5
   offPlanMeals: int("offPlanMeals").default(0), // number of off-plan meals that day
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

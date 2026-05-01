@@ -104,6 +104,7 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
                   {log.sleepHours != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep</p><p className="text-sm font-semibold text-foreground">{log.sleepHours} hrs</p></div>}
                   {log.sleepQuality != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
                   {log.hungerLevel != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
+                  {(log as any).stressLevel != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Stress</p><p className="text-sm font-semibold text-foreground">{(log as any).stressLevel}/5</p></div>}
                   {log.caffeineServings != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Caffeine</p><p className="text-sm font-semibold text-foreground">{log.caffeineServings} srv</p></div>}
                 </div>
                 {log.notes && (
@@ -228,13 +229,14 @@ type DailyForm = {
   lissMinutes: string;
   sleepQuality: number | null;
   hungerLevel: number | null;
+  stressLevel: number | null;
   offPlanMeals: boolean;
   notes: string;
 };
 
 const blank: DailyForm = {
   weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false,
-  trainingType: "", stepsCount: "", lissMinutes: "", sleepQuality: null, hungerLevel: null,
+  trainingType: "", stepsCount: "", lissMinutes: "", sleepQuality: null, hungerLevel: null, stressLevel: null,
   offPlanMeals: false, notes: "",
 };
 
@@ -333,6 +335,7 @@ export default function DailyLogTab() {
           lissMinutes: (existing as any).lissMinutes?.toString() ?? "",
           sleepQuality: existing.sleepQuality ?? null,
           hungerLevel: existing.hungerLevel ?? null,
+          stressLevel: (existing as any).stressLevel ?? null,
           offPlanMeals: (existing.offPlanMeals ?? 0) > 0,
           notes: existing.notes ?? "",
         }, newKey);
@@ -359,6 +362,7 @@ export default function DailyLogTab() {
         lissMinutes: (existing as any).lissMinutes?.toString() ?? "",
         sleepQuality: existing.sleepQuality ?? null,
         hungerLevel: existing.hungerLevel ?? null,
+        stressLevel: (existing as any).stressLevel ?? null,
           offPlanMeals: (existing.offPlanMeals ?? 0) > 0,
           notes: existing.notes ?? "",
         });
@@ -394,6 +398,7 @@ export default function DailyLogTab() {
       lissMinutes: form.lissMinutes ? parseInt(form.lissMinutes) : undefined,
       sleepQuality: form.sleepQuality ?? undefined,
       hungerLevel: form.hungerLevel ?? undefined,
+      stressLevel: form.stressLevel ?? undefined,
       offPlanMeals: form.offPlanMeals ?? false,
       notes: form.notes || undefined,
     });
@@ -463,6 +468,7 @@ export default function DailyLogTab() {
         <Card className="space-y-4">
           <ScoreInput label="Sleep Quality" value={form.sleepQuality} onChange={v => setForm(p => ({ ...p, sleepQuality: v }))} max={5} />
           <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => setForm(p => ({ ...p, hungerLevel: v }))} max={5} />
+          <ScoreInput label="Stress Level" value={form.stressLevel} onChange={v => setForm(p => ({ ...p, stressLevel: v }))} max={5} />
         </Card>
       </div>
 

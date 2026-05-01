@@ -176,6 +176,7 @@ export const progressRouter = router({
         // Recovery
         const avgHunger = avg(periodLogs.map((l) => l.hungerLevel));
         const avgSleepQuality = avg(periodLogs.map((l) => l.sleepQuality));
+        const avgStress = avg(periodLogs.map((l) => (l as any).stressLevel));
         const avgSleepHours = avg(periodLogs.map((l) => l.sleepHours));
 
         // Activity
@@ -237,6 +238,7 @@ export const progressRouter = router({
           avgHunger,
           avgSleepQuality,
           avgSleepHours,
+          avgStress,
           // Activity
           avgSteps,
           stepGoal,

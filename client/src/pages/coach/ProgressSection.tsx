@@ -1041,6 +1041,9 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                   {log.hungerLevel != null && (
                     <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>
                   )}
+                  {(log as any).stressLevel != null && (
+                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Stress</p><p className="text-sm font-semibold text-foreground">{(log as any).stressLevel}/5</p></div>
+                  )}
                   {log.caffeineServings != null && (
                     <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Caffeine</p><p className="text-sm font-semibold text-foreground">{log.caffeineServings} srv</p></div>
                   )}
@@ -1818,6 +1821,9 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
 
   const curAvgHunger = avgOf(cur7.map(l => l.hungerLevel as number | null));
   const prevAvgHunger = avgOf(prev7.map(l => l.hungerLevel as number | null));
+
+  const curAvgStress = avgOf(cur7.map(l => (l as any).stressLevel as number | null));
+  const prevAvgStress = avgOf(prev7.map(l => (l as any).stressLevel as number | null));
 
   const curAvgSleep = avgOf(cur7.map(l => l.sleepQuality as number | null));
   const prevAvgSleep = avgOf(prev7.map(l => l.sleepQuality as number | null));

@@ -279,6 +279,7 @@ export async function upsertDailyLog(data: {
   lissMinutes?: number;
   sleepQuality?: number;
   hungerLevel?: number;
+  stressLevel?: number;
   offPlanMeals?: number;
   notes?: string;
   force?: boolean; // if true, bypass the trainingCompleted guard (used by deleteWorkoutSession)

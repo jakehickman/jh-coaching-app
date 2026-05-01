@@ -27,6 +27,7 @@ type Week = {
   avgHunger: number | null;
   avgSleepQuality: number | null;
   avgSleepHours: number | null;
+  avgStress?: number | null;
   avgSteps: number | null;
   stepGoal: number | null;
   totalLissMinutes: number | null;
@@ -392,6 +393,13 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                         muted={week.avgHunger == null}
                         delta={d(week.avgHunger, prev?.avgHunger ?? null)}
                         higherIsBetter={null}
+                      />
+                      <Tile
+                        label="Stress"
+                        value={week.avgStress != null ? `${fmt(week.avgStress)}/5` : "—"}
+                        muted={week.avgStress == null}
+                        delta={d(week.avgStress, prev?.avgStress ?? null)}
+                        higherIsBetter={false}
                       />
                       <Tile
                         label="Caffeine"
