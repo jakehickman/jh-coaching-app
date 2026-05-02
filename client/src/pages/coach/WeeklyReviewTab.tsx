@@ -281,13 +281,17 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
               <div className="flex items-center gap-2 min-w-0">
                 {(() => {
                   const phaseWk = getPhaseWeekNumber(phases, week.weekStart);
-                  return phaseWk != null ? (
+                  const wNum = phaseWk ?? week.weekNumber;
+                  if (phaseLabel && phaseColor) {
+                    return (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
+                        {phaseLabel} W{wNum}
+                      </span>
+                    );
+                  }
+                  return (
                     <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                      W{phaseWk}
-                    </span>
-                  ) : (
-                    <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                      W{week.weekNumber}
+                      W{wNum}
                     </span>
                   );
                 })()}
@@ -296,11 +300,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-400 bg-amber-500/10 flex-shrink-0">
                     Current
                   </Badge>
-                )}
-                {phaseLabel && phaseColor && (
-                  <span className={`text-[10px] font-semibold px-1.5 py-0 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
-                    {phaseLabel}
-                  </span>
                 )}
               </div>
               <div className="flex items-center gap-3 flex-shrink-0 ml-2">

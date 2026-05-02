@@ -142,19 +142,24 @@ function WeekCard({ week, prevWeek, phases }: { week: Week; prevWeek: Week | nul
         {/* Week label */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-xs font-bold text-foreground">
-              {(() => {
-                const phaseWk = getPhaseWeekNumber(phases, week.weekStart);
-                return phaseWk != null ? `Week ${phaseWk}` : `Week ${week.weekNumber}`;
-              })()}
-            </span>
+            {(() => {
+              const phaseWk = getPhaseWeekNumber(phases, week.weekStart);
+              const wNum = phaseWk ?? week.weekNumber;
+              if (phaseLabel && phaseColor) {
+                return (
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
+                    {phaseLabel} W{wNum}
+                  </span>
+                );
+              }
+              return (
+                <span className="text-xs font-bold text-foreground">
+                  Week {wNum}
+                </span>
+              );
+            })()}
             {week.isInProgress && (
               <span className="text-[10px] font-medium text-primary bg-primary/10 rounded px-1.5 py-0.5">In Progress</span>
-            )}
-            {phaseLabel && phaseColor && (
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
-                {phaseLabel}
-              </span>
             )}
           </div>
           <span className="text-[11px] text-muted-foreground">{week.label}</span>
