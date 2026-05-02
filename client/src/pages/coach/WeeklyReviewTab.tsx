@@ -285,7 +285,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                   if (phaseLabel && phaseColor) {
                     return (
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
-                        {phaseLabel} W{wNum}
+                        W{wNum} – {phaseLabel}
                       </span>
                     );
                   }
