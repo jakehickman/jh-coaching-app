@@ -1072,7 +1072,6 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
 function RecentLogsWithViewMore({ logs, startDate }: { logs: DailyLogRow[]; startDate?: string | null }) {
   const [showAll, setShowAll] = useState(false);
   const INITIAL_DAYS = 7;
-  const TOTAL_DAYS = 14;
 
   // Build a map of yyyy-mm-dd -> log
   const logMap: Record<string, DailyLogRow> = {};
@@ -1081,26 +1080,29 @@ function RecentLogsWithViewMore({ logs, startDate }: { logs: DailyLogRow[]; star
     if (key) logMap[key] = log;
   }
 
-  // Generate last N calendar days (today first), filtered to on/after client start date
+  // Generate all calendar days from today back to client start date (up to 365 days)
   const allDays: string[] = [];
-  for (let i = 0; i < TOTAL_DAYS; i++) {
-    const d = new Date();
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
     d.setDate(d.getDate() - i);
     const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    if (!startDate || iso >= startDate) allDays.push(iso);
+    if (startDate && iso < startDate) break;
+    allDays.push(iso);
   }
   const visibleDays = showAll ? allDays : allDays.slice(0, INITIAL_DAYS);
+  const hiddenCount = allDays.length - INITIAL_DAYS;
 
   return (
     <div>
       <SectionLabel>Recent Daily Logs</SectionLabel>
       <RecentLogsPanel logs={logs} visibleDays={visibleDays} />
-      {!showAll && (
+      {!showAll && hiddenCount > 0 && (
         <button
           onClick={() => setShowAll(true)}
           className="w-full mt-2 py-2 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg hover:border-border/80 transition-colors"
         >
-          View more (14 days)
+          View more ({hiddenCount} more {hiddenCount === 1 ? 'day' : 'days'})
         </button>
       )}
       {showAll && (

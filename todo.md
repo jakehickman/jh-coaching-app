@@ -628,3 +628,4 @@
 - [ ] Add startWeight and targetWeight columns to client_phases table
 - [ ] Auto-populate startWeight from most recent logged weight when creating a phase
 - [ ] Show calculated rate of change (% body weight per week) on phase cards
+- [x] Fix coach Recent Daily Logs: was capped at 14 days, now shows all days from client start date with dynamic "View more" count
