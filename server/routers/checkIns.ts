@@ -297,7 +297,12 @@ export const checkInRouter = router({
         return db.getAnswersForSubmission(submissionId);
       }
 
-      const history = await Promise.all(rows.map(async r => {
+      const today = todayUtcStr();
+
+      // Filter out any archived rows with a future due date (data anomalies)
+      const validRows = rows.filter(r => toDateStr(r.dueDate) <= today);
+
+      const history = await Promise.all(validRows.map(async r => {
         const dueDateStr = toDateStr(r.dueDate);
         const answers = await enrichWithAnswers(r.submissionId ?? null);
         return {
@@ -308,17 +313,14 @@ export const checkInRouter = router({
           skipped: r.skipped ?? false,
           submission: r.submission,
           answers,
-          weekNumber: computeWeekNumber(startDateStr, checkInDay, dueDateStr),
+          weekNumber: null as number | null, // assigned below after anchor is known
         };
       }));
 
       // Also include the current active cycle if it has a submission
-      // (active cycles are not in check_in_history until the coach marks them complete)
       if (activeCycle?.submissionId) {
         const dueDateStr = toDateStr(activeCycle.dueDate);
-        const weekNumber = computeWeekNumber(startDateStr, checkInDay, dueDateStr);
-        // Only add if not already present in history
-        if (!history.some(h => h.weekNumber === weekNumber)) {
+        if (!history.some(h => h.dueDate === dueDateStr)) {
           const [submission, answers] = await Promise.all([
             db.getCheckInForWeek(input.clientId, dueDateStr),
             enrichWithAnswers(activeCycle.submissionId),
@@ -331,50 +333,55 @@ export const checkInRouter = router({
             skipped: false,
             submission: submission as any,
             answers,
-            weekNumber,
+            weekNumber: null,
           });
         }
       }
 
       // ── Inject synthetic "missed" entries for past expected check-in dates
-      // Anchor from the earliest known cycle date (history or active) and walk forward.
-      // This ensures synthetic dates always align with the actual cycle schedule.
+      // Anchor from the earliest known cycle date and walk forward 7 days at a time.
       const allKnownDates = [
         ...history.map(h => h.dueDate),
         ...(activeCycle ? [toDateStr(activeCycle.dueDate)] : []),
       ];
 
       if (allKnownDates.length > 0) {
-        const today = todayUtcStr();
         const activeDueDateStr = activeCycle ? toDateStr(activeCycle.dueDate) : null;
         const accountedDates = new Set(history.map(h => h.dueDate));
 
-        // Find the earliest known due date as anchor
-        const earliestDateStr = allKnownDates.sort()[0];
+        // Find the earliest known due date as anchor (W1)
+        const earliestDateStr = [...allKnownDates].sort()[0];
         const cursor = new Date(earliestDateStr + "T00:00:00Z");
 
         while (true) {
           const dueDateStr = `${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, "0")}-${String(cursor.getUTCDate()).padStart(2, "0")}`;
           // Stop once we reach today or the future
-          if (dueDateStr >= today) break;
+          if (dueDateStr > today) break;
           // Skip if already in history or is the active cycle's due date
           if (!accountedDates.has(dueDateStr) && dueDateStr !== activeDueDateStr) {
-            const weekNumber = computeWeekNumber(startDateStr, checkInDay, dueDateStr);
             history.push({
-              id: -(cursor.getTime()), // synthetic negative id
+              id: -(cursor.getTime()),
               dueDate: dueDateStr,
               completedAt: null as any,
               submissionId: null,
               skipped: false,
               submission: null as any,
               answers: [],
-              weekNumber,
+              weekNumber: null,
             });
           }
           cursor.setUTCDate(cursor.getUTCDate() + 7);
         }
 
-        // Sort descending by dueDate so newest is first
+        // Sort ascending by dueDate to assign week numbers from anchor
+        history.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+        // Assign week numbers: earliest entry = W1, each subsequent +1
+        history.forEach((entry, idx) => {
+          entry.weekNumber = idx + 1;
+        });
+
+        // Re-sort descending (newest first) for display
         history.sort((a, b) => b.dueDate.localeCompare(a.dueDate));
       }
 
