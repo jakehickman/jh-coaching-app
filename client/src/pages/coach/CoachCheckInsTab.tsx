@@ -231,6 +231,12 @@ export function CoachCheckInsTab({ clientId }: Props) {
     { enabled: !!clientId, staleTime: 0 }
   );
 
+  // Fetch the current active cycle to show overdue placeholder if no submission
+  const { data: currentCycle } = trpc.checkIn.clientCurrentCycle.useQuery(
+    { clientId },
+    { enabled: !!clientId, staleTime: 0 }
+  );
+
   const utils = trpc.useUtils();
   const markReviewed = trpc.checkIn.markReviewed.useMutation({
     onSuccess: () => {
@@ -268,6 +274,17 @@ export function CoachCheckInsTab({ clientId }: Props) {
     ),
     [checkInHistory, weekNumbersInReview]
   );
+
+  // Overdue active cycle with no submission — show as a placeholder card
+  const overdueCyclePlaceholder = useMemo(() => {
+    if (!currentCycle) return null;
+    if (currentCycle.submissionId) return null; // has submission, shown in history
+    if (currentCycle.status !== 'overdue') return null;
+    // Don't duplicate if already in history
+    const alreadyInHistory = (checkInHistory ?? []).some(r => r.dueDate === currentCycle.dueDate);
+    if (alreadyInHistory) return null;
+    return currentCycle;
+  }, [currentCycle, checkInHistory]);
 
   // Initialise: expand only the most recent week with a submission
   useEffect(() => {
@@ -351,6 +368,30 @@ export function CoachCheckInsTab({ clientId }: Props) {
 
   return (
     <div className="mt-2 space-y-2">
+        {/* Current overdue cycle with no submission */}
+        {overdueCyclePlaceholder && (() => {
+          const d = new Date(overdueCyclePlaceholder.dueDate + "T00:00:00Z");
+          const label = d.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" });
+          return (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 opacity-80">
+              <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-2">
+                  {overdueCyclePlaceholder.weekNumber != null && (
+                    <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full flex-shrink-0">
+                      W{overdueCyclePlaceholder.weekNumber}
+                    </span>
+                  )}
+                  <span className="text-sm font-semibold text-muted-foreground">{label}</span>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 flex-shrink-0 border-amber-500/40 text-amber-400 bg-amber-500/10">
+                    Overdue
+                  </Badge>
+                </div>
+                <span className="text-xs text-muted-foreground">No submission</span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Skipped / missed placeholder cards from reviewData weeks */}
         {weeksSkippedOrMissed.map((week) => {
           const historyRow = historyByWeek.get(week.weekNumber);
