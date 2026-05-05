@@ -258,6 +258,17 @@ export function CoachCheckInsTab({ clientId }: Props) {
     [weeks, historyByWeek]
   );
 
+  // Missed/skipped entries from history that don't have a matching reviewData week
+  const weekNumbersInReview = useMemo(() => new Set(weeks.map(w => w.weekNumber)), [weeks]);
+  const orphanedHistoryEntries = useMemo(() =>
+    (checkInHistory ?? []).filter(r =>
+      r.weekNumber != null &&
+      !weekNumbersInReview.has(r.weekNumber) &&
+      (!r.submissionId)
+    ),
+    [checkInHistory, weekNumbersInReview]
+  );
+
   // Initialise: expand only the most recent week with a submission
   useEffect(() => {
     if (expandedInit || weeksWithSubmission.length === 0) return;
@@ -298,7 +309,7 @@ export function CoachCheckInsTab({ clientId }: Props) {
     );
   }
 
-  if (weeksWithSubmission.length === 0) {
+  if (weeksWithSubmission.length === 0 && orphanedHistoryEntries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
         <p className="text-base font-medium">No check-in submissions yet</p>
@@ -313,30 +324,59 @@ export function CoachCheckInsTab({ clientId }: Props) {
 
   const visibleWeeks = showAll ? weeksWithSubmission : weeksWithActualSubmission.slice(0, DEFAULT_VISIBLE);
 
+  // Helper to render a skipped/missed placeholder card
+  function MissedCard({ weekNumber, label, dueDate, isSkipped }: { weekNumber: number | null; label: string; dueDate: string; isSkipped: boolean }) {
+    return (
+      <div className="rounded-xl border border-border bg-card opacity-60">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            {weekNumber != null && (
+              <span className="text-xs font-bold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full flex-shrink-0">
+                W{weekNumber}
+              </span>
+            )}
+            <span className="text-sm font-semibold text-muted-foreground">{label}</span>
+            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
+              isSkipped
+                ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
+                : "border-border text-muted-foreground bg-secondary"
+            }`}>
+              {isSkipped ? "Skipped" : "Missed"}
+            </Badge>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-2 space-y-2">
-        {/* Skipped / missed placeholder cards */}
+        {/* Skipped / missed placeholder cards from reviewData weeks */}
         {weeksSkippedOrMissed.map((week) => {
           const historyRow = historyByWeek.get(week.weekNumber);
-          const isSkipped = historyRow?.skipped;
           return (
-            <div key={`skipped-${week.weekStart}`} className="rounded-xl border border-border bg-card opacity-60">
-              <div className="flex items-center justify-between px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full flex-shrink-0">
-                    W{week.weekNumber}
-                  </span>
-                  <span className="text-sm font-semibold text-muted-foreground">{week.label}</span>
-                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
-                    isSkipped
-                      ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
-                      : "border-border text-muted-foreground bg-secondary"
-                  }`}>
-                    {isSkipped ? "Skipped" : "Missed"}
-                  </Badge>
-                </div>
-              </div>
-            </div>
+            <MissedCard
+              key={`skipped-${week.weekStart}`}
+              weekNumber={week.weekNumber}
+              label={week.label}
+              dueDate={week.weekStart}
+              isSkipped={historyRow?.skipped ?? false}
+            />
+          );
+        })}
+
+        {/* Missed/skipped entries not covered by reviewData weeks (e.g. before first submission) */}
+        {orphanedHistoryEntries.map((row) => {
+          const d = new Date(row.dueDate + "T00:00:00Z");
+          const label = d.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" });
+          return (
+            <MissedCard
+              key={`orphan-${row.dueDate}`}
+              weekNumber={row.weekNumber}
+              label={label}
+              dueDate={row.dueDate}
+              isSkipped={row.skipped ?? false}
+            />
           );
         })}
 
