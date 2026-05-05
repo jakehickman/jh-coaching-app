@@ -208,6 +208,17 @@ function ChangesNotesField({ submissionId, initialNotes }: { submissionId: numbe
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+type EntryType = 'overdue' | 'missed' | 'skipped' | 'submission';
+interface UnifiedEntry {
+  key: string;
+  weekNumber: number | null;
+  dueDate: string;
+  label: string;
+  type: EntryType;
+  weekData?: any;
+  historyRow?: any;
+}
+
 interface Props {
   clientId: number;
 }
@@ -216,245 +227,154 @@ export function CoachCheckInsTab({ clientId }: Props) {
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [expandedInit, setExpandedInit] = useState(false);
-
-  const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
-
-  // Fetch weekly review data for week labels and numbers
-  const { data: reviewData, isLoading: reviewLoading } = trpc.progress.weeklyReview.useQuery(
-    { clientId, tzOffsetMinutes },
-    { enabled: !!clientId, staleTime: 0, retry: 1 }
-  );
-
-  // Fetch check-in history for submissions and answers
   const { data: checkInHistory, isLoading: historyLoading, error } = trpc.checkIn.clientHistory.useQuery(
-    { clientId },
-    { enabled: !!clientId, staleTime: 0 }
+    { clientId }, { enabled: !!clientId, staleTime: 0 }
   );
-
-  // Fetch the current active cycle to show overdue placeholder if no submission
   const { data: currentCycle } = trpc.checkIn.clientCurrentCycle.useQuery(
-    { clientId },
-    { enabled: !!clientId, staleTime: 0 }
+    { clientId }, { enabled: !!clientId, staleTime: 0 }
   );
 
   const utils = trpc.useUtils();
   const markReviewed = trpc.checkIn.markReviewed.useMutation({
-    onSuccess: () => {
-      utils.checkIn.clientHistory.invalidate();
-      utils.progress.weeklyReview.invalidate();
-      toast.success("Check-in marked as reviewed");
-    },
-    onError: () => toast.error("Failed to update review status"),
+    onSuccess: () => { utils.checkIn.clientHistory.invalidate(); toast.success('Check-in marked as reviewed'); },
+    onError: () => toast.error('Failed to update review status'),
   });
 
-  const weeks = reviewData?.weeks ?? [];
+  // Build unified sorted list directly from server-provided history (which already includes synthetic missed entries)
+  const allEntries = useMemo((): UnifiedEntry[] => {
+    const entries: UnifiedEntry[] = [];
+    const seen = new Set<string>();
 
-  // Build a map from weekNumber → history row
-  const historyByWeek = useMemo(() => {
-    const map = new Map<number, any>();
-    for (const row of checkInHistory ?? []) {
-      if (row.weekNumber != null) map.set(row.weekNumber, row);
+    // Active overdue cycle with no submission (not yet in history)
+    if (currentCycle && !currentCycle.submissionId && currentCycle.status === 'overdue') {
+      const d = new Date(currentCycle.dueDate + 'T00:00:00Z');
+      const label = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+      entries.push({ key: `overdue-${currentCycle.dueDate}`, weekNumber: currentCycle.weekNumber ?? null, dueDate: currentCycle.dueDate, label, type: 'overdue' });
+      seen.add(currentCycle.dueDate);
     }
-    return map;
-  }, [checkInHistory]);
 
-  // Show weeks that have a submission OR are in history (skipped/missed)
-  const weeksWithSubmission = useMemo(() =>
-    weeks.filter(w => historyByWeek.has(w.weekNumber)),
-    [weeks, historyByWeek]
-  );
+    // All history rows (real submissions, skipped, and synthetic missed)
+    for (const row of checkInHistory ?? []) {
+      if (seen.has(row.dueDate)) continue;
+      seen.add(row.dueDate);
+      const d = new Date(row.dueDate + 'T00:00:00Z');
+      const label = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+      const type: EntryType = row.submissionId ? 'submission' : row.skipped ? 'skipped' : 'missed';
+      entries.push({ key: `h-${row.dueDate}`, weekNumber: row.weekNumber ?? null, dueDate: row.dueDate, label, type, historyRow: row });
+    }
 
-  // Missed/skipped entries from history that don't have a matching reviewData week
-  const weekNumbersInReview = useMemo(() => new Set(weeks.map(w => w.weekNumber)), [weeks]);
-  const orphanedHistoryEntries = useMemo(() =>
-    (checkInHistory ?? []).filter(r =>
-      r.weekNumber != null &&
-      !weekNumbersInReview.has(r.weekNumber) &&
-      (!r.submissionId)
-    ),
-    [checkInHistory, weekNumbersInReview]
-  );
-
-  // Overdue active cycle with no submission — show as a placeholder card
-  const overdueCyclePlaceholder = useMemo(() => {
-    if (!currentCycle) return null;
-    if (currentCycle.submissionId) return null; // has submission, shown in history
-    if (currentCycle.status !== 'overdue') return null;
-    // Don't duplicate if already in history
-    const alreadyInHistory = (checkInHistory ?? []).some(r => r.dueDate === currentCycle.dueDate);
-    if (alreadyInHistory) return null;
-    return currentCycle;
+    return entries.sort((a, b) => b.dueDate.localeCompare(a.dueDate));
   }, [currentCycle, checkInHistory]);
 
-  // Initialise: expand only the most recent week with a submission
-  useEffect(() => {
-    if (expandedInit || weeksWithSubmission.length === 0) return;
-    const toExpand = new Set<string>();
-    if (weeksWithSubmission[0]) toExpand.add(weeksWithSubmission[0].weekStart);
-    setExpanded(toExpand);
-    setExpandedInit(true);
-  }, [weeksWithSubmission.length, expandedInit]);
+  const submissionCount = useMemo(() => allEntries.filter(e => e.type === 'submission').length, [allEntries]);
 
-  function toggleCard(weekStart: string) {
-    setExpanded(prev => {
-      if (prev.has(weekStart)) return new Set<string>();
-      return new Set<string>([weekStart]);
+  const visibleEntries = useMemo(() => {
+    if (showAll) return allEntries;
+    let subCount = 0;
+    return allEntries.filter(e => {
+      if (e.type !== 'submission') return true;
+      return ++subCount <= DEFAULT_VISIBLE;
     });
+  }, [allEntries, showAll]);
+
+  // Auto-expand most recent submission
+  useEffect(() => {
+    if (expandedInit) return;
+    const first = allEntries.find(e => e.type === 'submission');
+    if (!first) return;
+    setExpanded(new Set([first.dueDate]));
+    setExpandedInit(true);
+  }, [allEntries.length, expandedInit]);
+
+  function toggleCard(key: string) {
+    setExpanded(prev => prev.has(key) ? new Set() : new Set([key]));
   }
 
-  const isLoading = reviewLoading || historyLoading;
+  const isLoading = historyLoading;
 
-  if (isLoading) {
-    return (
-      <div className="space-y-2 mt-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full bg-muted rounded-xl" />
-        ))}
-      </div>
-    );
-  }
+  if (isLoading) return (
+    <div className="space-y-2 mt-2">
+      {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full bg-muted rounded-xl" />)}
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div className="flex items-center gap-3 p-4 mt-2 rounded-lg border border-destructive/40 bg-destructive/10 text-destructive">
-        <AlertCircle className="h-5 w-5 shrink-0" />
-        <div>
-          <p className="font-medium">Failed to load check-ins</p>
-          <p className="text-sm opacity-80">{error.message}</p>
-        </div>
-      </div>
-    );
-  }
+  if (error) return (
+    <div className="flex items-center gap-3 p-4 mt-2 rounded-lg border border-destructive/40 bg-destructive/10 text-destructive">
+      <AlertCircle className="h-5 w-5 shrink-0" />
+      <div><p className="font-medium">Failed to load check-ins</p><p className="text-sm opacity-80">{error.message}</p></div>
+    </div>
+  );
 
-  if (weeksWithSubmission.length === 0 && orphanedHistoryEntries.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <p className="text-base font-medium">No check-in submissions yet</p>
-        <p className="text-sm mt-1">Submissions will appear here once the client completes their first check-in.</p>
-      </div>
-    );
-  }
-
-  // Separate skipped/missed from submitted for toggle
-  const weeksWithActualSubmission = weeksWithSubmission.filter(w => historyByWeek.get(w.weekNumber)?.submissionId);
-  const weeksSkippedOrMissed = weeksWithSubmission.filter(w => !historyByWeek.get(w.weekNumber)?.submissionId);
-
-  const visibleWeeks = showAll ? weeksWithSubmission : weeksWithActualSubmission.slice(0, DEFAULT_VISIBLE);
-
-  // Helper to render a skipped/missed placeholder card
-  function MissedCard({ weekNumber, label, dueDate, isSkipped }: { weekNumber: number | null; label: string; dueDate: string; isSkipped: boolean }) {
-    return (
-      <div className="rounded-xl border border-border bg-card opacity-60">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            {weekNumber != null && (
-              <span className="text-xs font-bold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full flex-shrink-0">
-                W{weekNumber}
-              </span>
-            )}
-            <span className="text-sm font-semibold text-muted-foreground">{label}</span>
-            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
-              isSkipped
-                ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
-                : "border-border text-muted-foreground bg-secondary"
-            }`}>
-              {isSkipped ? "Skipped" : "Missed"}
-            </Badge>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (allEntries.length === 0) return (
+    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+      <p className="text-base font-medium">No check-in submissions yet</p>
+      <p className="text-sm mt-1">Submissions will appear here once the client completes their first check-in.</p>
+    </div>
+  );
 
   return (
     <div className="mt-2 space-y-2">
-        {/* Current overdue cycle with no submission */}
-        {overdueCyclePlaceholder && (() => {
-          const d = new Date(overdueCyclePlaceholder.dueDate + "T00:00:00Z");
-          const label = d.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" });
+      {visibleEntries.map((entry) => {
+        // Placeholder cards (overdue / missed / skipped)
+        if (entry.type !== 'submission') {
+          const isOverdue = entry.type === 'overdue';
+          const isSkipped = entry.type === 'skipped';
           return (
-            <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 opacity-80">
+            <div key={entry.key} className={`rounded-xl border opacity-80 ${
+              isOverdue ? 'border-amber-500/40 bg-amber-500/5' : 'border-border bg-card opacity-60'
+            }`}>
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-2">
-                  {overdueCyclePlaceholder.weekNumber != null && (
-                    <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full flex-shrink-0">
-                      W{overdueCyclePlaceholder.weekNumber}
+                  {entry.weekNumber != null && (
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 border ${
+                      isOverdue
+                        ? 'text-amber-400 bg-amber-500/10 border-amber-500/30'
+                        : 'text-muted-foreground bg-muted border-border'
+                    }`}>
+                      W{entry.weekNumber}
                     </span>
                   )}
-                  <span className="text-sm font-semibold text-muted-foreground">{label}</span>
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 flex-shrink-0 border-amber-500/40 text-amber-400 bg-amber-500/10">
-                    Overdue
+                  <span className="text-sm font-semibold text-muted-foreground">{entry.label}</span>
+                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
+                    isOverdue
+                      ? 'border-amber-500/40 text-amber-400 bg-amber-500/10'
+                      : isSkipped
+                        ? 'border-amber-500/40 text-amber-400 bg-amber-500/10'
+                        : 'border-border text-muted-foreground bg-secondary'
+                  }`}>
+                    {isOverdue ? 'Overdue' : isSkipped ? 'Skipped' : 'Missed'}
                   </Badge>
                 </div>
-                <span className="text-xs text-muted-foreground">No submission</span>
+                {isOverdue && <span className="text-xs text-muted-foreground">No submission</span>}
               </div>
             </div>
           );
-        })()}
+        }
 
-        {/* Skipped / missed placeholder cards from reviewData weeks */}
-        {weeksSkippedOrMissed.map((week) => {
-          const historyRow = historyByWeek.get(week.weekNumber);
-          return (
-            <MissedCard
-              key={`skipped-${week.weekStart}`}
-              weekNumber={week.weekNumber}
-              label={week.label}
-              dueDate={week.weekStart}
-              isSkipped={historyRow?.skipped ?? false}
-            />
-          );
-        })}
-
-        {/* Missed/skipped entries not covered by reviewData weeks (e.g. before first submission) */}
-        {orphanedHistoryEntries.map((row) => {
-          const d = new Date(row.dueDate + "T00:00:00Z");
-          const label = d.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" });
-          return (
-            <MissedCard
-              key={`orphan-${row.dueDate}`}
-              weekNumber={row.weekNumber}
-              label={label}
-              dueDate={row.dueDate}
-              isSkipped={row.skipped ?? false}
-            />
-          );
-        })}
-
-        {visibleWeeks.map((week) => {
-        const historyRow = historyByWeek.get(week.weekNumber);
+        // Submission cards
+        const historyRow = entry.historyRow;
         const submission = historyRow?.submission ?? null;
         const submissionAnswers = historyRow?.answers ?? [];
         const isReviewed = !!(submission as any)?.reviewedAt;
-        const isExpanded = expanded.has(week.weekStart);
+        const isExpanded = expanded.has(entry.key);
         const submittedAt = (submission as any)?.submittedAt;
 
         return (
           <div
-            key={week.weekStart}
-            className={`rounded-xl border transition-colors ${
-              week.isInProgress
-                ? "border-amber-500/40 bg-amber-500/5"
-                : "border-border bg-card"
-            }`}
+            key={entry.key}
+            className="rounded-xl border transition-colors border-border bg-card"
           >
-            {/* Card header */}
             <button
-              className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors rounded-xl ${
-                week.isInProgress ? "hover:bg-amber-500/10" : "hover:bg-muted/20"
-              }`}
-              onClick={() => toggleCard(week.weekStart)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors rounded-xl hover:bg-muted/20"
+              onClick={() => toggleCard(entry.key)}
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                  W{week.weekNumber}
-                </span>
-                <span className="text-sm font-semibold text-foreground truncate">{week.label}</span>
-                {week.isInProgress && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-400 bg-amber-500/10 flex-shrink-0">
-                    Current
-                  </Badge>
+                {entry.weekNumber != null && (
+                  <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                    W{entry.weekNumber}
+                  </span>
                 )}
+                <span className="text-sm font-semibold text-foreground truncate">{entry.label}</span>
                 {!isReviewed && (
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-blue-500/50 text-blue-400 bg-blue-500/10 flex-shrink-0">
                     Unreviewed
@@ -469,57 +389,47 @@ export function CoachCheckInsTab({ clientId }: Props) {
               <div className="flex items-center gap-3 flex-shrink-0 ml-2">
                 {submittedAt && (
                   <span className="text-[11px] text-muted-foreground hidden sm:block">
-                    {new Date(submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+                    {new Date(submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                   </span>
                 )}
-                <ChevronDown size={14} className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                <ChevronDown size={14} className={`text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
               </div>
             </button>
 
-            {/* Expanded content */}
             {isExpanded && (
               <div className="border-t border-border/40">
-                {/* Submission date */}
                 {submittedAt && (
                   <div className="px-4 pt-3 pb-1 flex items-center justify-between">
                     <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">Check-in Submission</p>
                     <span className="text-[10px] text-muted-foreground">
-                      Submitted {new Date(submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                      Submitted {new Date(submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
                 )}
-
-                {/* Q&A answers */}
                 <SubmissionQA answers={submissionAnswers} />
-
-                {/* Coach Notes (Tiptap) */}
                 {submission && (
                   <CoachNotesField
                     submissionId={(submission as any).id}
                     initialNotes={(submission as any).coachNotes}
                   />
                 )}
-
-                {/* Changes Made (Tiptap) */}
                 {submission && (
                   <ChangesNotesField
                     submissionId={(submission as any).id}
                     initialNotes={(submission as any).changesNotes}
                   />
                 )}
-
-                {/* Mark as Reviewed */}
                 {submission && (
                   <div className="px-4 py-3 border-t border-border/50">
                     <Button
                       size="sm"
-                      variant={isReviewed ? "outline" : "default"}
+                      variant={isReviewed ? 'outline' : 'default'}
                       onClick={() => markReviewed.mutate({ id: (submission as any).id, reviewed: !isReviewed, clientId })}
                       disabled={markReviewed.isPending}
                       className="gap-1.5"
                     >
                       <CheckCircle2 size={13} />
-                      {isReviewed ? "Mark as Unreviewed" : "Mark as Reviewed"}
+                      {isReviewed ? 'Mark as Unreviewed' : 'Mark as Reviewed'}
                     </Button>
                   </div>
                 )}
@@ -529,8 +439,7 @@ export function CoachCheckInsTab({ clientId }: Props) {
         );
       })}
 
-      {/* Show all / show less */}
-      {weeksWithSubmission.length > DEFAULT_VISIBLE && (
+      {submissionCount > DEFAULT_VISIBLE && (
         <div className="flex justify-center mt-1">
           <Button
             variant="ghost"
@@ -538,7 +447,7 @@ export function CoachCheckInsTab({ clientId }: Props) {
             onClick={() => setShowAll((v) => !v)}
             className="text-muted-foreground hover:text-foreground"
           >
-            {showAll ? "Show less" : `Show all ${weeksWithSubmission.length} check-ins`}
+            {showAll ? 'Show less' : `Show all ${submissionCount} check-ins`}
           </Button>
         </div>
       )}

@@ -337,47 +337,45 @@ export const checkInRouter = router({
       }
 
       // ── Inject synthetic "missed" entries for past expected check-in dates
-      // that have no history record and are not the current active cycle.
-      if (startDateStr && checkInDay) {
-        const dow = DAY_NAME_TO_DOW[checkInDay.toLowerCase()];
-        if (dow !== undefined) {
-          const start = new Date(startDateStr + "T00:00:00Z");
-          const startDow = start.getUTCDay();
-          let daysUntilFirst = (dow - startDow + 7) % 7;
-          if (daysUntilFirst === 0) daysUntilFirst = 7;
-          const firstDue = new Date(start);
-          firstDue.setUTCDate(start.getUTCDate() + daysUntilFirst);
+      // Anchor from the earliest known cycle date (history or active) and walk forward.
+      // This ensures synthetic dates always align with the actual cycle schedule.
+      const allKnownDates = [
+        ...history.map(h => h.dueDate),
+        ...(activeCycle ? [toDateStr(activeCycle.dueDate)] : []),
+      ];
 
-          const today = todayUtcStr();
-          const activeDueDateStr = activeCycle ? toDateStr(activeCycle.dueDate) : null;
-          const accountedDates = new Set(history.map(h => h.dueDate));
+      if (allKnownDates.length > 0) {
+        const today = todayUtcStr();
+        const activeDueDateStr = activeCycle ? toDateStr(activeCycle.dueDate) : null;
+        const accountedDates = new Set(history.map(h => h.dueDate));
 
-          // Walk through every expected check-in date up to (but not including) today
-          const cursor = new Date(firstDue);
-          while (true) {
-            const dueDateStr = `${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, "0")}-${String(cursor.getUTCDate()).padStart(2, "0")}`;
-            // Stop once we reach today or the future
-            if (dueDateStr >= today) break;
-            // Skip if already in history or is the active cycle's due date
-            if (!accountedDates.has(dueDateStr) && dueDateStr !== activeDueDateStr) {
-              const weekNumber = computeWeekNumber(startDateStr, checkInDay, dueDateStr);
-              history.push({
-                id: -(cursor.getTime()), // synthetic negative id
-                dueDate: dueDateStr,
-                completedAt: null as any,
-                submissionId: null,
-                skipped: false,
-                submission: null as any,
-                answers: [],
-                weekNumber,
-              });
-            }
-            cursor.setUTCDate(cursor.getUTCDate() + 7);
+        // Find the earliest known due date as anchor
+        const earliestDateStr = allKnownDates.sort()[0];
+        const cursor = new Date(earliestDateStr + "T00:00:00Z");
+
+        while (true) {
+          const dueDateStr = `${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, "0")}-${String(cursor.getUTCDate()).padStart(2, "0")}`;
+          // Stop once we reach today or the future
+          if (dueDateStr >= today) break;
+          // Skip if already in history or is the active cycle's due date
+          if (!accountedDates.has(dueDateStr) && dueDateStr !== activeDueDateStr) {
+            const weekNumber = computeWeekNumber(startDateStr, checkInDay, dueDateStr);
+            history.push({
+              id: -(cursor.getTime()), // synthetic negative id
+              dueDate: dueDateStr,
+              completedAt: null as any,
+              submissionId: null,
+              skipped: false,
+              submission: null as any,
+              answers: [],
+              weekNumber,
+            });
           }
-
-          // Sort descending by dueDate so newest is first
-          history.sort((a, b) => b.dueDate.localeCompare(a.dueDate));
+          cursor.setUTCDate(cursor.getUTCDate() + 7);
         }
+
+        // Sort descending by dueDate so newest is first
+        history.sort((a, b) => b.dueDate.localeCompare(a.dueDate));
       }
 
       return history;
