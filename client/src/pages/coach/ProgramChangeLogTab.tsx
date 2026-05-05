@@ -171,6 +171,16 @@ export default function ProgramChangeLogTab({ clientId }: { clientId: number }) 
     (a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime()
   );
 
+  // Sort changes within each row: by session label, then add before remove/modify
+  const TYPE_ORDER: Record<string, number> = { add: 0, modify: 1, remove: 2 };
+  function sortChanges(changes: ProgramChangeEntry[]): ProgramChangeEntry[] {
+    return [...changes].sort((a, b) => {
+      const sessionCmp = a.session.localeCompare(b.session);
+      if (sessionCmp !== 0) return sessionCmp;
+      return (TYPE_ORDER[a.type] ?? 3) - (TYPE_ORDER[b.type] ?? 3);
+    });
+  }
+
   // Group by calendar date (local timezone)
   const groups: { dateKey: string; label: string; rows: ChangeLogRow[] }[] = [];
   for (const log of sorted as ChangeLogRow[]) {
@@ -191,7 +201,7 @@ export default function ProgramChangeLogTab({ clientId }: { clientId: number }) 
             <p className="text-sm font-semibold mb-3">{group.label}</p>
             <div className="space-y-3">
               {group.rows.map((log, rowIdx) => {
-                const changes: ProgramChangeEntry[] = Array.isArray(log.changes) ? log.changes : [];
+                const changes: ProgramChangeEntry[] = sortChanges(Array.isArray(log.changes) ? log.changes : []);
                 return (
                   <div key={log.id} className={rowIdx > 0 ? "pt-3 border-t border-border/30" : ""}>
                     <div className="flex items-start justify-between gap-2">

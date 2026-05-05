@@ -596,11 +596,42 @@ export async function insertProgramChangeLog(data: {
 }) {
   const db = await getDb();
   if (!db || data.changes.length === 0) return;
-  await db.insert(programChangeLogs).values({
-    userId: data.userId,
-    coachId: data.coachId ?? null,
-    changes: data.changes,
-  } as any);
+
+  // Check if a row already exists for this user on today's calendar date (UTC date)
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
+
+  const [existing] = await db
+    .select()
+    .from(programChangeLogs)
+    .where(
+      and(
+        eq(programChangeLogs.userId, data.userId),
+        gte(programChangeLogs.changedAt, todayStart),
+        lt(programChangeLogs.changedAt, tomorrowStart)
+      )
+    )
+    .limit(1);
+
+  if (existing) {
+    // Merge new changes into the existing row
+    const merged: ProgramChangeEntry[] = [
+      ...(Array.isArray(existing.changes) ? existing.changes : []),
+      ...data.changes,
+    ];
+    await db
+      .update(programChangeLogs)
+      .set({ changes: merged as any })
+      .where(eq(programChangeLogs.id, existing.id));
+  } else {
+    await db.insert(programChangeLogs).values({
+      userId: data.userId,
+      coachId: data.coachId ?? null,
+      changes: data.changes,
+    } as any);
+  }
 }
 
 export async function getProgramChangeLogs(userId: number) {
@@ -1364,7 +1395,31 @@ export async function updateClientProfileExtended(userId: number, data: {
       }
     }
     if (changes.length > 0) {
-      await db.insert(cardioChangeLogs).values({ userId, coachId: coachId ?? null, changes });
+      // Merge into existing same-day row if one exists
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const tomorrowStart = new Date(todayStart);
+      tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
+      const [existingCardioLog] = await db
+        .select()
+        .from(cardioChangeLogs)
+        .where(
+          and(
+            eq(cardioChangeLogs.userId, userId),
+            gte(cardioChangeLogs.changedAt, todayStart),
+            lt(cardioChangeLogs.changedAt, tomorrowStart)
+          )
+        )
+        .limit(1);
+      if (existingCardioLog) {
+        const merged: CardioChangeEntry[] = [
+          ...(Array.isArray(existingCardioLog.changes) ? existingCardioLog.changes : []),
+          ...changes,
+        ];
+        await db.update(cardioChangeLogs).set({ changes: merged as any }).where(eq(cardioChangeLogs.id, existingCardioLog.id));
+      } else {
+        await db.insert(cardioChangeLogs).values({ userId, coachId: coachId ?? null, changes });
+      }
     }
     // Also backfill coachId if it's missing
     const updateData: any = { ...data };
