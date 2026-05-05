@@ -338,11 +338,9 @@ export function CoachCheckInsTab({ clientId }: Props) {
                   <Badge variant="outline" className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
                     isOverdue
                       ? 'border-amber-500/40 text-amber-400 bg-amber-500/10'
-                      : isSkipped
-                        ? 'border-amber-500/40 text-amber-400 bg-amber-500/10'
-                        : 'border-border text-muted-foreground bg-secondary'
+                      : 'border-border text-muted-foreground bg-secondary'
                   }`}>
-                    {isOverdue ? 'Overdue' : isSkipped ? 'Skipped' : 'Missed'}
+                    {isOverdue ? 'Overdue' : 'Missed'}
                   </Badge>
                 </div>
                 {isOverdue && <span className="text-xs text-muted-foreground">No submission</span>}
