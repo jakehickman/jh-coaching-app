@@ -508,37 +508,47 @@ function PhaseSummaryCard({
     <div className={`border rounded-xl overflow-hidden ${c.border} bg-card`}>
       {/* Compact data row */}
       <div
-        className="flex cursor-pointer select-none px-4 py-3 gap-3 items-center"
+        className="cursor-pointer select-none px-4 py-3"
         onClick={() => setExpanded(!expanded)}
       >
-        {/* Phase label + status */}
-        <div className="flex items-center gap-2 flex-shrink-0 w-44">
+        {/* Top row: label + status + actions */}
+        <div className="flex items-center gap-2 mb-2">
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${c.bg} ${c.text} ${c.border} whitespace-nowrap`}>
             {phase.label}
           </span>
           <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border whitespace-nowrap ${statusClass}`}>
             {statusLabel}
           </span>
+          <div className="flex items-center gap-1 ml-auto" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={onEdit}
+              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Pencil size={13} />
+            </button>
+            <button
+              onClick={onDelete}
+              className="p-1.5 rounded-lg hover:bg-destructive/15 text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <Trash2 size={13} />
+            </button>
+            {expanded ? <ChevronUp size={15} className="text-muted-foreground ml-1" /> : <ChevronDown size={15} className="text-muted-foreground ml-1" />}
+          </div>
         </div>
 
-        {/* Divider */}
-        <div className="w-px self-stretch bg-border/50 flex-shrink-0" />
-
-        {/* Data columns — each fixed width, top-aligned */}
-        <div className="flex flex-1 items-start gap-0 min-w-0">
+        {/* Data grid — 2 cols on mobile, auto-flow on desktop */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-2">
           {/* Dates */}
-          <div className="flex-none w-36 px-3">
+          <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Dates</p>
-            <p className="text-xs text-foreground font-medium whitespace-nowrap">{fmtDate(startDate)}</p>
-            <p className="text-xs text-muted-foreground whitespace-nowrap">
+            <p className="text-xs text-foreground font-medium">{fmtDate(startDate)}</p>
+            <p className="text-xs text-muted-foreground">
               {endDate ? `→ ${fmtDate(endDate)}` : status === "active" ? "→ Present" : "—"}
             </p>
           </div>
 
-          <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
-
           {/* Weeks */}
-          <div className="flex-none w-20 px-3">
+          <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Weeks</p>
             {plannedDurationWeeks != null && plannedDurationWeeks > 0 ? (
               <p className="text-xs text-foreground font-medium">
@@ -554,69 +564,40 @@ function PhaseSummaryCard({
             )}
           </div>
 
-          <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
-
           {/* Start weight */}
-          <div className="flex-none w-24 px-3">
+          <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Start</p>
             <p className="text-xs text-foreground font-medium">
               {phase.startWeight != null ? `${fmt(phase.startWeight)} kg` : "—"}
             </p>
           </div>
 
-          <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
-
           {/* Target weight */}
-          <div className="flex-none w-24 px-3">
+          <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Target</p>
             <p className="text-xs text-foreground font-medium">
               {phase.targetWeight != null ? `${fmt(phase.targetWeight)} kg` : "—"}
             </p>
           </div>
 
-          <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
-
           {/* Target rate */}
-          <div className="flex-none w-28 px-3">
+          <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Target Rate</p>
-            <p className="text-xs text-foreground font-medium whitespace-nowrap">{phase.targetRate || "—"}</p>
+            <p className="text-xs text-foreground font-medium">{phase.targetRate || "—"}</p>
           </div>
 
-          <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
-
           {/* Actual rate */}
-          <div className="flex-none w-28 px-3">
+          <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Actual Rate</p>
-            <p className="text-xs text-foreground font-medium whitespace-nowrap">{actualRate ?? "—"}</p>
+            <p className="text-xs text-foreground font-medium">{actualRate ?? "—"}</p>
           </div>
 
           {phase.notes && (
-            <>
-              <div className="w-px self-stretch bg-border/30 flex-shrink-0" />
-              {/* Notes */}
-              <div className="flex-1 min-w-0 px-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Notes</p>
-                <p className="text-xs text-muted-foreground italic truncate">{phase.notes}</p>
-              </div>
-            </>
+            <div className="col-span-2 sm:flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Notes</p>
+              <p className="text-xs text-muted-foreground italic">{phase.notes}</p>
+            </div>
           )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-1 flex-shrink-0 ml-auto" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={onEdit}
-            className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Pencil size={13} />
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-1.5 rounded-lg hover:bg-destructive/15 text-muted-foreground hover:text-destructive transition-colors"
-          >
-            <Trash2 size={13} />
-          </button>
-          {expanded ? <ChevronUp size={15} className="text-muted-foreground ml-1" /> : <ChevronDown size={15} className="text-muted-foreground ml-1" />}
         </div>
       </div>
 
