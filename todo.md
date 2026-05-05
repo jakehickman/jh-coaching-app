@@ -630,3 +630,4 @@
 - [ ] Show calculated rate of change (% body weight per week) on phase cards
 - [x] Fix coach Recent Daily Logs: was capped at 14 days, now shows all days from client start date with dynamic "View more" count
 - [x] Daily log: amber border/ring on unfilled fields so incomplete entries are visually obvious
+- [x] Training tab: group program change log entries by date into a single card per day (also applied to Cardio change log)

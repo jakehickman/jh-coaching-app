@@ -77,6 +77,11 @@ function formatDate(ts: string | Date) {
   return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function toDateKey(ts: string | Date): string {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function NoteEditor({ logId, initialNote }: { logId: number; initialNote?: string | null }) {
   const [note, setNote] = useState(initialNote ?? "");
   const [saved, setSaved] = useState(false);
@@ -110,14 +115,14 @@ function NoteEditor({ logId, initialNote }: { logId: number; initialNote?: strin
   }
 
   return (
-    <div className="mt-3 pt-3 border-t border-border/30">
+    <div className="mt-2">
       <textarea
         ref={textareaRef}
         value={note}
         onChange={e => setNote(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        placeholder=""
+        placeholder="Add a note…"
         rows={2}
         className="w-full resize-none rounded-md bg-muted/30 border border-border/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring/50 transition-colors"
       />
@@ -166,39 +171,56 @@ export default function ProgramChangeLogTab({ clientId }: { clientId: number }) 
     (a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime()
   );
 
+  // Group by calendar date (local timezone)
+  const groups: { dateKey: string; label: string; rows: ChangeLogRow[] }[] = [];
+  for (const log of sorted as ChangeLogRow[]) {
+    const key = toDateKey(log.changedAt);
+    const existing = groups.find(g => g.dateKey === key);
+    if (existing) {
+      existing.rows.push(log);
+    } else {
+      groups.push({ dateKey: key, label: formatDate(log.changedAt), rows: [log] });
+    }
+  }
+
   return (
     <div className="space-y-4">
-      {sorted.map((log: ChangeLogRow) => {
-        const changes: ProgramChangeEntry[] = Array.isArray(log.changes) ? log.changes : [];
-
-        return (
-          <Card key={log.id} className="bg-card/60 border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold">{formatDate(log.changedAt)}</p>
-                <button
-                  onClick={() => {
-                    if (confirm("Delete this change log entry?")) {
-                      deleteEntry.mutate({ id: log.id });
-                    }
-                  }}
-                  disabled={deleteEntry.isPending}
-                  className="p-1.5 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-40"
-                  title="Delete entry"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <div className="divide-y divide-border/30">
-                {changes.map((entry, i) => (
-                  <ChangeRow key={i} entry={entry} />
-                ))}
-              </div>
-              <NoteEditor logId={log.id} initialNote={log.note} />
-            </CardContent>
-          </Card>
-        );
-      })}
+      {groups.map(group => (
+        <Card key={group.dateKey} className="bg-card/60 border-border/50">
+          <CardContent className="p-4">
+            <p className="text-sm font-semibold mb-3">{group.label}</p>
+            <div className="space-y-3">
+              {group.rows.map((log, rowIdx) => {
+                const changes: ProgramChangeEntry[] = Array.isArray(log.changes) ? log.changes : [];
+                return (
+                  <div key={log.id} className={rowIdx > 0 ? "pt-3 border-t border-border/30" : ""}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 divide-y divide-border/20">
+                        {changes.map((entry, i) => (
+                          <ChangeRow key={i} entry={entry} />
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (confirm("Delete this change log entry?")) {
+                            deleteEntry.mutate({ id: log.id });
+                          }
+                        }}
+                        disabled={deleteEntry.isPending}
+                        className="p-1.5 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-40 shrink-0 mt-0.5"
+                        title="Delete entry"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <NoteEditor logId={log.id} initialNote={log.note} />
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
