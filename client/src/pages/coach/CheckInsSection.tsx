@@ -318,6 +318,16 @@ export function CheckInsDetailPanel({ clientId, focusWeekNumber }: { clientId: n
     onError: () => toast.error("Failed to mark complete"),
   });
 
+  const skipCycle = trpc.checkIn.skipCycle.useMutation({
+    onSuccess: () => {
+      toast.success("Check-in skipped — next cycle scheduled");
+      utils.checkIn.clientCurrentCycle.invalidate();
+      utils.checkIn.clientHistory.invalidate();
+      utils.checkIn.clientStatusList.invalidate();
+    },
+    onError: () => toast.error("Failed to skip cycle"),
+  });
+
   const markReviewed = trpc.checkIn.markReviewed.useMutation({
     onSuccess: () => {
       utils.checkIn.clientHistory.invalidate();
@@ -401,13 +411,22 @@ export function CheckInsDetailPanel({ clientId, focusWeekNumber }: { clientId: n
           </button>
         )}
         {status === "overdue" && (
-          <button
-            onClick={() => markComplete.mutate({ clientId })}
-            disabled={markComplete.isPending}
-            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-          >
-            {markComplete.isPending ? "Saving…" : "Advance Cycle"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => skipCycle.mutate({ clientId })}
+              disabled={skipCycle.isPending || markComplete.isPending}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-colors disabled:opacity-50"
+            >
+              {skipCycle.isPending ? "Skipping…" : "Skip"}
+            </button>
+            <button
+              onClick={() => markComplete.mutate({ clientId })}
+              disabled={markComplete.isPending || skipCycle.isPending}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              {markComplete.isPending ? "Saving…" : "Advance Cycle"}
+            </button>
+          </div>
         )}
       </div>
 
@@ -471,11 +490,13 @@ export function CheckInsDetailPanel({ clientId, focusWeekNumber }: { clientId: n
                       Due {fmtDate(row.dueDate)}
                     </span>
                     <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
-                      hasSub
+                      row.skipped
+                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                        : hasSub
                         ? "bg-green-500/15 text-green-400 border-green-500/30"
                         : "bg-secondary text-muted-foreground border-border"
                     }`}>
-                      {hasSub ? "Submitted" : "Missed"}
+                      {row.skipped ? "Skipped" : hasSub ? "Submitted" : "Missed"}
                     </span>
                     {hasSub && row.submission.reviewedAt && (
                       <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full border bg-primary/10 text-primary border-primary/20 flex items-center gap-1">

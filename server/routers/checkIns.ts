@@ -305,6 +305,7 @@ export const checkInRouter = router({
           dueDate: dueDateStr,
           completedAt: r.completedAt,
           submissionId: r.submissionId ?? null,
+          skipped: r.skipped ?? false,
           submission: r.submission,
           answers,
           weekNumber: computeWeekNumber(startDateStr, checkInDay, dueDateStr),
@@ -327,6 +328,7 @@ export const checkInRouter = router({
             dueDate: dueDateStr,
             completedAt: null as any,
             submissionId: activeCycle.submissionId,
+            skipped: false,
             submission: submission as any,
             answers,
             weekNumber,
@@ -344,6 +346,17 @@ export const checkInRouter = router({
     .input(z.object({ clientId: z.number() }))
     .mutation(async ({ input }) => {
       await db.completeCycle(input.clientId);
+      return { success: true };
+    }),
+
+  /**
+   * COACH: Skip the current cycle (client didn't check in).
+   * Archives with skipped=true, advances dueDate by 7 days, resets to upcoming.
+   */
+  skipCycle: adminProcedure
+    .input(z.object({ clientId: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.skipCycle(input.clientId);
       return { success: true };
     }),
 

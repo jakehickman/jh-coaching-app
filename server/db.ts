@@ -1625,6 +1625,38 @@ export async function completeCycle(clientId: number): Promise<void> {
     .where(eq(checkInCycles.clientId, clientId));
 }
 
+/**
+ * Skip the current cycle (coach action for missed check-ins).
+ * Archives to history with skipped=true, advances dueDate by 7 days.
+ */
+export async function skipCycle(clientId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const cycle = await getActiveCycle(clientId);
+  if (!cycle) return;
+
+  const dueDateStr = dateColToStr(cycle.dueDate);
+
+  // Archive to history as skipped
+  await db.insert(checkInHistory).values({
+    clientId,
+    dueDate: dueDateStr as any,
+    submissionId: null,
+    skipped: true,
+    completedAt: new Date(),
+  });
+
+  // Advance: dueDate + 7, reset to upcoming
+  const nextDue = new Date(dueDateStr + "T00:00:00Z");
+  nextDue.setUTCDate(nextDue.getUTCDate() + 7);
+  const nextDueStr = nextDue.toISOString().slice(0, 10);
+
+  await db.update(checkInCycles)
+    .set({ dueDate: nextDueStr as any, status: "upcoming", submissionId: null, updatedAt: new Date() })
+    .where(eq(checkInCycles.clientId, clientId));
+}
+
 /** Get check-in history for a client (most recent first) */
 export async function getCycleHistory(clientId: number): Promise<(CheckInHistoryRow & { submission: CheckInSubmission | null })[]> {
   const db = await getDb();

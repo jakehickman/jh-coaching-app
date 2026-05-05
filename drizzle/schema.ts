@@ -503,6 +503,7 @@ export const checkInHistory = mysqlTable("check_in_history", {
   clientId: int("clientId").notNull(), // FK -> users.id
   dueDate: date("dueDate").notNull(),  // The due date of the completed cycle
   submissionId: int("submissionId"),   // FK -> check_in_submissions.id (null if cycle was missed)
+  skipped: boolean("skipped").default(false).notNull(),
   completedAt: timestamp("completedAt").defaultNow().notNull(),
 });
 
