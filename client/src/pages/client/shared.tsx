@@ -67,10 +67,11 @@ export function ScoreInput({ label, value, onChange, max = 10 }: {
   onChange: (v: number) => void;
   max?: number;
 }) {
+  const isEmpty = value == null;
   return (
     <div>
       <p className="text-sm text-muted-foreground mb-2">{label}</p>
-      <div className="flex gap-2">
+      <div className={`flex gap-2 rounded-lg transition-all ${isEmpty ? 'outline outline-1 outline-amber-500/50' : ''}`}>
         {Array.from({ length: max }, (_, i) => i + 1).map(n => (
           <button
             key={n}

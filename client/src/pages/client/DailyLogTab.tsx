@@ -427,15 +427,15 @@ export default function DailyLogTab() {
           <div className="space-y-3">
             <div>
               <label className="text-sm text-muted-foreground block mb-1.5">Weight (kg)</label>
-              <input type="number" step="0.1" value={form.weight} onChange={f("weight")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <input type="number" step="0.1" value={form.weight} onChange={f("weight")} className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.weight === '' ? 'border-amber-500/50' : 'border-border'}`} />
             </div>
             <div>
               <label className="text-sm text-muted-foreground block mb-1.5">Sleep (hours)</label>
-              <input type="number" step="0.5" value={form.sleepHours} onChange={f("sleepHours")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <input type="number" step="0.5" value={form.sleepHours} onChange={f("sleepHours")} className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.sleepHours === '' ? 'border-amber-500/50' : 'border-border'}`} />
             </div>
             <div>
               <label className="text-sm text-muted-foreground block mb-1.5">Caffeine (servings)</label>
-              <input type="number" step="0.5" min="0" value={form.caffeineServings} onChange={f("caffeineServings")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <input type="number" step="0.5" min="0" value={form.caffeineServings} onChange={f("caffeineServings")} className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.caffeineServings === '' ? 'border-amber-500/50' : 'border-border'}`} />
               <p className="text-[10px] text-muted-foreground mt-0.5">1 serving ≈ 80–100mg</p>
             </div>
             <div>
@@ -445,7 +445,7 @@ export default function DailyLogTab() {
                   <span className="text-xs text-primary font-medium">Goal: {((profile as any).stepGoal as number).toLocaleString()}</span>
                 )}
               </div>
-              <input type="number" value={form.stepsCount} onChange={f("stepsCount")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <input type="number" value={form.stepsCount} onChange={f("stepsCount")} className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.stepsCount === '' ? 'border-amber-500/50' : 'border-border'}`} />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -455,7 +455,7 @@ export default function DailyLogTab() {
                 )}
               </div>
               <div className="relative">
-                <input type="number" value={form.lissMinutes} onChange={f("lissMinutes")} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary pr-14" />
+                <input type="number" value={form.lissMinutes} onChange={f("lissMinutes")} className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary pr-14 border ${form.lissMinutes === '' ? 'border-amber-500/50' : 'border-border'}`} />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">mins</span>
               </div>
             </div>
