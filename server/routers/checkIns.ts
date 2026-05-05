@@ -339,19 +339,38 @@ export const checkInRouter = router({
       }
 
       // ── Inject synthetic "missed" entries for past expected check-in dates
-      // Anchor from the earliest known cycle date and walk forward 7 days at a time.
+      // Anchor from the computed first due date (startDate + checkInDay) so weeks
+      // before the first recorded cycle are also surfaced as missed.
       const allKnownDates = [
         ...history.map(h => h.dueDate),
         ...(activeCycle ? [toDateStr(activeCycle.dueDate)] : []),
       ];
 
-      if (allKnownDates.length > 0) {
+      if (allKnownDates.length > 0 || (startDateStr && checkInDay)) {
         const activeDueDateStr = activeCycle ? toDateStr(activeCycle.dueDate) : null;
         const accountedDates = new Set(history.map(h => h.dueDate));
 
-        // Find the earliest known due date as anchor (W1)
-        const earliestDateStr = [...allKnownDates].sort()[0];
-        const cursor = new Date(earliestDateStr + "T00:00:00Z");
+        // Compute first expected due date from startDate + checkInDay
+        let computedFirstDue: string | null = null;
+        if (startDateStr && checkInDay) {
+          const dow = DAY_NAME_TO_DOW[checkInDay.toLowerCase()];
+          if (dow !== undefined) {
+            const start = new Date(startDateStr + "T00:00:00Z");
+            const startDow = start.getUTCDay();
+            let daysUntilFirst = (dow - startDow + 7) % 7;
+            if (daysUntilFirst === 0) daysUntilFirst = 7;
+            const firstDue = new Date(start);
+            firstDue.setUTCDate(start.getUTCDate() + daysUntilFirst);
+            computedFirstDue = `${firstDue.getUTCFullYear()}-${String(firstDue.getUTCMonth() + 1).padStart(2, "0")}-${String(firstDue.getUTCDate()).padStart(2, "0")}`;
+          }
+        }
+
+        // Use the earlier of: computed first due date vs earliest known date
+        const knownEarliest = allKnownDates.length > 0 ? [...allKnownDates].sort()[0] : null;
+        const anchorDateStr = computedFirstDue && knownEarliest
+          ? (computedFirstDue < knownEarliest ? computedFirstDue : knownEarliest)
+          : (computedFirstDue ?? knownEarliest!);
+        const cursor = new Date(anchorDateStr + "T00:00:00Z");
 
         while (true) {
           const dueDateStr = `${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, "0")}-${String(cursor.getUTCDate()).padStart(2, "0")}`;

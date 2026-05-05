@@ -282,17 +282,17 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                 {(() => {
                   const phaseWk = getPhaseWeekNumber(phases, week.weekStart);
                   const wNum = phaseWk ?? week.weekNumber;
-                  if (phaseLabel && phaseColor) {
-                    return (
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
-                        W{wNum} – {phaseLabel}
-                      </span>
-                    );
-                  }
                   return (
-                    <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                      W{wNum}
-                    </span>
+                    <>
+                      <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                        W{wNum}
+                      </span>
+                      {phaseLabel && phaseColor && (
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
+                          {phaseLabel}
+                        </span>
+                      )}
+                    </>
                   );
                 })()}
                 <span className="text-sm font-semibold text-foreground truncate">{week.label}</span>
