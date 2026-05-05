@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { AlertCircle, CheckCircle2, Calendar, RefreshCw, Settings, SlidersHorizontal, ExternalLink } from "lucide-react";
+import { AlertCircle, CheckCircle2, Calendar, RefreshCw, Settings, SlidersHorizontal, ExternalLink, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import {
   Sheet,
@@ -159,6 +160,15 @@ interface ClientCardProps {
 
 function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, badgeClass, onCustomise }: ClientCardProps) {
   const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
+  const skipCycle = trpc.checkIn.skipCycle.useMutation({
+    onSuccess: () => {
+      toast.success(`${name}'s check-in skipped — next cycle scheduled`);
+      utils.checkIn.clientStatusList.invalidate();
+      utils.checkIn.clientHistory.invalidate();
+    },
+    onError: () => toast.error("Failed to skip cycle"),
+  });
 
   const initials = name
     .split(" ")
@@ -213,6 +223,16 @@ function ClientCard({ clientId, name, status, dueDate, weekNumber, cardClass, ba
 
         {/* Hover action buttons */}
         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+          {status === "overdue" && (
+            <button
+              onClick={(e) => { e.stopPropagation(); skipCycle.mutate({ clientId }); }}
+              disabled={skipCycle.isPending}
+              title="Skip this check-in"
+              className="p-1 rounded text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 disabled:opacity-50"
+            >
+              <SkipForward size={13} />
+            </button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); navigate(`/coach/client/${clientId}?tab=check-ins`); }}
             title="View check-ins"

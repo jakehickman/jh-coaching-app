@@ -252,9 +252,9 @@ export function CoachCheckInsTab({ clientId }: Props) {
     return map;
   }, [checkInHistory]);
 
-  // Only show weeks that have a check-in submission
+  // Show weeks that have a submission OR are in history (skipped/missed)
   const weeksWithSubmission = useMemo(() =>
-    weeks.filter(w => historyByWeek.has(w.weekNumber) && historyByWeek.get(w.weekNumber)?.submissionId),
+    weeks.filter(w => historyByWeek.has(w.weekNumber)),
     [weeks, historyByWeek]
   );
 
@@ -307,11 +307,40 @@ export function CoachCheckInsTab({ clientId }: Props) {
     );
   }
 
-  const visibleWeeks = showAll ? weeksWithSubmission : weeksWithSubmission.slice(0, DEFAULT_VISIBLE);
+  // Separate skipped/missed from submitted for toggle
+  const weeksWithActualSubmission = weeksWithSubmission.filter(w => historyByWeek.get(w.weekNumber)?.submissionId);
+  const weeksSkippedOrMissed = weeksWithSubmission.filter(w => !historyByWeek.get(w.weekNumber)?.submissionId);
+
+  const visibleWeeks = showAll ? weeksWithSubmission : weeksWithActualSubmission.slice(0, DEFAULT_VISIBLE);
 
   return (
     <div className="mt-2 space-y-2">
-      {visibleWeeks.map((week) => {
+        {/* Skipped / missed placeholder cards */}
+        {weeksSkippedOrMissed.map((week) => {
+          const historyRow = historyByWeek.get(week.weekNumber);
+          const isSkipped = historyRow?.skipped;
+          return (
+            <div key={`skipped-${week.weekStart}`} className="rounded-xl border border-border bg-card opacity-60">
+              <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full flex-shrink-0">
+                    W{week.weekNumber}
+                  </span>
+                  <span className="text-sm font-semibold text-muted-foreground">{week.label}</span>
+                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
+                    isSkipped
+                      ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
+                      : "border-border text-muted-foreground bg-secondary"
+                  }`}>
+                    {isSkipped ? "Skipped" : "Missed"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {visibleWeeks.map((week) => {
         const historyRow = historyByWeek.get(week.weekNumber);
         const submission = historyRow?.submission ?? null;
         const submissionAnswers = historyRow?.answers ?? [];
