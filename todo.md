@@ -635,3 +635,4 @@
 - [x] Program change log: sort changes by session label then add-before-remove within each session
 - [x] Training: only show "Last" weight/reps when previous session used the same machine preset as current session
 - [x] Training session: make progress bar sticky at top of session logging view
+- [x] Fix double-advance bug in completeCycle: reviewing W3 also archived W4 as Missed in the same operation; correct Jake's data and patch the server logic
