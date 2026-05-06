@@ -634,3 +634,4 @@
 - [x] Consolidate existing same-day change log entries in DB into single rows (program + cardio), and merge on future saves
 - [x] Program change log: sort changes by session label then add-before-remove within each session
 - [x] Training: only show "Last" weight/reps when previous session used the same machine preset as current session
+- [x] Training session: make progress bar sticky at top of session logging view

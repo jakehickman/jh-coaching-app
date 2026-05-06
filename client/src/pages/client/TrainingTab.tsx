@@ -1003,15 +1003,17 @@ function WorkoutLogTab() {
 
         return (
           <div className="space-y-3 pb-24">
-            {/* Session progress bar */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all duration-500"
-                  style={{ width: `${progressPct}%` }}
-                />
+            {/* Session progress bar — sticky at top */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 border-b border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-500"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground flex-shrink-0">{completedExercises}/{totalExercises}</span>
               </div>
-              <span className="text-xs font-medium text-muted-foreground flex-shrink-0">{completedExercises}/{totalExercises}</span>
             </div>
             {(dayDef?.exercises ?? []).map((ex, i) => {
               const subName = substitutions[ex.name];
