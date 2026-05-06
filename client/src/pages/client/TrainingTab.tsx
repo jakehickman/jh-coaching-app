@@ -1020,7 +1020,7 @@ function WorkoutLogTab() {
               const isCollapsed = collapsedExercises[displayName] ?? false;
               // When a substitution is active, only look up by the sub name.
               // Never fall back to the original exercise's last performance — different movement.
-              const prevSets = subName
+              const rawPrevSets = subName
                 ? (prevExMap[displayName] ?? [])
                 : (prevExMap[ex.name] ?? []);
               const exVideoUrl = videoMap[displayName] ?? videoMap[ex.name];
@@ -1028,6 +1028,12 @@ function WorkoutLogTab() {
               const currentPreset = machinePreset[displayName] ?? "";
               const currentSettings = machineSettings[displayName] ?? "";
               const hasEquipment = !!(equipmentDetails[displayName]?.trim()) || !!currentPreset;
+              // Only show Last figures when the previous session used the same machine preset.
+              // If either side has a preset and they don't match, suppress Last to avoid
+              // comparing numbers from different machines.
+              const prevPreset = prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name] ?? "";
+              const presetMatches = (!currentPreset && !prevPreset) || (currentPreset === prevPreset);
+              const prevSets = presetMatches ? rawPrevSets : [];
               // Field is open if: has preset/text (always show) OR explicitly opened via button
               const isEquipmentOpen = hasEquipment || (!!equipmentOpen[displayName] && !isCollapsed);
               return (
