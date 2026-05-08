@@ -4,7 +4,6 @@ import {
 } from "recharts";
 import { X } from "lucide-react";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
-import { SectionLabel } from "./shared";
 
 const DAY = 86400000;
 
@@ -63,9 +62,10 @@ interface TrendFullModalProps {
   color: string;
   data: TrendPoint[];
   isScore?: boolean;
+  rangeLabel: string;
   onClose: () => void;
 }
-export function TrendFullModal({ title, unit, color, data, isScore, onClose }: TrendFullModalProps) {
+export function TrendFullModal({ title, unit, color, data, isScore, rangeLabel, onClose }: TrendFullModalProps) {
   const validData = data.filter(d => d.value != null);
   const avg = validData.length > 0
     ? (validData.reduce((s, d) => s + d.value!, 0) / validData.length).toFixed(isScore ? 1 : 0)
@@ -80,7 +80,7 @@ export function TrendFullModal({ title, unit, color, data, isScore, onClose }: T
           <div>
             <p className="text-base font-bold text-foreground">{title}</p>
             {avg != null && (
-              <p className="text-xs text-muted-foreground">8-week average: {avg}{unit}</p>
+              <p className="text-xs text-muted-foreground">{rangeLabel} average: {avg}{unit}</p>
             )}
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
@@ -128,7 +128,6 @@ export function TrendFullModal({ title, unit, color, data, isScore, onClose }: T
 }
 
 // ─── DailyLogTrendsPanel ───────────────────────────────────────────────────────
-// Reusable panel that renders the 2x2 trends grid given raw daily log rows.
 interface LogRow {
   logDate: string | Date;
   sleepHours?: number | null;
@@ -145,17 +144,34 @@ interface DailyLogTrendsPanelProps {
   gridCols?: string;
 }
 
+type RangeKey = '4w' | '8w' | 'all';
+
+const RANGE_OPTIONS: { key: RangeKey; label: string; days: number | null }[] = [
+  { key: '4w', label: '4 weeks', days: 28 },
+  { key: '8w', label: '8 weeks', days: 56 },
+  { key: 'all', label: 'All time', days: null },
+];
+
 export function DailyLogTrendsPanel({ logs, clientStartDate, gridCols = "grid-cols-2" }: DailyLogTrendsPanelProps) {
   const [expandedTrend, setExpandedTrend] = useState<keyof typeof trendConfig | null>(null);
+  const [range, setRange] = useState<RangeKey>('8w');
 
+  const selectedRange = RANGE_OPTIONS.find(r => r.key === range)!;
+
+  // Build the list of days to show based on selected range
   const trendDays = useMemo(() => {
     const days: string[] = [];
-    for (let i = 55; i >= 0; i--) {
+    // For "all time", go back to clientStartDate or max 365 days
+    const maxDays = selectedRange.days ?? 365;
+    for (let i = maxDays - 1; i >= 0; i--) {
       const d = new Date(Date.now() - i * DAY);
-      days.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      // For "all time", trim to clientStartDate
+      if (selectedRange.days === null && clientStartDate && iso < clientStartDate) continue;
+      days.push(iso);
     }
     return days;
-  }, []);
+  }, [selectedRange.days, clientStartDate]);
 
   const logMap = useMemo(() => {
     const m: Record<string, LogRow> = {};
@@ -195,7 +211,25 @@ export function DailyLogTrendsPanel({ logs, clientStartDate, gridCols = "grid-co
   return (
     <>
       <div>
-        <SectionLabel>Trends (last 8 weeks)</SectionLabel>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Trends</p>
+          {/* Range toggle */}
+          <div className="flex items-center gap-1 bg-muted/30 rounded-lg p-0.5">
+            {RANGE_OPTIONS.map(opt => (
+              <button
+                key={opt.key}
+                onClick={() => setRange(opt.key)}
+                className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors ${
+                  range === opt.key
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className={`grid ${gridCols} gap-3`}>
           {(Object.keys(trendConfig) as Array<keyof typeof trendConfig>).map(key => {
             const cfg = trendConfig[key];
@@ -217,6 +251,7 @@ export function DailyLogTrendsPanel({ logs, clientStartDate, gridCols = "grid-co
       {expandedTrend && (
         <TrendFullModal
           {...trendConfig[expandedTrend]}
+          rangeLabel={selectedRange.label}
           onClose={() => setExpandedTrend(null)}
         />
       )}
