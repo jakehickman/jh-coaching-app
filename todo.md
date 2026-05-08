@@ -639,3 +639,4 @@
 - [x] Overview tab: add Trends section with 2x2 sparkline cards for Sleep, Hunger, Stress, Steps (last 8 weeks), tap-to-expand full chart modal
 - [x] Move Trends section (Sleep, Hunger, Stress, Steps sparklines) from client OverviewTab to coach ProgressSection Overview tab; remove from client view
 - [x] Trends panel: add 4 weeks / 8 weeks / All time date range toggle
+- [x] Trends modal: add linear regression trend line overlay on expanded charts

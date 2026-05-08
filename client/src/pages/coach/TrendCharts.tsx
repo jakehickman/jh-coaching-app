@@ -61,11 +61,30 @@ interface TrendFullModalProps {
   rangeLabel: string;
   onClose: () => void;
 }
+// Compute linear regression over all data points (using index as x, value as y)
+function computeTrendLine(data: TrendPoint[]): (number | null)[] {
+  const pts = data.map((d, i) => ({ x: i, y: d.value })).filter(p => p.y != null) as { x: number; y: number }[];
+  if (pts.length < 3) return data.map(() => null);
+  const n = pts.length;
+  const sumX = pts.reduce((s, p) => s + p.x, 0);
+  const sumY = pts.reduce((s, p) => s + p.y, 0);
+  const sumXY = pts.reduce((s, p) => s + p.x * p.y, 0);
+  const sumX2 = pts.reduce((s, p) => s + p.x * p.x, 0);
+  const denom = n * sumX2 - sumX * sumX;
+  if (denom === 0) return data.map(() => null);
+  const m = (n * sumXY - sumX * sumY) / denom;
+  const b = (sumY - m * sumX) / n;
+  return data.map((_, i) => parseFloat((m * i + b).toFixed(2)));
+}
+
 export function TrendFullModal({ title, unit, color, data, isScore, rangeLabel, onClose }: TrendFullModalProps) {
   const validData = data.filter(d => d.value != null);
   const avg = validData.length > 0
     ? (validData.reduce((s, d) => s + d.value!, 0) / validData.length).toFixed(isScore ? 1 : 0)
     : null;
+  // Build chart data with trend line values merged in
+  const trendValues = computeTrendLine(data);
+  const chartData = data.map((d, i) => ({ ...d, trend: trendValues[i] }));
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -88,32 +107,34 @@ export function TrendFullModal({ title, unit, color, data, isScore, rangeLabel, 
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             {isScore ? (
-              <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={10}>
+              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={10}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "#555", fontSize: 9 }} tickLine={false} interval={Math.floor(data.length / 8)} />
+                <XAxis dataKey="label" tick={{ fill: "#555", fontSize: 9 }} tickLine={false} interval={Math.floor(chartData.length / 8)} />
                 <YAxis domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fill: "#555", fontSize: 10 }} tickLine={false} />
                 <Tooltip
                   contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }}
                   labelStyle={{ color: "#aaa", fontSize: 11 }}
                   itemStyle={{ color }}
-                  formatter={(v: any) => [`${v}${unit}`, title]}
+                  formatter={(v: any, name: string) => name === 'trend' ? null : [`${v}${unit}`, title]}
                 />
-                {avg != null && <ReferenceLine y={Number(avg)} stroke={color} strokeDasharray="4 2" strokeOpacity={0.5} />}
+                {avg != null && <ReferenceLine y={Number(avg)} stroke={color} strokeDasharray="4 2" strokeOpacity={0.4} />}
                 <Bar dataKey="value" fill={color} opacity={0.85} radius={[3, 3, 0, 0]} />
+                <Line type="linear" dataKey="trend" stroke={color} strokeWidth={1.5} strokeOpacity={0.6} dot={false} connectNulls strokeDasharray="5 3" />
               </BarChart>
             ) : (
-              <LineChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <LineChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "#555", fontSize: 9 }} tickLine={false} interval={Math.floor(data.length / 8)} />
+                <XAxis dataKey="label" tick={{ fill: "#555", fontSize: 9 }} tickLine={false} interval={Math.floor(chartData.length / 8)} />
                 <YAxis domain={["auto", "auto"]} tick={{ fill: "#555", fontSize: 10 }} tickLine={false} />
                 <Tooltip
                   contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }}
                   labelStyle={{ color: "#aaa", fontSize: 11 }}
                   itemStyle={{ color }}
-                  formatter={(v: any) => [`${v}${unit}`, title]}
+                  formatter={(v: any, name: string) => name === 'trend' ? null : [`${v}${unit}`, title]}
                 />
-                {avg != null && <ReferenceLine y={Number(avg)} stroke={color} strokeDasharray="4 2" strokeOpacity={0.5} />}
+                {avg != null && <ReferenceLine y={Number(avg)} stroke={color} strokeDasharray="4 2" strokeOpacity={0.4} />}
                 <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} connectNulls={false} />
+                <Line type="linear" dataKey="trend" stroke={color} strokeWidth={1.5} strokeOpacity={0.5} dot={false} connectNulls strokeDasharray="5 3" />
               </LineChart>
             )}
           </ResponsiveContainer>
