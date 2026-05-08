@@ -641,3 +641,4 @@
 - [x] Trends panel: add 4 weeks / 8 weeks / All time date range toggle
 - [x] Trends modal: add linear regression trend line overlay on expanded charts
 - [x] Fix sticky progress bar overlapping the app header on mobile in training session view
+- [x] Replace native select dropdown for machine preset with a bottom sheet picker in TrainingTab
