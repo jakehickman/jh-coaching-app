@@ -292,64 +292,65 @@ function PresetSelector({
 
       {/* Bottom sheet */}
       <Sheet open={sheetOpen} onOpenChange={onSheetOpenChange}>
-        <SheetContent side="bottom" className="px-0 pb-8 rounded-t-2xl max-h-[75vh] overflow-y-auto">
-          <SheetHeader className="px-4 pb-3 border-b border-border">
+        <SheetContent side="bottom" className="px-0 rounded-t-2xl max-h-[75vh] flex flex-col">
+          <SheetHeader className="px-4 pb-3 border-b border-border flex-shrink-0">
             <SheetTitle className="text-sm font-semibold text-foreground text-left">{exerciseName} — Machine</SheetTitle>
           </SheetHeader>
 
-          <div className="mt-1">
+          {/* Scrollable preset list */}
+          <div className="flex-1 overflow-y-auto">
             {(presetList as any[]).length === 0 && (
               <p className="px-4 py-6 text-sm text-muted-foreground text-center">No machines saved yet.</p>
             )}
             {(presetList as any[]).map((p: any) => (
-              <div key={p.id} className="border-b border-border">
-                <div
-                  className={`flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-colors ${
-                    currentPreset === p.presetName ? "bg-primary/10" : "hover:bg-secondary/60 active:bg-secondary"
-                  }`}
-                  onClick={() => handlePickPreset(p)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[15px] text-foreground font-medium">{p.presetName}</p>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {currentPreset === p.presetName && (
-                      <Check size={16} className="text-primary" />
-                    )}
-                    <button
-                      onClick={e => { e.stopPropagation(); startRename(p); }}
-                      className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-                      title="Rename"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); handleDeletePreset(p); }}
-                      className="p-2 rounded-lg text-muted-foreground hover:text-red-400 transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+              <div
+                key={p.id}
+                className={`flex items-center gap-3 px-4 py-3.5 border-b border-border cursor-pointer transition-colors ${
+                  currentPreset === p.presetName ? "bg-primary/10" : "hover:bg-secondary/60 active:bg-secondary"
+                }`}
+                onClick={() => handlePickPreset(p)}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] text-foreground font-medium">{p.presetName}</p>
                 </div>
-                {/* Setup field — shown inline under the selected preset */}
-                {currentPreset === p.presetName && (
-                  <div className="px-4 pb-3 pt-0">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Setup</p>
-                    <input
-                      type="text"
-                      value={currentSettings}
-                      onChange={e => onSettingsChange(e.target.value)}
-                      onBlur={e => handleSettingsBlur(e.target.value)}
-                      placeholder="e.g. Seat 3, pin 8"
-                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                )}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {currentPreset === p.presetName && (
+                    <Check size={16} className="text-primary" />
+                  )}
+                  <button
+                    onClick={e => { e.stopPropagation(); startRename(p); }}
+                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                    title="Rename"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); handleDeletePreset(p); }}
+                    className="p-2 rounded-lg text-muted-foreground hover:text-red-400 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             ))}
+          </div>
 
-            {/* Add new machine row */}
+          {/* Fixed bottom: setup field + add new */}
+          <div className="flex-shrink-0 border-t border-border">
+            {currentPreset && (
+              <div className="px-4 pt-3 pb-2">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Setup</p>
+                <input
+                  type="text"
+                  value={currentSettings}
+                  onChange={e => onSettingsChange(e.target.value)}
+                  onBlur={e => handleSettingsBlur(e.target.value)}
+                  placeholder="e.g. Seat 3, pin 8"
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            )}
             <button
               className="w-full flex items-center gap-3 px-4 py-3.5 text-primary text-[15px] hover:bg-secondary/60 transition-colors"
               onClick={() => { onSheetOpenChange(false); onStartAddNew(); }}

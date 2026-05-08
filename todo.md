@@ -646,3 +646,4 @@
 - [x] Show tappable preset name pill in exercise card header when machine section is toggled off
 - [x] Refactor machine preset UX: pill opens bottom sheet directly, setup field moves inside sheet, remove expanded machine section from exercise card
 - [x] Keep machine preset sheet open after selecting a preset (don't auto-close on tap)
+- [x] Move setup field to fixed bottom of machine preset sheet (above Add new machine)
