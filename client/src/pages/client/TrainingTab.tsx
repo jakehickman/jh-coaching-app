@@ -235,7 +235,7 @@ function PresetSelector({
 
   const handlePickPreset = (preset: any) => {
     onSelectPreset(preset.presetName, preset.lastSettings ?? null, preset.id);
-    onSheetOpenChange(false);
+    // Sheet stays open so user can browse presets and view/edit setup
   };
 
   const handleDeletePreset = (preset: any) => {

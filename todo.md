@@ -645,3 +645,4 @@
 - [x] Add machine toggle icon button to exercise card header in workout log (show/hide machine section, auto-open when preset already selected)
 - [x] Show tappable preset name pill in exercise card header when machine section is toggled off
 - [x] Refactor machine preset UX: pill opens bottom sheet directly, setup field moves inside sheet, remove expanded machine section from exercise card
+- [x] Keep machine preset sheet open after selecting a preset (don't auto-close on tap)
