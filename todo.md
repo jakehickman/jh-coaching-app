@@ -640,3 +640,4 @@
 - [x] Move Trends section (Sleep, Hunger, Stress, Steps sparklines) from client OverviewTab to coach ProgressSection Overview tab; remove from client view
 - [x] Trends panel: add 4 weeks / 8 weeks / All time date range toggle
 - [x] Trends modal: add linear regression trend line overlay on expanded charts
+- [x] Fix sticky progress bar overlapping the app header on mobile in training session view

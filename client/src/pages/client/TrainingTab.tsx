@@ -1004,7 +1004,7 @@ function WorkoutLogTab() {
         return (
           <div className="space-y-3 pb-24">
             {/* Session progress bar — sticky at top */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 border-b border-border/50">
+            <div className="sticky top-14 z-10 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 border-b border-border/50">
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
                   <div
