@@ -634,7 +634,8 @@ function WorkoutLogTab() {
 
   const loadedRef = useRef<string | null>(null);
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
-  const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean>>({});
+  // null = auto (open if preset exists), true = forced open, false = forced closed
+  const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean | null>>({});
   const [prevNoteOpen, setPrevNoteOpen] = useState<Record<string, boolean>>({});
   const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>({});
 
@@ -656,7 +657,7 @@ function WorkoutLogTab() {
       if (selectedDay) saveCollapsed(sessionDate, selectedDay, next);
       // Reset equipment open state when collapsing
       if (!next[exName] === false) {
-        setEquipmentOpen(p => ({ ...p, [exName]: false }));
+        setEquipmentOpen(p => ({ ...p, [exName]: null }));
       }
       return next;
     });
@@ -1079,8 +1080,12 @@ function WorkoutLogTab() {
               const prevPreset = prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name] ?? "";
               const presetMatches = (!currentPreset && !prevPreset) || (currentPreset === prevPreset);
               const prevSets = presetMatches ? rawPrevSets : [];
-              // Machine section open if: preset already selected (auto-open) OR user toggled it
-              const isEquipmentOpen = !isCollapsed && (!!currentPreset || !!equipmentOpen[displayName]);
+              // null/undefined = auto (open when preset exists), true = forced open, false = forced closed
+              const equipmentState = equipmentOpen[displayName];
+              const isEquipmentOpen = !isCollapsed && (
+                equipmentState === true ||
+                (equipmentState !== false && !!currentPreset)
+              );
               return (
                 <Card key={displayName}>
                   <div
@@ -1151,7 +1156,7 @@ function WorkoutLogTab() {
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <button
-                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
+                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !isEquipmentOpen })); }}
                             title={isEquipmentOpen ? "Hide machine" : "Show machine"}
                             className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
                               isEquipmentOpen
