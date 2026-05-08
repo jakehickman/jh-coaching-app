@@ -24,7 +24,6 @@ export function TrendSparklineCard({ title, unit, color, data, isScore, onClick 
   const avg = validData.length > 0
     ? (validData.reduce((s, d) => s + d.value!, 0) / validData.length).toFixed(isScore ? 1 : 0)
     : null;
-  const latest = validData.length > 0 ? validData[validData.length - 1].value : null;
   return (
     <button
       onClick={onClick}
@@ -32,14 +31,11 @@ export function TrendSparklineCard({ title, unit, color, data, isScore, onClick 
     >
       <div className="flex items-start justify-between mb-1">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{title}</p>
-        {avg != null && (
-          <span className="text-[10px] text-muted-foreground/60 shrink-0 ml-1">avg {avg}{unit}</span>
-        )}
       </div>
-      {latest != null && (
+      {avg != null && (
         <p className="text-lg font-bold text-foreground mb-1.5" style={{ color }}>
-          {latest}{unit}
-          <span className="text-xs font-normal text-muted-foreground ml-1">latest</span>
+          {avg}{unit}
+          <span className="text-xs font-normal text-muted-foreground ml-1">avg</span>
         </p>
       )}
       {validData.length === 0 ? (
