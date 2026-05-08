@@ -25,6 +25,7 @@ import CardioChangeLogTab from "./CardioChangeLogTab";
 import { CoachCheckInsTab } from "./CoachCheckInsTab";
 import { UnifiedChangeLog } from "./UnifiedChangeLog";
 import { PhasesTab } from "./PhasesTab";
+import { DailyLogTrendsPanel } from "./TrendCharts";
 
 // ─── Collapsible Change History Panel ───────────────────────────────────────
 function ChangeHistoryPanel({ children, label = "Change History" }: { children: React.ReactNode; label?: string }) {
@@ -1968,6 +1969,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               {(logs ?? []).length > 0 && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
+                  <DailyLogTrendsPanel logs={logs ?? []} clientStartDate={clientStartDate} gridCols="grid-cols-2" />
                 </div>
               )}
             </div>

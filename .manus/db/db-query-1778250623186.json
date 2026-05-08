@@ -1,0 +1,50 @@
+{
+  "query": "SELECT logDate, sleepHours, sleepQuality, hungerLevel, stressLevel, stepsCount FROM daily_logs WHERE userId = 1 ORDER BY logDate DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT logDate, sleepHours, sleepQuality, hungerLevel, stressLevel, stepsCount FROM daily_logs WHERE userId = 1 ORDER BY logDate DESC LIMIT 5;",
+  "rows": [
+    {
+      "logDate": "2026-05-08",
+      "sleepHours": "7",
+      "sleepQuality": "3",
+      "hungerLevel": "NULL",
+      "stressLevel": "NULL",
+      "stepsCount": "NULL"
+    },
+    {
+      "logDate": "2026-05-07",
+      "sleepHours": "9",
+      "sleepQuality": "4",
+      "hungerLevel": "2",
+      "stressLevel": "2",
+      "stepsCount": "6800"
+    },
+    {
+      "logDate": "2026-05-06",
+      "sleepHours": "8.5",
+      "sleepQuality": "4",
+      "hungerLevel": "3",
+      "stressLevel": "2",
+      "stepsCount": "9700"
+    },
+    {
+      "logDate": "2026-05-05",
+      "sleepHours": "4",
+      "sleepQuality": "1",
+      "hungerLevel": "3",
+      "stressLevel": "2",
+      "stepsCount": "8400"
+    },
+    {
+      "logDate": "2026-05-04",
+      "sleepHours": "8",
+      "sleepQuality": "3",
+      "hungerLevel": "3",
+      "stressLevel": "2",
+      "stepsCount": "6700"
+    }
+  ],
+  "messages": [],
+  "stdout": "logDate\tsleepHours\tsleepQuality\thungerLevel\tstressLevel\tstepsCount\n2026-05-08\t7\t3\tNULL\tNULL\tNULL\n2026-05-07\t9\t4\t2\t2\t6800\n2026-05-06\t8.5\t4\t3\t2\t9700\n2026-05-05\t4\t1\t3\t2\t8400\n2026-05-04\t8\t3\t3\t2\t6700\n",
+  "stderr": "",
+  "execution_time_ms": 1724
+}

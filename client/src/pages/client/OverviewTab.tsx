@@ -2,11 +2,11 @@ import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { SectionLabel, Card, MetricCard } from "./shared";
-import { CheckSquare, Square, X } from "lucide-react";
+import { CheckSquare, Square } from "lucide-react";
 
 // ─── HabitsSummary ─────────────────────────────────────────────────────────────
 function HabitsSummary() {
@@ -131,128 +131,6 @@ function HabitsSummary() {
   );
 }
 
-// ─── TrendSparklineCard ────────────────────────────────────────────────────────
-type TrendPoint = { label: string; value: number | null };
-
-interface TrendSparklineCardProps {
-  title: string;
-  unit: string;
-  color: string;
-  data: TrendPoint[];
-  maxScale?: number;
-  isScore?: boolean; // 1-5 scale
-  onClick: () => void;
-}
-
-function TrendSparklineCard({ title, unit, color, data, maxScale, isScore, onClick }: TrendSparklineCardProps) {
-  const validData = data.filter(d => d.value != null);
-  const avg = validData.length > 0
-    ? (validData.reduce((s, d) => s + d.value!, 0) / validData.length).toFixed(isScore ? 1 : 0)
-    : null;
-  const latest = validData.length > 0 ? validData[validData.length - 1].value : null;
-
-  return (
-    <button
-      onClick={onClick}
-      className="bg-card border border-border rounded-xl p-3 text-left w-full hover:border-primary/40 transition-colors active:scale-[0.98]"
-    >
-      <div className="flex items-start justify-between mb-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{title}</p>
-        {avg != null && (
-          <span className="text-[10px] text-muted-foreground/60 shrink-0 ml-1">avg {avg}{unit}</span>
-        )}
-      </div>
-      {latest != null && (
-        <p className="text-lg font-bold text-foreground mb-1.5" style={{ color }}>
-          {latest}{unit}
-          <span className="text-xs font-normal text-muted-foreground ml-1">latest</span>
-        </p>
-      )}
-      {validData.length === 0 ? (
-        <p className="text-xs text-muted-foreground/50 py-4 text-center">No data yet</p>
-      ) : (
-        <ResponsiveContainer width="100%" height={60}>
-          <BarChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }} barSize={6}>
-            <Bar dataKey="value" fill={color} opacity={0.8} radius={[2, 2, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-    </button>
-  );
-}
-
-// ─── TrendFullModal ────────────────────────────────────────────────────────────
-interface TrendFullModalProps {
-  title: string;
-  unit: string;
-  color: string;
-  data: TrendPoint[];
-  isScore?: boolean;
-  onClose: () => void;
-}
-
-function TrendFullModal({ title, unit, color, data, isScore, onClose }: TrendFullModalProps) {
-  const validData = data.filter(d => d.value != null);
-  const avg = validData.length > 0
-    ? (validData.reduce((s, d) => s + d.value!, 0) / validData.length).toFixed(isScore ? 1 : 0)
-    : null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="bg-background border border-border rounded-t-2xl w-full max-w-lg p-5 pb-8"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-base font-bold text-foreground">{title}</p>
-            {avg != null && (
-              <p className="text-xs text-muted-foreground">8-week average: {avg}{unit}</p>
-            )}
-          </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
-            <X size={18} />
-          </button>
-        </div>
-        {validData.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No data logged yet.</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            {isScore ? (
-              <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={10}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "#555", fontSize: 9 }} tickLine={false} interval={Math.floor(data.length / 8)} />
-                <YAxis domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fill: "#555", fontSize: 10 }} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }}
-                  labelStyle={{ color: "#aaa", fontSize: 11 }}
-                  itemStyle={{ color }}
-                  formatter={(v: any) => [`${v}${unit}`, title]}
-                />
-                {avg != null && <ReferenceLine y={Number(avg)} stroke={color} strokeDasharray="4 2" strokeOpacity={0.5} />}
-                <Bar dataKey="value" fill={color} opacity={0.85} radius={[3, 3, 0, 0]} />
-              </BarChart>
-            ) : (
-              <LineChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "#555", fontSize: 9 }} tickLine={false} interval={Math.floor(data.length / 8)} />
-                <YAxis domain={["auto", "auto"]} tick={{ fill: "#555", fontSize: 10 }} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8 }}
-                  labelStyle={{ color: "#aaa", fontSize: 11 }}
-                  itemStyle={{ color }}
-                  formatter={(v: any) => [`${v}${unit}`, title]}
-                />
-                {avg != null && <ReferenceLine y={Number(avg)} stroke={color} strokeDasharray="4 2" strokeOpacity={0.5} />}
-                <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} connectNulls={false} />
-              </LineChart>
-            )}
-          </ResponsiveContainer>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // ─── OverviewTab ──────────────────────────────────────────────────────────────
 const PHASE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -264,9 +142,8 @@ const PHASE_COLORS: Record<string, { bg: string; text: string; border: string }>
 
 export default function OverviewTab() {
   const { viewAsUserId } = useViewAs();
-  // Fetch 60 days of logs to cover ~8 weeks for trends
-  const { data: logsOwn } = trpc.dailyLog.list.useQuery({ limit: 60 }, { enabled: !viewAsUserId });
-  const { data: logsAdmin } = trpc.dailyLog.listForClient.useQuery({ userId: viewAsUserId!, limit: 60 }, { enabled: !!viewAsUserId });
+  const { data: logsOwn } = trpc.dailyLog.list.useQuery({ limit: 30 }, { enabled: !viewAsUserId });
+  const { data: logsAdmin } = trpc.dailyLog.listForClient.useQuery({ userId: viewAsUserId!, limit: 30 }, { enabled: !!viewAsUserId });
   const logs = viewAsUserId ? logsAdmin : logsOwn;
   const { data: profileOwn } = trpc.profile.get.useQuery(undefined, { enabled: !viewAsUserId });
   const { data: profileAdmin } = trpc.profile.getById.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
@@ -275,7 +152,6 @@ export default function OverviewTab() {
   const { data: programAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const program = viewAsUserId ? programAdmin : programOwn;
 
-  const [expandedTrend, setExpandedTrend] = useState<'sleep' | 'hunger' | 'stress' | 'steps' | null>(null);
 
   // Active phase for the phase banner
   const { data: phasesOwn } = trpc.phases.listMine.useQuery(undefined, { enabled: !viewAsUserId });
@@ -425,49 +301,6 @@ export default function OverviewTab() {
   );
   const alreadySubmittedThisWeek = currentCycle?.status === "submitted" || hasSubmittedThisWeek === true;
 
-  // ─── Trends data: last 56 days (8 weeks) ──────────────────────────────────
-  const trendDays = useMemo(() => {
-    const days: string[] = [];
-    for (let i = 55; i >= 0; i--) {
-      const d = new Date(Date.now() - i * DAY);
-      days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
-    }
-    return days;
-  }, []);
-
-  const logMap = useMemo(() => {
-    const m: Record<string, typeof allLogs[0]> = {};
-    for (const l of allLogs) {
-      const iso = toLocalDateStr(l.logDate);
-      if (iso) m[iso] = l;
-    }
-    return m;
-  }, [allLogs]);
-
-  const makeTrendData = (field: 'sleepHours' | 'sleepQuality' | 'hungerLevel' | 'stressLevel' | 'stepsCount'): TrendPoint[] => {
-    return trendDays
-      .filter(d => !clientStartDate || d >= clientStartDate)
-      .map(d => {
-        const log = logMap[d];
-        const val = log ? (log as any)[field] : null;
-        const label = d.slice(5); // MM-DD
-        return { label, value: val != null ? Number(val) : null };
-      });
-  };
-
-  const sleepData = useMemo(() => makeTrendData('sleepHours'), [logMap, trendDays, clientStartDate]);
-  const hungerData = useMemo(() => makeTrendData('hungerLevel'), [logMap, trendDays, clientStartDate]);
-  const stressData = useMemo(() => makeTrendData('stressLevel'), [logMap, trendDays, clientStartDate]);
-  const stepsData = useMemo(() => makeTrendData('stepsCount'), [logMap, trendDays, clientStartDate]);
-
-  const hasTrendData = [...sleepData, ...hungerData, ...stressData, ...stepsData].some(d => d.value != null);
-
-  const trendConfig = {
-    sleep:  { title: 'Sleep', unit: 'h', color: '#818cf8', data: sleepData, isScore: false },
-    hunger: { title: 'Hunger', unit: '/5', color: '#fb923c', data: hungerData, isScore: true },
-    stress: { title: 'Stress', unit: '/5', color: '#f87171', data: stressData, isScore: true },
-    steps:  { title: 'Steps', unit: '', color: '#34d399', data: stepsData, isScore: false },
-  } as const;
 
   return (
     <div className="space-y-6">
@@ -545,28 +378,6 @@ export default function OverviewTab() {
         </div>
       )}
 
-      {hasTrendData && (
-        <div>
-          <SectionLabel>Trends (last 8 weeks)</SectionLabel>
-          <div className="grid grid-cols-2 gap-3">
-            {(Object.keys(trendConfig) as Array<keyof typeof trendConfig>).map(key => {
-              const cfg = trendConfig[key];
-              return (
-                <TrendSparklineCard
-                  key={key}
-                  title={cfg.title}
-                  unit={cfg.unit}
-                  color={cfg.color}
-                  data={cfg.data}
-                  isScore={cfg.isScore}
-                  onClick={() => setExpandedTrend(key)}
-                />
-              );
-            })}
-          </div>
-          <p className="text-[10px] text-muted-foreground/50 text-center mt-2">Tap a card to expand</p>
-        </div>
-      )}
 
       <HabitsSummary />
 
@@ -595,12 +406,6 @@ export default function OverviewTab() {
         </svg>
       </a>
 
-      {expandedTrend && (
-        <TrendFullModal
-          {...trendConfig[expandedTrend]}
-          onClose={() => setExpandedTrend(null)}
-        />
-      )}
     </div>
   );
 }
