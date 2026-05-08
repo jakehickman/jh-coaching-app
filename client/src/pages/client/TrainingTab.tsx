@@ -1114,13 +1114,17 @@ function WorkoutLogTab() {
                         {subName && (
                           <p className="text-xs text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
                         )}
-                        {/* Preset pill — visible when machine section is hidden but a preset is set */}
-                        {currentPreset && !isEquipmentOpen && (
+                        {/* Pill — always visible when card is expanded; toggles the machine section */}
+                        {!isCollapsed && (
                           <button
-                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: true })); }}
-                            className="inline-flex items-center mt-2 mb-0.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary/80 hover:bg-primary/20 transition-colors"
+                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !isEquipmentOpen })); }}
+                            className={`inline-flex items-center mt-2 mb-0.5 px-3 py-1 rounded-full border text-xs transition-colors ${
+                              currentPreset
+                                ? "bg-primary/10 border-primary/20 text-primary/80 hover:bg-primary/20"
+                                : "bg-secondary border-border text-muted-foreground hover:text-foreground"
+                            }`}
                           >
-                            {currentPreset}
+                            {currentPreset || "Add machine"}
                           </button>
                         )}
                       </div>
@@ -1164,17 +1168,6 @@ function WorkoutLogTab() {
                           })()}
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <button
-                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !isEquipmentOpen })); }}
-                            title={isEquipmentOpen ? "Hide machine" : "Show machine"}
-                            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
-                              isEquipmentOpen
-                                ? "bg-primary/15 text-primary"
-                                : "bg-secondary text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            <Settings size={15} />
-                          </button>
                           <button
                             onClick={e => { e.stopPropagation(); setHistorySheet(displayName); }}
                             title="Exercise history"
