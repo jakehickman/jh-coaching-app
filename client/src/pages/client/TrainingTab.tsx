@@ -165,6 +165,8 @@ interface PresetSelectorProps {
   currentSettings: string;
   isAddingNew: boolean;
   newPresetValue: string;
+  sheetOpen: boolean;
+  onSheetOpenChange: (open: boolean) => void;
   onSelectPreset: (presetName: string, lastSettings: string | null, presetId?: number) => void;
   onStartAddNew: () => void;
   onNewPresetChange: (val: string) => void;
@@ -177,6 +179,7 @@ interface PresetSelectorProps {
 
 function PresetSelector({
   exerciseName, currentPreset, currentSettings, isAddingNew, newPresetValue,
+  sheetOpen, onSheetOpenChange,
   onSelectPreset, onStartAddNew, onNewPresetChange, onSaveNewPreset, onCancelAddNew,
   onSettingsChange, onSettingsBlur, onDeletePreset,
 }: PresetSelectorProps) {
@@ -207,8 +210,7 @@ function PresetSelector({
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renamingFrom, setRenamingFrom] = useState("");
   const [renameValue, setRenameValue] = useState("");
-  // Bottom sheet open state
-  const [sheetOpen, setSheetOpen] = useState(false);
+  // Sheet open state is controlled by parent via props
 
   const handleSaveNewPreset = (name: string) => {
     upsertMutation.mutate({ exerciseName, presetName: name });
@@ -223,7 +225,7 @@ function PresetSelector({
     setRenamingId(preset.id);
     setRenamingFrom(preset.presetName);
     setRenameValue(preset.presetName);
-    setSheetOpen(false);
+    onSheetOpenChange(false);
   };
   const commitRename = () => {
     const trimmed = renameValue.trim();
@@ -233,152 +235,132 @@ function PresetSelector({
 
   const handlePickPreset = (preset: any) => {
     onSelectPreset(preset.presetName, preset.lastSettings ?? null, preset.id);
-    setSheetOpen(false);
+    onSheetOpenChange(false);
   };
 
   const handleDeletePreset = (preset: any) => {
     if (confirm(`Delete "${preset.presetName}"?`)) {
       onDeletePreset(preset.id, preset.presetName);
       deleteMutation.mutate({ id: preset.id });
-      setSheetOpen(false);
+      onSheetOpenChange(false);
     }
   };
 
   return (
-    <div className="mb-3 -mt-1 space-y-2">
-      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Machine</p>
-
-      {renamingId !== null ? (
-        /* ── Rename mode ── */
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={renameValue}
-            onChange={e => setRenameValue(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") setRenamingId(null); }}
-            autoFocus
-            className="flex-1 bg-secondary border border-primary rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-          <button
-            onClick={commitRename}
-            disabled={renameMutation.isPending}
-            className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50"
-          >Save</button>
-          <button
-            onClick={() => setRenamingId(null)}
-            className="px-3 py-2 bg-secondary text-muted-foreground rounded-lg text-sm"
-          >Cancel</button>
+    <>
+      {/* Rename inline (outside sheet) */}
+      {renamingId !== null && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setRenamingId(null)}>
+          <div className="w-full max-w-lg bg-background border-t border-border rounded-t-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
+            <p className="text-sm font-semibold text-foreground">Rename machine</p>
+            <input
+              type="text"
+              value={renameValue}
+              onChange={e => setRenameValue(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") setRenamingId(null); }}
+              autoFocus
+              className="w-full bg-secondary border border-primary rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <div className="flex gap-2">
+              <button onClick={commitRename} disabled={renameMutation.isPending} className="flex-1 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50">Save</button>
+              <button onClick={() => setRenamingId(null)} className="flex-1 px-3 py-2 bg-secondary text-muted-foreground rounded-lg text-sm">Cancel</button>
+            </div>
+          </div>
         </div>
-      ) : !isAddingNew ? (
-        /* ── Normal mode: trigger button ── */
-        <>
-          <button
-            onClick={() => setSheetOpen(true)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 bg-secondary border border-border rounded-lg text-sm transition-colors hover:border-primary/40 active:bg-secondary/70"
-          >
-            <Settings size={14} className="text-muted-foreground flex-shrink-0" />
-            {currentPreset ? (
-              <span className="flex-1 text-left text-foreground truncate">{currentPreset}</span>
-            ) : (
-              <span className="flex-1 text-left text-muted-foreground">Select machine…</span>
+      )}
+
+      {/* Add new machine inline */}
+      {isAddingNew && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={onCancelAddNew}>
+          <div className="w-full max-w-lg bg-background border-t border-border rounded-t-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
+            <p className="text-sm font-semibold text-foreground">New machine</p>
+            <input
+              type="text"
+              value={newPresetValue}
+              onChange={e => onNewPresetChange(e.target.value)}
+              autoFocus
+              placeholder="Machine name…"
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <div className="flex gap-2">
+              <button onClick={() => { const name = newPresetValue.trim(); if (name) handleSaveNewPreset(name); }} className="flex-1 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium">Save</button>
+              <button onClick={onCancelAddNew} className="flex-1 px-3 py-2 bg-secondary text-muted-foreground rounded-lg text-sm">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom sheet */}
+      <Sheet open={sheetOpen} onOpenChange={onSheetOpenChange}>
+        <SheetContent side="bottom" className="px-0 pb-8 rounded-t-2xl max-h-[75vh] overflow-y-auto">
+          <SheetHeader className="px-4 pb-3 border-b border-border">
+            <SheetTitle className="text-sm font-semibold text-foreground text-left">{exerciseName} — Machine</SheetTitle>
+          </SheetHeader>
+
+          <div className="mt-1">
+            {(presetList as any[]).length === 0 && (
+              <p className="px-4 py-6 text-sm text-muted-foreground text-center">No machines saved yet.</p>
             )}
-            <ChevronDown size={14} className="text-muted-foreground flex-shrink-0" />
-          </button>
-
-          {/* Bottom sheet */}
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetContent side="bottom" className="px-0 pb-8 rounded-t-2xl max-h-[70vh] overflow-y-auto">
-              <SheetHeader className="px-4 pb-3 border-b border-border">
-                <SheetTitle className="text-sm font-semibold text-foreground text-left">{exerciseName} — Machine</SheetTitle>
-              </SheetHeader>
-
-              <div className="mt-1">
-                {(presetList as any[]).length === 0 && (
-                  <p className="px-4 py-6 text-sm text-muted-foreground text-center">No machines saved yet.</p>
-                )}
-                {(presetList as any[]).map((p: any) => (
-                  <div
-                    key={p.id}
-                    className={`flex items-center gap-3 px-4 py-3.5 border-b border-border cursor-pointer transition-colors ${
-                      currentPreset === p.presetName ? "bg-primary/10" : "hover:bg-secondary/60 active:bg-secondary"
-                    }`}
-                    onClick={() => handlePickPreset(p)}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[15px] text-foreground font-medium">{p.presetName}</p>
-                      {p.lastSettings && (
-                        <p className="text-xs text-muted-foreground mt-0.5">Last: {p.lastSettings}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {currentPreset === p.presetName && (
-                        <Check size={16} className="text-primary" />
-                      )}
-                      <button
-                        onClick={e => { e.stopPropagation(); startRename(p); }}
-                        className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-                        title="Rename"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={e => { e.stopPropagation(); handleDeletePreset(p); }}
-                        className="p-2 rounded-lg text-muted-foreground hover:text-red-400 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Add new machine row */}
-                <button
-                  className="w-full flex items-center gap-3 px-4 py-3.5 text-primary text-[15px] hover:bg-secondary/60 transition-colors"
-                  onClick={() => { setSheetOpen(false); onStartAddNew(); }}
+            {(presetList as any[]).map((p: any) => (
+              <div key={p.id} className="border-b border-border">
+                <div
+                  className={`flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-colors ${
+                    currentPreset === p.presetName ? "bg-primary/10" : "hover:bg-secondary/60 active:bg-secondary"
+                  }`}
+                  onClick={() => handlePickPreset(p)}
                 >
-                  <Plus size={16} />
-                  Add new machine
-                </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] text-foreground font-medium">{p.presetName}</p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {currentPreset === p.presetName && (
+                      <Check size={16} className="text-primary" />
+                    )}
+                    <button
+                      onClick={e => { e.stopPropagation(); startRename(p); }}
+                      className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                      title="Rename"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); handleDeletePreset(p); }}
+                      className="p-2 rounded-lg text-muted-foreground hover:text-red-400 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+                {/* Setup field — shown inline under the selected preset */}
+                {currentPreset === p.presetName && (
+                  <div className="px-4 pb-3 pt-0">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Setup</p>
+                    <input
+                      type="text"
+                      value={currentSettings}
+                      onChange={e => onSettingsChange(e.target.value)}
+                      onBlur={e => handleSettingsBlur(e.target.value)}
+                      placeholder="e.g. Seat 3, pin 8"
+                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                )}
               </div>
-            </SheetContent>
-          </Sheet>
-        </>
-      ) : (
-        /* ── Add new mode ── */
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newPresetValue}
-            onChange={e => onNewPresetChange(e.target.value)}
-            autoFocus
-            placeholder="Machine name…"
-            className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-          <button
-            onClick={() => { const name = newPresetValue.trim(); if (name) handleSaveNewPreset(name); }}
-            className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
-          >Save</button>
-          <button
-            onClick={onCancelAddNew}
-            className="px-3 py-2 bg-secondary text-muted-foreground rounded-lg text-sm"
-          >Cancel</button>
-        </div>
-      )}
+            ))}
 
-      {currentPreset && renamingId === null && (
-        <>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Setup</p>
-          <input
-            type="text"
-            value={currentSettings}
-            onChange={e => onSettingsChange(e.target.value)}
-            onBlur={e => handleSettingsBlur(e.target.value)}
-            className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </>
-      )}
-    </div>
+            {/* Add new machine row */}
+            <button
+              className="w-full flex items-center gap-3 px-4 py-3.5 text-primary text-[15px] hover:bg-secondary/60 transition-colors"
+              onClick={() => { onSheetOpenChange(false); onStartAddNew(); }}
+            >
+              <Plus size={16} />
+              Add new machine
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
 
@@ -1080,12 +1062,7 @@ function WorkoutLogTab() {
               const prevPreset = prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name] ?? "";
               const presetMatches = (!currentPreset && !prevPreset) || (currentPreset === prevPreset);
               const prevSets = presetMatches ? rawPrevSets : [];
-              // null/undefined = auto (open when preset exists), true = forced open, false = forced closed
-              const equipmentState = equipmentOpen[displayName];
-              const isEquipmentOpen = !isCollapsed && (
-                equipmentState === true ||
-                (equipmentState !== false && !!currentPreset)
-              );
+              const isSheetOpen = !!equipmentOpen[displayName];
               return (
                 <Card key={displayName}>
                   <div
@@ -1114,10 +1091,10 @@ function WorkoutLogTab() {
                         {subName && (
                           <p className="text-xs text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
                         )}
-                        {/* Pill — always visible when card is expanded; toggles the machine section */}
+                        {/* Pill — opens the machine bottom sheet */}
                         {!isCollapsed && (
                           <button
-                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !isEquipmentOpen })); }}
+                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: true })); }}
                             className={`inline-flex items-center mt-2 mb-0.5 px-3 py-1 rounded-full border text-xs transition-colors ${
                               currentPreset
                                 ? "bg-primary/10 border-primary/20 text-primary/80 hover:bg-primary/20"
@@ -1200,38 +1177,36 @@ function WorkoutLogTab() {
                   })()}
 
                   {!isCollapsed && (<>
-                    {isEquipmentOpen && (
-                      <PresetSelector
-                        exerciseName={displayName}
-                        currentPreset={currentPreset}
-                        currentSettings={currentSettings}
-                        isAddingNew={newPresetInput[displayName] !== undefined}
-                        newPresetValue={newPresetInput[displayName] ?? ""}
-                        onSelectPreset={(presetName, lastSettings, presetId) => {
-                          setMachinePreset(prev => ({ ...prev, [displayName]: presetName }));
-                          if (presetId) setMachinePresetId(prev => ({ ...prev, [displayName]: presetId }));
-                          if (lastSettings != null) setMachineSettings(prev => ({ ...prev, [displayName]: lastSettings }));
-                        }}
-                        onStartAddNew={() => setNewPresetInput(prev => ({ ...prev, [displayName]: "" }))}
-                        onNewPresetChange={val => setNewPresetInput(prev => ({ ...prev, [displayName]: val }))}
-                        onSaveNewPreset={name => {
-                          // upsert is called inside PresetSelector; here we just update local state
-                          setMachinePreset(prev => ({ ...prev, [displayName]: name }));
-                          setMachineSettings(prev => ({ ...prev, [displayName]: "" }));
-                          setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; });
-                        }}
-                        onCancelAddNew={() => setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; })}
-                        onSettingsChange={val => setMachineSettings(prev => ({ ...prev, [displayName]: val }))}
-                        onSettingsBlur={_val => { /* upsert handled inside PresetSelector */ }}
-                        onDeletePreset={(_id, presetName) => {
-                          // If the deleted preset was selected, clear it
-                          if (machinePreset[displayName] === presetName) {
-                            setMachinePreset(prev => { const n = { ...prev }; delete n[displayName]; return n; });
-                            setMachineSettings(prev => { const n = { ...prev }; delete n[displayName]; return n; });
-                          }
-                        }}
-                      />
-                    )}
+                    <PresetSelector
+                      exerciseName={displayName}
+                      currentPreset={currentPreset}
+                      currentSettings={currentSettings}
+                      isAddingNew={newPresetInput[displayName] !== undefined}
+                      newPresetValue={newPresetInput[displayName] ?? ""}
+                      sheetOpen={isSheetOpen}
+                      onSheetOpenChange={open => setEquipmentOpen(prev => ({ ...prev, [displayName]: open }))}
+                      onSelectPreset={(presetName, lastSettings, presetId) => {
+                        setMachinePreset(prev => ({ ...prev, [displayName]: presetName }));
+                        if (presetId) setMachinePresetId(prev => ({ ...prev, [displayName]: presetId }));
+                        if (lastSettings != null) setMachineSettings(prev => ({ ...prev, [displayName]: lastSettings }));
+                      }}
+                      onStartAddNew={() => setNewPresetInput(prev => ({ ...prev, [displayName]: "" }))}
+                      onNewPresetChange={val => setNewPresetInput(prev => ({ ...prev, [displayName]: val }))}
+                      onSaveNewPreset={name => {
+                        setMachinePreset(prev => ({ ...prev, [displayName]: name }));
+                        setMachineSettings(prev => ({ ...prev, [displayName]: "" }));
+                        setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; });
+                      }}
+                      onCancelAddNew={() => setNewPresetInput(prev => { const n = { ...prev }; delete n[displayName]; return n; })}
+                      onSettingsChange={val => setMachineSettings(prev => ({ ...prev, [displayName]: val }))}
+                      onSettingsBlur={_val => { /* upsert handled inside PresetSelector */ }}
+                      onDeletePreset={(_id, presetName) => {
+                        if (machinePreset[displayName] === presetName) {
+                          setMachinePreset(prev => { const n = { ...prev }; delete n[displayName]; return n; });
+                          setMachineSettings(prev => { const n = { ...prev }; delete n[displayName]; return n; });
+                        }
+                      }}
+                    />
 
                     {sets.length > 0 && (
                       <div className="mb-2">
