@@ -1118,9 +1118,8 @@ function WorkoutLogTab() {
                         {currentPreset && !isEquipmentOpen && (
                           <button
                             onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: true })); }}
-                            className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[11px] text-primary/80 hover:bg-primary/20 transition-colors"
+                            className="inline-flex items-center mt-2 mb-0.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary/80 hover:bg-primary/20 transition-colors"
                           >
-                            <Settings size={9} />
                             {currentPreset}
                           </button>
                         )}
