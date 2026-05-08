@@ -1114,6 +1114,16 @@ function WorkoutLogTab() {
                         {subName && (
                           <p className="text-xs text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
                         )}
+                        {/* Preset pill — visible when machine section is hidden but a preset is set */}
+                        {currentPreset && !isEquipmentOpen && (
+                          <button
+                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: true })); }}
+                            className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[11px] text-primary/80 hover:bg-primary/20 transition-colors"
+                          >
+                            <Settings size={9} />
+                            {currentPreset}
+                          </button>
+                        )}
                       </div>
                       <ChevronDown size={16} className={`text-muted-foreground transition-transform flex-shrink-0 mt-1 ${isCollapsed ? '' : 'rotate-180'}`} />
                     </div>

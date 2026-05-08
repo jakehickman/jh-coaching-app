@@ -643,3 +643,4 @@
 - [x] Fix sticky progress bar overlapping the app header on mobile in training session view
 - [x] Replace native select dropdown for machine preset with a bottom sheet picker in TrainingTab
 - [x] Add machine toggle icon button to exercise card header in workout log (show/hide machine section, auto-open when preset already selected)
+- [x] Show tappable preset name pill in exercise card header when machine section is toggled off
