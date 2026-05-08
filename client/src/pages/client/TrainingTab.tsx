@@ -1079,8 +1079,8 @@ function WorkoutLogTab() {
               const prevPreset = prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name] ?? "";
               const presetMatches = (!currentPreset && !prevPreset) || (currentPreset === prevPreset);
               const prevSets = presetMatches ? rawPrevSets : [];
-              // Field is open if: has preset/text (always show) OR explicitly opened via button
-              const isEquipmentOpen = hasEquipment || (!!equipmentOpen[displayName] && !isCollapsed);
+              // Machine section open if: preset already selected (auto-open) OR user toggled it
+              const isEquipmentOpen = !isCollapsed && (!!currentPreset || !!equipmentOpen[displayName]);
               return (
                 <Card key={displayName}>
                   <div
@@ -1105,24 +1105,7 @@ function WorkoutLogTab() {
                             </button>
                           )}
                         </div>
-                        {/* Machine preset chip */}
-                        {currentPreset ? (
-                          <button
-                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
-                            className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[11px] text-primary/80 hover:bg-primary/20 transition-colors"
-                          >
-                            {currentPreset}
-                          </button>
-                        ) : (
-                          !isCollapsed && (
-                            <button
-                              onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: true })); }}
-                              className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              Add machine
-                            </button>
-                          )
-                        )}
+
                         {subName && (
                           <p className="text-xs text-muted-foreground mt-0.5">Substituting: {ex.name}</p>
                         )}
@@ -1167,6 +1150,17 @@ function WorkoutLogTab() {
                           })()}
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <button
+                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
+                            title={isEquipmentOpen ? "Hide machine" : "Show machine"}
+                            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
+                              isEquipmentOpen
+                                ? "bg-primary/15 text-primary"
+                                : "bg-secondary text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            <Settings size={15} />
+                          </button>
                           <button
                             onClick={e => { e.stopPropagation(); setHistorySheet(displayName); }}
                             title="Exercise history"
