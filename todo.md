@@ -636,3 +636,4 @@
 - [x] Training: only show "Last" weight/reps when previous session used the same machine preset as current session
 - [x] Training session: make progress bar sticky at top of session logging view
 - [x] Fix double-advance bug in completeCycle: reviewing W3 also archived W4 as Missed in the same operation; correct Jake's data and patch the server logic
+- [x] Overview tab: add Trends section with 2x2 sparkline cards for Sleep, Hunger, Stress, Steps (last 8 weeks), tap-to-expand full chart modal
