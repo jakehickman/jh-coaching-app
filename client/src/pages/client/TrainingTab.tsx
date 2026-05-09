@@ -1094,16 +1094,21 @@ function WorkoutLogTab() {
                         )}
                         {/* Pill — opens the machine bottom sheet */}
                         {!isCollapsed && (
-                          <button
-                            onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: true })); }}
-                            className={`inline-flex items-center mt-2 mb-0.5 px-3 py-1 rounded-full border text-xs transition-colors ${
-                              currentPreset
-                                ? "bg-primary/10 border-primary/20 text-primary/80 hover:bg-primary/20"
-                                : "bg-secondary border-border text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            {currentPreset || "Add machine"}
-                          </button>
+                          <div className="mt-2 mb-0.5">
+                            <button
+                              onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: true })); }}
+                              className={`inline-flex items-center px-3 py-1 rounded-full border text-xs transition-colors ${
+                                currentPreset
+                                  ? "bg-primary/10 border-primary/20 text-primary/80 hover:bg-primary/20"
+                                  : "bg-secondary border-border text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              {currentPreset || "Add machine"}
+                            </button>
+                            {currentPreset && currentSettings && (
+                              <p className="text-xs text-muted-foreground mt-1">{currentSettings}</p>
+                            )}
+                          </div>
                         )}
                       </div>
                       <ChevronDown size={16} className={`text-muted-foreground transition-transform flex-shrink-0 mt-1 ${isCollapsed ? '' : 'rotate-180'}`} />
