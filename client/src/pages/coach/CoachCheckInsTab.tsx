@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -224,6 +225,7 @@ interface Props {
 }
 
 export function CoachCheckInsTab({ clientId }: Props) {
+  const [confirm, ConfirmDialogNode] = useConfirm();
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [expandedInit, setExpandedInit] = useState(false);
@@ -427,7 +429,17 @@ export function CoachCheckInsTab({ clientId }: Props) {
                     <Button
                       size="sm"
                       variant={isReviewed ? 'outline' : 'default'}
-                      onClick={() => markReviewed.mutate({ id: (submission as any).id, reviewed: !isReviewed, clientId })}
+                      onClick={async () => {
+                        if (!isReviewed) {
+                          const ok = await confirm({
+                            title: 'Mark as Reviewed',
+                            description: 'This will mark the check-in as reviewed and advance the cycle to next week.',
+                            confirmLabel: 'Mark as Reviewed',
+                          });
+                          if (!ok) return;
+                        }
+                        markReviewed.mutate({ id: (submission as any).id, reviewed: !isReviewed, clientId });
+                      }}
                       disabled={markReviewed.isPending}
                       className="gap-1.5"
                     >
@@ -454,6 +466,7 @@ export function CoachCheckInsTab({ clientId }: Props) {
           </Button>
         </div>
       )}
+      {ConfirmDialogNode}
     </div>
   );
 }

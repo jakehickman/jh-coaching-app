@@ -652,3 +652,5 @@
 - [x] Hide exercise notes field behind Add note toggle
 - [ ] Rename machine preset also updates machinePreset in workout history entries
 - [x] Mark as Reviewed also advances the cycle (no separate Mark Complete needed)
+- [x] Fix 20 pre-existing TS syntax errors in CheckInsSection.tsx (were stale watcher errors, tsc passes clean)
+- [x] Add confirmation prompt before Mark as Reviewed advances the cycle
