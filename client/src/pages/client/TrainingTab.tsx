@@ -620,6 +620,7 @@ function WorkoutLogTab() {
   // null = auto (open if preset exists), true = forced open, false = forced closed
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean | null>>({});
   const [prevNoteOpen, setPrevNoteOpen] = useState<Record<string, boolean>>({});
+  const [noteOpen, setNoteOpen] = useState<Record<string, boolean>>({});
   const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>({});
 
   function getCollapseKey(date: string, dayLabel: string) {
@@ -1094,7 +1095,7 @@ function WorkoutLogTab() {
                         )}
                         {/* Pill — opens the machine bottom sheet */}
                         {!isCollapsed && (
-                          <div className="mt-2 mb-0.5">
+                          <div className="mt-2 mb-0.5 flex items-center gap-2 flex-wrap">
                             <button
                               onClick={e => { e.stopPropagation(); setEquipmentOpen(prev => ({ ...prev, [displayName]: true })); }}
                               className={`inline-flex items-center px-3 py-1 rounded-full border text-xs transition-colors ${
@@ -1106,7 +1107,7 @@ function WorkoutLogTab() {
                               {currentPreset || "Add machine"}
                             </button>
                             {currentPreset && currentSettings && (
-                              <p className="text-xs text-muted-foreground mt-1">{currentSettings}</p>
+                              <span className="text-xs text-muted-foreground">{currentSettings}</span>
                             )}
                           </div>
                         )}
@@ -1300,13 +1301,23 @@ function WorkoutLogTab() {
                     </button>
 
                     <div className="mt-3 pt-3 border-t border-border">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">Exercise notes</p>
-                      <input
-                        type="text"
-                        value={exerciseNotes[displayName] ?? ""}
-                        onChange={e => setExerciseNotes(prev => ({ ...prev, [displayName]: e.target.value }))}
-                        className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                      />
+                      {!(noteOpen[displayName] || exerciseNotes[displayName]) ? (
+                        <button
+                          onClick={e => { e.stopPropagation(); setNoteOpen(prev => ({ ...prev, [displayName]: true })); }}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          + Add note
+                        </button>
+                      ) : (
+                        <input
+                          type="text"
+                          autoFocus={noteOpen[displayName] && !exerciseNotes[displayName]}
+                          value={exerciseNotes[displayName] ?? ""}
+                          onChange={e => setExerciseNotes(prev => ({ ...prev, [displayName]: e.target.value }))}
+                          onBlur={() => { if (!exerciseNotes[displayName]) setNoteOpen(prev => ({ ...prev, [displayName]: false })); }}
+                          className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                      )}
                     </div>
                   </>)}
                 </Card>

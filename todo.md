@@ -648,3 +648,5 @@
 - [x] Keep machine preset sheet open after selecting a preset (don't auto-close on tap)
 - [x] Move setup field to fixed bottom of machine preset sheet (above Add new machine)
 - [x] Show setup details in muted text below the machine pill on the exercise card
+- [x] Move machine setup text inline with pill on same line
+- [x] Hide exercise notes field behind Add note toggle
