@@ -236,7 +236,12 @@ export function CoachCheckInsTab({ clientId }: Props) {
 
   const utils = trpc.useUtils();
   const markReviewed = trpc.checkIn.markReviewed.useMutation({
-    onSuccess: () => { utils.checkIn.clientHistory.invalidate(); toast.success('Check-in marked as reviewed'); },
+    onSuccess: () => {
+      utils.checkIn.clientHistory.invalidate();
+      utils.checkIn.clientCurrentCycle.invalidate();
+      utils.checkIn.clientStatusList.invalidate();
+      toast.success('Check-in marked as reviewed');
+    },
     onError: () => toast.error('Failed to update review status'),
   });
 

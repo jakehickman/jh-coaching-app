@@ -650,3 +650,5 @@
 - [x] Show setup details in muted text below the machine pill on the exercise card
 - [x] Move machine setup text inline with pill on same line
 - [x] Hide exercise notes field behind Add note toggle
+- [ ] Rename machine preset also updates machinePreset in workout history entries
+- [x] Mark as Reviewed also advances the cycle (no separate Mark Complete needed)

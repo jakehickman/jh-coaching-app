@@ -431,14 +431,22 @@ export const checkInRouter = router({
 
   /**
    * COACH: Mark a submission as reviewed / unreviewed.
-   * NOTE: Does NOT advance the cycle — that is a separate explicit action (markComplete).
-   * Calling completeCycle here caused a double-advance bug where reviewing a submission
-   * would also archive the next week as Missed if markComplete was also called.
+   * When marking as reviewed (reviewed=true) and clientId is provided,
+   * also advances the cycle (archives current cycle, sets next due date +7 days, resets to upcoming).
+   * This is the primary action coaches use — no separate "Mark Complete" step needed.
    */
   markReviewed: adminProcedure
     .input(z.object({ id: z.number(), reviewed: z.boolean(), clientId: z.number().optional() }))
     .mutation(async ({ input }) => {
       await db.markCheckInReviewed(input.id, input.reviewed);
+      // When marking as reviewed, also advance the cycle so it moves to upcoming
+      if (input.reviewed && input.clientId) {
+        const cycle = await db.getActiveCycle(input.clientId);
+        // Only advance if the cycle is currently submitted (has a submission)
+        if (cycle && cycle.status === 'submitted') {
+          await db.completeCycle(input.clientId);
+        }
+      }
     }),
 
   /**
