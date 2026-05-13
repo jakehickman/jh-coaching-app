@@ -303,15 +303,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                 )}
               </div>
               <div className="flex items-center gap-3 flex-shrink-0 ml-2">
-                {/* Avg weight + delta */}
-                {week.avgWeight != null && (
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-[11px] font-semibold tabular-nums text-foreground">{fmt(week.avgWeight)} kg</span>
-                    {weightDeltaPct != null && (
-                      <Delta delta={weightDeltaPct} text={`${weightDeltaPct > 0 ? "+" : ""}${weightDeltaPct.toFixed(1)}%`} higherIsBetter={null} />
-                    )}
-                  </div>
-                )}
                 <span className="text-[11px] text-muted-foreground">
                   {hasData ? `${week.daysLogged} day${week.daysLogged !== 1 ? "s" : ""}` : "No data"}
                 </span>
