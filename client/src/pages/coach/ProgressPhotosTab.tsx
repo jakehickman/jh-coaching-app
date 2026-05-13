@@ -51,12 +51,16 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
 
   // Fetch available weeks from check-in history
   const { data: historyData } = trpc.checkIn.clientHistory.useQuery({ clientId });
+  // Also fetch the current cycle so the in-progress week appears in the selector
+  const { data: currentCycle } = trpc.checkIn.clientCurrentCycle.useQuery({ clientId });
   const availableWeeks = Array.from(
-    new Set(
-      (historyData ?? [])
+    new Set([
+      ...(historyData ?? [])
         .map((h) => h.weekNumber)
-        .filter((w): w is number => w !== null && w > 0)
-    )
+        .filter((w): w is number => w !== null && w > 0),
+      // Include the current in-progress week even if it has no history entry yet
+      ...(currentCycle?.weekNumber != null && currentCycle.weekNumber > 0 ? [currentCycle.weekNumber] : []),
+    ])
   ).sort((a, b) => a - b);
 
   // Fetch weekly progress data for weight overlays
