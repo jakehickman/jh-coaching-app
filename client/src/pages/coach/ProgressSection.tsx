@@ -1347,13 +1347,13 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
         {/* Grid */}
         <div className="border border-border rounded-xl overflow-hidden">
           {/* Weekday headers */}
-          <div className="grid grid-cols-7 bg-muted/30 border-b border-border">
+          <div className="grid grid-cols-7 bg-muted/30 border-b border-border divide-x divide-border">
             {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
               <div key={d} className="py-2 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{d}</div>
             ))}
           </div>
-          {/* Day cells */}
-          <div className="grid grid-cols-7">
+          {/* Day cells — wrap each row in a div so borders are clean */}
+          <div className="grid grid-cols-7 divide-x divide-y divide-border">
             {cells.map((cell, idx) => {
               const sess = cell.iso ? sessionByDate[cell.iso] : null;
               const isToday = cell.iso === todayIso;
@@ -1376,8 +1376,7 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                 <div
                   key={idx}
                   className={[
-                    'min-h-[90px] p-1.5 border-r border-b border-border last:border-r-0',
-                    idx % 7 === 6 ? 'border-r-0' : '',
+                    'min-h-[90px] p-1.5',
                     cell.otherMonth ? 'opacity-30 bg-card' : 'bg-card',
                     isToday ? 'bg-primary/5' : '',
                     isSelected ? 'ring-1 ring-inset ring-primary/40' : '',
