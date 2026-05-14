@@ -293,7 +293,7 @@ function MealPlanTab() {
               <div className="flex items-center gap-2 mb-1">
                 <Candy size={14} className="text-pink-400" />
                 <p className="text-[10px] text-pink-400 uppercase tracking-wider font-semibold">
-                  {dayType === "training" ? "Training Day" : "Rest Day"} Treat Allowance
+                  {dayType === "training" ? "Training Day" : "Rest Day"} Free Calories
                 </p>
               </div>
               <p className="text-sm text-foreground">

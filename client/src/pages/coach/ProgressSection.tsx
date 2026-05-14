@@ -529,8 +529,8 @@ function NutritionTab({ clientId }: { clientId: number }) {
             <span className="text-xl font-bold tabular-nums text-foreground">
               {displayCals != null ? displayCals.toLocaleString() : "—"}
             </span>
-            {treat > 0 && mealCals != null && (
-              <span className="text-[10px] text-muted-foreground/50 leading-none">{mealCals.toLocaleString()} meals + {treat} treat</span>
+              {treat > 0 && mealCals != null && (
+              <span className="text-[10px] text-muted-foreground/50 leading-none">{mealCals.toLocaleString()} meals + {treat} free</span>
             )}
             <span className="text-[10px] text-muted-foreground/50 leading-none">kcal</span>
           </div>
@@ -587,7 +587,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
                       : `${((weeklyAvgCaloriesWithTreat ?? weeklyAvgCalories) * 7).toLocaleString()} kcal / week`}
                   </div>
                   {weeklyAvgCaloriesWithTreat != null && (
-                    <div className="text-[10px] text-muted-foreground/50 mt-0.5">{weeklyAvgCalories.toLocaleString()} meals + treat avg</div>
+                    <div className="text-[10px] text-muted-foreground/50 mt-0.5">{weeklyAvgCalories.toLocaleString()} meals + free cal avg</div>
                   )}
                 </div>
               </div>
