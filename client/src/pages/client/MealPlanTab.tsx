@@ -66,7 +66,7 @@ function MealPlanTab() {
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">Daily Totals</p>
               <div className="grid grid-cols-5 gap-2">
                 {[
-                  { label: "Calories", value: dailyTotals.calories, unit: "kcal", highlight: true },
+                  { label: "Calories", value: dailyTotals.calories + (treatAllowanceKcal ?? 0), unit: "kcal", highlight: true },
                   { label: "Protein", value: dailyTotals.protein, unit: "g" },
                   { label: "Carbs", value: dailyTotals.carbs, unit: "g" },
                   { label: "Fiber", value: dailyTotals.fiber, unit: "g" },
