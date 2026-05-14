@@ -389,14 +389,14 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
 
       {selectedUserId && (
         <>
-        {/* Mode toggle */}
-        <div className="flex items-center gap-1 p-1 bg-secondary rounded-lg w-fit">
+        {/* Mode toggle — matches Training Day / Rest Day style */}
+        <div className="flex items-center gap-2">
           {(["meal_plan", "macros"] as const).map(m => (
             <button
               key={m}
               onClick={() => setModeMutation.mutate({ userId: selectedUserId, mode: m })}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                nutritionMode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                nutritionMode === m ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
             >
               {m === "meal_plan" ? "Meal Plan" : "Macros"}
@@ -437,19 +437,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
             )}
           </div>
 
-          {/* Daily totals summary */}
-          {meals.length > 0 && (
-            <Card>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">Daily Totals</p>
-              <div className="flex gap-2 flex-wrap">
-                <MacroChip label="Calories" value={dailyTotals.calories + (parseInt(treatAllowance) || 0)} unit="kcal" highlight />
-                <MacroChip label="Protein" value={dailyTotals.protein} />
-                <MacroChip label="Carbs" value={dailyTotals.carbs} />
-                <MacroChip label="Fiber" value={dailyTotals.fiber} />
-                <MacroChip label="Fat" value={dailyTotals.fat} />
-              </div>
-            </Card>
-          )}
+          {/* Daily totals — removed inline strip; sticky right panel handles this */}
 
           <div className="space-y-4">
             {meals.map((meal, i) => (
@@ -468,17 +456,18 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                   <input type="text" value={meal.name} onChange={e => updateMealName(i, e.target.value)}
                     className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-primary" />
                   <input type="time" value={meal.time ?? ""} onChange={e => updateMealTime(i, e.target.value)}
-                    className="w-28 bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                    className="w-32 bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
                   <button onClick={() => removeMeal(i)} className="text-destructive hover:opacity-80">
                     <Trash2 size={15} />
                   </button>
                 </div>
                 <div className="space-y-2">
-                  <div className="grid grid-cols-12 gap-1 px-1">
-                    <p className="col-span-6 text-[10px] text-muted-foreground">Food</p>
-                    <p className="col-span-2 text-[10px] text-muted-foreground">Amount</p>
-                    <p className="col-span-3 text-[10px] text-muted-foreground">Macros</p>
-                    <p className="col-span-1"></p>
+                  <div className="flex items-center gap-1.5 px-0.5 mb-1">
+                    <p className="flex-1 text-[10px] text-muted-foreground">Food</p>
+                    <p className="w-16 text-[10px] text-muted-foreground text-right">Amount</p>
+                    <p className="w-10 text-[10px] text-muted-foreground">Unit</p>
+                    <p className="w-24 text-[10px] text-muted-foreground">Macros</p>
+                    <p className="w-4"></p>
                   </div>
                   {(meal.items ?? []).map((item: any, j: number) => {
                     const selectedFood = foodDb.find(f => f.name === item.food);
@@ -512,8 +501,8 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                       qty?.focus();
                     };
                     return (
-                      <div key={j} className="grid grid-cols-12 gap-1 items-start">
-                        <div className="col-span-6">
+                      <div key={j} className="flex items-center gap-1.5">
+                        <div className="flex-1 min-w-0">
                           <FoodCombobox
                             value={item.food}
                             onChange={v => updateItem(i, j, "food", v)}
@@ -523,7 +512,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                             itemIdx={j}
                           />
                         </div>
-                        <div className="col-span-2">
+                        <div className="flex items-center gap-1 shrink-0">
                           <input
                             type="number" min="0" step={isServingBased ? "0.5" : "1"}
                             data-meal={i}
@@ -532,20 +521,22 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                             value={item.grams}
                             onChange={e => updateItem(i, j, "grams", e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextFoodInput(); } }}
-                            className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-16 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
                           />
-                          {isServingBased && (
-                            <span className="text-[9px] text-muted-foreground block text-left mt-0.5">{selectedFood.servingUnit}{effectiveGrams ? ` (${effectiveGrams}g)` : ""}</span>
-                          )}
-                          {!isServingBased && <span className="text-[9px] text-muted-foreground block text-left mt-0.5">g</span>}
+                          <span className="text-[10px] text-muted-foreground w-10 truncate">
+                            {isServingBased ? selectedFood.servingUnit : "g"}
+                            {isServingBased && effectiveGrams ? ` (${effectiveGrams}g)` : ""}
+                          </span>
                         </div>
-                        <div className="col-span-3 text-[10px] text-muted-foreground leading-tight pt-1.5">
+                        <div className="w-24 shrink-0 text-[10px] leading-tight">
                           {hasData ? (
-                            <span className="text-foreground font-medium">{m.calories} kcal</span>
+                            <>
+                              <span className="text-foreground font-medium">{m.calories} kcal</span>
+                              <div className="text-muted-foreground text-[9px]">P{m.protein} C{m.carbs} F{m.fat}</div>
+                            </>
                           ) : <span className="text-muted-foreground/40">—</span>}
-                          {hasData && <div className="text-[9px] text-muted-foreground">P{m.protein} C{m.carbs} F{m.fat}</div>}
                         </div>
-                        <button onClick={() => removeItem(i, j)} className="col-span-1 flex justify-center text-destructive hover:opacity-80 pt-1.5">
+                        <button onClick={() => removeItem(i, j)} className="shrink-0 text-destructive hover:opacity-80">
                           <Trash2 size={12} />
                         </button>
                       </div>
@@ -555,17 +546,14 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                     <Plus size={12} /> Add Item
                   </button>
                 </div>
-                {/* Meal subtotal */}
+                {/* Meal subtotal — smaller/muted to distinguish from Daily Totals */}
                 {(meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
-                  <div className="mt-3 pt-3 border-t border-border/50">
-                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Meal Total</p>
-                    <div className="flex gap-2 flex-wrap">
-                      <MacroChip label="Calories" value={mealMacros[i].calories} unit="kcal" highlight />
-                      <MacroChip label="Protein" value={mealMacros[i].protein} />
-                      <MacroChip label="Carbs" value={mealMacros[i].carbs} />
-                      <MacroChip label="Fiber" value={mealMacros[i].fiber} />
-                      <MacroChip label="Fat" value={mealMacros[i].fat} />
-                    </div>
+                  <div className="mt-2 pt-2 border-t border-border/40 flex items-center gap-3 flex-wrap">
+                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 font-semibold">Meal</span>
+                    <span className="text-[11px] font-semibold text-primary/80">{mealMacros[i].calories} kcal</span>
+                    <span className="text-[10px] text-muted-foreground">P{mealMacros[i].protein}g</span>
+                    <span className="text-[10px] text-muted-foreground">C{mealMacros[i].carbs}g</span>
+                    <span className="text-[10px] text-muted-foreground">F{mealMacros[i].fat}g</span>
                   </div>
                 )}
               </Card>
