@@ -294,8 +294,8 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
 
   // Notify parent of live calorie total whenever it changes
   useEffect(() => {
-    if (onLiveTotals) onLiveTotals(dayType, dailyTotals.calories);
-  }, [dailyTotals.calories, dayType]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (onLiveTotals) onLiveTotals(dayType, dailyTotals.calories + (parseInt(treatAllowance) || 0));
+  }, [dailyTotals.calories, dayType, treatAllowance]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const doSave = () => {
     if (!selectedUserId || upsert.isPending) return;

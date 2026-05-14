@@ -384,14 +384,19 @@ function WeeklyCalorySummary({
   const cycleLength = schedule.length;
   const trainingDays = schedule.filter((s: string) => s.toUpperCase() !== "OFF").length;
   const restDays = cycleLength - trainingDays;
-  // Prefer live (draft) values over saved server values
-  const tCal = (liveTrainingCal != null && liveTrainingCal > 0) ? liveTrainingCal : (trainingPlan?.totalCalories ?? null);
-  const rCal = (liveRestCal != null && liveRestCal > 0) ? liveRestCal : (restPlan?.totalCalories ?? null);
+  // Treat allowances from saved plans (live values already include treat via onLiveTotals)
+  const tTreat = trainingPlan?.treatAllowanceKcal ?? 0;
+  const rTreat = restPlan?.treatAllowanceKcal ?? 0;
+  // Prefer live (draft) values over saved server values; add treat to saved values
+  const tCal = (liveTrainingCal != null && liveTrainingCal > 0) ? liveTrainingCal : (trainingPlan?.totalCalories != null ? trainingPlan.totalCalories + tTreat : null);
+  const rCal = (liveRestCal != null && liveRestCal > 0) ? liveRestCal : (restPlan?.totalCalories != null ? restPlan.totalCalories + rTreat : null);
 
   // Is the figure currently showing live/unsaved draft values?
+  const savedTCal = trainingPlan?.totalCalories != null ? trainingPlan.totalCalories + tTreat : null;
+  const savedRCal = restPlan?.totalCalories != null ? restPlan.totalCalories + rTreat : null;
   const isLive =
-    (liveTrainingCal != null && liveTrainingCal > 0 && liveTrainingCal !== (trainingPlan?.totalCalories ?? null)) ||
-    (liveRestCal != null && liveRestCal > 0 && liveRestCal !== (restPlan?.totalCalories ?? null));
+    (liveTrainingCal != null && liveTrainingCal > 0 && liveTrainingCal !== savedTCal) ||
+    (liveRestCal != null && liveRestCal > 0 && liveRestCal !== savedRCal);
 
   if (!cycleLength || (tCal == null && rCal == null)) return null;
 
