@@ -1128,133 +1128,255 @@ const MUSCLE_LABELS: Record<string, string> = {
 const MUSCLE_KEYS = Object.keys(MUSCLE_LABELS);
 
 // ─── Section: Workout Sessions Tab ──────────────────────────────────────────
+const CAL_MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function SessionDetailPanel({ session, onClose }: { session: any; onClose: () => void }) {
+  const exercises = (session.exercises as any[]) ?? [];
+  const sessionNotes = session.notes as string | null;
+  const dateStr = toLocalDateStr(session.sessionDate);
+  const dateObj = new Date(`${dateStr}T00:00:00`);
+  const dateLabel = dateObj.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+  const totalSets = exercises.reduce((acc: number, ex: any) =>
+    acc + (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null).length, 0);
+  const hasIncomplete = exercises.some((ex: any) => {
+    const sets = ex.sets ?? [];
+    return sets.length > 0 && sets.filter((s: any) => s.completed).length < sets.length;
+  });
+
+  return (
+    <div className="w-72 flex-shrink-0 border border-border rounded-xl bg-card overflow-hidden sticky top-4">
+      {/* Header */}
+      <div className="flex items-start justify-between px-4 py-3 border-b border-border bg-muted/30">
+        <div>
+          <p className="text-sm font-bold text-foreground">
+            Session {session.dayLabel}
+            {hasIncomplete && (
+              <span className="ml-2 text-[10px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">Incomplete</span>
+            )}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{dateLabel} &middot; {exercises.length} exercises &middot; {totalSets} sets</p>
+        </div>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors mt-0.5">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      {/* Exercise list */}
+      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+        <div className="px-4 py-3 space-y-3">
+          {exercises.map((ex: any, i: number) => {
+            const allSets: any[] = ex.sets ?? [];
+            const totalExSets = allSets.length;
+            const completedSets = allSets.filter((s: any) => s.completed || s.weight != null || s.reps != null);
+            const isPartial = completedSets.length > 0 && totalExSets > 0 && completedSets.length < totalExSets;
+            const isSkipped = completedSets.length === 0 && totalExSets > 0;
+            return (
+              <div key={i} className="border-b border-border/40 pb-3 last:border-0 last:pb-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <p className="text-xs font-semibold text-foreground">{ex.name}</p>
+                  {ex.substitutedFor && (
+                    <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded">SUB</span>
+                  )}
+                </div>
+                {isSkipped ? (
+                  <p className="text-[11px] text-amber-400/80">0/{totalExSets} sets — skipped</p>
+                ) : (
+                  <div className="space-y-1">
+                    {completedSets.map((s: any, si: number) => (
+                      <div key={si} className="flex items-center gap-2">
+                        <span className="text-[10px] font-semibold text-muted-foreground w-4">{si + 1}</span>
+                        <span className="text-[11px] font-semibold text-foreground">
+                          {s.weight != null ? `${s.weight} kg` : '—'} × {s.reps != null ? s.reps : '—'}
+                        </span>
+                        {isPartial && si === completedSets.length - 1 && (
+                          <span className="text-[10px] text-amber-400/80">{completedSets.length}/{totalExSets}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {ex.exerciseNotes && (
+                  <p className="text-[11px] text-muted-foreground/60 italic mt-1">&ldquo;{ex.exerciseNotes}&rdquo;</p>
+                )}
+              </div>
+            );
+          })}
+          {sessionNotes && (
+            <div className="pt-2 border-t border-border/50">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Session notes</p>
+              <p className="text-xs text-muted-foreground/80 italic">&ldquo;{sessionNotes}&rdquo;</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [showAll, setShowAll] = useState(false);
+  const today = new Date();
+  const [calYear, setCalYear] = useState(today.getFullYear());
+  const [calMonth, setCalMonth] = useState(today.getMonth()); // 0-indexed
+  const [selectedSession, setSelectedSession] = useState<any | null>(null);
+
+  // Build a map of dateStr -> session for quick lookup
+  const sessionByDate = useMemo(() => {
+    const map: Record<string, any> = {};
+    for (const s of workoutSessions) {
+      const d = toLocalDateStr(s.sessionDate);
+      // If multiple sessions on same day, keep the latest
+      if (!map[d] || s.id > map[d].id) map[d] = s;
+    }
+    return map;
+  }, [workoutSessions]);
+
+  const monthSessionCount = useMemo(() => {
+    const prefix = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-`;
+    return workoutSessions.filter(s => toLocalDateStr(s.sessionDate).startsWith(prefix)).length;
+  }, [workoutSessions, calYear, calMonth]);
+
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  // Calendar grid helpers
+  const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  const monFirst = (firstDayOfMonth + 6) % 7; // 0=Mon
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+  function changeMonth(dir: number) {
+    setSelectedSession(null);
+    setCalMonth(m => {
+      let nm = m + dir;
+      if (nm > 11) { setCalYear(y => y + 1); return 0; }
+      if (nm < 0) { setCalYear(y => y - 1); return 11; }
+      return nm;
+    });
+  }
+
+  // Build cells
+  const cells: { day: number; iso: string | null; otherMonth: boolean }[] = [];
+  for (let i = 0; i < monFirst; i++) {
+    cells.push({ day: daysInPrev - monFirst + 1 + i, iso: null, otherMonth: true });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    cells.push({ day: d, iso, otherMonth: false });
+  }
+  const remaining = (7 - (cells.length % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    cells.push({ day: i, iso: null, otherMonth: true });
+  }
 
   if (!workoutSessions.length) {
     return <p className="text-sm text-muted-foreground">No workout sessions logged yet.</p>;
   }
 
-  const sorted = [...workoutSessions].sort((a, b) =>
-    toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate))
-  );
-
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const sevenDaysAgoStr = `${sevenDaysAgo.getFullYear()}-${String(sevenDaysAgo.getMonth()+1).padStart(2,'0')}-${String(sevenDaysAgo.getDate()).padStart(2,'0')}`;
-  const recent = sorted.filter(s => toLocalDateStr(s.sessionDate) >= sevenDaysAgoStr);
-  const older = sorted.filter(s => toLocalDateStr(s.sessionDate) < sevenDaysAgoStr);
-  const visible = showAll ? sorted : recent;
-
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {showAll ? `All sessions (${sorted.length})` : `Last 7 days${recent.length > 0 ? ` · ${recent.length} session${recent.length !== 1 ? 's' : ''}` : ''}`}
-        </p>
-      </div>
-      {visible.length === 0 && (
-        <p className="text-sm text-muted-foreground">No sessions in the last 7 days.</p>
-      )}
-      {visible.map((session) => {
-        const dateStr = toLocalDateStr(session.sessionDate);
-        const dateObj = new Date(`${dateStr}T00:00:00`);
-        const weekday = dateObj.toLocaleDateString('en-AU', { weekday: 'short' });
-        const day = dateObj.getDate();
-        const month = dateObj.toLocaleDateString('en-AU', { month: 'short' });
-        const dateLabel = `${weekday} ${day} ${month}`;
-        const isOpen = expandedId === session.id;
-        const exercises = (session.exercises as any[]) ?? [];
-        const sessionNotes = session.notes as string | null;
-        const hasNotes = exercises.some((ex: any) => ex.exerciseNotes) || !!sessionNotes;
-        const hasIncomplete = exercises.some((ex: any) => {
-          const sets = ex.sets ?? [];
-          const programmedSets = sets.length;
-          const completedSets = sets.filter((s: any) => s.completed).length;
-          return programmedSets > 0 && completedSets < programmedSets;
-        });
-
-        return (
-          <div key={session.id} className="bg-card border border-border rounded-xl overflow-hidden">
-            {/* Header row */}
+    <div className="flex gap-4 items-start">
+      {/* Calendar */}
+      <div className="flex-1 min-w-0">
+        {/* Month nav */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setExpandedId(isOpen ? null : session.id)}
-              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/30 transition-colors"
+              onClick={() => changeMonth(-1)}
+              className="w-7 h-7 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
             >
-              <div className="flex items-center gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{dateLabel}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {(() => {
-                      const totalSets = exercises.reduce((acc: number, ex: any) =>
-                        acc + (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null).length, 0);
-                      return <>{session.dayLabel} &middot; {exercises.length} exercise{exercises.length !== 1 ? 's' : ''} &middot; {totalSets} set{totalSets !== 1 ? 's' : ''}</>;
-                    })()}
-                    {hasNotes && <span className="ml-1.5 text-primary/70">· notes</span>}
-                    {hasIncomplete && <span className="ml-1.5 text-amber-500/80">· incomplete</span>}
-                  </p>
-                </div>
-              </div>
-              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className="w-3.5 h-3.5 rotate-90" />
             </button>
+            <span className="text-sm font-bold text-foreground min-w-[120px] text-center">
+              {CAL_MONTH_NAMES[calMonth]} {calYear}
+            </span>
+            <button
+              onClick={() => changeMonth(1)}
+              className="w-7 h-7 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+            >
+              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+            </button>
+          </div>
+          <span className="text-[11px] text-muted-foreground">
+            <span className="font-semibold text-foreground">{monthSessionCount}</span> session{monthSessionCount !== 1 ? 's' : ''} this month
+          </span>
+        </div>
 
-            {/* Expanded detail */}
-            {isOpen && (
-              <div className="px-4 pb-4 border-t border-border/50 space-y-4 pt-3">
-                {exercises.map((ex: any, i: number) => {
-                  const allSets: any[] = ex.sets ?? [];
-                  const totalSets = allSets.length;
-                  const completedSets = allSets.filter((s: any) => s.completed || s.weight != null || s.reps != null);
-                  const firstSet = completedSets.find((s: any) => s.weight != null || s.reps != null) ?? completedSets[0];
-                  const machineName = ex.machinePreset ?? ex.equipmentDetails ?? null;
-                  const isPartial = completedSets.length > 0 && totalSets > 0 && completedSets.length < totalSets;
-                  const isSkipped = completedSets.length === 0 && totalSets > 0;
-                  return (
-                    <div key={i} className="flex items-baseline gap-2 flex-wrap">
-                      <p className="text-sm font-medium text-foreground shrink-0">{ex.name}</p>
-                      {ex.substitutedFor && (
-                        <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded shrink-0">SUB</span>
-                      )}
-                      {completedSets.length > 0 && firstSet ? (
-                        <span className="text-xs text-muted-foreground">
-                          {firstSet.weight != null ? `${firstSet.weight}kg` : '—'} × {firstSet.reps != null ? firstSet.reps : '—'}
-                          {isPartial ? (
-                            <span className="text-amber-400/80 ml-1">· {completedSets.length}/{totalSets} sets</span>
-                          ) : (
-                            <span className="text-muted-foreground/50 ml-1">· {completedSets.length} set{completedSets.length !== 1 ? 's' : ''}</span>
-                          )}
-                          {machineName && <span className="text-muted-foreground/40 ml-1">· {machineName}</span>}
+        {/* Grid */}
+        <div className="border border-border rounded-xl overflow-hidden">
+          {/* Weekday headers */}
+          <div className="grid grid-cols-7 bg-muted/30 border-b border-border">
+            {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
+              <div key={d} className="py-2 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{d}</div>
+            ))}
+          </div>
+          {/* Day cells */}
+          <div className="grid grid-cols-7">
+            {cells.map((cell, idx) => {
+              const sess = cell.iso ? sessionByDate[cell.iso] : null;
+              const isToday = cell.iso === todayIso;
+              const isSelected = selectedSession && cell.iso && toLocalDateStr(selectedSession.sessionDate) === cell.iso;
+
+              let exercises: any[] = [];
+              let totalSets = 0;
+              let hasIncomplete = false;
+              if (sess) {
+                exercises = (sess.exercises as any[]) ?? [];
+                totalSets = exercises.reduce((acc: number, ex: any) =>
+                  acc + (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null).length, 0);
+                hasIncomplete = exercises.some((ex: any) => {
+                  const sets = ex.sets ?? [];
+                  return sets.length > 0 && sets.filter((s: any) => s.completed).length < sets.length;
+                });
+              }
+
+              return (
+                <div
+                  key={idx}
+                  className={[
+                    'min-h-[90px] p-1.5 border-r border-b border-border last:border-r-0',
+                    idx % 7 === 6 ? 'border-r-0' : '',
+                    cell.otherMonth ? 'opacity-30 bg-card' : 'bg-card',
+                    isToday ? 'bg-primary/5' : '',
+                    isSelected ? 'ring-1 ring-inset ring-primary/40' : '',
+                    sess ? 'cursor-pointer hover:bg-muted/20' : '',
+                  ].join(' ')}
+                  onClick={() => sess ? setSelectedSession(isSelected ? null : sess) : undefined}
+                >
+                  <span className={`text-[11px] font-medium block mb-1 ${
+                    isToday ? 'text-primary font-bold' : 'text-muted-foreground'
+                  }`}>{cell.day}</span>
+
+                  {sess && (
+                    <div className={[
+                      'rounded-md px-1.5 py-1 border text-left',
+                      hasIncomplete
+                        ? 'bg-amber-500/10 border-amber-500/20'
+                        : 'bg-primary/10 border-primary/20',
+                    ].join(' ')}>
+                      <div className="flex items-center gap-1">
+                        <span className={`text-[11px] font-black ${
+                          hasIncomplete ? 'text-amber-400' : 'text-primary'
+                        }`}>{sess.dayLabel}</span>
+                        <span className="text-[10px] text-muted-foreground truncate">
+                          {exercises.length} ex &middot; {totalSets} sets
                         </span>
-                      ) : isSkipped ? (
-                        <span className="text-xs text-amber-400/80">0/{totalSets} sets — skipped</span>
-                      ) : (
-                        <span className="text-xs text-amber-400/70">incomplete</span>
-                      )}
-                      {ex.exerciseNotes && (
-                        <span className="text-xs text-muted-foreground/60 italic">&ldquo;{ex.exerciseNotes}&rdquo;</span>
+                      </div>
+                      {hasIncomplete && (
+                        <span className="text-[9px] font-semibold text-amber-400/80">incomplete</span>
                       )}
                     </div>
-                  );
-                })}
-                {sessionNotes && (
-                  <div className="pt-3 border-t border-border/50">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Session notes</p>
-                    <p className="text-xs text-muted-foreground/80 italic">&ldquo;{sessionNotes}&rdquo;</p>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
-      {older.length > 0 && (
-        <button
-          onClick={() => setShowAll(v => !v)}
-          className="w-full text-xs text-muted-foreground hover:text-foreground py-2 transition-colors"
-        >
-          {showAll ? 'Show less' : `View ${older.length} older session${older.length !== 1 ? 's' : ''}`}
-        </button>
+        </div>
+      </div>
+
+      {/* Detail panel */}
+      {selectedSession ? (
+        <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} />
+      ) : (
+        <div className="w-72 flex-shrink-0 border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 200 }}>
+          <p className="text-xs text-muted-foreground">Click a session to view details</p>
+        </div>
       )}
     </div>
   );
