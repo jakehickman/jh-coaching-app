@@ -463,6 +463,25 @@ function NutritionTab({ clientId }: { clientId: number }) {
     return Math.round((trainingDays * tCalVal + restDays * rCalVal) / cycleLength);
   }, [trainingProgram, trainingPlan, restPlan]);
 
+  // Weekly average including treat allowances
+  const weeklyAvgCaloriesWithTreat = useMemo(() => {
+    const schedule: string[] = (trainingProgram as any)?.schedule ?? [];
+    if (!schedule.length) return null;
+    const cycleLength = schedule.length;
+    const trainingDays = schedule.filter((s: string) => s.toUpperCase() !== "OFF").length;
+    const restDays = cycleLength - trainingDays;
+    const tCal = (trainingPlan?.totalCalories ?? null);
+    const rCal = (restPlan?.totalCalories ?? null);
+    const tTreat = trainingPlan?.treatAllowanceKcal ?? 0;
+    const rTreat = restPlan?.treatAllowanceKcal ?? 0;
+    if (tCal == null && rCal == null) return null;
+    const tCalVal = (tCal ?? rCal!) + tTreat;
+    const rCalVal = (rCal ?? tCal!) + rTreat;
+    const avg = Math.round((trainingDays * tCalVal + restDays * rCalVal) / cycleLength);
+    // Only return if there's actually a treat allowance on at least one plan
+    return (tTreat > 0 || rTreat > 0) ? avg : null;
+  }, [trainingProgram, trainingPlan, restPlan]);
+
   const scheduleLabel = useMemo(() => {
     const schedule: string[] = (trainingProgram as any)?.schedule ?? [];
     if (!schedule.length) return null;
@@ -493,17 +512,30 @@ function NutritionTab({ clientId }: { clientId: number }) {
         <p className="text-sm text-muted-foreground italic">No plan set</p>
       </div>
     );
+    const treat = plan.treatAllowanceKcal ?? 0;
+    const totalWithTreat = plan.totalCalories != null ? plan.totalCalories + treat : null;
     return (
       <div className="bg-card border border-border rounded-xl p-5">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">{label}</p>
         <div className="grid grid-cols-4 gap-4">
-          <MacroTile label="Calories" value={plan.totalCalories} unit="kcal" />
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">Calories</span>
+            <span className="text-xl font-bold tabular-nums text-foreground">
+              {plan.totalCalories != null ? plan.totalCalories.toLocaleString() : "—"}
+            </span>
+            {treat > 0 && totalWithTreat != null && (
+              <span className="text-[11px] font-semibold tabular-nums text-primary/80">
+                {totalWithTreat.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">incl. treat</span>
+              </span>
+            )}
+            <span className="text-[10px] text-muted-foreground/50 leading-none">kcal</span>
+          </div>
           <MacroTile label="Protein" value={plan.totalProtein} unit="g" />
           <MacroTile label="Carbs" value={plan.totalCarbs} unit="g" />
           <MacroTile label="Fat" value={plan.totalFat} unit="g" />
         </div>
-        {plan.treatAllowanceKcal != null && (
-          <p className="text-[11px] text-muted-foreground/60 mt-3">Treat allowance: {plan.treatAllowanceKcal} kcal</p>
+        {treat > 0 && (
+          <p className="text-[11px] text-muted-foreground/60 mt-3">Treat allowance: {treat} kcal</p>
         )}
         {plan.notes && (
           <p className="text-xs text-muted-foreground/70 mt-2 italic">{plan.notes}</p>
@@ -542,18 +574,32 @@ function NutritionTab({ clientId }: { clientId: number }) {
           {weeklyAvgCalories != null && (
             <div className="bg-card border border-border rounded-xl p-5">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly Average</p>
-              <div className="flex items-end gap-3">
+              <div className="flex items-end gap-4 flex-wrap">
                 <div>
                   <span className="text-xl font-bold tabular-nums text-foreground">
                     {weeklyAvgCalories.toLocaleString()}
                   </span>
                   <span className="text-sm text-muted-foreground ml-1.5">kcal / day</span>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {weeklyAvgCalories * 7 >= 1000
+                      ? `${(weeklyAvgCalories * 7 / 1000).toFixed(1)}k kcal / week`
+                      : `${(weeklyAvgCalories * 7).toLocaleString()} kcal / week`}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground pb-1">
-                  {weeklyAvgCalories * 7 >= 1000
-                    ? `${(weeklyAvgCalories * 7 / 1000).toFixed(1)}k kcal / week`
-                    : `${(weeklyAvgCalories * 7).toLocaleString()} kcal / week`}
-                </div>
+                {weeklyAvgCaloriesWithTreat != null && (
+                  <div className="border-l border-border pl-4">
+                    <span className="text-xl font-bold tabular-nums text-primary/90">
+                      {weeklyAvgCaloriesWithTreat.toLocaleString()}
+                    </span>
+                    <span className="text-sm text-muted-foreground ml-1.5">kcal / day</span>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {weeklyAvgCaloriesWithTreat * 7 >= 1000
+                        ? `${(weeklyAvgCaloriesWithTreat * 7 / 1000).toFixed(1)}k kcal / week`
+                        : `${(weeklyAvgCaloriesWithTreat * 7).toLocaleString()} kcal / week`}
+                    </div>
+                    <div className="text-[10px] text-primary/60 mt-0.5">incl. treat allowance</div>
+                  </div>
+                )}
               </div>
               {scheduleLabel && (
                 <p className="text-xs text-muted-foreground/60 mt-2">{scheduleLabel}</p>
