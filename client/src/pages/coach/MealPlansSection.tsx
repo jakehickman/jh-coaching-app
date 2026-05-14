@@ -398,7 +398,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
             <Card>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">Daily Totals</p>
               <div className="flex gap-2 flex-wrap">
-                <MacroChip label="Calories" value={dailyTotals.calories} unit="kcal" highlight />
+                <MacroChip label="Calories" value={dailyTotals.calories + (parseInt(treatAllowance) || 0)} unit="kcal" highlight />
                 <MacroChip label="Protein" value={dailyTotals.protein} />
                 <MacroChip label="Carbs" value={dailyTotals.carbs} />
                 <MacroChip label="Fiber" value={dailyTotals.fiber} />
@@ -592,7 +592,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
               <div className="grid grid-cols-2 gap-2">
                 <div className="col-span-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 text-center">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Calories</p>
-                  <p className="text-xl font-bold text-primary">{dailyTotals.calories} <span className="text-xs font-normal">kcal</span></p>
+                  <p className="text-xl font-bold text-primary">{dailyTotals.calories + (parseInt(treatAllowance) || 0)} <span className="text-xs font-normal">kcal</span></p>
                 </div>
                 {[{l:'Protein',v:dailyTotals.protein},{l:'Carbs',v:dailyTotals.carbs},{l:'Fiber',v:dailyTotals.fiber},{l:'Fat',v:dailyTotals.fat}].map(({l,v}) => (
                   <div key={l} className="bg-secondary rounded-lg px-2 py-2 text-center">
