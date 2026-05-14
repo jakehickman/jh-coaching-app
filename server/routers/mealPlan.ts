@@ -55,6 +55,50 @@ export const mealPlanRouter = router({
     .mutation(({ input }) => db.deleteMealPlanHistoryEntry(input.id)),
 });
 
+const macroMealSchema = z.object({
+  id: z.string().optional(),
+  name: z.string(),
+  time: z.string().optional(),
+  caloriesMin: z.number().nullable().optional(),
+  caloriesMax: z.number().nullable().optional(),
+  proteinMin: z.number().nullable().optional(),
+  proteinMax: z.number().nullable().optional(),
+  carbsMin: z.number().nullable().optional(),
+  carbsMax: z.number().nullable().optional(),
+  fatMin: z.number().nullable().optional(),
+  fatMax: z.number().nullable().optional(),
+});
+
+export const macroTargetRouter = router({
+  // Client reads their own macro targets
+  get: protectedProcedure
+    .input(z.object({ dayType: z.enum(["training", "rest"]) }))
+    .query(({ ctx, input }) => db.getMacroTarget(ctx.user.id, input.dayType)),
+  // Coach reads a client's macro targets
+  getForClient: adminProcedure
+    .input(z.object({ userId: z.number(), dayType: z.enum(["training", "rest"]) }))
+    .query(({ input }) => db.getMacroTarget(input.userId, input.dayType)),
+  // Coach saves macro targets for a client
+  upsert: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      dayType: z.enum(["training", "rest"]),
+      meals: z.array(macroMealSchema).optional(),
+      notes: z.string().nullable().optional(),
+    }))
+    .mutation(({ ctx, input }) => db.upsertMacroTarget({ coachId: ctx.user.id, ...input })),
+  // Coach reads/sets the nutrition mode for a client
+  getMode: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(({ input }) => db.getNutritionMode(input.userId)),
+  setMode: adminProcedure
+    .input(z.object({ userId: z.number(), mode: z.enum(["meal_plan", "macros"]) }))
+    .mutation(({ input }) => db.setNutritionMode(input.userId, input.mode)),
+  // Client reads their own nutrition mode
+  getMyMode: protectedProcedure
+    .query(({ ctx }) => db.getNutritionMode(ctx.user.id)),
+});
+
 export const shoppingRouter = router({
   list: protectedProcedure.query(({ ctx }) => db.getShoppingItems(ctx.user.id)),
   listForClient: adminProcedure

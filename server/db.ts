@@ -7,6 +7,8 @@ import {
   dailyLogs,
   measurements,
   mealPlans,
+  macroTargets,
+  MacroMeal,
   shoppingItems,
   trainingPrograms,
   mesoCycles,
@@ -421,6 +423,59 @@ export async function deleteMealPlanHistoryEntry(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(mealPlanHistory).where(eq(mealPlanHistory.id, id));
+}
+
+// ─── Macro Targets ──────────────────────────────────────────────────────────
+
+export async function getNutritionMode(userId: number): Promise<"meal_plan" | "macros"> {
+  const db = await getDb();
+  if (!db) return "meal_plan";
+  const result = await db
+    .select({ nutritionMode: clientProfiles.nutritionMode })
+    .from(clientProfiles)
+    .where(eq(clientProfiles.userId, userId))
+    .limit(1);
+  return (result[0]?.nutritionMode as "meal_plan" | "macros") ?? "meal_plan";
+}
+
+export async function setNutritionMode(userId: number, mode: "meal_plan" | "macros") {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(clientProfiles)
+    .set({ nutritionMode: mode } as any)
+    .where(eq(clientProfiles.userId, userId));
+}
+
+export async function getMacroTarget(userId: number, dayType: "training" | "rest") {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(macroTargets)
+    .where(and(eq(macroTargets.userId, userId), eq(macroTargets.dayType, dayType)))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+export async function upsertMacroTarget(data: {
+  userId: number;
+  coachId?: number;
+  dayType: "training" | "rest";
+  meals?: MacroMeal[];
+  notes?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await getMacroTarget(data.userId, data.dayType);
+  if (existing) {
+    await db
+      .update(macroTargets)
+      .set({ ...data, updatedAt: new Date() } as any)
+      .where(eq(macroTargets.id, existing.id));
+  } else {
+    await db.insert(macroTargets).values(data as any);
+  }
 }
 
 export async function insertMealPlanHistorySnapshot(data: {

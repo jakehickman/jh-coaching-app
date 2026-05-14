@@ -97,6 +97,7 @@ export const clientProfiles = mysqlTable("client_profiles", {
   lissSessionsPerWeek: int('liss_sessions_per_week'), // recommended LISS sessions per week
   lissMinutesPerSession: int('liss_minutes_per_session'), // recommended minutes per LISS session
   photoType: mysqlEnum("photoType", ["standard", "athlete"]).default("standard").notNull(),
+  nutritionMode: mysqlEnum("nutritionMode", ["meal_plan", "macros"]).default("meal_plan").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -176,6 +177,32 @@ export const mealPlans = mysqlTable("meal_plans", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 export type MealPlan = typeof mealPlans.$inferSelect;
+
+// Macro targets — per-meal min/max targets when client is in macros mode
+export interface MacroMeal {
+  id?: string;
+  name: string;          // e.g. "Meal 1"
+  time?: string;         // e.g. "07:00"
+  caloriesMin?: number | null;
+  caloriesMax?: number | null;
+  proteinMin?: number | null;
+  proteinMax?: number | null;
+  carbsMin?: number | null;
+  carbsMax?: number | null;
+  fatMin?: number | null;
+  fatMax?: number | null;
+}
+
+export const macroTargets = mysqlTable("macro_targets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),   // client
+  coachId: int("coachId"),
+  dayType: mysqlEnum("dayType", ["training", "rest"]).notNull(),
+  meals: json("meals").$type<MacroMeal[]>(),
+  notes: text("notes"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MacroTarget = typeof macroTargets.$inferSelect;
 
 // Shopping list items
 export const shoppingItems = mysqlTable("shopping_items", {

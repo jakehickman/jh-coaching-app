@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, ArrowUp, ArrowDown, Check } from "lucide-react";
 import { Card, SectionLabel, ClientCombobox, useClientSelector } from "./shared";
+import MacroTargetsEditor from "./MacroTargetsEditor";
 
 function FoodCombobox({
   value, onChange, foodNames, onSelectAdvance, mealIdx, itemIdx
@@ -357,6 +358,15 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
 
   const foodNames = foodDb.map(f => f.name).sort();
 
+  // Nutrition mode: meal_plan or macros
+  const { data: nutritionMode = "meal_plan", refetch: refetchMode } = trpc.macroTarget.getMode.useQuery(
+    { userId: selectedUserId! },
+    { enabled: !!selectedUserId }
+  );
+  const setModeMutation = trpc.macroTarget.setMode.useMutation({
+    onSuccess: () => refetchMode(),
+  });
+
   return (
     <div className="space-y-6">
       {!fixedClientId && (
@@ -366,6 +376,28 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
       )}
 
       {selectedUserId && (
+        <>
+        {/* Mode toggle */}
+        <div className="flex items-center gap-1 p-1 bg-secondary rounded-lg w-fit">
+          {(["meal_plan", "macros"] as const).map(m => (
+            <button
+              key={m}
+              onClick={() => setModeMutation.mutate({ userId: selectedUserId, mode: m })}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                nutritionMode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m === "meal_plan" ? "Meal Plan" : "Macros"}
+            </button>
+          ))}
+        </div>
+        </>)}
+
+      {selectedUserId && nutritionMode === "macros" && (
+        <MacroTargetsEditor clientId={selectedUserId} />
+      )}
+
+      {selectedUserId && nutritionMode === "meal_plan" && (
         <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:items-start">
         <div className="space-y-6">
           <div className="flex items-center gap-2 flex-wrap">
@@ -543,7 +575,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
           <div className="flex items-end gap-2">
             <div className="flex-1">
               <label className="text-xs text-muted-foreground mb-1 block">
-                Daily Treat Allowance (kcal)
+                Daily Free Calories (kcal)
               </label>
               <input
                 type="number"

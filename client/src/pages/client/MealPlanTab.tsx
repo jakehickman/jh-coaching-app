@@ -4,15 +4,136 @@ import { Check, Candy } from "lucide-react"; // Candy used for treat allowance c
 import { SectionLabel, Card } from "./shared";
 import { useViewAs } from "@/contexts/ViewAsContext";
 
+// ─── MacroTargetsView ─────────────────────────────────────────────────────────
+function MacroTargetsView() {
+  const { viewAsUserId } = useViewAs();
+  const [dayType, setDayType] = useState<"training" | "rest">("training");
+  const { data: targetOwn } = trpc.macroTarget.get.useQuery({ dayType }, { enabled: !viewAsUserId });
+  const { data: targetAdmin } = trpc.macroTarget.getForClient.useQuery(
+    { userId: viewAsUserId!, dayType },
+    { enabled: !!viewAsUserId }
+  );
+  const target = viewAsUserId ? targetAdmin : targetOwn;
+  const meals = (target?.meals as any[]) ?? [];
+
+  // Daily totals
+  const totals = meals.reduce(
+    (acc: any, m: any) => ({
+      calMin: acc.calMin + (m.caloriesMin ?? 0),
+      calMax: acc.calMax + (m.caloriesMax ?? 0),
+      proMin: acc.proMin + (m.proteinMin ?? 0),
+      proMax: acc.proMax + (m.proteinMax ?? 0),
+      carbMin: acc.carbMin + (m.carbsMin ?? 0),
+      carbMax: acc.carbMax + (m.carbsMax ?? 0),
+      fatMin: acc.fatMin + (m.fatMin ?? 0),
+      fatMax: acc.fatMax + (m.fatMax ?? 0),
+    }),
+    { calMin: 0, calMax: 0, proMin: 0, proMax: 0, carbMin: 0, carbMax: 0, fatMin: 0, fatMax: 0 }
+  );
+
+  function fmtRange(min: number, max: number, unit: string) {
+    if (min === 0 && max === 0) return "—";
+    if (min === max) return `${min}${unit}`;
+    return `${min} – ${max}${unit}`;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-2">
+        {(["training", "rest"] as const).map(t => (
+          <button key={t} onClick={() => setDayType(t)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+              dayType === t ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+            }`}>
+            {t === "training" ? "Training Day" : "Rest Day"}
+          </button>
+        ))}
+      </div>
+
+      {target && meals.length > 0 && (
+        <Card>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-semibold">Daily Totals</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2 bg-primary/15 border border-primary/30 rounded-lg px-3 py-2 text-center">
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground block">Calories</span>
+              <span className="text-lg font-bold text-primary">{fmtRange(totals.calMin, totals.calMax, " kcal")}</span>
+            </div>
+            {[
+              { label: "Protein", min: totals.proMin, max: totals.proMax },
+              { label: "Carbs", min: totals.carbMin, max: totals.carbMax },
+              { label: "Fat", min: totals.fatMin, max: totals.fatMax },
+            ].map(({ label, min, max }) => (
+              <div key={label} className="bg-secondary/60 rounded-lg px-2 py-2 text-center">
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground block">{label}</span>
+                <span className="text-sm font-bold text-foreground">{fmtRange(min, max, "g")}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {meals.length > 0 ? (
+        <div className="space-y-4">
+          {meals.map((meal: any, i: number) => (
+            <Card key={i}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-foreground">{meal.name ?? `Meal ${i + 1}`}</p>
+                {meal.time && (
+                  <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
+                    {(() => { try { const [h, m] = meal.time.split(":"); const d = new Date(); d.setHours(+h, +m); return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); } catch { return meal.time; } })()}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { label: "Calories", min: meal.caloriesMin, max: meal.caloriesMax, unit: " kcal", highlight: true },
+                  { label: "Protein", min: meal.proteinMin, max: meal.proteinMax, unit: "g" },
+                  { label: "Carbs", min: meal.carbsMin, max: meal.carbsMax, unit: "g" },
+                  { label: "Fat", min: meal.fatMin, max: meal.fatMax, unit: "g" },
+                ] as { label: string; min: number | null; max: number | null; unit: string; highlight?: boolean }[]).map(({ label, min, max, unit, highlight }) => (
+                  <div key={label} className={`rounded-lg px-2 py-2 text-center ${ highlight ? "col-span-2 bg-primary/10 border border-primary/20" : "bg-secondary/60" }`}>
+                    <span className={`text-[9px] uppercase tracking-wider block ${ highlight ? "text-primary/70" : "text-muted-foreground" }`}>{label}</span>
+                    <span className={`text-sm font-bold ${ highlight ? "text-primary" : "text-foreground" }`}>
+                      {fmtRange(min ?? 0, max ?? 0, unit)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="text-center py-8">
+          <p className="text-muted-foreground text-sm">No macro targets set for {dayType} days yet.</p>
+          <p className="text-xs text-muted-foreground mt-1">Your coach will add your macro targets here.</p>
+        </Card>
+      )}
+
+      {target?.notes && (
+        <Card>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Coach Notes</p>
+          <p className="text-sm text-foreground">{target.notes}</p>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 const SHOPPING_CHECKED_KEY = "jh_shopping_checked";
 
 // ─── MealPlanTab ────────────────────────────────────────────────────────────────────────────────
 function MealPlanTab() {
   const { viewAsUserId } = useViewAs();
   const [dayType, setDayType] = useState<"training" | "rest">("training");
+  // Check nutrition mode
+  const { data: nutritionMode = "meal_plan" } = viewAsUserId
+    ? trpc.macroTarget.getMode.useQuery({ userId: viewAsUserId })
+    : trpc.macroTarget.getMyMode.useQuery();
   const { data: planOwn } = trpc.mealPlan.get.useQuery({ dayType }, { enabled: !viewAsUserId });
   const { data: planAdmin } = trpc.mealPlan.getForClient.useQuery({ userId: viewAsUserId!, dayType }, { enabled: !!viewAsUserId });
   const plan = viewAsUserId ? planAdmin : planOwn;
+
+  if (nutritionMode === "macros") return <MacroTargetsView />;
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
   const treatAllowanceKcal = (plan as any)?.treatAllowanceKcal as number | null | undefined;
 

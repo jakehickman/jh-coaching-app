@@ -3,7 +3,7 @@ export { profileRouter } from "./profile";
 export { usersRouter } from "./users";
 export { dailyLogRouter } from "./dailyLog";
 export { measurementsRouter } from "./measurements";
-export { mealPlanRouter, shoppingRouter } from "./mealPlan";
+export { mealPlanRouter, shoppingRouter, macroTargetRouter } from "./mealPlan";
 export { trainingRouter, mesoRouter, workoutSessionsRouter, exerciseLibraryRouter, equipmentPresetsRouter } from "./training";
 export { checkInRouter } from "./checkIns";
 export { habitsRouter } from "./habits";

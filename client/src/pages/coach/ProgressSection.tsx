@@ -1288,18 +1288,23 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
     });
   }
 
-  // Build cells
-  const cells: { day: number; iso: string | null; otherMonth: boolean }[] = [];
+  // Build cells — overflow days get real ISO dates so they can show sessions too
+  const cells: { day: number; iso: string; otherMonth: boolean }[] = [];
+  const prevMonthYear = calMonth === 0 ? calYear - 1 : calYear;
+  const prevMonthIdx = calMonth === 0 ? 11 : calMonth - 1;
   for (let i = 0; i < monFirst; i++) {
-    cells.push({ day: daysInPrev - monFirst + 1 + i, iso: null, otherMonth: true });
+    const d = daysInPrev - monFirst + 1 + i;
+    cells.push({ day: d, iso: `${prevMonthYear}-${String(prevMonthIdx+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, otherMonth: true });
   }
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     cells.push({ day: d, iso, otherMonth: false });
   }
+  const nextMonthYear = calMonth === 11 ? calYear + 1 : calYear;
+  const nextMonthIdx = calMonth === 11 ? 0 : calMonth + 1;
   const remaining = (7 - (cells.length % 7)) % 7;
   for (let i = 1; i <= remaining; i++) {
-    cells.push({ day: i, iso: null, otherMonth: true });
+    cells.push({ day: i, iso: `${nextMonthYear}-${String(nextMonthIdx+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`, otherMonth: true });
   }
 
   if (!workoutSessions.length) {
