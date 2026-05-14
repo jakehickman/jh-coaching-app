@@ -358,13 +358,25 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
 
   const foodNames = foodDb.map(f => f.name).sort();
 
-  // Nutrition mode: meal_plan or macros
-  const { data: nutritionMode = "meal_plan", refetch: refetchMode } = trpc.macroTarget.getMode.useQuery(
+  // Nutrition mode: meal_plan or macros — optimistic so the toggle is instant
+  const utils = trpc.useUtils();
+  const { data: nutritionMode = "meal_plan" } = trpc.macroTarget.getMode.useQuery(
     { userId: selectedUserId! },
     { enabled: !!selectedUserId }
   );
   const setModeMutation = trpc.macroTarget.setMode.useMutation({
-    onSuccess: () => refetchMode(),
+    onMutate: async ({ userId, mode }) => {
+      await utils.macroTarget.getMode.cancel({ userId });
+      const prev = utils.macroTarget.getMode.getData({ userId });
+      utils.macroTarget.getMode.setData({ userId }, mode);
+      return { prev };
+    },
+    onError: (_err, { userId }, ctx) => {
+      if (ctx?.prev !== undefined) utils.macroTarget.getMode.setData({ userId }, ctx.prev);
+    },
+    onSettled: (_data, _err, { userId }) => {
+      utils.macroTarget.getMode.invalidate({ userId });
+    },
   });
 
   return (
