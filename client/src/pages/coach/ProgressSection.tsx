@@ -2142,7 +2142,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
 
       {selectedUserId && (
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <div className="sticky top-[48px] z-20 bg-background -mx-4 px-4 lg:-mx-6 lg:px-6 pt-2 pb-2 border-b border-border/40">
+          <div className="-mx-4 px-4 lg:-mx-6 lg:px-6 pt-2 pb-2 border-b border-border/40">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="check-ins">Check-ins</TabsTrigger>

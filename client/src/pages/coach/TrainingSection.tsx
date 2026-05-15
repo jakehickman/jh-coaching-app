@@ -1013,7 +1013,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
             </div>
             {/* Right: sticky weekly volume summary */}
             {volumeTable && (
-              <div className="w-72 xl:w-80 shrink-0 min-w-0 sticky top-24 overflow-hidden">
+              <div className="w-72 xl:w-80 shrink-0 min-w-0 sticky top-4 overflow-hidden">
                 <SectionLabel>Weekly Volume</SectionLabel>
                 <p className="text-xs text-muted-foreground mb-3">
                   Cycle: {schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(3)} · sets/wk
