@@ -1048,6 +1048,8 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                 updateExercise={updateExercise}
                 setDays={setDays}
                 exerciseNames={(exerciseLib as any[]).map((e: any) => e.name).sort()}
+                exerciseLib={exerciseLib as any[]}
+                schedule={schedule}
               />
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Coach Notes</label>

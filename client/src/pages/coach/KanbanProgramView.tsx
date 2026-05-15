@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Plus, Trash2, GripVertical, ChevronDown } from "lucide-react";
+import { MUSCLE_GROUPS } from "./ExerciseLibrarySection";
 import {
   DndContext,
   DragOverlay,
@@ -43,6 +44,8 @@ interface Props {
   updateExercise: (dayIdx: number, exIdx: number, field: string, value: string) => void;
   setDays: (days: Day[]) => void;
   exerciseNames: string[];
+  exerciseLib: Array<Record<string, unknown>>;
+  schedule: string[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -356,7 +359,7 @@ function PlaceholderSlot({ id, visible }: { id: string; visible: boolean }) {
 
 // ─── Main Kanban View ─────────────────────────────────────────────────────────
 export default function KanbanProgramView({
-  days, updateDay, removeDay, addDay, addExercise, removeExercise, updateExercise, setDays, exerciseNames,
+  days, updateDay, removeDay, addDay, addExercise, removeExercise, updateExercise, setDays, exerciseNames, exerciseLib, schedule,
 }: Props) {
   const [activeExId, setActiveExId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ dayIdx: number; insertIdx: number } | null>(null);
@@ -449,7 +452,44 @@ export default function KanbanProgramView({
   const srcParsed = activeExId ? parseExId(activeExId) : null;
   const activeEx = srcParsed ? days[srcParsed.dayIdx]?.exercises?.[srcParsed.exIdx] ?? null : null;
 
+  // Compute weekly volume for the chip bar
+  const volumeEntries = (() => {
+    if (!days.length) return [];
+    const cycleLengthDays = schedule.length > 0 ? schedule.length : days.length;
+    const multiplier = 7 / cycleLengthDays;
+    const libMap = new Map<string, Record<string, number>>();
+    for (const ex of exerciseLib) {
+      const contributions: Record<string, number> = {};
+      for (const mg of MUSCLE_GROUPS) {
+        const val = (ex as any)[mg.key] as number ?? 0;
+        if (val > 0) contributions[mg.key] = val;
+      }
+      libMap.set(String(ex.name ?? "").toLowerCase(), contributions);
+    }
+    const weeklyTotals: Record<string, number> = {};
+    for (const day of days) {
+      const dayName = day.name || "Unnamed";
+      const occurrences = schedule.length > 0 ? schedule.filter(s => s === dayName).length : 1;
+      for (const ex of (day.exercises ?? [])) {
+        const sets = parseFloat(ex.sets) || 0;
+        const contrib = libMap.get((ex.name ?? "").toLowerCase());
+        if (!contrib || sets === 0) continue;
+        for (const [mgKey, val] of Object.entries(contrib)) {
+          weeklyTotals[mgKey] = (weeklyTotals[mgKey] ?? 0) + sets * val * occurrences;
+        }
+      }
+    }
+    for (const key of Object.keys(weeklyTotals)) {
+      weeklyTotals[key] = Math.round(weeklyTotals[key] * multiplier);
+    }
+    return MUSCLE_GROUPS
+      .map(mg => ({ label: mg.label, key: mg.key, total: weeklyTotals[mg.key] ?? 0 }))
+      .filter(e => e.total > 0)
+      .sort((a, b) => b.total - a.total);
+  })();
+
   return (
+    <>
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
@@ -495,5 +535,21 @@ export default function KanbanProgramView({
         {activeEx ? <DragCard ex={activeEx} /> : null}
       </DragOverlay>
     </DndContext>
+
+    {/* Weekly Volume chip bar */}
+    {volumeEntries.length > 0 && (
+      <div className="mt-4 pt-4 border-t border-border/40">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Weekly Volume</p>
+        <div className="flex flex-wrap gap-1.5">
+          {volumeEntries.map(e => (
+            <div key={e.key} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-secondary/60 text-[12px]">
+              <span className="text-foreground/80">{e.label}</span>
+              <span className="font-semibold text-primary">{e.total}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+    </>
   );
 }
