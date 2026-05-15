@@ -1371,8 +1371,7 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                 <div
                   key={idx}
                   className={[
-                    'min-h-[90px] p-1.5',
-                    cell.otherMonth ? 'opacity-30 bg-card' : 'bg-card',
+                    'min-h-[90px] p-1.5 bg-card',
                     isToday ? 'bg-primary/5' : '',
                     isSelected ? 'ring-1 ring-inset ring-primary/40' : '',
                     sess ? 'cursor-pointer hover:bg-muted/20' : '',
@@ -1380,7 +1379,7 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
                   onClick={() => sess ? setSelectedSession(isSelected ? null : sess) : undefined}
                 >
                   <span className={`text-[11px] font-medium block mb-1 ${
-                    isToday ? 'text-primary font-bold' : 'text-muted-foreground'
+                    isToday ? 'text-primary font-bold' : cell.otherMonth ? 'text-muted-foreground/30' : 'text-muted-foreground'
                   }`}>{cell.day}</span>
 
                   {sess && (
