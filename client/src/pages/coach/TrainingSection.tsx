@@ -851,8 +851,24 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
   }, [program, selectedUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const DAY_LETTERS = ["A","B","C","D","E","F","G","H"];
-  const addDay = () => setDays(d => [...d, { name: DAY_LETTERS[d.length] ?? `Day ${d.length + 1}`, focus: "", exercises: [] }]);
-  const removeDay = (i: number) => setDays(d => d.filter((_, idx) => idx !== i));
+  const addDay = () => {
+    setDays(d => {
+      const newName = DAY_LETTERS[d.length] ?? `Day ${d.length + 1}`;
+      // Auto-add the new day name to the training schedule
+      setSchedule(s => [...s, newName]);
+      return [...d, { name: newName, focus: "", exercises: [] }];
+    });
+  };
+  const removeDay = (i: number) => {
+    setDays(d => {
+      const removedName = d[i]?.name;
+      // Remove all schedule slots that reference this day
+      if (removedName) {
+        setSchedule(s => s.filter(slot => slot !== removedName));
+      }
+      return d.filter((_, idx) => idx !== i);
+    });
+  };
   const updateDay = (i: number, field: string, value: string) => {
     setDays(d => {
       const oldDay = d[i];
@@ -962,7 +978,17 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
   // Schedule helpers
   const dayOptions = ["Off", ...days.map(d => d.name || `Day ${days.indexOf(d) + 1}`)];
   const addScheduleSlot = () => setSchedule(s => [...s, days[0]?.name || "A"]);
-  const removeScheduleSlot = (i: number) => setSchedule(s => s.filter((_, idx) => idx !== i));
+  const removeScheduleSlot = (i: number) => {
+    setSchedule(s => {
+      const removedSlot = s[i];
+      const next = s.filter((_, idx) => idx !== i);
+      // If this was the last occurrence of a day name in the schedule, also remove that day card
+      if (removedSlot && removedSlot !== "Off" && !next.includes(removedSlot)) {
+        setDays(d => d.filter(day => day.name !== removedSlot));
+      }
+      return next;
+    });
+  };
   const updateScheduleSlot = (i: number, val: string) => setSchedule(s => s.map((v, idx) => idx === i ? val : v));
 
   return (
