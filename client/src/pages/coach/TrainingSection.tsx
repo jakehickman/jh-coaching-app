@@ -925,7 +925,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
           <div>
             <div className="mb-2">
               <label className="text-xs text-muted-foreground">Training Schedule</label>
-              <span className="text-xs text-muted-foreground/50 ml-2">defines the rotation for this client</span>
+
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleScheduleDragEnd}>
               <SortableContext items={schedule.map((_, i) => `slot-${i}`)} strategy={horizontalListSortingStrategy}>
@@ -1013,10 +1013,10 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
             </div>
             {/* Right: sticky weekly volume summary */}
             {volumeTable && (
-              <div className="w-72 xl:w-80 shrink-0 min-w-0 sticky top-4 overflow-hidden">
+              <div className="w-72 xl:w-80 shrink-0 min-w-0 sticky top-4">
                 <SectionLabel>Weekly Volume</SectionLabel>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Cycle: {schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(3)} · sets/wk
+                  Cycle: {schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(1)} · sets/wk
                 </p>
                 <div className="overflow-x-auto rounded-xl border border-border">
                   <table className="w-full text-sm">
