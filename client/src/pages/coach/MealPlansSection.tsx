@@ -67,7 +67,7 @@ function FoodCombobox({
         onBlur={() => setTimeout(() => { setOpen(false); setHighlightedIdx(-1); }, 150)}
         onKeyDown={handleKeyDown}
         placeholder="Search food…"
-        className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
       />
       {open && filtered.length > 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto">
@@ -521,9 +521,9 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                             value={item.grams}
                             onChange={e => updateItem(i, j, "grams", e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextFoodInput(); } }}
-                            className="w-16 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
+                            className="w-16 bg-secondary border border-border rounded px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
                           />
-                          <span className="text-[10px] text-muted-foreground w-24">
+                          <span className="text-sm text-muted-foreground w-24">
                             {isServingBased ? selectedFood.servingUnit : "g"}
                             {isServingBased && effectiveGrams ? ` (${effectiveGrams}g)` : ""}
                           </span>
