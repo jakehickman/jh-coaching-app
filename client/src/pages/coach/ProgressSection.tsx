@@ -1166,7 +1166,7 @@ const MUSCLE_KEYS = Object.keys(MUSCLE_LABELS);
 // ─── Section: Workout Sessions Tab ──────────────────────────────────────────
 const CAL_MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-function SessionDetailPanel({ session, onClose }: { session: any; onClose: () => void }) {
+function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: any; onClose: () => void; onExerciseClick?: (name: string) => void }) {
   const exercises = (session.exercises as any[]) ?? [];
   const sessionNotes = session.notes as string | null;
   const dateStr = toLocalDateStr(session.sessionDate);
@@ -1213,7 +1213,14 @@ function SessionDetailPanel({ session, onClose }: { session: any; onClose: () =>
               : `${completedSets.length} set${completedSets.length !== 1 ? 's' : ''}`;
             return (
               <div key={i} className="flex items-center gap-2 py-1.5 border-b border-border/30 last:border-0">
-                <p className="text-xs font-semibold text-foreground flex-1 truncate">{ex.name}</p>
+                {onExerciseClick ? (
+                  <button
+                    onClick={() => onExerciseClick(ex.name)}
+                    className="text-xs font-semibold text-foreground flex-1 truncate text-left hover:text-primary hover:underline transition-colors"
+                  >{ex.name}</button>
+                ) : (
+                  <p className="text-xs font-semibold text-foreground flex-1 truncate">{ex.name}</p>
+                )}
                 {ex.substitutedFor && (
                   <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded shrink-0">SUB</span>
                 )}
@@ -1238,7 +1245,7 @@ function SessionDetailPanel({ session, onClose }: { session: any; onClose: () =>
   );
 }
 
-function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
+function WorkoutSessionsTab({ workoutSessions, onExerciseClick }: { workoutSessions: any[]; onExerciseClick?: (name: string) => void }) {
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth()); // 0-indexed
@@ -1401,7 +1408,7 @@ function WorkoutSessionsTab({ workoutSessions }: { workoutSessions: any[] }) {
 
       {/* Detail panel */}
       {selectedSession ? (
-        <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} />
+        <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} />
       ) : (
         <div className="w-72 flex-shrink-0 border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 200 }}>
           <p className="text-xs text-muted-foreground">Click a session to view details</p>
@@ -1494,14 +1501,43 @@ function CoachPresetEditor({ clientId, exerciseName, onClose }: { clientId: numb
 }
 
 function ExerciseProgressTab({
-  workoutSessions, exerciseLib, clientId
+  workoutSessions, exerciseLib, clientId, initialExercise
 }: {
   workoutSessions: any[];
   exerciseLib: any[];
   clientId: number;
+  initialExercise?: string | null;
 }) {
   const [selectedGroup, setSelectedGroup] = useState<string>('All');
   const [presetFilter, setPresetFilter] = useState<Record<string, string>>({});
+  const [highlightedExercise, setHighlightedExercise] = useState<string | null>(null);
+  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // When initialExercise is set (from session detail click-through), switch to its muscle group and scroll to it
+  useEffect(() => {
+    if (!initialExercise) return;
+    // Find the muscle group for this exercise
+    let targetGroup = 'All';
+    for (const ex of exerciseLib) {
+      if (ex.name === initialExercise) {
+        let best = 'Other', bestVal = 0;
+        for (const m of MUSCLE_KEYS) {
+          if ((ex[m] ?? 0) > bestVal) { bestVal = ex[m]; best = m; }
+        }
+        targetGroup = MUSCLE_LABELS[best] ?? 'Other';
+        break;
+      }
+    }
+    setSelectedGroup(targetGroup);
+    setHighlightedExercise(initialExercise);
+    // Scroll to the card after DOM update
+    setTimeout(() => {
+      const el = cardRefs.current.get(initialExercise);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Clear highlight after 2 seconds
+      setTimeout(() => setHighlightedExercise(null), 2000);
+    }, 150);
+  }, [initialExercise]);
 
   // Build lookup: exerciseName -> primary muscle label
   const exToMuscle: Record<string, string> = {};
@@ -1604,8 +1640,17 @@ function ExerciseProgressTab({
                 ? latestW > prevW ? 'up' : latestW < prevW ? 'down' : 'flat'
                 : null;
 
+              const isHighlighted = highlightedExercise === name;
               return (
-                <div key={name} className="bg-card border border-border rounded-xl p-4">
+                <div
+                  key={name}
+                  ref={(el) => { if (el) cardRefs.current.set(name, el); else cardRefs.current.delete(name); }}
+                  className={`bg-card border rounded-xl p-4 transition-all duration-300 ${
+                    isHighlighted
+                      ? 'border-primary ring-2 ring-primary/40 shadow-lg'
+                      : 'border-border'
+                  }`}
+                >
                   {/* Header */}
                   <div className="flex items-start justify-between mb-3">
                     <div>
@@ -1860,6 +1905,8 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
   const [subTabs, setSubTabs] = useState<Record<string, string>>(
     urlSubTab ? { [urlTab]: urlSubTab } : {}
   );
+  // Exercise click-through: set when user clicks an exercise in the session detail panel
+  const [jumpToExercise, setJumpToExercise] = useState<string | null>(null);
 
   const getSubTab = (tab: string) => subTabs[tab] ?? "";
 
@@ -2178,10 +2225,17 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
               </TabsList>
               <TabsContent value="session-log">
-                <WorkoutSessionsTab workoutSessions={workoutSessions} />
+                <WorkoutSessionsTab
+                  workoutSessions={workoutSessions}
+                  onExerciseClick={(name) => {
+                    setJumpToExercise(name);
+                    setSubTabs(prev => ({ ...prev, training: 'exercise-progress' }));
+                    updateTabUrl('training', 'exercise-progress');
+                  }}
+                />
               </TabsContent>
               <TabsContent value="exercise-progress">
-                <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} />
+                <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} initialExercise={jumpToExercise} />
               </TabsContent>
               <TabsContent value="program">
                 <div className="space-y-6">
