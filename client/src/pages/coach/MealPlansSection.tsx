@@ -575,7 +575,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
           <div className="flex items-end gap-2">
             <div className="flex-1">
               <label className="text-xs text-muted-foreground mb-1 block">
-                Daily Free Calories (kcal)
+                Free Calories
               </label>
               <input
                 type="number"
