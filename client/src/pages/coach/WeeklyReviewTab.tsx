@@ -166,7 +166,8 @@ function getPhaseWeekNumber(phases: any[], weekStart: string): number | null {
   if (!phase) return null;
   const phaseStart = new Date(phase.startDate + "T00:00:00").getTime();
   const weekStartMs = new Date(weekStart + "T00:00:00").getTime();
-  return Math.floor((weekStartMs - phaseStart) / (7 * 24 * 60 * 60 * 1000)) + 1;
+  const wk = Math.floor((weekStartMs - phaseStart) / (7 * 24 * 60 * 60 * 1000)) + 1;
+  return wk < 1 ? 1 : wk;
 }
 
 export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
