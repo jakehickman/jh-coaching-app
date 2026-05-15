@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
-import { Plus, Trash2, ChevronDown, ChevronUp, Save, GripVertical, Check, ChevronsUpDown, Users, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Save, GripVertical, Check, ChevronsUpDown, Users, ArrowUp, ArrowDown, LayoutList, LayoutGrid } from "lucide-react";
+import KanbanProgramView from "./KanbanProgramView";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -718,6 +719,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
   const [days, setDays] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<string[]>([]);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "board">("list");
 
   // Snapshot of the last server-saved state — used to detect genuine changes
   const trainingSavedSnapshot = useRef<{ programName: string; notes: string; days: any[]; schedule: string[] } | null>(null);
@@ -972,6 +974,28 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
       )}
       {selectedUserId && (
         <div className="space-y-6">
+          {/* ── View toggle ── */}
+          <div className="flex items-center justify-end gap-1">
+            <button
+              onClick={() => setViewMode("list")}
+              title="List view"
+              className={`p-1.5 rounded transition-colors ${
+                viewMode === "list" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutList size={15} />
+            </button>
+            <button
+              onClick={() => setViewMode("board")}
+              title="Board view"
+              className={`p-1.5 rounded transition-colors ${
+                viewMode === "board" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutGrid size={15} />
+            </button>
+          </div>
+
           {/* ── Training Schedule ── */}
           <div>
             <div className="mb-2">
@@ -1011,8 +1035,45 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
               </p>
             )}
           </div>
+          {/* ── Board view ── */}
+          {viewMode === "board" && (
+            <div className="space-y-4">
+              <KanbanProgramView
+                days={days}
+                updateDay={updateDay}
+                removeDay={removeDay}
+                addDay={addDay}
+                addExercise={addExercise}
+                removeExercise={removeExercise}
+                updateExercise={updateExercise}
+                setDays={setDays}
+                exerciseNames={(exerciseLib as any[]).map((e: any) => e.name).sort()}
+              />
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Coach Notes</label>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+              </div>
+              <div className="space-y-1.5">
+                <button
+                  onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || null, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null })}
+                  disabled={upsert.isPending}
+                  className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Save size={15} />
+                  {upsert.isPending ? "Saving..." : "Save Training Program"}
+                </button>
+                {lastSavedAt && (
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── Two-column: sessions left, volume summary right ── */}
-          <div className="flex flex-col lg:flex-row gap-6 items-start min-w-0">
+          {viewMode === "list" && <div className="flex flex-col lg:flex-row gap-6 items-start min-w-0">
             {/* Left: sessions + controls */}
             <div className="flex-1 min-w-0 space-y-4">
               {/* Single flat DndContext handles both day reorder (day-N) and exercise drag (ex-D-E) */}
@@ -1150,7 +1211,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                 <p className="text-xs text-muted-foreground mt-2">Only muscle groups with &gt;0 weekly sets shown.</p>
               </div>
             )}
-          </div>
+          </div>}
         </div>
       )}
     </div>
