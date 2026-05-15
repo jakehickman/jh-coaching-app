@@ -45,16 +45,22 @@ interface Props {
   exerciseNames: string[];
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const PLACEHOLDER_PREFIX = "__placeholder__";
+
 function parseExId(id: UniqueIdentifier): { dayIdx: number; exIdx: number } | null {
   const m = String(id).match(/^ex-(\d+)-(\d+)$/);
   if (!m) return null;
   return { dayIdx: parseInt(m[1]), exIdx: parseInt(m[2]) };
 }
 
+function isPlaceholder(id: UniqueIdentifier) {
+  return String(id).startsWith(PLACEHOLDER_PREFIX);
+}
+
 // ─── Kanban Exercise Card ─────────────────────────────────────────────────────
 function KanbanExCard({
-  id, ex, dayIdx, exIdx, updateExercise, removeExercise, exerciseNames,
+  id, ex, dayIdx, exIdx, updateExercise, removeExercise, exerciseNames, isGhost,
 }: {
   id: string;
   ex: Exercise;
@@ -63,6 +69,7 @@ function KanbanExCard({
   updateExercise: (d: number, e: number, f: string, v: string) => void;
   removeExercise: (d: number, e: number) => void;
   exerciseNames: string[];
+  isGhost?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const [showNotes, setShowNotes] = useState(false);
@@ -75,7 +82,9 @@ function KanbanExCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.25 : 1,
+    // Ghost: faded in source column. isDragging: being actively dragged (hidden, overlay takes over).
+    opacity: isGhost ? 0.3 : isDragging ? 0 : 1,
+    pointerEvents: (isGhost ? "none" : undefined) as React.CSSProperties["pointerEvents"],
   };
 
   const filtered = searchTerm.length > 0
@@ -113,7 +122,7 @@ function KanbanExCard({
           <GripVertical size={12} />
         </div>
 
-        {/* Exercise name — searchable, takes all remaining space */}
+        {/* Exercise name */}
         <div className="flex-1 min-w-0 relative">
           <input
             type="text"
@@ -147,7 +156,7 @@ function KanbanExCard({
           )}
         </div>
 
-        {/* Sets — narrow */}
+        {/* Sets */}
         <input
           ref={setsRef}
           type="text"
@@ -158,7 +167,7 @@ function KanbanExCard({
           className="w-6 bg-transparent text-[12px] text-foreground text-center focus:outline-none focus:bg-secondary rounded px-0 placeholder:text-muted-foreground/40 flex-shrink-0"
         />
         <span className="text-muted-foreground/30 text-[10px] flex-shrink-0">×</span>
-        {/* Reps — narrow */}
+        {/* Reps */}
         <input
           ref={repsRef}
           type="text"
@@ -201,10 +210,21 @@ function KanbanExCard({
   );
 }
 
-// ─── Overlay card (shown while dragging) ─────────────────────────────────────
+// ─── Placeholder slot (shown in target column during cross-column drag) ───────
+function PlaceholderSlot({ id }: { id: string }) {
+  const { setNodeRef, transform, transition } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+  return (
+    <div ref={setNodeRef} style={style}>
+      <div className="h-[38px] border-2 border-dashed border-primary/40 rounded-lg bg-primary/5" />
+    </div>
+  );
+}
+
+// ─── Drag overlay card ────────────────────────────────────────────────────────
 function DragCard({ ex }: { ex: Exercise }) {
   return (
-    <div className="flex items-center gap-1 bg-card border border-primary/60 rounded-lg px-1.5 py-1.5 shadow-xl opacity-95 w-56 xl:w-64">
+    <div className="flex items-center gap-1 bg-card border border-primary/60 rounded-lg px-1.5 py-1.5 shadow-xl w-56 xl:w-64 cursor-grabbing">
       <GripVertical size={12} className="text-muted-foreground/40 flex-shrink-0" />
       <span className="flex-1 min-w-0 text-[12px] text-foreground truncate">{ex.name || "Exercise"}</span>
       <span className="text-[12px] text-muted-foreground flex-shrink-0">{ex.sets} × {ex.reps}</span>
@@ -214,11 +234,14 @@ function DragCard({ ex }: { ex: Exercise }) {
 
 // ─── Kanban Column ────────────────────────────────────────────────────────────
 function KanbanColumn({
-  day, dayIdx, isDragTarget, updateDay, removeDay, addExercise, removeExercise, updateExercise, exerciseNames,
+  day, dayIdx, isDragTarget, ghostExIdx, placeholderIdx,
+  updateDay, removeDay, addExercise, removeExercise, updateExercise, exerciseNames,
 }: {
   day: Day;
   dayIdx: number;
   isDragTarget: boolean;
+  ghostExIdx: number | null;    // index in this column that should appear as ghost (source col)
+  placeholderIdx: number | null; // index in this column where placeholder slot should appear (target col)
   updateDay: (i: number, f: string, v: string) => void;
   removeDay: (i: number) => void;
   addExercise: (i: number) => void;
@@ -227,7 +250,16 @@ function KanbanColumn({
   exerciseNames: string[];
 }) {
   const totalSets = (day.exercises ?? []).reduce((s, ex) => s + (parseInt(ex.sets) || 0), 0);
-  const exIds = (day.exercises ?? []).map((_, j) => `ex-${dayIdx}-${j}`);
+
+  // Build the items list for SortableContext — insert placeholder at target position
+  const items: string[] = [];
+  (day.exercises ?? []).forEach((_, j) => {
+    if (placeholderIdx === j) items.push(`${PLACEHOLDER_PREFIX}${dayIdx}`);
+    items.push(`ex-${dayIdx}-${j}`);
+  });
+  if (placeholderIdx === (day.exercises ?? []).length) {
+    items.push(`${PLACEHOLDER_PREFIX}${dayIdx}`);
+  }
 
   return (
     <div
@@ -257,23 +289,40 @@ function KanbanColumn({
         </button>
       </div>
 
-      {/* Exercise list — scrollable */}
+      {/* Exercise list */}
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1 min-h-[48px]">
-        <SortableContext items={exIds} strategy={verticalListSortingStrategy}>
-          {(day.exercises ?? []).map((ex, j) => (
-            <KanbanExCard
-              key={`ex-${dayIdx}-${j}`}
-              id={`ex-${dayIdx}-${j}`}
-              ex={ex}
-              dayIdx={dayIdx}
-              exIdx={j}
-              updateExercise={updateExercise}
-              removeExercise={removeExercise}
-              exerciseNames={exerciseNames}
-            />
-          ))}
+        <SortableContext items={items} strategy={verticalListSortingStrategy}>
+          {(() => {
+            const rows: React.ReactNode[] = [];
+            (day.exercises ?? []).forEach((ex, j) => {
+              if (placeholderIdx === j) {
+                rows.push(
+                  <PlaceholderSlot key={`placeholder-${dayIdx}`} id={`${PLACEHOLDER_PREFIX}${dayIdx}`} />
+                );
+              }
+              rows.push(
+                <KanbanExCard
+                  key={`ex-${dayIdx}-${j}`}
+                  id={`ex-${dayIdx}-${j}`}
+                  ex={ex}
+                  dayIdx={dayIdx}
+                  exIdx={j}
+                  updateExercise={updateExercise}
+                  removeExercise={removeExercise}
+                  exerciseNames={exerciseNames}
+                  isGhost={ghostExIdx === j}
+                />
+              );
+            });
+            if (placeholderIdx === (day.exercises ?? []).length) {
+              rows.push(
+                <PlaceholderSlot key={`placeholder-${dayIdx}`} id={`${PLACEHOLDER_PREFIX}${dayIdx}`} />
+              );
+            }
+            return rows;
+          })()}
         </SortableContext>
-        {(day.exercises ?? []).length === 0 && (
+        {(day.exercises ?? []).length === 0 && placeholderIdx === null && (
           <div className="flex items-center justify-center h-10 text-[11px] text-muted-foreground/40 border border-dashed border-border/30 rounded-lg">
             Drop exercises here
           </div>
@@ -297,13 +346,10 @@ function KanbanColumn({
 export default function KanbanProgramView({
   days, updateDay, removeDay, addDay, addExercise, removeExercise, updateExercise, setDays, exerciseNames,
 }: Props) {
-  // We keep a local "live" copy of days during drag so SortableContext sees the
-  // updated order and renders the placeholder gap in real time.
-  const [liveDays, setLiveDays] = useState<Day[] | null>(null);
+  // Track active drag
   const [activeExId, setActiveExId] = useState<string | null>(null);
-
-  // The days we actually render — live during drag, committed on drop
-  const renderDays = liveDays ?? days;
+  // Track where the placeholder should appear: { dayIdx, insertBeforeIdx }
+  const [dropTarget, setDropTarget] = useState<{ dayIdx: number; insertIdx: number } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -312,105 +358,78 @@ export default function KanbanProgramView({
 
   function handleDragStart({ active }: { active: { id: UniqueIdentifier } }) {
     const id = String(active.id);
-    if (id.startsWith("ex-")) {
-      setActiveExId(id);
-      // Snapshot current days as the live working copy
-      setLiveDays(days.map(d => ({ ...d, exercises: [...(d.exercises ?? [])] })));
-    }
+    if (id.startsWith("ex-")) setActiveExId(id);
   }
 
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
-    if (!over) return;
+    if (!over) { setDropTarget(null); return; }
     const activeId = String(active.id);
     const overId = String(over.id);
     if (!activeId.startsWith("ex-")) return;
 
     const src = parseExId(activeId);
-    const tgt = parseExId(overId);
-    if (!src || !tgt) return;
-    if (src.dayIdx === tgt.dayIdx && src.exIdx === tgt.exIdx) return;
+    if (!src) return;
 
-    // Mutate the live copy so SortableContext renders the gap in real time
-    setLiveDays(prev => {
-      const base = prev ?? days.map(d => ({ ...d, exercises: [...(d.exercises ?? [])] }));
-      const next = base.map(d => ({ ...d, exercises: [...d.exercises] }));
-
-      // Find current position of the dragged exercise in the live copy
-      // (it may have already moved from a previous dragOver)
-      let currentSrcDayIdx = -1;
-      let currentSrcExIdx = -1;
-      for (let di = 0; di < next.length; di++) {
-        // We identify the dragged item by matching the original ID's exercise
-        // stored in activeExId — but since IDs are positional we need to track
-        // by the original src. Instead, we scan for the item that was at src
-        // in the snapshot. Since we mutate liveDays, we use the active.id to
-        // find the current position by re-parsing from the live state.
-        // Simplest: find the item by its original src position in the snapshot.
-        // Actually, since IDs are positional and we update liveDays, we need
-        // to find the item that was originally at src.dayIdx/src.exIdx.
-        // We'll track this by storing the original exercise reference.
-        // For simplicity, just use the src from the active.id which is stable.
-        break;
+    // Determine target day and insert position from the over element
+    if (overId.startsWith("ex-")) {
+      const tgt = parseExId(overId);
+      if (!tgt) return;
+      if (tgt.dayIdx === src.dayIdx) {
+        // Same column — no cross-column placeholder needed
+        setDropTarget(null);
+      } else {
+        setDropTarget({ dayIdx: tgt.dayIdx, insertIdx: tgt.exIdx });
       }
-
-      // Use src from active.id (stable — dnd-kit doesn't change active.id during drag)
-      const originalSrc = parseExId(activeId)!;
-
-      // Find where the dragged item currently lives in the live copy
-      // by scanning for it (it may have moved due to previous dragOver calls)
-      // We identify it by reference to the original exercise object
-      const originalEx = (days[originalSrc.dayIdx]?.exercises ?? [])[originalSrc.exIdx];
-      if (!originalEx) return prev;
-
-      let curDayIdx = -1;
-      let curExIdx = -1;
-      for (let di = 0; di < next.length; di++) {
-        const idx = next[di].exercises.findIndex(e => e === originalEx);
-        if (idx !== -1) { curDayIdx = di; curExIdx = idx; break; }
-      }
-      if (curDayIdx === -1) {
-        // Fallback: use original src
-        curDayIdx = originalSrc.dayIdx;
-        curExIdx = originalSrc.exIdx;
-      }
-
-      if (curDayIdx === tgt.dayIdx && curExIdx === tgt.exIdx) return prev;
-
-      // Remove from current position
-      const [moved] = next[curDayIdx].exercises.splice(curExIdx, 1);
-      // Insert at target position
-      next[tgt.dayIdx].exercises.splice(tgt.exIdx, 0, moved);
-
-      return next;
-    });
+    } else if (isPlaceholder(overId)) {
+      // Hovering over the placeholder itself — keep current dropTarget
+    } else {
+      setDropTarget(null);
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    const prevActiveId = activeExId;
+    const prevDropTarget = dropTarget;
+
     setActiveExId(null);
+    setDropTarget(null);
 
-    if (!over || !liveDays) {
-      setLiveDays(null);
-      return;
+    if (!over || !prevActiveId) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    if (!activeId.startsWith("ex-")) return;
+
+    const src = parseExId(activeId);
+    if (!src) return;
+
+    const newDays = days.map(d => ({ ...d, exercises: [...(d.exercises ?? [])] }));
+
+    if (prevDropTarget && prevDropTarget.dayIdx !== src.dayIdx) {
+      // Cross-column move — use the tracked drop target
+      const [moved] = newDays[src.dayIdx].exercises.splice(src.exIdx, 1);
+      const insertIdx = Math.min(prevDropTarget.insertIdx, newDays[prevDropTarget.dayIdx].exercises.length);
+      newDays[prevDropTarget.dayIdx].exercises.splice(insertIdx, 0, moved);
+      setDays(newDays);
+    } else if (overId.startsWith("ex-")) {
+      const tgt = parseExId(overId);
+      if (!tgt) return;
+      if (tgt.dayIdx === src.dayIdx) {
+        // Same column reorder
+        newDays[src.dayIdx].exercises = arrayMove(newDays[src.dayIdx].exercises, src.exIdx, tgt.exIdx);
+        setDays(newDays);
+      }
     }
-
-    // Commit the live state to the parent
-    setDays(liveDays);
-    setLiveDays(null);
   }
 
   function handleDragCancel() {
     setActiveExId(null);
-    setLiveDays(null);
+    setDropTarget(null);
   }
 
-  const activeEx = activeExId ? (() => {
-    const p = parseExId(activeExId);
-    if (!p) return null;
-    // Look in liveDays first, then days
-    return (liveDays ?? days)[p.dayIdx]?.exercises?.[p.exIdx] ?? null;
-  })() : null;
+  const srcParsed = activeExId ? parseExId(activeExId) : null;
+  const activeEx = srcParsed ? days[srcParsed.dayIdx]?.exercises?.[srcParsed.exIdx] ?? null : null;
 
   return (
     <DndContext
@@ -423,22 +442,30 @@ export default function KanbanProgramView({
     >
       {/* Horizontal scroll board */}
       <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: "300px" }}>
-        {renderDays.map((day, i) => (
-          <KanbanColumn
-            key={`col-${i}`}
-            day={day}
-            dayIdx={i}
-            isDragTarget={false}
-            updateDay={updateDay}
-            removeDay={removeDay}
-            addExercise={addExercise}
-            removeExercise={removeExercise}
-            updateExercise={updateExercise}
-            exerciseNames={exerciseNames}
-          />
-        ))}
+        {days.map((day, i) => {
+          const isSrcCol = srcParsed?.dayIdx === i;
+          const isTgtCol = dropTarget?.dayIdx === i;
+          return (
+            <KanbanColumn
+              key={`col-${i}`}
+              day={day}
+              dayIdx={i}
+              isDragTarget={isTgtCol}
+              // Ghost: show the dragged exercise faded in its source column
+              ghostExIdx={isSrcCol && isTgtCol === false ? srcParsed!.exIdx : null}
+              // Placeholder: show insertion slot in the target column
+              placeholderIdx={isTgtCol ? dropTarget!.insertIdx : null}
+              updateDay={updateDay}
+              removeDay={removeDay}
+              addExercise={addExercise}
+              removeExercise={removeExercise}
+              updateExercise={updateExercise}
+              exerciseNames={exerciseNames}
+            />
+          );
+        })}
 
-        {/* Add Training Day column */}
+        {/* Add Training Day */}
         <div className="flex-shrink-0 w-44 flex items-start pt-3">
           <button
             onClick={addDay}
@@ -450,7 +477,7 @@ export default function KanbanProgramView({
         </div>
       </div>
 
-      {/* Drag overlay */}
+      {/* Drag overlay — follows cursor */}
       <DragOverlay dropAnimation={null}>
         {activeEx ? <DragCard ex={activeEx} /> : null}
       </DragOverlay>
