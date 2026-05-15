@@ -109,7 +109,7 @@ function KanbanExCard({
   return (
     <div ref={setNodeRef} style={style} className="space-y-1">
       <div className="bg-secondary/60 border border-border/60 rounded-lg px-1.5 py-1.5 group hover:border-border transition-colors">
-        {/* Row 1: grip + exercise name + actions */}
+        {/* Row 1: grip + exercise name + sets input + actions */}
         <div className="flex items-center gap-1">
           <div
             {...attributes}
@@ -150,6 +150,20 @@ function KanbanExCard({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Always-visible sets input */}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <input
+              ref={setsRef}
+              type="text"
+              value={ex.sets}
+              onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); repsRef.current?.focus(); } }}
+              placeholder="—"
+              title="Sets"
+              className="w-7 bg-secondary/80 border border-border/60 rounded text-[11px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary/50 px-0.5 py-0.5 placeholder:text-muted-foreground/30"
+            />
           </div>
 
           <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -452,11 +466,12 @@ export default function KanbanProgramView({
   const srcParsed = activeExId ? parseExId(activeExId) : null;
   const activeEx = srcParsed ? days[srcParsed.dayIdx]?.exercises?.[srcParsed.exIdx] ?? null : null;
 
-  // Compute weekly volume for the chip bar
-  const volumeEntries = (() => {
-    if (!days.length) return [];
+  // Compute per-session and weekly volume table
+  const volumeTable = (() => {
+    if (!days.length) return null;
     const cycleLengthDays = schedule.length > 0 ? schedule.length : days.length;
     const multiplier = 7 / cycleLengthDays;
+
     const libMap = new Map<string, Record<string, number>>();
     for (const ex of exerciseLib) {
       const contributions: Record<string, number> = {};
@@ -466,26 +481,41 @@ export default function KanbanProgramView({
       }
       libMap.set(String(ex.name ?? "").toLowerCase(), contributions);
     }
-    const weeklyTotals: Record<string, number> = {};
+
+    // Per-day raw set totals per muscle group
+    const dayTotals: Record<string, Record<string, number>> = {};
     for (const day of days) {
       const dayName = day.name || "Unnamed";
-      const occurrences = schedule.length > 0 ? schedule.filter(s => s === dayName).length : 1;
+      dayTotals[dayName] = {};
       for (const ex of (day.exercises ?? [])) {
         const sets = parseFloat(ex.sets) || 0;
         const contrib = libMap.get((ex.name ?? "").toLowerCase());
         if (!contrib || sets === 0) continue;
         for (const [mgKey, val] of Object.entries(contrib)) {
-          weeklyTotals[mgKey] = (weeklyTotals[mgKey] ?? 0) + sets * val * occurrences;
+          dayTotals[dayName][mgKey] = (dayTotals[dayName][mgKey] ?? 0) + sets * val;
         }
+      }
+    }
+
+    // Weekly totals (occurrences × per-day × multiplier)
+    const weeklyTotals: Record<string, number> = {};
+    for (const day of days) {
+      const dayName = day.name || "Unnamed";
+      const occurrences = schedule.length > 0 ? schedule.filter(s => s === dayName).length : 1;
+      for (const [mgKey, val] of Object.entries(dayTotals[dayName] ?? {})) {
+        weeklyTotals[mgKey] = (weeklyTotals[mgKey] ?? 0) + val * occurrences;
       }
     }
     for (const key of Object.keys(weeklyTotals)) {
       weeklyTotals[key] = Math.round(weeklyTotals[key] * multiplier);
     }
-    return MUSCLE_GROUPS
-      .map(mg => ({ label: mg.label, key: mg.key, total: weeklyTotals[mg.key] ?? 0 }))
-      .filter(e => e.total > 0)
-      .sort((a, b) => b.total - a.total);
+
+    // Muscle groups that have any volume
+    const activeMgs = MUSCLE_GROUPS.filter(mg =>
+      days.some(d => (dayTotals[d.name || "Unnamed"]?.[mg.key] ?? 0) > 0)
+    ).sort((a, b) => (weeklyTotals[b.key] ?? 0) - (weeklyTotals[a.key] ?? 0));
+
+    return { dayTotals, weeklyTotals, activeMgs, multiplier };
   })();
 
   return (
@@ -536,17 +566,50 @@ export default function KanbanProgramView({
       </DragOverlay>
     </DndContext>
 
-    {/* Weekly Volume chip bar */}
-    {volumeEntries.length > 0 && (
+    {/* Weekly Volume table */}
+    {volumeTable && volumeTable.activeMgs.length > 0 && (
       <div className="mt-4 pt-4 border-t border-border/40">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Weekly Volume</p>
-        <div className="flex flex-wrap gap-1.5">
-          {volumeEntries.map(e => (
-            <div key={e.key} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-secondary/60 text-[12px]">
-              <span className="text-foreground/80">{e.label}</span>
-              <span className="font-semibold text-primary">{e.total}</span>
-            </div>
-          ))}
+        <div className="flex items-baseline gap-2 mb-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Weekly Volume</p>
+          <span className="text-[10px] text-muted-foreground/50">
+            Cycle: {schedule.length > 0 ? schedule.length : days.length} days
+            {" "}&times;{Math.round((7 / (schedule.length > 0 ? schedule.length : days.length)) * 10) / 10} sets/wk
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="text-[12px] border-collapse w-auto">
+            <thead>
+              <tr>
+                <th className="text-left text-[10px] uppercase tracking-wider text-muted-foreground pr-4 pb-1.5 font-medium">Muscle</th>
+                {days.map((d, i) => (
+                  <th key={i} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground px-3 pb-1.5 font-medium">
+                    {d.name || `Day ${i + 1}`}
+                  </th>
+                ))}
+                <th className="text-center text-[10px] uppercase tracking-wider text-primary/70 px-3 pb-1.5 font-medium">Wk</th>
+              </tr>
+            </thead>
+            <tbody>
+              {volumeTable.activeMgs.map(mg => {
+                const weeklyVal = volumeTable.weeklyTotals[mg.key] ?? 0;
+                return (
+                  <tr key={mg.key} className="border-t border-border/20">
+                    <td className="pr-4 py-1 text-muted-foreground/80 whitespace-nowrap">{mg.label}</td>
+                    {days.map((d, i) => {
+                      const dayName = d.name || "Unnamed";
+                      const val = Math.round(volumeTable.dayTotals[dayName]?.[mg.key] ?? 0);
+                      return (
+                        <td key={i} className="text-center px-3 py-1 tabular-nums">
+                          {val > 0 ? <span className="text-foreground/80">{val}</span> : <span className="text-muted-foreground/20">&mdash;</span>}
+                        </td>
+                      );
+                    })}
+                    <td className="text-center px-3 py-1 tabular-nums font-semibold text-primary">{weeklyVal}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     )}
