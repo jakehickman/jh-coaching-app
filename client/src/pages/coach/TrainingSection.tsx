@@ -239,14 +239,16 @@ function SortableExerciseRow({
         </div>
       </div>
       {showNotes && (
-        <div className="pl-6">
+        <div className="grid grid-cols-12 gap-1">
+          <div className="col-span-1" />
           <input
             type="text"
             value={ex.notes ?? ""}
             onChange={e => updateExercise(dayIdx, exIdx, "notes", e.target.value)}
-
-            className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:text-foreground"
+            placeholder="Add note..."
+            className="col-span-10 bg-secondary/50 border border-border/50 rounded px-2 py-1 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:text-foreground"
           />
+          <div className="col-span-1" />
         </div>
       )}
     </div>
@@ -959,7 +961,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
             )}
           </div>
           {/* ── Two-column: sessions left, volume summary right ── */}
-          <div className="flex flex-col lg:flex-row gap-6 items-start">
+          <div className="flex flex-col lg:flex-row gap-6 items-start min-w-0">
             {/* Left: sessions + controls */}
             <div className="flex-1 min-w-0 space-y-4">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDayDragEnd}>
@@ -1011,7 +1013,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
             </div>
             {/* Right: sticky weekly volume summary */}
             {volumeTable && (
-              <div className="w-80 shrink-0 sticky top-24">
+              <div className="w-72 xl:w-80 shrink-0 min-w-0 sticky top-24 overflow-hidden">
                 <SectionLabel>Weekly Volume</SectionLabel>
                 <p className="text-xs text-muted-foreground mb-3">
                   Cycle: {schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(3)} · sets/wk
