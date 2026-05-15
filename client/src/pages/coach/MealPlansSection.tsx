@@ -551,9 +551,9 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                   <div className="mt-2 pt-2 border-t border-border/40 flex items-center gap-3 flex-wrap">
                     <span className="text-[11px] uppercase tracking-wider text-muted-foreground/60 font-semibold">Meal</span>
                     <span className="text-[13px] font-semibold text-primary/80">{mealMacros[i].calories} kcal</span>
-                    <span className="text-[13px] text-muted-foreground">P{mealMacros[i].protein}g</span>
-                    <span className="text-[13px] text-muted-foreground">C{mealMacros[i].carbs}g</span>
-                    <span className="text-[13px] text-muted-foreground">F{mealMacros[i].fat}g</span>
+                    <span className="text-[13px] text-muted-foreground">P{mealMacros[i].protein}</span>
+                    <span className="text-[13px] text-muted-foreground">C{mealMacros[i].carbs}</span>
+                    <span className="text-[13px] text-muted-foreground">F{mealMacros[i].fat}</span>
                   </div>
                 )}
               </Card>
