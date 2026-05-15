@@ -465,7 +465,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                   <div className="flex items-center gap-1.5 px-0.5 mb-1">
                     <p className="flex-1 text-[10px] text-muted-foreground">Food</p>
                     <p className="w-16 text-[10px] text-muted-foreground text-right">Amount</p>
-                    <p className="w-10 text-[10px] text-muted-foreground">Unit</p>
+                    <p className="w-24 text-[10px] text-muted-foreground">Unit</p>
                     <p className="w-24 text-[10px] text-muted-foreground">Macros</p>
                     <p className="w-4"></p>
                   </div>
@@ -523,7 +523,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextFoodInput(); } }}
                             className="w-16 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
                           />
-                          <span className="text-[10px] text-muted-foreground w-10 truncate">
+                          <span className="text-[10px] text-muted-foreground w-24">
                             {isServingBased ? selectedFood.servingUnit : "g"}
                             {isServingBased && effectiveGrams ? ` (${effectiveGrams}g)` : ""}
                           </span>
