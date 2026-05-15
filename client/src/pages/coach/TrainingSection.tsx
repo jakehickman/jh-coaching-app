@@ -614,7 +614,7 @@ function SortableDayCard({
             <GripVertical size={15} />
           </div>
           <input type="text" value={day.name} onChange={e => updateDay(dayIdx, "name", e.target.value)}
-            className="w-16 bg-transparent border-0 border-b border-border/60 px-1 py-0.5 text-[13px] text-foreground font-semibold focus:outline-none focus:border-primary" />
+            className="w-32 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground font-semibold focus:outline-none focus:ring-1 focus:ring-primary" />
           <div className="flex-1" />
           <button onClick={() => removeDay(dayIdx)} title="Remove day" className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
             <Trash2 size={14} />
