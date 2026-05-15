@@ -112,87 +112,92 @@ function KanbanExCard({
 
   return (
     <div ref={setNodeRef} style={style} className="space-y-1">
-      <div className="flex items-center gap-1 bg-secondary/60 border border-border/60 rounded-lg px-1.5 py-1.5 group hover:border-border transition-colors">
-        {/* Grip */}
-        <div
-          {...attributes}
-          {...listeners}
-          className="text-muted-foreground/40 cursor-grab active:cursor-grabbing hover:text-muted-foreground touch-none flex-shrink-0"
-        >
-          <GripVertical size={12} />
+      <div className="bg-secondary/60 border border-border/60 rounded-lg px-1.5 py-1.5 group hover:border-border transition-colors">
+        {/* Row 1: grip + exercise name + actions */}
+        <div className="flex items-center gap-1">
+          <div
+            {...attributes}
+            {...listeners}
+            className="text-muted-foreground/40 cursor-grab active:cursor-grabbing hover:text-muted-foreground touch-none flex-shrink-0"
+          >
+            <GripVertical size={12} />
+          </div>
+
+          {/* Exercise name */}
+          <div className="flex-1 min-w-0 relative">
+            <input
+              type="text"
+              value={dropdownOpen ? searchTerm : ex.name}
+              onChange={e => { setSearchTerm(e.target.value); setDropdownOpen(true); setHighlightedIdx(-1); }}
+              onFocus={() => { setSearchTerm(""); setDropdownOpen(true); setHighlightedIdx(-1); }}
+              onBlur={() => setTimeout(() => { setDropdownOpen(false); setHighlightedIdx(-1); }, 150)}
+              onKeyDown={handleExKeyDown}
+              placeholder="Exercise name"
+              className="w-full bg-transparent text-[12px] text-foreground focus:outline-none truncate placeholder:text-muted-foreground/40"
+            />
+            {dropdownOpen && filtered.length > 0 && (
+              <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-40 overflow-y-auto">
+                {filtered.map((name, idx) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onMouseDown={() => {
+                      updateExercise(dayIdx, exIdx, "name", name);
+                      setSearchTerm(""); setDropdownOpen(false); setHighlightedIdx(-1);
+                      setTimeout(() => setsRef.current?.focus(), 0);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-[12px] transition-colors ${
+                      idx === highlightedIdx ? "bg-primary/20 text-primary" : "text-foreground hover:bg-primary/10 hover:text-primary"
+                    }`}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            <button
+              onClick={() => setShowNotes(n => !n)}
+              title="Toggle notes"
+              className={`p-1 rounded hover:bg-secondary transition-colors ${showNotes || ex.notes ? 'text-primary' : 'text-muted-foreground'}`}
+            >
+              <ChevronDown size={11} className={`transition-transform ${showNotes ? 'rotate-180' : ''}`} />
+            </button>
+            <button
+              onClick={() => removeExercise(dayIdx, exIdx)}
+              title="Remove exercise"
+              className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <Trash2 size={11} />
+            </button>
+          </div>
         </div>
 
-        {/* Exercise name */}
-        <div className="flex-1 min-w-0 relative">
+        {/* Row 2: sets × reps */}
+        <div className="flex items-center gap-1 pl-4 mt-0.5">
+          <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wide w-8">Sets</span>
           <input
+            ref={setsRef}
             type="text"
-            value={dropdownOpen ? searchTerm : ex.name}
-            onChange={e => { setSearchTerm(e.target.value); setDropdownOpen(true); setHighlightedIdx(-1); }}
-            onFocus={() => { setSearchTerm(""); setDropdownOpen(true); setHighlightedIdx(-1); }}
-            onBlur={() => setTimeout(() => { setDropdownOpen(false); setHighlightedIdx(-1); }, 150)}
-            onKeyDown={handleExKeyDown}
-            placeholder="Exercise name"
-            className="w-full bg-transparent text-[12px] text-foreground focus:outline-none truncate placeholder:text-muted-foreground/40"
+            value={ex.sets}
+            onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); repsRef.current?.focus(); } }}
+            placeholder="—"
+            className="w-8 bg-secondary/60 border border-border/40 rounded text-[12px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary/40 px-1 py-0.5 placeholder:text-muted-foreground/40"
           />
-          {dropdownOpen && filtered.length > 0 && (
-            <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-40 overflow-y-auto">
-              {filtered.map((name, idx) => (
-                <button
-                  key={name}
-                  type="button"
-                  onMouseDown={() => {
-                    updateExercise(dayIdx, exIdx, "name", name);
-                    setSearchTerm(""); setDropdownOpen(false); setHighlightedIdx(-1);
-                    setTimeout(() => setsRef.current?.focus(), 0);
-                  }}
-                  className={`w-full text-left px-3 py-1.5 text-[12px] transition-colors ${
-                    idx === highlightedIdx ? "bg-primary/20 text-primary" : "text-foreground hover:bg-primary/10 hover:text-primary"
-                  }`}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Sets */}
-        <input
-          ref={setsRef}
-          type="text"
-          value={ex.sets}
-          onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); repsRef.current?.focus(); } }}
-          placeholder="—"
-          className="w-6 bg-transparent text-[12px] text-foreground text-center focus:outline-none focus:bg-secondary rounded px-0 placeholder:text-muted-foreground/40 flex-shrink-0"
-        />
-        <span className="text-muted-foreground/30 text-[10px] flex-shrink-0">×</span>
-        {/* Reps */}
-        <input
-          ref={repsRef}
-          type="text"
-          value={ex.reps}
-          onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
-          placeholder="—"
-          className="w-10 bg-transparent text-[12px] text-foreground text-center focus:outline-none focus:bg-secondary rounded px-0 placeholder:text-muted-foreground/40 flex-shrink-0"
-        />
-
-        {/* Actions */}
-        <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-          <button
-            onClick={() => setShowNotes(n => !n)}
-            title="Toggle notes"
-            className={`p-1 rounded hover:bg-secondary transition-colors ${showNotes || ex.notes ? 'text-primary' : 'text-muted-foreground'}`}
-          >
-            <ChevronDown size={11} className={`transition-transform ${showNotes ? 'rotate-180' : ''}`} />
-          </button>
-          <button
-            onClick={() => removeExercise(dayIdx, exIdx)}
-            title="Remove exercise"
-            className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-          >
-            <Trash2 size={11} />
-          </button>
+          <span className="text-muted-foreground/30 text-[10px]">×</span>
+          <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wide w-8">Reps</span>
+          <input
+            ref={repsRef}
+            type="text"
+            value={ex.reps}
+            onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
+            placeholder="—"
+            className="w-14 bg-secondary/60 border border-border/40 rounded text-[12px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary/40 px-1 py-0.5 placeholder:text-muted-foreground/40"
+          />
         </div>
       </div>
 
