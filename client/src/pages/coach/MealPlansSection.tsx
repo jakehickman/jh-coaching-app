@@ -531,8 +531,8 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                         <div className="w-24 shrink-0 text-[10px] leading-tight">
                           {hasData ? (
                             <>
-                              <span className="text-foreground font-medium">{m.calories} kcal</span>
-                              <div className="text-muted-foreground text-[9px]">P{m.protein} C{m.carbs} F{m.fat}</div>
+                              <span className="text-foreground font-medium text-xs">{m.calories} kcal</span>
+                              <div className="text-muted-foreground text-xs">P{m.protein} C{m.carbs} F{m.fat}</div>
                             </>
                           ) : <span className="text-muted-foreground/40">—</span>}
                         </div>
