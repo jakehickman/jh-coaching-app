@@ -46,16 +46,10 @@ interface Props {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const PLACEHOLDER_PREFIX = "__placeholder__";
-
 function parseExId(id: UniqueIdentifier): { dayIdx: number; exIdx: number } | null {
   const m = String(id).match(/^ex-(\d+)-(\d+)$/);
   if (!m) return null;
   return { dayIdx: parseInt(m[1]), exIdx: parseInt(m[2]) };
-}
-
-function isPlaceholder(id: UniqueIdentifier) {
-  return String(id).startsWith(PLACEHOLDER_PREFIX);
 }
 
 // ─── Kanban Exercise Card ─────────────────────────────────────────────────────
@@ -82,7 +76,6 @@ function KanbanExCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    // Ghost: faded in source column. isDragging: being actively dragged (hidden, overlay takes over).
     opacity: isGhost ? 0.3 : isDragging ? 0 : 1,
     pointerEvents: (isGhost ? "none" : undefined) as React.CSSProperties["pointerEvents"],
   };
@@ -123,7 +116,6 @@ function KanbanExCard({
             <GripVertical size={12} />
           </div>
 
-          {/* Exercise name */}
           <div className="flex-1 min-w-0 relative">
             <input
               type="text"
@@ -157,7 +149,6 @@ function KanbanExCard({
             )}
           </div>
 
-          {/* Actions */}
           <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
             <button
               onClick={() => setShowNotes(n => !n)}
@@ -201,7 +192,6 @@ function KanbanExCard({
         </div>
       </div>
 
-      {/* Notes */}
       {(showNotes || ex.notes) && (
         <input
           type="text"
@@ -215,38 +205,38 @@ function KanbanExCard({
   );
 }
 
-// ─── Placeholder slot (shown in target column during cross-column drag) ───────
-function PlaceholderSlot({ id }: { id: string }) {
-  const { setNodeRef, transform, transition } = useSortable({ id });
-  const style = { transform: CSS.Transform.toString(transform), transition };
-  return (
-    <div ref={setNodeRef} style={style}>
-      <div className="h-[38px] border-2 border-dashed border-primary/40 rounded-lg bg-primary/5" />
-    </div>
-  );
-}
-
 // ─── Drag overlay card ────────────────────────────────────────────────────────
 function DragCard({ ex }: { ex: Exercise }) {
   return (
-    <div className="flex items-center gap-1 bg-card border border-primary/60 rounded-lg px-1.5 py-1.5 shadow-xl w-56 xl:w-64 cursor-grabbing">
-      <GripVertical size={12} className="text-muted-foreground/40 flex-shrink-0" />
-      <span className="flex-1 min-w-0 text-[12px] text-foreground truncate">{ex.name || "Exercise"}</span>
-      <span className="text-[12px] text-muted-foreground flex-shrink-0">{ex.sets} × {ex.reps}</span>
+    <div className="bg-card border border-primary/60 rounded-lg px-1.5 py-1.5 shadow-xl w-56 xl:w-64 cursor-grabbing">
+      <div className="flex items-center gap-1">
+        <GripVertical size={12} className="text-muted-foreground/40 flex-shrink-0" />
+        <span className="flex-1 min-w-0 text-[12px] text-foreground truncate">{ex.name || "Exercise"}</span>
+      </div>
+      <div className="flex items-center gap-1 pl-4 mt-0.5">
+        <span className="text-[10px] text-muted-foreground/50 w-8">Sets</span>
+        <span className="text-[12px] text-foreground">{ex.sets || "—"}</span>
+        <span className="text-muted-foreground/30 text-[10px]">×</span>
+        <span className="text-[10px] text-muted-foreground/50 w-8">Reps</span>
+        <span className="text-[12px] text-foreground">{ex.reps || "—"}</span>
+      </div>
     </div>
   );
 }
 
 // ─── Kanban Column ────────────────────────────────────────────────────────────
+// The key insight: we always include a stable placeholder ID in the SortableContext
+// items list for every column, but only show it visually when this column is the drop target.
+// This keeps the hook count stable across renders (no conditional useSortable calls).
 function KanbanColumn({
-  day, dayIdx, isDragTarget, ghostExIdx, placeholderIdx,
+  day, dayIdx, isDragTarget, ghostExIdx, placeholderInsertIdx,
   updateDay, removeDay, addExercise, removeExercise, updateExercise, exerciseNames,
 }: {
   day: Day;
   dayIdx: number;
   isDragTarget: boolean;
-  ghostExIdx: number | null;    // index in this column that should appear as ghost (source col)
-  placeholderIdx: number | null; // index in this column where placeholder slot should appear (target col)
+  ghostExIdx: number | null;
+  placeholderInsertIdx: number | null;
   updateDay: (i: number, f: string, v: string) => void;
   removeDay: (i: number) => void;
   addExercise: (i: number) => void;
@@ -254,17 +244,20 @@ function KanbanColumn({
   updateExercise: (d: number, e: number, f: string, v: string) => void;
   exerciseNames: string[];
 }) {
-  const totalSets = (day.exercises ?? []).reduce((s, ex) => s + (parseInt(ex.sets) || 0), 0);
+  const exercises = day.exercises ?? [];
+  const totalSets = exercises.reduce((s, ex) => s + (parseInt(ex.sets) || 0), 0);
 
-  // Build the items list for SortableContext — insert placeholder at target position
+  // Build stable items list: always include the placeholder ID for this column.
+  // Its position in the list determines where the drop slot appears.
+  const placeholderId = `placeholder-col-${dayIdx}`;
+  const insertAt = placeholderInsertIdx ?? exercises.length; // default: end (hidden)
+
   const items: string[] = [];
-  (day.exercises ?? []).forEach((_, j) => {
-    if (placeholderIdx === j) items.push(`${PLACEHOLDER_PREFIX}${dayIdx}`);
+  exercises.forEach((_, j) => {
+    if (j === insertAt) items.push(placeholderId);
     items.push(`ex-${dayIdx}-${j}`);
   });
-  if (placeholderIdx === (day.exercises ?? []).length) {
-    items.push(`${PLACEHOLDER_PREFIX}${dayIdx}`);
-  }
+  if (insertAt >= exercises.length) items.push(placeholderId);
 
   return (
     <div
@@ -297,37 +290,39 @@ function KanbanColumn({
       {/* Exercise list */}
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1 min-h-[48px]">
         <SortableContext items={items} strategy={verticalListSortingStrategy}>
-          {(() => {
-            const rows: React.ReactNode[] = [];
-            (day.exercises ?? []).forEach((ex, j) => {
-              if (placeholderIdx === j) {
-                rows.push(
-                  <PlaceholderSlot key={`placeholder-${dayIdx}`} id={`${PLACEHOLDER_PREFIX}${dayIdx}`} />
-                );
-              }
-              rows.push(
-                <KanbanExCard
-                  key={`ex-${dayIdx}-${j}`}
-                  id={`ex-${dayIdx}-${j}`}
-                  ex={ex}
-                  dayIdx={dayIdx}
-                  exIdx={j}
-                  updateExercise={updateExercise}
-                  removeExercise={removeExercise}
-                  exerciseNames={exerciseNames}
-                  isGhost={ghostExIdx === j}
+          {items.map((itemId) => {
+            if (itemId === placeholderId) {
+              // Always render the placeholder component (stable hook count),
+              // but only show it visually when this column is the drop target.
+              return (
+                <PlaceholderSlot
+                  key={placeholderId}
+                  id={placeholderId}
+                  visible={isDragTarget && placeholderInsertIdx !== null}
                 />
               );
-            });
-            if (placeholderIdx === (day.exercises ?? []).length) {
-              rows.push(
-                <PlaceholderSlot key={`placeholder-${dayIdx}`} id={`${PLACEHOLDER_PREFIX}${dayIdx}`} />
-              );
             }
-            return rows;
-          })()}
+            const parsed = parseExId(itemId);
+            if (!parsed) return null;
+            const { exIdx } = parsed;
+            const ex = exercises[exIdx];
+            if (!ex) return null;
+            return (
+              <KanbanExCard
+                key={itemId}
+                id={itemId}
+                ex={ex}
+                dayIdx={dayIdx}
+                exIdx={exIdx}
+                updateExercise={updateExercise}
+                removeExercise={removeExercise}
+                exerciseNames={exerciseNames}
+                isGhost={ghostExIdx === exIdx}
+              />
+            );
+          })}
         </SortableContext>
-        {(day.exercises ?? []).length === 0 && placeholderIdx === null && (
+        {exercises.length === 0 && !isDragTarget && (
           <div className="flex items-center justify-center h-10 text-[11px] text-muted-foreground/40 border border-dashed border-border/30 rounded-lg">
             Drop exercises here
           </div>
@@ -347,13 +342,23 @@ function KanbanColumn({
   );
 }
 
+// ─── Placeholder slot — always rendered, visibility controlled by prop ────────
+function PlaceholderSlot({ id, visible }: { id: string; visible: boolean }) {
+  const { setNodeRef, transform, transition } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+  if (!visible) return <div ref={setNodeRef} style={style} className="h-0 overflow-hidden" />;
+  return (
+    <div ref={setNodeRef} style={style}>
+      <div className="h-[52px] border-2 border-dashed border-primary/40 rounded-lg bg-primary/5" />
+    </div>
+  );
+}
+
 // ─── Main Kanban View ─────────────────────────────────────────────────────────
 export default function KanbanProgramView({
   days, updateDay, removeDay, addDay, addExercise, removeExercise, updateExercise, setDays, exerciseNames,
 }: Props) {
-  // Track active drag
   const [activeExId, setActiveExId] = useState<string | null>(null);
-  // Track where the placeholder should appear: { dayIdx, insertBeforeIdx }
   const [dropTarget, setDropTarget] = useState<{ dayIdx: number; insertIdx: number } | null>(null);
 
   const sensors = useSensors(
@@ -376,18 +381,26 @@ export default function KanbanProgramView({
     const src = parseExId(activeId);
     if (!src) return;
 
-    // Determine target day and insert position from the over element
     if (overId.startsWith("ex-")) {
       const tgt = parseExId(overId);
       if (!tgt) return;
-      if (tgt.dayIdx === src.dayIdx) {
-        // Same column — no cross-column placeholder needed
-        setDropTarget(null);
-      } else {
+      if (tgt.dayIdx !== src.dayIdx) {
         setDropTarget({ dayIdx: tgt.dayIdx, insertIdx: tgt.exIdx });
+      } else {
+        setDropTarget(null);
       }
-    } else if (isPlaceholder(overId)) {
-      // Hovering over the placeholder itself — keep current dropTarget
+    } else if (overId.startsWith("placeholder-col-")) {
+      // Hovering over the placeholder itself — keep current or set to end of that column
+      const colMatch = overId.match(/^placeholder-col-(\d+)$/);
+      if (colMatch) {
+        const tgtDayIdx = parseInt(colMatch[1]);
+        if (tgtDayIdx !== src.dayIdx) {
+          setDropTarget(prev => prev?.dayIdx === tgtDayIdx ? prev : {
+            dayIdx: tgtDayIdx,
+            insertIdx: days[tgtDayIdx]?.exercises?.length ?? 0,
+          });
+        }
+      }
     } else {
       setDropTarget(null);
     }
@@ -412,7 +425,7 @@ export default function KanbanProgramView({
     const newDays = days.map(d => ({ ...d, exercises: [...(d.exercises ?? [])] }));
 
     if (prevDropTarget && prevDropTarget.dayIdx !== src.dayIdx) {
-      // Cross-column move — use the tracked drop target
+      // Cross-column move
       const [moved] = newDays[src.dayIdx].exercises.splice(src.exIdx, 1);
       const insertIdx = Math.min(prevDropTarget.insertIdx, newDays[prevDropTarget.dayIdx].exercises.length);
       newDays[prevDropTarget.dayIdx].exercises.splice(insertIdx, 0, moved);
@@ -445,7 +458,6 @@ export default function KanbanProgramView({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      {/* Horizontal scroll board */}
       <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: "300px" }}>
         {days.map((day, i) => {
           const isSrcCol = srcParsed?.dayIdx === i;
@@ -456,10 +468,8 @@ export default function KanbanProgramView({
               day={day}
               dayIdx={i}
               isDragTarget={isTgtCol}
-              // Ghost: show the dragged exercise faded in its source column
-              ghostExIdx={isSrcCol && isTgtCol === false ? srcParsed!.exIdx : null}
-              // Placeholder: show insertion slot in the target column
-              placeholderIdx={isTgtCol ? dropTarget!.insertIdx : null}
+              ghostExIdx={isSrcCol && !isTgtCol ? srcParsed!.exIdx : null}
+              placeholderInsertIdx={isTgtCol ? dropTarget!.insertIdx : null}
               updateDay={updateDay}
               removeDay={removeDay}
               addExercise={addExercise}
@@ -470,7 +480,6 @@ export default function KanbanProgramView({
           );
         })}
 
-        {/* Add Training Day */}
         <div className="flex-shrink-0 w-44 flex items-start pt-3">
           <button
             onClick={addDay}
@@ -482,7 +491,6 @@ export default function KanbanProgramView({
         </div>
       </div>
 
-      {/* Drag overlay — follows cursor */}
       <DragOverlay dropAnimation={null}>
         {activeEx ? <DragCard ex={activeEx} /> : null}
       </DragOverlay>
