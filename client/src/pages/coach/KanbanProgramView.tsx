@@ -580,34 +580,40 @@ export default function KanbanProgramView({
           <table className="text-[12px] border-collapse w-auto">
             <thead>
               <tr>
-                <th className="text-left text-[10px] uppercase tracking-wider text-muted-foreground pr-4 pb-1.5 font-medium">Muscle</th>
-                {days.map((d, i) => (
-                  <th key={i} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground px-3 pb-1.5 font-medium">
-                    {d.name || `Day ${i + 1}`}
+                <th className="text-left text-[10px] uppercase tracking-wider text-muted-foreground pr-4 pb-1.5 font-medium">Session</th>
+                {volumeTable.activeMgs.map(mg => (
+                  <th key={mg.key} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground px-3 pb-1.5 font-medium whitespace-nowrap">
+                    {mg.label}
                   </th>
                 ))}
-                <th className="text-center text-[10px] uppercase tracking-wider text-primary/70 px-3 pb-1.5 font-medium">Wk</th>
               </tr>
             </thead>
             <tbody>
-              {volumeTable.activeMgs.map(mg => {
-                const weeklyVal = volumeTable.weeklyTotals[mg.key] ?? 0;
+              {days.map((d, i) => {
+                const dayName = d.name || `Day ${i + 1}`;
                 return (
-                  <tr key={mg.key} className="border-t border-border/20">
-                    <td className="pr-4 py-1 text-muted-foreground/80 whitespace-nowrap">{mg.label}</td>
-                    {days.map((d, i) => {
-                      const dayName = d.name || "Unnamed";
-                      const val = Math.round(volumeTable.dayTotals[dayName]?.[mg.key] ?? 0);
+                  <tr key={i} className="border-t border-border/20">
+                    <td className="pr-4 py-1 text-muted-foreground/80 whitespace-nowrap font-medium">{dayName}</td>
+                    {volumeTable.activeMgs.map(mg => {
+                      const val = Math.round(volumeTable.dayTotals[d.name || "Unnamed"]?.[mg.key] ?? 0);
                       return (
-                        <td key={i} className="text-center px-3 py-1 tabular-nums">
+                        <td key={mg.key} className="text-center px-3 py-1 tabular-nums">
                           {val > 0 ? <span className="text-foreground/80">{val}</span> : <span className="text-muted-foreground/20">&mdash;</span>}
                         </td>
                       );
                     })}
-                    <td className="text-center px-3 py-1 tabular-nums font-semibold text-primary">{weeklyVal}</td>
                   </tr>
                 );
               })}
+              {/* Weekly total row */}
+              <tr className="border-t border-border/40">
+                <td className="pr-4 py-1 text-[10px] uppercase tracking-wider text-primary/70 font-medium">Wk</td>
+                {volumeTable.activeMgs.map(mg => (
+                  <td key={mg.key} className="text-center px-3 py-1 tabular-nums font-semibold text-primary">
+                    {volumeTable.weeklyTotals[mg.key] ?? 0}
+                  </td>
+                ))}
+              </tr>
             </tbody>
           </table>
         </div>
