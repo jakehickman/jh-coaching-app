@@ -53,7 +53,7 @@ function SortableScheduleSlot({
       <select
         value={slot}
         onChange={e => onUpdate(index, e.target.value)}
-        className="bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        className="bg-secondary border border-border rounded-lg px-2 py-1.5 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
       >
         {dayOptions.map(opt => (
           <option key={opt} value={opt}>{opt}</option>
@@ -184,7 +184,7 @@ function SortableExerciseRow({
             onFocus={() => { setSearchTerm(""); setDropdownOpen(true); setHighlightedIdx(-1); }}
             onBlur={() => setTimeout(() => { setDropdownOpen(false); setHighlightedIdx(-1); }, 150)}
             onKeyDown={handleExerciseKeyDown}
-            className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
           {dropdownOpen && filtered.length > 0 && (
             <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
@@ -199,7 +199,7 @@ function SortableExerciseRow({
                     setHighlightedIdx(-1);
                     setTimeout(() => setsRef.current?.focus(), 0);
                   }}
-                  className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+                  className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${
                     idx === highlightedIdx
                       ? "bg-primary/20 text-primary"
                       : "text-foreground hover:bg-primary/10 hover:text-primary"
@@ -217,14 +217,14 @@ function SortableExerciseRow({
           value={ex.sets}
           onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
           onKeyDown={handleSetsKeyDown}
-          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
         <input
           ref={repsRef}
           type="text"
           value={ex.reps}
           onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
           onKeyDown={handleRepsKeyDown}
-          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
         <div className="col-span-1 flex items-center gap-0.5">
           <button
             onClick={() => setShowNotes(n => !n)}
@@ -612,7 +612,7 @@ function SortableDayCard({
             <GripVertical size={15} />
           </div>
           <input type="text" value={day.name} onChange={e => updateDay(dayIdx, "name", e.target.value)}
-            className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-medium" />
+            className="w-16 bg-transparent border-0 border-b border-border/60 px-1 py-0.5 text-[13px] text-foreground font-semibold focus:outline-none focus:border-primary" />
           <button onClick={() => removeDay(dayIdx)} className="text-destructive hover:opacity-80 flex-shrink-0">
             <Trash2 size={15} />
           </button>
@@ -620,9 +620,9 @@ function SortableDayCard({
         <div className="space-y-2">
           <div className="grid grid-cols-12 gap-1 px-1">
             <p className="col-span-1"></p>
-            <p className="col-span-6 text-[10px] text-muted-foreground">Exercise</p>
-            <p className="col-span-2 text-[10px] text-muted-foreground text-center">Sets</p>
-            <p className="col-span-2 text-[10px] text-muted-foreground text-center">Reps</p>
+            <p className="col-span-6 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Exercise</p>
+            <p className="col-span-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground text-center">Sets</p>
+            <p className="col-span-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground text-center">Reps</p>
             <p className="col-span-1"></p>
           </div>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleExDragEnd(dayIdx)}>
@@ -647,7 +647,7 @@ function SortableDayCard({
             </SortableContext>
           </DndContext>
           <button onClick={() => addExercise(dayIdx)}
-            className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 mt-1">
+            className="flex items-center gap-1 text-[13px] text-primary hover:text-primary/80 mt-1">
             <Plus size={12} /> Add Exercise
           </button>
         </div>
@@ -922,7 +922,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs text-muted-foreground">Training Schedule</label>
-              <span className="text-[10px] text-muted-foreground/60">defines the rotation for this client</span>
+              <span className="text-xs text-muted-foreground/70">defines the rotation for this client</span>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleScheduleDragEnd}>
               <SortableContext items={schedule.map((_, i) => `slot-${i}`)} strategy={horizontalListSortingStrategy}>
@@ -990,7 +990,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Coach Notes</label>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
               </div>
               <div className="space-y-1.5">
                 <button
