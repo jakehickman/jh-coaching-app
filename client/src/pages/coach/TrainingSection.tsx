@@ -1015,53 +1015,60 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
           <div className="flex flex-col lg:flex-row gap-6 items-start min-w-0">
             {/* Left: sessions + controls */}
             <div className="flex-1 min-w-0 space-y-4">
-              {/* Outer context: reorder whole day cards */}
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDayDragEnd}>
+              {/* Single flat DndContext handles both day reorder (day-N) and exercise drag (ex-D-E) */}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={({ active }) => {
+                  if (String(active.id).startsWith("ex-")) handleGlobalExDragStart({ active });
+                }}
+                onDragOver={(event) => {
+                  if (activeExId !== null) handleGlobalExDragOver(event);
+                }}
+                onDragEnd={(event) => {
+                  if (activeExId !== null || String(event.active.id).startsWith("ex-")) {
+                    handleGlobalExDragEnd(event);
+                  } else {
+                    handleDayDragEnd(event);
+                  }
+                }}
+              >
                 <SortableContext items={days.map((_: any, i: number) => `day-${i}`)} strategy={verticalListSortingStrategy}>
-                  {/* Inner context: cross-day exercise drag */}
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragStart={handleGlobalExDragStart}
-                    onDragOver={handleGlobalExDragOver}
-                    onDragEnd={handleGlobalExDragEnd}
-                  >
-                    <div className="grid grid-cols-1 gap-4">
-                      {days.map((day, i) => (
-                        <SortableDayCard
-                          key={`day-${i}`}
-                          id={`day-${i}`}
-                          day={day}
-                          dayIdx={i}
-                          updateDay={updateDay}
-                          removeDay={removeDay}
-                          addExercise={addExercise}
-                          removeExercise={removeExercise}
-                          updateExercise={updateExercise}
-                          exerciseNames={(exerciseLib as any[]).map((e: any) => e.name).sort()}
-                          isDragTarget={dragTargetDayIdx === i && activeExId !== null && parseExId(activeExId)?.dayIdx !== i}
-                        />
-                      ))}
-                    </div>
-                    <DragOverlay>
-                      {activeExId ? (() => {
-                        const parsed = parseExId(activeExId);
-                        if (!parsed) return null;
-                        const ex = days[parsed.dayIdx]?.exercises?.[parsed.exIdx];
-                        if (!ex) return null;
-                        return (
-                          <div className="grid grid-cols-12 gap-1 items-center bg-card border border-primary/40 rounded-lg px-2 py-1.5 shadow-xl opacity-95">
-                            <div className="col-span-1 flex justify-center text-muted-foreground"><GripVertical size={13} /></div>
-                            <div className="col-span-6 text-[13px] text-foreground truncate">{ex.name || "Exercise"}</div>
-                            <div className="col-span-2 text-[13px] text-foreground text-center">{ex.sets}</div>
-                            <div className="col-span-2 text-[13px] text-foreground text-center">{ex.reps}</div>
-                            <div className="col-span-1" />
-                          </div>
-                        );
-                      })() : null}
-                    </DragOverlay>
-                  </DndContext>
+                  <div className="grid grid-cols-1 gap-4">
+                    {days.map((day, i) => (
+                      <SortableDayCard
+                        key={`day-${i}`}
+                        id={`day-${i}`}
+                        day={day}
+                        dayIdx={i}
+                        updateDay={updateDay}
+                        removeDay={removeDay}
+                        addExercise={addExercise}
+                        removeExercise={removeExercise}
+                        updateExercise={updateExercise}
+                        exerciseNames={(exerciseLib as any[]).map((e: any) => e.name).sort()}
+                        isDragTarget={dragTargetDayIdx === i && activeExId !== null && parseExId(activeExId)?.dayIdx !== i}
+                      />
+                    ))}
+                  </div>
                 </SortableContext>
+                <DragOverlay>
+                  {activeExId ? (() => {
+                    const parsed = parseExId(activeExId);
+                    if (!parsed) return null;
+                    const ex = days[parsed.dayIdx]?.exercises?.[parsed.exIdx];
+                    if (!ex) return null;
+                    return (
+                      <div className="grid grid-cols-12 gap-1 items-center bg-card border border-primary/40 rounded-lg px-2 py-1.5 shadow-xl opacity-95">
+                        <div className="col-span-1 flex justify-center text-muted-foreground"><GripVertical size={13} /></div>
+                        <div className="col-span-6 text-[13px] text-foreground truncate">{ex.name || "Exercise"}</div>
+                        <div className="col-span-2 text-[13px] text-foreground text-center">{ex.sets}</div>
+                        <div className="col-span-2 text-[13px] text-foreground text-center">{ex.reps}</div>
+                        <div className="col-span-1" />
+                      </div>
+                    );
+                  })() : null}
+                </DragOverlay>
               </DndContext>
               <button onClick={addDay}
                 className="flex items-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors w-full justify-center">
