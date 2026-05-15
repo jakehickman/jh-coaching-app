@@ -225,16 +225,16 @@ function SortableExerciseRow({
           onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
           onKeyDown={handleRepsKeyDown}
           className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-        <div className="col-span-1 flex items-center gap-0.5">
+        <div className="col-span-1 flex items-center justify-end gap-1">
           <button
             onClick={() => setShowNotes(n => !n)}
             title="Toggle notes"
-            className={`flex justify-center transition-colors ${showNotes || ex.notes ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`p-1.5 rounded hover:bg-secondary transition-colors ${showNotes || ex.notes ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
           >
-            <ChevronDown size={12} className={`transition-transform ${showNotes ? 'rotate-180' : ''}`} />
+            <ChevronDown size={14} className={`transition-transform ${showNotes ? 'rotate-180' : ''}`} />
           </button>
-          <button onClick={() => removeExercise(dayIdx, exIdx)} className="flex justify-center text-destructive hover:opacity-80">
-            <Trash2 size={12} />
+          <button onClick={() => removeExercise(dayIdx, exIdx)} title="Remove exercise" className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+            <Trash2 size={14} />
           </button>
         </div>
       </div>
@@ -613,8 +613,9 @@ function SortableDayCard({
           </div>
           <input type="text" value={day.name} onChange={e => updateDay(dayIdx, "name", e.target.value)}
             className="w-16 bg-transparent border-0 border-b border-border/60 px-1 py-0.5 text-[13px] text-foreground font-semibold focus:outline-none focus:border-primary" />
-          <button onClick={() => removeDay(dayIdx)} className="text-destructive hover:opacity-80 flex-shrink-0">
-            <Trash2 size={15} />
+          <div className="flex-1" />
+          <button onClick={() => removeDay(dayIdx)} title="Remove day" className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
+            <Trash2 size={14} />
           </button>
         </div>
         <div className="space-y-2">
