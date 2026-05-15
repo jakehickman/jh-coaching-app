@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Plus, Trash2, GripVertical, ChevronDown, List, LayoutList } from "lucide-react";
+import { Plus, Trash2, GripVertical, ChevronDown } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
@@ -64,10 +64,9 @@ function KanbanExCard({
   removeExercise: (d: number, e: number) => void;
   exerciseNames: string[];
   isGhost?: boolean;
-  showDetails?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-  const [showNotes, setShowNotes] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [highlightedIdx, setHighlightedIdx] = useState(-1);
@@ -152,11 +151,11 @@ function KanbanExCard({
 
           <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
             <button
-              onClick={() => setShowNotes(n => !n)}
+              onClick={() => setExpanded(n => !n)}
               title="Toggle notes"
-              className={`p-1 rounded hover:bg-secondary transition-colors ${showNotes || ex.notes ? 'text-primary' : 'text-muted-foreground'}`}
+              className={`p-1 rounded hover:bg-secondary transition-colors ${expanded || ex.notes ? 'text-primary' : 'text-muted-foreground'}`}
             >
-              <ChevronDown size={11} className={`transition-transform ${showNotes ? 'rotate-180' : ''}`} />
+              <ChevronDown size={11} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
             </button>
             <button
               onClick={() => removeExercise(dayIdx, exIdx)}
@@ -168,8 +167,8 @@ function KanbanExCard({
           </div>
         </div>
 
-        {/* Row 2: sets × reps */}
-        {showDetails !== false && <div className="flex items-center gap-1 pl-4 mt-0.5">
+        {/* Row 2: sets × reps + notes (shown when expanded) */}
+        {expanded && <div className="flex items-center gap-1 pl-4 mt-0.5">
           <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wide w-8">Sets</span>
           <input
             ref={setsRef}
@@ -193,7 +192,7 @@ function KanbanExCard({
         </div>}
       </div>
 
-      {(showNotes || ex.notes) && (
+      {expanded && (
         <input
           type="text"
           value={ex.notes ?? ""}
@@ -231,7 +230,7 @@ function DragCard({ ex }: { ex: Exercise }) {
 // This keeps the hook count stable across renders (no conditional useSortable calls).
 function KanbanColumn({
   day, dayIdx, isDragTarget, ghostExIdx, placeholderInsertIdx,
-  updateDay, removeDay, addExercise, removeExercise, updateExercise, exerciseNames, showDetails,
+  updateDay, removeDay, addExercise, removeExercise, updateExercise, exerciseNames,
 }: {
   day: Day;
   dayIdx: number;
@@ -244,7 +243,6 @@ function KanbanColumn({
   removeExercise: (d: number, e: number) => void;
   updateExercise: (d: number, e: number, f: string, v: string) => void;
   exerciseNames: string[];
-  showDetails: boolean;
 }) {
   const exercises = day.exercises ?? [];
   const totalSets = exercises.reduce((s, ex) => s + (parseInt(ex.sets) || 0), 0);
@@ -363,7 +361,6 @@ export default function KanbanProgramView({
 }: Props) {
   const [activeExId, setActiveExId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ dayIdx: number; insertIdx: number } | null>(null);
-  const [showDetails, setShowDetails] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -462,26 +459,6 @@ export default function KanbanProgramView({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="flex items-center justify-end mb-2 gap-1">
-        <button
-          onClick={() => setShowDetails(false)}
-          title="Compact view"
-          className={`p-1.5 rounded transition-colors ${
-            !showDetails ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <List size={13} />
-        </button>
-        <button
-          onClick={() => setShowDetails(true)}
-          title="Detailed view"
-          className={`p-1.5 rounded transition-colors ${
-            showDetails ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <LayoutList size={13} />
-        </button>
-      </div>
       <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: "300px" }}>
         {days.map((day, i) => {
           const isSrcCol = srcParsed?.dayIdx === i;
@@ -500,7 +477,6 @@ export default function KanbanProgramView({
               removeExercise={removeExercise}
               updateExercise={updateExercise}
               exerciseNames={exerciseNames}
-              showDetails={showDetails}
             />
           );
         })}
