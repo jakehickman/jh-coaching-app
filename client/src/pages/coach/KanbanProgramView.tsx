@@ -54,7 +54,7 @@ function parseExId(id: UniqueIdentifier): { dayIdx: number; exIdx: number } | nu
 
 // ─── Kanban Exercise Card ─────────────────────────────────────────────────────
 function KanbanExCard({
-  id, ex, dayIdx, exIdx, updateExercise, removeExercise, exerciseNames, isGhost, showDetails,
+  id, ex, dayIdx, exIdx, updateExercise, removeExercise, exerciseNames, isGhost,
 }: {
   id: string;
   ex: Exercise;
@@ -318,7 +318,6 @@ function KanbanColumn({
                 removeExercise={removeExercise}
                 exerciseNames={exerciseNames}
                 isGhost={ghostExIdx === exIdx}
-                showDetails={showDetails}
               />
             );
           })}
