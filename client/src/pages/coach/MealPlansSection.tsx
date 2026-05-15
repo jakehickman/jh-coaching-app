@@ -67,7 +67,7 @@ function FoodCombobox({
         onBlur={() => setTimeout(() => { setOpen(false); setHighlightedIdx(-1); }, 150)}
         onKeyDown={handleKeyDown}
         placeholder="Search food…"
-        className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        className="w-full bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
       />
       {open && filtered.length > 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto">
@@ -463,10 +463,10 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 px-0.5 mb-1">
-                    <p className="flex-1 text-[10px] text-muted-foreground">Food</p>
-                    <p className="w-16 text-[10px] text-muted-foreground text-right">Amount</p>
-                    <p className="w-24 text-[10px] text-muted-foreground">Unit</p>
-                    <p className="w-24 text-[10px] text-muted-foreground">Macros</p>
+                    <p className="flex-1 text-[13px] text-muted-foreground">Food</p>
+                    <p className="w-16 text-[13px] text-muted-foreground text-right">Amount</p>
+                    <p className="w-24 text-[13px] text-muted-foreground">Unit</p>
+                    <p className="w-24 text-[13px] text-muted-foreground">Macros</p>
                     <p className="w-4"></p>
                   </div>
                   {(meal.items ?? []).map((item: any, j: number) => {
@@ -521,9 +521,9 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                             value={item.grams}
                             onChange={e => updateItem(i, j, "grams", e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextFoodInput(); } }}
-                            className="w-16 bg-secondary border border-border rounded px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
+                            className="w-16 bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
                           />
-                          <span className="text-sm text-muted-foreground w-24">
+                          <span className="text-[13px] text-muted-foreground w-24">
                             {isServingBased ? selectedFood.servingUnit : "g"}
                             {isServingBased && effectiveGrams ? ` (${effectiveGrams}g)` : ""}
                           </span>
@@ -531,8 +531,8 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                         <div className="w-24 shrink-0 text-[10px] leading-tight">
                           {hasData ? (
                             <>
-                              <span className="text-foreground font-medium text-xs">{m.calories} kcal</span>
-                              <div className="text-muted-foreground text-xs">P{m.protein} C{m.carbs} F{m.fat}</div>
+                              <span className="text-foreground font-medium text-[13px]">{m.calories} kcal</span>
+                              <div className="text-muted-foreground text-[13px]">P{m.protein} C{m.carbs} F{m.fat}</div>
                             </>
                           ) : <span className="text-muted-foreground/40">—</span>}
                         </div>
@@ -549,11 +549,11 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                 {/* Meal subtotal — smaller/muted to distinguish from Daily Totals */}
                 {(meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
                   <div className="mt-2 pt-2 border-t border-border/40 flex items-center gap-3 flex-wrap">
-                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 font-semibold">Meal</span>
-                    <span className="text-[11px] font-semibold text-primary/80">{mealMacros[i].calories} kcal</span>
-                    <span className="text-[10px] text-muted-foreground">P{mealMacros[i].protein}g</span>
-                    <span className="text-[10px] text-muted-foreground">C{mealMacros[i].carbs}g</span>
-                    <span className="text-[10px] text-muted-foreground">F{mealMacros[i].fat}g</span>
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground/60 font-semibold">Meal</span>
+                    <span className="text-[13px] font-semibold text-primary/80">{mealMacros[i].calories} kcal</span>
+                    <span className="text-[13px] text-muted-foreground">P{mealMacros[i].protein}g</span>
+                    <span className="text-[13px] text-muted-foreground">C{mealMacros[i].carbs}g</span>
+                    <span className="text-[13px] text-muted-foreground">F{mealMacros[i].fat}g</span>
                   </div>
                 )}
               </Card>
