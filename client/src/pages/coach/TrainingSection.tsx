@@ -8,12 +8,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
+  type UniqueIdentifier,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -593,16 +596,16 @@ function ClientsSection() {
 
 // ─── Section: Training Programs ───────────────────────────────────────────────
 function SortableDayCard({
-  id, day, dayIdx, sensors, updateDay, removeDay, addExercise, removeExercise, updateExercise, handleExDragEnd, exerciseNames
+  id, day, dayIdx, updateDay, removeDay, addExercise, removeExercise, updateExercise, exerciseNames, isDragTarget
 }: {
-  id: string; day: any; dayIdx: number; sensors: any;
+  id: string; day: any; dayIdx: number;
   updateDay: (i: number, f: string, v: string) => void;
   removeDay: (i: number) => void;
   addExercise: (i: number) => void;
   removeExercise: (d: number, e: number) => void;
   updateExercise: (d: number, e: number, f: string, v: string) => void;
-  handleExDragEnd: (dayIdx: number) => (event: DragEndEvent) => void;
   exerciseNames: string[];
+  isDragTarget?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
@@ -613,7 +616,7 @@ function SortableDayCard({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Card>
+      <Card className={isDragTarget ? "ring-2 ring-primary/50 ring-offset-1" : ""}>
         <div className="flex items-center gap-2 mb-3">
           <div {...attributes} {...listeners} className="text-muted-foreground cursor-grab active:cursor-grabbing hover:text-foreground touch-none flex-shrink-0">
             <GripVertical size={15} />
@@ -638,27 +641,25 @@ function SortableDayCard({
             <p className="col-span-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground text-center">Reps</p>
             <p className="col-span-1"></p>
           </div>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleExDragEnd(dayIdx)}>
-            <SortableContext
-              items={(day.exercises ?? []).map((_: any, j: number) => `ex-${dayIdx}-${j}`)}
-              strategy={verticalListSortingStrategy}
-            >
-              {(day.exercises ?? []).map((ex: any, j: number) => (
-                <SortableExerciseRow
-                  key={`ex-${dayIdx}-${j}`}
-                  id={`ex-${dayIdx}-${j}`}
-                  ex={ex}
-                  dayIdx={dayIdx}
-                  exIdx={j}
-                  updateExercise={updateExercise}
-                  removeExercise={removeExercise}
-                  exerciseNames={exerciseNames}
-                  addExercise={addExercise}
-                  totalExercises={(day.exercises ?? []).length}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
+          <SortableContext
+            items={(day.exercises ?? []).map((_: any, j: number) => `ex-${dayIdx}-${j}`)}
+            strategy={verticalListSortingStrategy}
+          >
+            {(day.exercises ?? []).map((ex: any, j: number) => (
+              <SortableExerciseRow
+                key={`ex-${dayIdx}-${j}`}
+                id={`ex-${dayIdx}-${j}`}
+                ex={ex}
+                dayIdx={dayIdx}
+                exIdx={j}
+                updateExercise={updateExercise}
+                removeExercise={removeExercise}
+                exerciseNames={exerciseNames}
+                addExercise={addExercise}
+                totalExercises={(day.exercises ?? []).length}
+              />
+            ))}
+          </SortableContext>
           <button onClick={() => addExercise(dayIdx)}
             className="flex items-center gap-1 text-[13px] text-primary hover:text-primary/80 mt-1">
             <Plus size={12} /> Add Exercise
@@ -899,15 +900,55 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
-  const handleExDragEnd = (dayIdx: number) => (event: DragEndEvent) => {
+  // ── Global cross-day exercise drag state ──────────────────────────────────
+  const [activeExId, setActiveExId] = useState<UniqueIdentifier | null>(null);
+  const [dragTargetDayIdx, setDragTargetDayIdx] = useState<number | null>(null);
+
+  // Parse "ex-{dayIdx}-{exIdx}" → { dayIdx, exIdx } or null
+  const parseExId = (id: UniqueIdentifier): { dayIdx: number; exIdx: number } | null => {
+    const parts = String(id).split("-");
+    if (parts.length !== 3 || parts[0] !== "ex") return null;
+    const d = parseInt(parts[1], 10);
+    const e = parseInt(parts[2], 10);
+    if (isNaN(d) || isNaN(e)) return null;
+    return { dayIdx: d, exIdx: e };
+  };
+
+  const handleGlobalExDragStart = ({ active }: { active: { id: UniqueIdentifier } }) => {
+    setActiveExId(active.id);
+  };
+
+  const handleGlobalExDragOver = (event: DragOverEvent) => {
+    const { over } = event;
+    if (!over) { setDragTargetDayIdx(null); return; }
+    const parsed = parseExId(over.id);
+    setDragTargetDayIdx(parsed ? parsed.dayIdx : null);
+  };
+
+  const handleGlobalExDragEnd = (event: DragEndEvent) => {
+    setActiveExId(null);
+    setDragTargetDayIdx(null);
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const exercises = days[dayIdx]?.exercises ?? [];
-      const oldIndex = exercises.findIndex((_: any, i: number) => `ex-${dayIdx}-${i}` === active.id);
-      const newIndex = exercises.findIndex((_: any, i: number) => `ex-${dayIdx}-${i}` === over.id);
-      if (oldIndex !== -1 && newIndex !== -1) reorderExercises(dayIdx, oldIndex, newIndex);
+    if (!over || active.id === over.id) return;
+    const src = parseExId(active.id);
+    const dst = parseExId(over.id);
+    if (!src || !dst) return;
+    if (src.dayIdx === dst.dayIdx) {
+      // Same day — simple reorder
+      reorderExercises(src.dayIdx, src.exIdx, dst.exIdx);
+    } else {
+      // Cross-day move
+      setDays(d => {
+        const next = d.map(day => ({ ...day, exercises: [...(day.exercises ?? [])] }));
+        const [moved] = next[src.dayIdx].exercises.splice(src.exIdx, 1);
+        next[dst.dayIdx].exercises.splice(dst.exIdx, 0, moved);
+        return next;
+      });
     }
   };
+
+  // Keep legacy per-day handler for backward compat (unused now but avoids TS errors)
+  const handleExDragEnd = (_dayIdx: number) => (_event: DragEndEvent) => {};
   const handleDayDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -974,26 +1015,52 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
           <div className="flex flex-col lg:flex-row gap-6 items-start min-w-0">
             {/* Left: sessions + controls */}
             <div className="flex-1 min-w-0 space-y-4">
+              {/* Outer context: reorder whole day cards */}
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDayDragEnd}>
                 <SortableContext items={days.map((_: any, i: number) => `day-${i}`)} strategy={verticalListSortingStrategy}>
-                  <div className="grid grid-cols-1 gap-4">
-                    {days.map((day, i) => (
-                      <SortableDayCard
-                        key={`day-${i}`}
-                        id={`day-${i}`}
-                        day={day}
-                        dayIdx={i}
-                        sensors={sensors}
-                        updateDay={updateDay}
-                        removeDay={removeDay}
-                        addExercise={addExercise}
-                        removeExercise={removeExercise}
-                        updateExercise={updateExercise}
-                        handleExDragEnd={handleExDragEnd}
-                        exerciseNames={(exerciseLib as any[]).map((e: any) => e.name).sort()}
-                      />
-                    ))}
-                  </div>
+                  {/* Inner context: cross-day exercise drag */}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleGlobalExDragStart}
+                    onDragOver={handleGlobalExDragOver}
+                    onDragEnd={handleGlobalExDragEnd}
+                  >
+                    <div className="grid grid-cols-1 gap-4">
+                      {days.map((day, i) => (
+                        <SortableDayCard
+                          key={`day-${i}`}
+                          id={`day-${i}`}
+                          day={day}
+                          dayIdx={i}
+                          updateDay={updateDay}
+                          removeDay={removeDay}
+                          addExercise={addExercise}
+                          removeExercise={removeExercise}
+                          updateExercise={updateExercise}
+                          exerciseNames={(exerciseLib as any[]).map((e: any) => e.name).sort()}
+                          isDragTarget={dragTargetDayIdx === i && activeExId !== null && parseExId(activeExId)?.dayIdx !== i}
+                        />
+                      ))}
+                    </div>
+                    <DragOverlay>
+                      {activeExId ? (() => {
+                        const parsed = parseExId(activeExId);
+                        if (!parsed) return null;
+                        const ex = days[parsed.dayIdx]?.exercises?.[parsed.exIdx];
+                        if (!ex) return null;
+                        return (
+                          <div className="grid grid-cols-12 gap-1 items-center bg-card border border-primary/40 rounded-lg px-2 py-1.5 shadow-xl opacity-95">
+                            <div className="col-span-1 flex justify-center text-muted-foreground"><GripVertical size={13} /></div>
+                            <div className="col-span-6 text-[13px] text-foreground truncate">{ex.name || "Exercise"}</div>
+                            <div className="col-span-2 text-[13px] text-foreground text-center">{ex.sets}</div>
+                            <div className="col-span-2 text-[13px] text-foreground text-center">{ex.reps}</div>
+                            <div className="col-span-1" />
+                          </div>
+                        );
+                      })() : null}
+                    </DragOverlay>
+                  </DndContext>
                 </SortableContext>
               </DndContext>
               <button onClick={addDay}
