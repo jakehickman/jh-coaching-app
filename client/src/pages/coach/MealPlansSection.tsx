@@ -465,7 +465,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                   <div className="flex items-center gap-1.5 px-0.5 mb-1">
                     <p className="flex-1 text-[13px] text-muted-foreground">Food</p>
                     <p className="w-16 text-[13px] text-muted-foreground text-right">Amount</p>
-                    <p className="w-24 text-[13px] text-muted-foreground">Unit</p>
+                    <p className="w-28 text-[13px] text-muted-foreground">Unit</p>
                     <p className="w-24 text-[13px] text-muted-foreground">Macros</p>
                     <p className="w-4"></p>
                   </div>
@@ -523,10 +523,10 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextFoodInput(); } }}
                             className="w-16 bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
                           />
-                          <span className="text-[13px] text-muted-foreground w-24">
-                            {isServingBased ? selectedFood.servingUnit : "g"}
-                            {isServingBased && effectiveGrams ? ` (${effectiveGrams}g)` : ""}
-                          </span>
+                          <div className="text-[13px] text-muted-foreground w-28 leading-tight">
+                            <span className="whitespace-nowrap">{isServingBased ? selectedFood.servingUnit : "g"}</span>
+                            {isServingBased && effectiveGrams ? <span className="whitespace-nowrap text-muted-foreground/60"> ({effectiveGrams}g)</span> : null}
+                          </div>
                         </div>
                         <div className="w-24 shrink-0 text-[10px] leading-tight">
                           {hasData ? (
