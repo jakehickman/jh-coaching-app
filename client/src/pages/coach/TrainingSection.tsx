@@ -606,6 +606,11 @@ function SortableDayCard({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const totalSets = (day.exercises ?? []).reduce((sum: number, ex: any) => {
+    const n = parseInt(ex.sets, 10);
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+
   return (
     <div ref={setNodeRef} style={style}>
       <Card>
@@ -616,6 +621,11 @@ function SortableDayCard({
           <input type="text" value={day.name} onChange={e => updateDay(dayIdx, "name", e.target.value)}
             className="w-32 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground font-semibold focus:outline-none focus:ring-1 focus:ring-primary" />
           <div className="flex-1" />
+          {totalSets > 0 && (
+            <span className="text-[11px] text-muted-foreground tabular-nums flex-shrink-0">
+              {totalSets} sets
+            </span>
+          )}
           <button onClick={() => removeDay(dayIdx)} title="Remove day" className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
             <Trash2 size={14} />
           </button>
