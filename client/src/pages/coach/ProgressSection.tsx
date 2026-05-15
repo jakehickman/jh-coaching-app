@@ -1203,36 +1203,26 @@ function SessionDetailPanel({ session, onClose }: { session: any; onClose: () =>
             const allSets: any[] = ex.sets ?? [];
             const totalExSets = allSets.length;
             const completedSets = allSets.filter((s: any) => s.completed || s.weight != null || s.reps != null);
-            const isPartial = completedSets.length > 0 && totalExSets > 0 && completedSets.length < totalExSets;
             const isSkipped = completedSets.length === 0 && totalExSets > 0;
+            const firstSet = completedSets[0];
+            const setStr = firstSet
+              ? `${firstSet.weight != null ? firstSet.weight + ' kg' : '—'} × ${firstSet.reps != null ? firstSet.reps : '—'}`
+              : null;
+            const setsLabel = isSkipped
+              ? 'skipped'
+              : `${completedSets.length} set${completedSets.length !== 1 ? 's' : ''}`;
             return (
-              <div key={i} className="border-b border-border/40 pb-3 last:border-0 last:pb-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <p className="text-xs font-semibold text-foreground">{ex.name}</p>
-                  {ex.substitutedFor && (
-                    <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded">SUB</span>
-                  )}
-                </div>
-                {isSkipped ? (
-                  <p className="text-[11px] text-amber-400/80">0/{totalExSets} sets — skipped</p>
-                ) : (
-                  <div className="space-y-1">
-                    {completedSets.map((s: any, si: number) => (
-                      <div key={si} className="flex items-center gap-2">
-                        <span className="text-[10px] font-semibold text-muted-foreground w-4">{si + 1}</span>
-                        <span className="text-[11px] font-semibold text-foreground">
-                          {s.weight != null ? `${s.weight} kg` : '—'} × {s.reps != null ? s.reps : '—'}
-                        </span>
-                        {isPartial && si === completedSets.length - 1 && (
-                          <span className="text-[10px] text-amber-400/80">{completedSets.length}/{totalExSets}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+              <div key={i} className="flex items-center gap-2 py-1.5 border-b border-border/30 last:border-0">
+                <p className="text-xs font-semibold text-foreground flex-1 truncate">{ex.name}</p>
+                {ex.substitutedFor && (
+                  <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded shrink-0">SUB</span>
                 )}
-                {ex.exerciseNotes && (
-                  <p className="text-[11px] text-muted-foreground/60 italic mt-1">&ldquo;{ex.exerciseNotes}&rdquo;</p>
+                {setStr && (
+                  <span className="text-[11px] text-muted-foreground shrink-0">{setStr}</span>
                 )}
+                <span className={`text-[11px] shrink-0 ${isSkipped ? 'text-amber-400/80' : 'text-muted-foreground/60'}`}>
+                  {setsLabel}
+                </span>
               </div>
             );
           })}
