@@ -923,9 +923,9 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
         <div className="space-y-6">
           {/* ── Training Schedule ── */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2">
               <label className="text-xs text-muted-foreground">Training Schedule</label>
-              <span className="text-xs text-muted-foreground/70">defines the rotation for this client</span>
+              <span className="text-xs text-muted-foreground/50 ml-2">defines the rotation for this client</span>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleScheduleDragEnd}>
               <SortableContext items={schedule.map((_, i) => `slot-${i}`)} strategy={horizontalListSortingStrategy}>
@@ -955,7 +955,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
               </SortableContext>
             </DndContext>
             {schedule.length > 0 && (
-              <p className="text-[10px] text-muted-foreground/50 mt-1.5">
+              <p className="text-xs text-muted-foreground/70 mt-1.5">
                 {schedule.join(" / ")} / repeat
               </p>
             )}
