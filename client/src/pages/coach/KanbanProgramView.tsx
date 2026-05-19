@@ -22,6 +22,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+// ─── Constants ───────────────────────────────────────────────────────────────
+const REPS_OPTIONS = ["4–6", "7–9", "10–12", "12–15", "15–20", "AMRAP"];
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 /** Parse a sets string like "3", "2-4", "2–4" into {min, max}. Returns {min:0,max:0} if unparseable. */
 function parseSetsRange(s: string): { min: number; max: number } {
@@ -212,14 +215,18 @@ function KanbanExCard({
           />
           <span className="text-muted-foreground/30 text-[10px]">×</span>
           <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wide w-8">Reps</span>
-          <input
-            ref={repsRef}
-            type="text"
-            value={ex.reps}
-            onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
-            placeholder="—"
-            className="w-14 bg-secondary/60 border border-border/40 rounded text-[12px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary/40 px-1 py-0.5 placeholder:text-muted-foreground/40"
-          />
+          <select
+            ref={repsRef as any}
+            value={REPS_OPTIONS.includes(ex.reps) ? ex.reps : "__custom__"}
+            onChange={e => {
+              if (e.target.value !== "__custom__") updateExercise(dayIdx, exIdx, "reps", e.target.value);
+            }}
+            className="w-20 bg-secondary/60 border border-border/40 rounded text-[12px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary/40 px-1 py-0.5 cursor-pointer"
+          >
+            {REPS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            {!REPS_OPTIONS.includes(ex.reps) && ex.reps && <option value="__custom__">{ex.reps}</option>}
+            {!ex.reps && <option value="__custom__">—</option>}
+          </select>
         </div>}
       </div>
 

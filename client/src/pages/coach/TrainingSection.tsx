@@ -31,6 +31,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { Card, SectionLabel, DateInput, ClientCombobox, useClientSelector } from "./shared";
 import { MUSCLE_GROUPS } from "./ExerciseLibrarySection";
 
+const REPS_OPTIONS = ["4–6", "7–9", "10–12", "12–15", "15–20", "AMRAP"];
+
 /** Parse a sets string like "3", "2-4", "2–4" into {min, max}. */
 function parseSetsRange(s: string): { min: number; max: number } {
   if (!s) return { min: 0, max: 0 };
@@ -233,13 +235,17 @@ function SortableExerciseRow({
           onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
           onKeyDown={handleSetsKeyDown}
           className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
-        <input
-          ref={repsRef}
-          type="text"
-          value={ex.reps}
-          onChange={e => updateExercise(dayIdx, exIdx, "reps", e.target.value)}
-          onKeyDown={handleRepsKeyDown}
-          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+        <select
+          ref={repsRef as any}
+          value={REPS_OPTIONS.includes(ex.reps) ? ex.reps : "__custom__"}
+          onChange={e => {
+            if (e.target.value !== "__custom__") updateExercise(dayIdx, exIdx, "reps", e.target.value);
+          }}
+          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer">
+          {REPS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          {!REPS_OPTIONS.includes(ex.reps) && ex.reps && <option value="__custom__">{ex.reps}</option>}
+          {!ex.reps && <option value="__custom__">—</option>}
+        </select>
         <div className="col-span-1 flex items-center justify-end gap-1">
           <button
             onClick={() => setShowNotes(n => !n)}
