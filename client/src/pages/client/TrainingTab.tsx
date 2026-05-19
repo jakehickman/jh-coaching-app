@@ -1238,10 +1238,12 @@ function WorkoutLogTab() {
                       const { min: minSets, max: maxSets } = parseSetsRange(String(ex.sets ?? 1));
                       const effectiveMin = Math.max(1, minSets || 1);
                       const effectiveMax = maxSets > 0 ? maxSets : Infinity;
+                      const isRange = effectiveMax !== Infinity && effectiveMax > effectiveMin;
                       const allCurrentDone = sets.every(s => s.completed);
                       const doneSetsCount = sets.filter(s => s.completed).length;
                       const minMet = doneSetsCount >= effectiveMin;
-                      const atMax = sets.length >= effectiveMax && allCurrentDone;
+                      // atMax only fires for true ranges (min < max); single-number sets never auto-complete
+                      const atMax = isRange && sets.length >= effectiveMax && allCurrentDone;
                       const isExDone = exerciseDone[displayName] || atMax;
                       const showAddOrDone = minMet && allCurrentDone && !isExDone;
                       return (
@@ -1268,13 +1270,17 @@ function WorkoutLogTab() {
                                     <button
                                       onClick={() => {
                                         toggleSetCompleted(displayName, idx);
-                                        // Auto-complete when max is reached after this tick
-                                        const newDone = sets.filter((s2, i2) => s2.completed || i2 === idx).length;
-                                        if (newDone >= effectiveMax) {
-                                          setTimeout(() => {
-                                            setExerciseDone(prev => ({ ...prev, [displayName]: true }));
-                                            setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: true }));
-                                          }, 300);
+                                        // Auto-complete only when ALL max sets are ticked
+                                        // effectiveMax must be finite and > effectiveMin to prevent
+                                        // auto-completing when min === max (single number sets)
+                                        if (effectiveMax !== Infinity && effectiveMax > effectiveMin) {
+                                          const newDone = sets.filter((s2, i2) => s2.completed || i2 === idx).length;
+                                          if (sets.length === effectiveMax && newDone === effectiveMax) {
+                                            setTimeout(() => {
+                                              setExerciseDone(prev => ({ ...prev, [displayName]: true }));
+                                              setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: true }));
+                                            }, 300);
+                                          }
                                         }
                                       }}
                                       className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
@@ -1339,20 +1345,6 @@ function WorkoutLogTab() {
                                   <Plus size={13} /> Add set
                                 </button>
                               )}
-                              <button
-                                onClick={() => {
-                                  setExerciseDone(prev => ({ ...prev, [displayName]: true }));
-                                  setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: true }));
-                                }}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
-                              >
-                                <Check size={13} /> Done
-                              </button>
-                            </div>
-                          ) : minMet && !isExDone ? (
-                            // Min met but still has incomplete sets — show Done button only
-                            <div className="flex items-center gap-2 mt-3">
-                              <div className="flex-1" />
                               <button
                                 onClick={() => {
                                   setExerciseDone(prev => ({ ...prev, [displayName]: true }));
