@@ -1275,11 +1275,18 @@ function WorkoutLogTab() {
                                     {/* Tick button */}
                                     <button
                                       onClick={() => {
+                                        const wasCompleted = s.completed;
                                         toggleSetCompleted(displayName, idx);
+                                        // If unticking a set, revert exerciseDone and uncollapse
+                                        if (wasCompleted && exerciseDone[displayName]) {
+                                          setExerciseDone(prev => ({ ...prev, [displayName]: false }));
+                                          setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: false }));
+                                          autoCollapsedRef.current.delete(displayName);
+                                        }
                                         // Auto-complete only when ALL max sets are ticked
                                         // effectiveMax must be finite and > effectiveMin to prevent
                                         // auto-completing when min === max (single number sets)
-                                        if (effectiveMax !== Infinity && effectiveMax > effectiveMin) {
+                                        if (!wasCompleted && effectiveMax !== Infinity && effectiveMax > effectiveMin) {
                                           const newDone = sets.filter((s2, i2) => s2.completed || i2 === idx).length;
                                           if (sets.length === effectiveMax && newDone === effectiveMax) {
                                             setTimeout(() => {
@@ -1338,9 +1345,16 @@ function WorkoutLogTab() {
                           </div>
                           {/* Add set / Done controls */}
                           {isExDone ? (
-                            <div className="mt-3 py-2 rounded-xl bg-primary/10 text-center">
-                              <span className="text-xs font-bold text-primary tracking-widest uppercase">Complete</span>
-                            </div>
+                            <button
+                              onClick={() => {
+                                setExerciseDone(prev => ({ ...prev, [displayName]: false }));
+                                setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: false }));
+                                autoCollapsedRef.current.delete(displayName);
+                              }}
+                              className="mt-3 w-full py-2 rounded-xl bg-primary/10 text-center hover:bg-primary/20 transition-colors"
+                            >
+                              <span className="text-xs font-bold text-primary tracking-widest uppercase">Complete ✕</span>
+                            </button>
                           ) : showAddOrDone ? (
                             <div className="flex items-center gap-2 mt-3">
                               {sets.length < effectiveMax && (
