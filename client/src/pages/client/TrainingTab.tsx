@@ -841,12 +841,14 @@ function WorkoutLogTab() {
     setMachineSettings(prefillMachineSettings);
     setExerciseNotes({});
     setSubstitutions({});
+    setExerciseDone({});
     setCollapsedExercisesRaw(loadCollapsed(date, label));
   }
 
   function selectDay(label: string) {
     setSelectedDay(label);
     loadedRef.current = null;
+    setExerciseDone({});
   }
 
   useEffect(() => {
