@@ -1015,9 +1015,10 @@ function WorkoutLogTab() {
       {selectedDay && (() => {
         const dayDef = days.find(d => d.label === selectedDay);
 
-        // All past sessions for this day, newest first
+        // All past sessions (any day label), newest first — so Last performance shows
+        // the most recent time each exercise was performed, regardless of which session it was in.
         const pastSessions = [...sessions]
-          .filter(s => s.dayLabel === selectedDay && toLocalDateStr(s.sessionDate) < sessionDate)
+          .filter(s => toLocalDateStr(s.sessionDate) < sessionDate)
           .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)));
         // For last-performance we look up per exercise name across all past sessions.
         // A substitution's sets should NOT count as last performance for the original exercise
