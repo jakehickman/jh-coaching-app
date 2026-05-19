@@ -665,24 +665,29 @@ function WorkoutLogTab() {
   }
 
   const autoCollapsedRef = useRef<Set<string>>(new Set());
+  // Auto-collapse only when exerciseDone is explicitly set (Done pressed or max sets reached)
+  // Do NOT auto-collapse just because all current set rows are ticked — the Add/Done flow
+  // needs to remain visible so the user can add more sets up to the max.
   useEffect(() => {
     setCollapsedExercisesRaw(prev => {
       let changed = false;
       const next = { ...prev };
-      for (const [exName, sets] of Object.entries(exerciseData)) {
-        const allDone = sets.length > 0 && sets.every(s => s.completed);
-        if (allDone && !autoCollapsedRef.current.has(exName) && !prev[exName]) {
+      for (const [exName, isDone] of Object.entries(exerciseDone)) {
+        if (isDone && !autoCollapsedRef.current.has(exName) && !prev[exName]) {
           next[exName] = true;
           autoCollapsedRef.current.add(exName);
           changed = true;
         }
-        if (!allDone) autoCollapsedRef.current.delete(exName);
+      }
+      // Reset auto-collapse tracking when exercise is un-done
+      for (const exName of autoCollapsedRef.current) {
+        if (!exerciseDone[exName]) autoCollapsedRef.current.delete(exName);
       }
       if (!changed) return prev;
       if (selectedDay) saveCollapsed(sessionDate, selectedDay, next);
       return next;
     });
-  }, [exerciseData]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [exerciseDone]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Auto-persist draft ────────────────────────────────────────────────────
   useEffect(() => {
