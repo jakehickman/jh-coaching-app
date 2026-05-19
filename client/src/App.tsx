@@ -11,6 +11,7 @@ import ClientHub from "./pages/coach/ClientHub";
 // import CoachingLanding from "./pages/CoachingLanding"; // temporarily disabled
 import Onboarding from "./pages/Onboarding";
 import GettingStarted from "./pages/GettingStarted";
+import SetFlowMockup from "./pages/client/SetFlowMockup";
 
 function AppRoutes() {
   return (
@@ -24,6 +25,7 @@ function AppRoutes() {
       {/* <Route path="/coaching" component={CoachingLanding} /> */} {/* temporarily disabled */}
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/getting-started" component={GettingStarted} />
+      <Route path="/mockup/set-flow" component={SetFlowMockup} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

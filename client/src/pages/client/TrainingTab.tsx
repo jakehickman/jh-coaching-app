@@ -637,6 +637,8 @@ function WorkoutLogTab() {
   const [prevNoteOpen, setPrevNoteOpen] = useState<Record<string, boolean>>({});
   const [noteOpen, setNoteOpen] = useState<Record<string, boolean>>({});
   const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>({});
+  // Tracks exercises the user has manually marked as done (before max sets reached)
+  const [exerciseDone, setExerciseDone] = useState<Record<string, boolean>>({});
 
   function getCollapseKey(date: string, dayLabel: string) {
     return `collapse:workout:${date}:${dayLabel}`;
@@ -815,7 +817,7 @@ function WorkoutLogTab() {
 
     const blankEx: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
     for (const ex of (dayDef?.exercises ?? [])) {
-      const setCount = Math.max(1, parseSetsRange(String(ex.sets ?? 1)).max || 1);
+      const setCount = Math.max(1, parseSetsRange(String(ex.sets ?? 1)).min || 1);
       blankEx[ex.name] = Array.from({ length: setCount }, () => ({ weight: '', reps: '', notes: '', completed: false }));
     }
     // Pre-populate equipment details from the most recent previous session for this day
@@ -1230,90 +1232,139 @@ function WorkoutLogTab() {
                       }}
                     />
 
-                    {sets.length > 0 && (
-                      <div className="mb-2">
-                        {/* Column headers + Last session hint */}
-                        {(() => {
-                          return (
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-9 flex-shrink-0" />
-                              <div className="flex-1 text-center">
-                                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Weight</p>
-                              </div>
-                              <div className="flex-1 text-center">
-                                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Reps</p>
-                              </div>
-                              <div className="w-6 flex-shrink-0" />
+                    {sets.length > 0 && (() => {
+                      const { min: minSets, max: maxSets } = parseSetsRange(String(ex.sets ?? 1));
+                      const effectiveMin = Math.max(1, minSets || 1);
+                      const effectiveMax = maxSets > 0 ? maxSets : Infinity;
+                      const allCurrentDone = sets.every(s => s.completed);
+                      const doneSetsCount = sets.filter(s => s.completed).length;
+                      const minMet = doneSetsCount >= effectiveMin;
+                      const atMax = sets.length >= effectiveMax && allCurrentDone;
+                      const isExDone = exerciseDone[displayName] || atMax;
+                      const showAddOrDone = minMet && allCurrentDone && !isExDone;
+                      return (
+                        <div className="mb-2">
+                          {/* Column headers */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-9 flex-shrink-0" />
+                            <div className="flex-1 text-center">
+                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Weight</p>
                             </div>
-                          );
-                        })()}
-                        <div className="space-y-2.5">
-                          {sets.map((s, idx) => {
-                            const prevW = prevSets[idx]?.weight;
-                            const prevR = prevSets[idx]?.reps;
-                            return (
-                              <div key={idx} className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  {/* Tick button — large */}
-                                  <button
-                                    onClick={() => toggleSetCompleted(displayName, idx)}
-                                    className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
-                                      s.completed
-                                        ? "border-green-500 bg-green-500/20 text-green-400"
-                                        : "border-border text-transparent hover:border-primary/60"
-                                    }`}
-                                  >
-                                    <Check size={15} />
-                                  </button>
-                                  {/* Weight input */}
-                                  <div className="flex-1">
-                                    <input
-                                      type="number" inputMode="decimal"
-                                      value={s.weight ?? ""}
-                                      onChange={e => setSet(displayName, idx, "weight", e.target.value)}
-                                      onWheel={e => (e.target as HTMLInputElement).blur()}
-                                      placeholder={prevW != null ? String(prevW) : ""}
-                                      className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
-                                        s.completed ? "opacity-50" : ""
+                            <div className="flex-1 text-center">
+                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Reps</p>
+                            </div>
+                            <div className="w-6 flex-shrink-0" />
+                          </div>
+                          <div className="space-y-2.5">
+                            {sets.map((s, idx) => {
+                              const prevW = prevSets[idx]?.weight;
+                              const prevR = prevSets[idx]?.reps;
+                              return (
+                                <div key={idx} className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    {/* Tick button */}
+                                    <button
+                                      onClick={() => {
+                                        toggleSetCompleted(displayName, idx);
+                                        // Auto-complete when max is reached after this tick
+                                        const newDone = sets.filter((s2, i2) => s2.completed || i2 === idx).length;
+                                        if (newDone >= effectiveMax) {
+                                          setTimeout(() => {
+                                            setExerciseDone(prev => ({ ...prev, [displayName]: true }));
+                                            setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: true }));
+                                          }, 300);
+                                        }
+                                      }}
+                                      className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
+                                        s.completed
+                                          ? "border-green-500 bg-green-500/20 text-green-400"
+                                          : "border-border text-transparent hover:border-primary/60"
                                       }`}
-                                    />
-                                  </div>
-                                  {/* Reps input */}
-                                  <div className="flex-1">
-                                    <input
-                                      type="number" inputMode="numeric"
-                                      value={s.reps ?? ""}
-                                      onChange={e => setSet(displayName, idx, "reps", e.target.value)}
-                                      onWheel={e => (e.target as HTMLInputElement).blur()}
-                                      placeholder={prevR != null ? String(prevR) : ""}
-                                      className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
-                                        s.completed ? "opacity-50" : ""
-                                      }`}
-                                    />
-                                  </div>
-                                  {/* Remove set */}
-                                  {sets.length > 1 ? (
-                                    <button onClick={() => removeSet(displayName, idx)} className="w-6 flex-shrink-0 flex items-center justify-center text-muted-foreground/50 hover:text-destructive transition-colors">
-                                      <Minus size={14} />
+                                    >
+                                      <Check size={15} />
                                     </button>
-                                  ) : (
-                                    <div className="w-6 flex-shrink-0" />
-                                  )}
+                                    {/* Weight input */}
+                                    <div className="flex-1">
+                                      <input
+                                        type="number" inputMode="decimal"
+                                        value={s.weight ?? ""}
+                                        onChange={e => setSet(displayName, idx, "weight", e.target.value)}
+                                        onWheel={e => (e.target as HTMLInputElement).blur()}
+                                        placeholder={prevW != null ? String(prevW) : ""}
+                                        className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                                          s.completed ? "opacity-50" : ""
+                                        }`}
+                                      />
+                                    </div>
+                                    {/* Reps input */}
+                                    <div className="flex-1">
+                                      <input
+                                        type="number" inputMode="numeric"
+                                        value={s.reps ?? ""}
+                                        onChange={e => setSet(displayName, idx, "reps", e.target.value)}
+                                        onWheel={e => (e.target as HTMLInputElement).blur()}
+                                        placeholder={prevR != null ? String(prevR) : ""}
+                                        className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                                          s.completed ? "opacity-50" : ""
+                                        }`}
+                                      />
+                                    </div>
+                                    {/* Remove set — only show if not done */}
+                                    {!isExDone && sets.length > effectiveMin ? (
+                                      <button onClick={() => removeSet(displayName, idx)} className="w-6 flex-shrink-0 flex items-center justify-center text-muted-foreground/50 hover:text-destructive transition-colors">
+                                        <Minus size={14} />
+                                      </button>
+                                    ) : (
+                                      <div className="w-6 flex-shrink-0" />
+                                    )}
+                                  </div>
                                 </div>
-
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
+                          {/* Add set / Done controls */}
+                          {isExDone ? (
+                            <div className="mt-3 py-2 rounded-xl bg-primary/10 text-center">
+                              <span className="text-xs font-bold text-primary tracking-widest uppercase">Complete</span>
+                            </div>
+                          ) : showAddOrDone ? (
+                            <div className="flex items-center gap-2 mt-3">
+                              {sets.length < effectiveMax && (
+                                <button
+                                  onClick={() => addSet(displayName)}
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                                >
+                                  <Plus size={13} /> Add set
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setExerciseDone(prev => ({ ...prev, [displayName]: true }));
+                                  setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: true }));
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
+                              >
+                                <Check size={13} /> Done
+                              </button>
+                            </div>
+                          ) : minMet && !isExDone ? (
+                            // Min met but still has incomplete sets — show Done button only
+                            <div className="flex items-center gap-2 mt-3">
+                              <div className="flex-1" />
+                              <button
+                                onClick={() => {
+                                  setExerciseDone(prev => ({ ...prev, [displayName]: true }));
+                                  setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: true }));
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
+                              >
+                                <Check size={13} /> Done
+                              </button>
+                            </div>
+                          ) : null}
                         </div>
-                      </div>
-                    )}
-
-                    <button
-                      onClick={() => addSet(displayName)}
-                      className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
-                    >
-                      <Plus size={13} /> Add Set
-                    </button>
+                      );
+                    })()}
 
                     <div className="mt-3 pt-3 border-t border-border">
                       {!(noteOpen[displayName] || exerciseNotes[displayName]) ? (
