@@ -1251,7 +1251,9 @@ function WorkoutLogTab() {
                       // atMax only fires for true ranges (min < max); single-number sets never auto-complete
                       const atMax = isRange && sets.length >= effectiveMax && allCurrentDone;
                       const isExDone = exerciseDone[displayName] || atMax;
-                      const showAddOrDone = minMet && allCurrentDone && !isExDone;
+                      // Show Add/Done when min sets are ticked, even if unticked rows remain above min
+                      // e.g. 4 sets, 1&2 ticked, remove set 4 → 3 sets, 1&2 ticked → should show Add/Done
+                      const showAddOrDone = !isExDone && doneSetsCount >= effectiveMin;
                       return (
                         <div className="mb-2">
                           {/* Column headers */}
