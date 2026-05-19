@@ -31,6 +31,17 @@ import { CSS } from "@dnd-kit/utilities";
 import { Card, SectionLabel, DateInput, ClientCombobox, useClientSelector } from "./shared";
 import { MUSCLE_GROUPS } from "./ExerciseLibrarySection";
 
+/** Parse a sets string like "3", "2-4", "2–4" into {min, max}. */
+function parseSetsRange(s: string): { min: number; max: number } {
+  if (!s) return { min: 0, max: 0 };
+  const norm = s.replace(/–/g, "-").trim();
+  const parts = norm.split("-").map(p => parseFloat(p.trim()));
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return { min: parts[0], max: parts[1] };
+  const single = parseFloat(norm);
+  if (!isNaN(single)) return { min: single, max: single };
+  return { min: 0, max: 0 };
+}
+
 
 function SortableScheduleSlot({
   id, slot, index, dayOptions, onUpdate, onRemove, isLast
@@ -611,8 +622,7 @@ function SortableDayCard({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
   const totalSets = (day.exercises ?? []).reduce((sum: number, ex: any) => {
-    const n = parseInt(ex.sets, 10);
-    return sum + (isNaN(n) ? 0 : n);
+    return sum + (parseSetsRange(ex.sets).max || 0);
   }, 0);
 
   return (
@@ -797,36 +807,36 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
       libMap.set(ex.name.toLowerCase(), contributions);
     }
 
-    // Per-day totals
-    const dayTotals: Record<string, Record<string, number>> = {};
+    // Per-day totals (min/max ranges)
+    const dayTotals: Record<string, Record<string, { min: number; max: number }>> = {};
     for (const day of days) {
       const dayName = day.name || "Unnamed";
       dayTotals[dayName] = {};
       for (const ex of (day.exercises ?? [])) {
-        const sets = parseFloat(ex.sets) || 0;
+        const { min: sMin, max: sMax } = parseSetsRange(ex.sets);
         const contrib = libMap.get((ex.name ?? "").toLowerCase());
-        if (!contrib || sets === 0) continue;
+        if (!contrib || sMax === 0) continue;
         for (const [mgKey, val] of Object.entries(contrib)) {
-          dayTotals[dayName][mgKey] = (dayTotals[dayName][mgKey] ?? 0) + sets * val;
+          const cur = dayTotals[dayName][mgKey] ?? { min: 0, max: 0 };
+          dayTotals[dayName][mgKey] = { min: cur.min + sMin * (val as number), max: cur.max + sMax * (val as number) };
         }
       }
     }
 
     // Weekly totals
-    const weeklyTotals: Record<string, number> = {};
+    const weeklyTotals: Record<string, { min: number; max: number }> = {};
     for (const day of days) {
       const dayName = day.name || "Unnamed";
-      // How many times does this day appear in the schedule?
       const occurrences = schedule.length > 0
         ? schedule.filter(s => s === dayName).length
         : 1;
-      for (const [mgKey, val] of Object.entries(dayTotals[dayName] ?? {})) {
-        weeklyTotals[mgKey] = (weeklyTotals[mgKey] ?? 0) + val * occurrences;
+      for (const [mgKey, range] of Object.entries(dayTotals[dayName] ?? {})) {
+        const cur = weeklyTotals[mgKey] ?? { min: 0, max: 0 };
+        weeklyTotals[mgKey] = { min: cur.min + range.min * occurrences, max: cur.max + range.max * occurrences };
       }
     }
-    // Apply multiplier to weekly totals
     for (const key of Object.keys(weeklyTotals)) {
-      weeklyTotals[key] = Math.round(weeklyTotals[key] * multiplier);
+      weeklyTotals[key] = { min: Math.round(weeklyTotals[key].min * multiplier), max: Math.round(weeklyTotals[key].max * multiplier) };
     }
 
     return { dayTotals, weeklyTotals, multiplier };
@@ -1204,19 +1214,24 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                     </thead>
                     <tbody>
                       {[...MUSCLE_GROUPS]
-                        .sort((a, b) => (volumeTable.weeklyTotals[b.key] ?? 0) - (volumeTable.weeklyTotals[a.key] ?? 0))
+                        .sort((a, b) => ((volumeTable.weeklyTotals[b.key]?.max) ?? 0) - ((volumeTable.weeklyTotals[a.key]?.max) ?? 0))
                         .map(mg => {
-                        const weekly = volumeTable.weeklyTotals[mg.key] ?? 0;
-                        if (weekly === 0) return null;
+                        const wk = volumeTable.weeklyTotals[mg.key];
+                        const wkMax = wk?.max ?? 0;
+                        if (wkMax === 0) return null;
+                        const wkLabel = wk && wk.min !== wk.max ? `${wk.min}–${wk.max}` : String(wkMax);
                         return (
                           <tr key={mg.key} className="border-b border-border/50 hover:bg-secondary/20">
                             <td className="px-3 py-2 font-medium text-foreground text-xs">{mg.label}</td>
                             {days.map(d => {
-                              const val = volumeTable.dayTotals[d.name || 'Unnamed']?.[mg.key] ?? 0;
+                              const range = volumeTable.dayTotals[d.name || 'Unnamed']?.[mg.key];
+                              const dMin = Math.round(range?.min ?? 0);
+                              const dMax = Math.round(range?.max ?? 0);
+                              const dLabel = dMax > 0 ? (dMin === dMax ? String(dMax) : `${dMin}–${dMax}`) : null;
                               return (
                                 <td key={d.name} className="px-2 py-2 text-center">
-                                  {val > 0 ? (
-                                    <span className="text-xs text-foreground/70">{Math.round(val)}</span>
+                                  {dLabel ? (
+                                    <span className="text-xs text-foreground/70">{dLabel}</span>
                                   ) : (
                                     <span className="text-muted-foreground/30 text-xs">—</span>
                                   )}
@@ -1225,10 +1240,10 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                             })}
                             <td className="px-2 py-2 text-center">
                               <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-bold ${
-                                weekly >= 10 ? "bg-primary/20 text-primary" :
-                                weekly >= 6 ? "bg-primary/10 text-primary/80" :
+                                wkMax >= 10 ? "bg-primary/20 text-primary" :
+                                wkMax >= 6 ? "bg-primary/10 text-primary/80" :
                                 "bg-secondary text-muted-foreground"
-                              }`}>{weekly}</span>
+                              }`}>{wkLabel}</span>
                             </td>
                           </tr>
                         );

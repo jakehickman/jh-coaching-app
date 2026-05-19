@@ -9,7 +9,22 @@ import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { SectionLabel, Card, DateInput } from "./shared";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+/** Parse a sets string like "3", "2-4", "2–4" into {min, max}. */
+function parseSetsRange(s: string): { min: number; max: number } {
+  if (!s) return { min: 0, max: 0 };
+  const norm = s.replace(/–/g, "-").trim();
+  const parts = norm.split("-").map(p => parseFloat(p.trim()));
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return { min: parts[0], max: parts[1] };
+  const single = parseFloat(norm);
+  if (!isNaN(single)) return { min: single, max: single };
+  return { min: 0, max: 0 };
+}
+function formatSetsRange(s: string): string {
+  const { min, max } = parseSetsRange(s);
+  if (max === 0) return s || "—";
+  return min === max ? String(max) : `${min}–${max}`;
+}
 function getYouTubeEmbedUrl(url: string): string | null {
   if (!url) return null;
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\.\w-]+)/);
@@ -800,7 +815,7 @@ function WorkoutLogTab() {
 
     const blankEx: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
     for (const ex of (dayDef?.exercises ?? [])) {
-      const setCount = Math.max(1, parseInt(String(ex.sets ?? 1), 10) || 1);
+      const setCount = Math.max(1, parseSetsRange(String(ex.sets ?? 1)).max || 1);
       blankEx[ex.name] = Array.from({ length: setCount }, () => ({ weight: '', reps: '', notes: '', completed: false }));
     }
     // Pre-populate equipment details from the most recent previous session for this day
@@ -1120,7 +1135,7 @@ function WorkoutLogTab() {
                         <div className="min-w-0">
                           {ex.notes && !subName && <p className="text-xs text-muted-foreground mb-0.5">{ex.notes}</p>}
                           <p className="text-sm font-medium text-foreground/70">
-                            {ex.sets} sets × {ex.reps}
+                            {formatSetsRange(ex.sets)} sets × {ex.reps}
                             {(() => {
                               const pw = prevSets[0]?.weight;
                               const pr = prevSets[0]?.reps;
