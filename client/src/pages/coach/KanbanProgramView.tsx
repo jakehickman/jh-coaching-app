@@ -22,6 +22,20 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+/** Parse a sets string like "3", "2-4", "2–4" into {min, max}. Returns {min:0,max:0} if unparseable. */
+function parseSetsRange(s: string): { min: number; max: number } {
+  if (!s) return { min: 0, max: 0 };
+  const norm = s.replace(/–/g, "-").trim();
+  const parts = norm.split("-").map(p => parseFloat(p.trim()));
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    return { min: parts[0], max: parts[1] };
+  }
+  const single = parseFloat(norm);
+  if (!isNaN(single)) return { min: single, max: single };
+  return { min: 0, max: 0 };
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Exercise {
   name: string;
@@ -162,7 +176,7 @@ function KanbanExCard({
               onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); repsRef.current?.focus(); } }}
               placeholder="—"
               title="Sets"
-              className="w-7 bg-secondary/80 border border-border/60 rounded text-[11px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary/50 px-0.5 py-0.5 placeholder:text-muted-foreground/30"
+              className="w-12 bg-secondary/80 border border-border/60 rounded text-[11px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary/50 px-0.5 py-0.5 placeholder:text-muted-foreground/30"
             />
           </div>
 
@@ -262,7 +276,7 @@ function KanbanColumn({
   exerciseNames: string[];
 }) {
   const exercises = day.exercises ?? [];
-  const totalSets = exercises.reduce((s, ex) => s + (parseInt(ex.sets) || 0), 0);
+  const totalSets = exercises.reduce((s, ex) => s + (parseSetsRange(ex.sets).max || 0), 0);
 
   // Build stable items list: always include the placeholder ID for this column.
   // Its position in the list determines where the drop slot appears.
@@ -482,38 +496,40 @@ export default function KanbanProgramView({
       libMap.set(String(ex.name ?? "").toLowerCase(), contributions);
     }
 
-    // Per-day raw set totals per muscle group
-    const dayTotals: Record<string, Record<string, number>> = {};
+    // Per-day raw set totals per muscle group (min/max ranges)
+    const dayTotals: Record<string, Record<string, { min: number; max: number }>> = {};
     for (const day of days) {
       const dayName = day.name || "Unnamed";
       dayTotals[dayName] = {};
       for (const ex of (day.exercises ?? [])) {
-        const sets = parseFloat(ex.sets) || 0;
+        const { min: setsMin, max: setsMax } = parseSetsRange(ex.sets);
         const contrib = libMap.get((ex.name ?? "").toLowerCase());
-        if (!contrib || sets === 0) continue;
+        if (!contrib || setsMax === 0) continue;
         for (const [mgKey, val] of Object.entries(contrib)) {
-          dayTotals[dayName][mgKey] = (dayTotals[dayName][mgKey] ?? 0) + sets * val;
+          const cur = dayTotals[dayName][mgKey] ?? { min: 0, max: 0 };
+          dayTotals[dayName][mgKey] = { min: cur.min + setsMin * (val as number), max: cur.max + setsMax * (val as number) } as any;
         }
       }
     }
 
     // Weekly totals (occurrences × per-day × multiplier)
-    const weeklyTotals: Record<string, number> = {};
+    const weeklyTotals: Record<string, { min: number; max: number }> = {};
     for (const day of days) {
       const dayName = day.name || "Unnamed";
       const occurrences = schedule.length > 0 ? schedule.filter(s => s === dayName).length : 1;
-      for (const [mgKey, val] of Object.entries(dayTotals[dayName] ?? {})) {
-        weeklyTotals[mgKey] = (weeklyTotals[mgKey] ?? 0) + val * occurrences;
+      for (const [mgKey, range] of Object.entries(dayTotals[dayName] ?? {})) {
+        const cur = weeklyTotals[mgKey] ?? { min: 0, max: 0 };
+        weeklyTotals[mgKey] = { min: cur.min + (range as any).min * occurrences, max: cur.max + (range as any).max * occurrences };
       }
     }
     for (const key of Object.keys(weeklyTotals)) {
-      weeklyTotals[key] = Math.round(weeklyTotals[key] * multiplier);
+      weeklyTotals[key] = { min: Math.round((weeklyTotals[key] as any).min * multiplier), max: Math.round((weeklyTotals[key] as any).max * multiplier) };
     }
 
     // Muscle groups that have any volume
     const activeMgs = MUSCLE_GROUPS.filter(mg =>
-      days.some(d => (dayTotals[d.name || "Unnamed"]?.[mg.key] ?? 0) > 0)
-    ).sort((a, b) => (weeklyTotals[b.key] ?? 0) - (weeklyTotals[a.key] ?? 0));
+      days.some(d => ((dayTotals[d.name || "Unnamed"]?.[mg.key] as any)?.max ?? 0) > 0)
+    ).sort((a, b) => ((weeklyTotals[b.key] as any)?.max ?? 0) - ((weeklyTotals[a.key] as any)?.max ?? 0));
 
     return { dayTotals, weeklyTotals, activeMgs, multiplier };
   })();
@@ -595,10 +611,13 @@ export default function KanbanProgramView({
                   <tr key={i} className="border-t border-border/20">
                     <td className="pr-4 py-1 text-muted-foreground/80 whitespace-nowrap font-medium">{dayName}</td>
                     {volumeTable.activeMgs.map(mg => {
-                      const val = Math.round(volumeTable.dayTotals[d.name || "Unnamed"]?.[mg.key] ?? 0);
+                      const range = volumeTable.dayTotals[d.name || "Unnamed"]?.[mg.key] as any;
+                      const minV = Math.round(range?.min ?? 0);
+                      const maxV = Math.round(range?.max ?? 0);
+                      const label = maxV > 0 ? (minV === maxV ? String(minV) : `${minV}–${maxV}`) : null;
                       return (
                         <td key={mg.key} className="text-center px-3 py-1 tabular-nums">
-                          {val > 0 ? <span className="text-foreground/80">{val}</span> : <span className="text-muted-foreground/20">&mdash;</span>}
+                          {label ? <span className="text-foreground/80">{label}</span> : <span className="text-muted-foreground/20">&mdash;</span>}
                         </td>
                       );
                     })}
@@ -608,11 +627,17 @@ export default function KanbanProgramView({
               {/* Weekly total row */}
               <tr className="border-t border-border/40">
                 <td className="pr-4 py-1 text-[10px] uppercase tracking-wider text-primary/70 font-medium">Wk</td>
-                {volumeTable.activeMgs.map(mg => (
-                  <td key={mg.key} className="text-center px-3 py-1 tabular-nums font-semibold text-primary">
-                    {volumeTable.weeklyTotals[mg.key] ?? 0}
-                  </td>
-                ))}
+                {volumeTable.activeMgs.map(mg => {
+                  const wk = volumeTable.weeklyTotals[mg.key] as any;
+                  const wkMin = wk?.min ?? 0;
+                  const wkMax = wk?.max ?? 0;
+                  const wkLabel = wkMin === wkMax ? String(wkMax) : `${wkMin}–${wkMax}`;
+                  return (
+                    <td key={mg.key} className="text-center px-3 py-1 tabular-nums font-semibold text-primary">
+                      {wkLabel}
+                    </td>
+                  );
+                })}
               </tr>
             </tbody>
           </table>
