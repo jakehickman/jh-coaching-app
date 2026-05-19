@@ -276,7 +276,9 @@ function KanbanColumn({
   exerciseNames: string[];
 }) {
   const exercises = day.exercises ?? [];
-  const totalSets = exercises.reduce((s, ex) => s + (parseSetsRange(ex.sets).max || 0), 0);
+  const totalSetsMin = exercises.reduce((s, ex) => s + (parseSetsRange(ex.sets).min || 0), 0);
+  const totalSetsMax = exercises.reduce((s, ex) => s + (parseSetsRange(ex.sets).max || 0), 0);
+  const totalSetsLabel = totalSetsMin === totalSetsMax ? `${totalSetsMax} sets` : `${totalSetsMin}–${totalSetsMax} sets`;
 
   // Build stable items list: always include the placeholder ID for this column.
   // Its position in the list determines where the drop slot appears.
@@ -306,8 +308,8 @@ function KanbanColumn({
           className="w-20 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <div className="flex-1" />
-        {totalSets > 0 && (
-          <span className="text-[11px] text-muted-foreground tabular-nums">{totalSets} sets</span>
+        {totalSetsMax > 0 && (
+          <span className="text-[11px] text-muted-foreground tabular-nums">{totalSetsLabel}</span>
         )}
         <button
           onClick={() => removeDay(dayIdx)}
