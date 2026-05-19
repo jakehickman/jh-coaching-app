@@ -589,56 +589,67 @@ export default function KanbanProgramView({
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Weekly Volume</p>
           <span className="text-[10px] text-muted-foreground/50">
             Cycle: {schedule.length > 0 ? schedule.length : days.length} days
-            {" "}&times;{Math.round((7 / (schedule.length > 0 ? schedule.length : days.length)) * 10) / 10} sets/wk
           </span>
         </div>
         <div className="overflow-x-auto">
           <table className="text-[12px] border-collapse w-auto">
             <thead>
+              {/* Row 1: session group headers */}
               <tr>
-                <th className="text-left text-[10px] uppercase tracking-wider text-muted-foreground pr-4 pb-1.5 font-medium">Session</th>
-                {volumeTable.activeMgs.map(mg => (
-                  <th key={mg.key} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground px-3 pb-1.5 font-medium whitespace-nowrap">
-                    {mg.label}
+                <th className="text-left text-[10px] uppercase tracking-wider text-muted-foreground pr-4 pb-0 font-medium" rowSpan={2}>Muscle</th>
+                {days.map((d, i) => (
+                  <th key={i} colSpan={2} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground px-1 pb-0 font-medium border-l border-border/20">
+                    {d.name || `Day ${i + 1}`}
                   </th>
                 ))}
+                <th colSpan={2} className="text-center text-[10px] uppercase tracking-wider text-primary/70 px-1 pb-0 font-medium border-l border-border/20">Wk</th>
+              </tr>
+              {/* Row 2: Min / Max sub-headers */}
+              <tr>
+                {days.map((_, i) => (
+                  <>
+                    <th key={`${i}-min`} className="text-center text-[9px] text-muted-foreground/50 px-2 pb-1.5 font-normal border-l border-border/20">Min</th>
+                    <th key={`${i}-max`} className="text-center text-[9px] text-muted-foreground/50 px-2 pb-1.5 font-normal">Max</th>
+                  </>
+                ))}
+                <th className="text-center text-[9px] text-muted-foreground/50 px-2 pb-1.5 font-normal border-l border-border/20">Min</th>
+                <th className="text-center text-[9px] text-muted-foreground/50 px-2 pb-1.5 font-normal">Max</th>
               </tr>
             </thead>
             <tbody>
-              {days.map((d, i) => {
-                const dayName = d.name || `Day ${i + 1}`;
-                return (
-                  <tr key={i} className="border-t border-border/20">
-                    <td className="pr-4 py-1 text-muted-foreground/80 whitespace-nowrap font-medium">{dayName}</td>
-                    {volumeTable.activeMgs.map(mg => {
-                      const range = volumeTable.dayTotals[d.name || "Unnamed"]?.[mg.key] as any;
-                      const minV = Math.round(range?.min ?? 0);
-                      const maxV = Math.round(range?.max ?? 0);
-                      const label = maxV > 0 ? (minV === maxV ? String(minV) : `${minV}–${maxV}`) : null;
-                      return (
-                        <td key={mg.key} className="text-center px-3 py-1 tabular-nums">
-                          {label ? <span className="text-foreground/80">{label}</span> : <span className="text-muted-foreground/20">&mdash;</span>}
+              {volumeTable.activeMgs.map(mg => (
+                <tr key={mg.key} className="border-t border-border/20">
+                  <td className="pr-4 py-1 text-muted-foreground/80 whitespace-nowrap font-medium text-[11px] uppercase tracking-wide">{mg.label}</td>
+                  {days.map((d, i) => {
+                    const range = volumeTable.dayTotals[d.name || "Unnamed"]?.[mg.key] as any;
+                    const minV = Math.round(range?.min ?? 0);
+                    const maxV = Math.round(range?.max ?? 0);
+                    const hasVal = maxV > 0;
+                    return (
+                      <>
+                        <td key={`${i}-min`} className="text-center px-2 py-1 tabular-nums border-l border-border/20">
+                          {hasVal ? <span className="text-foreground/70">{minV}</span> : <span className="text-muted-foreground/20">&mdash;</span>}
                         </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-              {/* Weekly total row */}
-              <tr className="border-t border-border/40">
-                <td className="pr-4 py-1 text-[10px] uppercase tracking-wider text-primary/70 font-medium">Wk</td>
-                {volumeTable.activeMgs.map(mg => {
-                  const wk = volumeTable.weeklyTotals[mg.key] as any;
-                  const wkMin = wk?.min ?? 0;
-                  const wkMax = wk?.max ?? 0;
-                  const wkLabel = wkMin === wkMax ? String(wkMax) : `${wkMin}–${wkMax}`;
-                  return (
-                    <td key={mg.key} className="text-center px-3 py-1 tabular-nums font-semibold text-primary">
-                      {wkLabel}
-                    </td>
-                  );
-                })}
-              </tr>
+                        <td key={`${i}-max`} className="text-center px-2 py-1 tabular-nums">
+                          {hasVal ? <span className="text-foreground/80 font-medium">{maxV}</span> : <span className="text-muted-foreground/20">&mdash;</span>}
+                        </td>
+                      </>
+                    );
+                  })}
+                  {/* Weekly totals */}
+                  {(() => {
+                    const wk = volumeTable.weeklyTotals[mg.key] as any;
+                    const wkMin = Math.round(wk?.min ?? 0);
+                    const wkMax = Math.round(wk?.max ?? 0);
+                    return (
+                      <>
+                        <td className="text-center px-2 py-1 tabular-nums font-semibold text-primary border-l border-border/20">{wkMin}</td>
+                        <td className="text-center px-2 py-1 tabular-nums font-semibold text-primary">{wkMax}</td>
+                      </>
+                    );
+                  })()}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
