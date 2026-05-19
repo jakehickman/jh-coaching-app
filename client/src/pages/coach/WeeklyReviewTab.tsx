@@ -152,17 +152,16 @@ const PHASE_COLORS: Record<string, { bg: string; text: string; border: string }>
 };
 
 function getPhaseForWeek(phases: any[], weekStart: string, weekEnd: string): string | null {
-  // Find the phase that overlaps with this week (use midpoint of week)
-  const mid = new Date(weekStart + "T00:00:00").getTime() + 3 * 86400000;
-  const midDate = new Date(mid).toISOString().slice(0, 10);
-  const phase = phases.find((p: any) => p.startDate <= midDate && (!p.endDate || p.endDate >= midDate));
+  // Find the phase that overlaps with any part of this week:
+  // phase starts on or before week end AND (no end date OR phase ends on or after week start)
+  const phase = phases.find((p: any) => p.startDate <= weekEnd && (!p.endDate || p.endDate >= weekStart));
   return phase?.label ?? null;
 }
 
 function getPhaseWeekNumber(phases: any[], weekStart: string): number | null {
-  const mid = new Date(weekStart + "T00:00:00").getTime() + 3 * 86400000;
-  const midDate = new Date(mid).toISOString().slice(0, 10);
-  const phase = phases.find((p: any) => p.startDate <= midDate && (!p.endDate || p.endDate >= midDate));
+  // Use week start for phase week number lookup (overlap: phase starts <= weekStart+6, ends >= weekStart)
+  const weekEnd = new Date(new Date(weekStart + "T00:00:00").getTime() + 6 * 86400000).toISOString().slice(0, 10);
+  const phase = phases.find((p: any) => p.startDate <= weekEnd && (!p.endDate || p.endDate >= weekStart));
   if (!phase) return null;
   const phaseStart = new Date(phase.startDate + "T00:00:00").getTime();
   const weekStartMs = new Date(weekStart + "T00:00:00").getTime();
