@@ -1345,16 +1345,9 @@ function WorkoutLogTab() {
                           </div>
                           {/* Add set / Done controls */}
                           {isExDone ? (
-                            <button
-                              onClick={() => {
-                                setExerciseDone(prev => ({ ...prev, [displayName]: false }));
-                                setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: false }));
-                                autoCollapsedRef.current.delete(displayName);
-                              }}
-                              className="mt-3 w-full py-2 rounded-xl bg-primary/10 text-center hover:bg-primary/20 transition-colors"
-                            >
-                              <span className="text-xs font-bold text-primary tracking-widest uppercase">Complete ✕</span>
-                            </button>
+                            <div className="mt-3 py-2 rounded-xl bg-primary/10 text-center">
+                              <span className="text-xs font-bold text-primary tracking-widest uppercase">Complete</span>
+                            </div>
                           ) : showAddOrDone ? (
                             <div className="flex items-center gap-2 mt-3">
                               {sets.length < effectiveMax && (
