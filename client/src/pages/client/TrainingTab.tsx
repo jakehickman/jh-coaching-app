@@ -1241,19 +1241,7 @@ function WorkoutLogTab() {
                     />
 
                     {sets.length > 0 && (() => {
-                      const { min: minSets, max: maxSets } = parseSetsRange(String(ex.sets ?? 1));
-                      const effectiveMin = Math.max(1, minSets || 1);
-                      const effectiveMax = maxSets > 0 ? maxSets : Infinity;
-                      const isRange = effectiveMax !== Infinity && effectiveMax > effectiveMin;
-                      const allCurrentDone = sets.every(s => s.completed);
-                      const doneSetsCount = sets.filter(s => s.completed).length;
-                      const minMet = doneSetsCount >= effectiveMin;
-                      // atMax only fires for true ranges (min < max); single-number sets never auto-complete
-                      const atMax = isRange && sets.length >= effectiveMax && allCurrentDone;
-                      const isExDone = exerciseDone[displayName] || atMax;
-                      // Show Add/Done when min sets are ticked, even if unticked rows remain above min
-                      // e.g. 4 sets, 1&2 ticked, remove set 4 → 3 sets, 1&2 ticked → should show Add/Done
-                      const showAddOrDone = !isExDone && doneSetsCount >= effectiveMin;
+                      const isExDone = exerciseDone[displayName];
                       return (
                         <div className="mb-2">
                           {/* Column headers */}
@@ -1332,8 +1320,8 @@ function WorkoutLogTab() {
                                         }`}
                                       />
                                     </div>
-                                    {/* Remove set — only show if not done and more than 1 set */}
-                                    {!isExDone && sets.length > 1 ? (
+                                    {/* Remove set button — always visible when more than 1 set */}
+                                    {sets.length > 1 ? (
                                       <button onClick={() => removeSet(displayName, idx)} className="w-6 flex-shrink-0 flex items-center justify-center text-muted-foreground/50 hover:text-destructive transition-colors">
                                         <Minus size={14} />
                                       </button>
@@ -1345,30 +1333,13 @@ function WorkoutLogTab() {
                               );
                             })}
                           </div>
-                          {/* Add set / Done controls */}
-                          {isExDone ? (
-                            <div className="mt-3 py-2 rounded-xl bg-primary/10 text-center">
-                              <span className="text-xs font-bold text-primary tracking-widest uppercase">Complete</span>
-                            </div>
-                          ) : showAddOrDone ? (
-                            <div className="flex items-center gap-2 mt-3">
-                              <button
-                                onClick={() => addSet(displayName)}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-                              >
-                                <Plus size={13} /> Add set
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setExerciseDone(prev => ({ ...prev, [displayName]: true }));
-                                  setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: true }));
-                                }}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
-                              >
-                                <Check size={13} /> Done
-                              </button>
-                            </div>
-                          ) : null}
+                          {/* Add set button — always visible */}
+                          <button
+                            onClick={() => addSet(displayName)}
+                            className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                          >
+                            <Plus size={13} /> Add set
+                          </button>
                         </div>
                       );
                     })()}
