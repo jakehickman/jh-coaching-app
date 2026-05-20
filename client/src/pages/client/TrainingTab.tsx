@@ -511,7 +511,7 @@ function PastSessionsList({
                   // For myo-reps: 1 activation + miniCount mini-sets; otherwise normal set count
                   const displaySetCount = isMyoEx ? 1 + miniCount : completedSets.length;
                   const setLabel = isMyoEx
-                    ? `1 activation + ${miniCount} mini`
+                    ? `1 + ${miniCount} sets`
                     : `${displaySetCount} ${displaySetCount === 1 ? 'set' : 'sets'}`;
                   return (
                     <div key={i} className="flex items-start justify-between gap-2">
