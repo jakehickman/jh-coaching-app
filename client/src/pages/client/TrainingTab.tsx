@@ -1276,7 +1276,7 @@ function WorkoutLogTab() {
                               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Weight</p>
                             </div>
                             <div className="flex-1 text-center">
-                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{isMyoReps ? 'Act. Reps' : 'Reps'}</p>
+                               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Reps</p>
                             </div>
                             <div className="w-6 flex-shrink-0" />
                           </div>
@@ -1343,16 +1343,16 @@ function WorkoutLogTab() {
                                         return { ...prev, [displayName]: updated };
                                       })}
                                       title={isMyoReps ? 'Disable myo-reps' : 'Enable myo-reps'}
-                                      className={`w-6 flex-shrink-0 flex items-center justify-center rounded text-[10px] font-bold transition-colors ${
+                                      className={`w-8 flex-shrink-0 flex items-center justify-center rounded text-[10px] font-bold transition-colors ${
                                         isMyoReps ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
                                       }`}
                                     >
-                                      M
+                                      MR
                                     </button>
                                   </div>
                                   {/* Mini-set count row — shown when myo-reps is on */}
                                   {isMyoReps && (
-                                    <div className="mt-2 mx-1 flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-4 py-2.5">
+                                    <div className="mt-2 ml-11 mr-8 flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-4 py-2.5">
                                       <span className="text-xs font-medium text-primary/80 tracking-wide uppercase">Mini-sets</span>
                                       <div className="flex items-center gap-3">
                                         <button
