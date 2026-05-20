@@ -1356,37 +1356,37 @@ function WorkoutLogTab() {
                                       M
                                     </button>
                                   </div>
-                                  {/* Mini-set count row — shown when myo-reps is on */}
-                                  {isMyoReps && (
-                                    <div className="mt-2 ml-11 mr-8 flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-4 py-2.5">
-                                      <span className="text-xs font-medium text-primary/80 tracking-wide uppercase">Mini-sets</span>
-                                      <div className="flex items-center gap-3">
-                                        <button
-                                          type="button"
-                                          onClick={() => setExerciseData(prev => {
-                                            const updated = [...(prev[displayName] ?? [])];
-                                            const cur = parseInt(updated[0].miniSets || "0") || 0;
-                                            updated[0] = { ...updated[0], miniSets: String(Math.max(0, cur - 1)) };
-                                            return { ...prev, [displayName]: updated };
-                                          })}
-                                          className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-lg flex items-center justify-center transition-colors"
-                                        >−</button>
-                                        <span className="w-8 text-center text-lg font-bold text-foreground tabular-nums">
-                                          {s.miniSets && s.miniSets !== "" ? s.miniSets : "0"}
-                                        </span>
-                                        <button
-                                          type="button"
-                                          onClick={() => setExerciseData(prev => {
-                                            const updated = [...(prev[displayName] ?? [])];
-                                            const cur = parseInt(updated[0].miniSets || "0") || 0;
-                                            updated[0] = { ...updated[0], miniSets: String(cur + 1) };
-                                            return { ...prev, [displayName]: updated };
-                                          })}
-                                          className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-lg flex items-center justify-center transition-colors"
-                                        >+</button>
-                                      </div>
-                                    </div>
-                                  )}
+                                   {/* Mini-set count row — shown when myo-reps is on */}
+                                   {isMyoReps && (
+                                     <div className="mt-2 ml-11 mr-8 flex items-center justify-between px-1 py-1">
+                                       <span className="text-xs text-muted-foreground">Mini-sets</span>
+                                       <div className="flex items-center gap-3">
+                                         <button
+                                           type="button"
+                                           onClick={() => setExerciseData(prev => {
+                                             const updated = [...(prev[displayName] ?? [])];
+                                             const cur = parseInt(updated[0].miniSets || "0") || 0;
+                                             updated[0] = { ...updated[0], miniSets: String(Math.max(0, cur - 1)) };
+                                             return { ...prev, [displayName]: updated };
+                                           })}
+                                           className="w-7 h-7 rounded-full bg-secondary hover:bg-secondary/70 text-muted-foreground font-bold text-base flex items-center justify-center transition-colors"
+                                         >−</button>
+                                         <span className="w-6 text-center text-base font-bold text-primary tabular-nums">
+                                           {s.miniSets && s.miniSets !== "" ? s.miniSets : "0"}
+                                         </span>
+                                         <button
+                                           type="button"
+                                           onClick={() => setExerciseData(prev => {
+                                             const updated = [...(prev[displayName] ?? [])];
+                                             const cur = parseInt(updated[0].miniSets || "0") || 0;
+                                             updated[0] = { ...updated[0], miniSets: String(cur + 1) };
+                                             return { ...prev, [displayName]: updated };
+                                           })}
+                                           className="w-7 h-7 rounded-full bg-secondary hover:bg-secondary/70 text-muted-foreground font-bold text-base flex items-center justify-center transition-colors"
+                                         >+</button>
+                                       </div>
+                                     </div>
+                                   )}
                                 </div>
                               );
                             })()}
