@@ -506,7 +506,13 @@ function PastSessionsList({
                 {allExercises.map((ex: any, i: number) => {
                   const completedSets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
                   const firstSet = completedSets.find((st: any) => st.weight != null || st.reps != null) ?? completedSets[0];
-                  const setCount = completedSets.length;
+                  const isMyoEx = firstSet?.myoReps === true;
+                  const miniCount = isMyoEx ? (parseInt(firstSet?.miniSets || '0') || 0) : 0;
+                  // For myo-reps: 1 activation + miniCount mini-sets; otherwise normal set count
+                  const displaySetCount = isMyoEx ? 1 + miniCount : completedSets.length;
+                  const setLabel = isMyoEx
+                    ? `1 activation + ${miniCount} mini`
+                    : `${displaySetCount} ${displaySetCount === 1 ? 'set' : 'sets'}`;
                   return (
                     <div key={i} className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -527,7 +533,7 @@ function PastSessionsList({
                         <p className="text-sm text-muted-foreground">
                           {firstSet?.weight != null ? `${firstSet.weight}kg` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
                         </p>
-                        <p className="text-[11px] text-muted-foreground/60">{setCount} {setCount === 1 ? 'set' : 'sets'}</p>
+                        <p className="text-[11px] text-muted-foreground/60">{setLabel}</p>
                       </div>
                     </div>
                   );
