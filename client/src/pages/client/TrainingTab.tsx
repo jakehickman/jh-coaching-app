@@ -594,7 +594,7 @@ function WorkoutLogTab() {
   }, [sessionDate]);
 
   // ── Form state ────────────────────────────────────────────────────────────
-  const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>>>({});
+  const [exerciseData, setExerciseData] = useState<Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean; myoReps?: boolean; miniSets?: string }>>>({});
   const [equipmentDetails, setEquipmentDetails] = useState<Record<string, string>>({});
   const [machinePreset, setMachinePreset] = useState<Record<string, string>>({}); // exerciseName -> preset name
   const [machinePresetId, setMachinePresetId] = useState<Record<string, number>>({}); // exerciseName -> preset ID
@@ -760,7 +760,7 @@ function WorkoutLogTab() {
     if (draft) {
       const migratedData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
       for (const [k, sets] of Object.entries(draft.exerciseData ?? {})) {
-        migratedData[k] = (sets as any[]).map((s: any) => ({ ...s, completed: s.completed ?? (s.weight !== '' || s.reps !== '') }));
+        migratedData[k] = (sets as any[]).map((s: any) => ({ ...s, completed: s.completed ?? (s.weight !== '' || s.reps !== ''), myoReps: s.myoReps ?? false, miniSets: s.miniSets ?? '' }));
       }
       setExerciseData(migratedData);
       setSessionNotes(draft.sessionNotes ?? '');
@@ -794,6 +794,8 @@ function WorkoutLogTab() {
           reps: s.reps != null ? String(s.reps) : '',
           notes: s.notes ?? '',
           completed: s.completed ?? (s.weight != null || s.reps != null),
+          myoReps: s.myoReps ?? false,
+          miniSets: s.miniSets != null ? String(s.miniSets) : '',
         }));
         if (ex.equipmentDetails) eqData[ex.name] = ex.equipmentDetails;
         if (ex.machinePreset) mpData[ex.name] = ex.machinePreset;
@@ -916,6 +918,8 @@ function WorkoutLogTab() {
           reps: s.reps !== "" ? parseInt(s.reps) : null,
           notes: s.notes || null,
           completed: s.completed || s.weight !== "" || s.reps !== "",
+          myoReps: s.myoReps || false,
+          miniSets: s.miniSets !== "" && s.miniSets != null ? parseInt(s.miniSets) : null,
         })),
       };
     });
@@ -968,6 +972,8 @@ function WorkoutLogTab() {
                             reps: s.reps !== '' ? parseInt(s.reps) : null,
                             notes: s.notes || null,
                             completed: s.completed || s.weight !== '' || s.reps !== '',
+                            myoReps: s.myoReps || false,
+                            miniSets: s.miniSets !== '' && s.miniSets != null ? parseInt(s.miniSets) : null,
                           })),
                         };
                       });
@@ -1241,7 +1247,7 @@ function WorkoutLogTab() {
                     />
 
                     {sets.length > 0 && (() => {
-                      const isExDone = exerciseDone[displayName];
+                      const isMyoReps = !!sets[0]?.myoReps;
                       return (
                         <div className="mb-2">
                           {/* Column headers */}
@@ -1251,39 +1257,28 @@ function WorkoutLogTab() {
                               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Weight</p>
                             </div>
                             <div className="flex-1 text-center">
-                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Reps</p>
+                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{isMyoReps ? 'Act. Reps' : 'Reps'}</p>
                             </div>
                             <div className="w-6 flex-shrink-0" />
                           </div>
                           <div className="space-y-2.5">
-                            {sets.map((s, idx) => {
-                              const prevW = prevSets[idx]?.weight;
-                              const prevR = prevSets[idx]?.reps;
+                            {/* First set row — always shown, has myo-reps checkbox */}
+                            {(() => {
+                              const s = sets[0];
+                              const prevW = prevSets[0]?.weight;
+                              const prevR = prevSets[0]?.reps;
                               return (
-                                <div key={idx} className="space-y-1">
+                                <div key={0} className="space-y-1">
                                   <div className="flex items-center gap-2">
                                     {/* Tick button */}
                                     <button
                                       onClick={() => {
                                         const wasCompleted = s.completed;
-                                        toggleSetCompleted(displayName, idx);
-                                        // If unticking a set, revert exerciseDone and uncollapse
+                                        toggleSetCompleted(displayName, 0);
                                         if (wasCompleted && exerciseDone[displayName]) {
                                           setExerciseDone(prev => ({ ...prev, [displayName]: false }));
                                           setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: false }));
                                           autoCollapsedRef.current.delete(displayName);
-                                        }
-                                        // Auto-complete only when ALL max sets are ticked
-                                        // effectiveMax must be finite and > effectiveMin to prevent
-                                        // auto-completing when min === max (single number sets)
-                                        if (!wasCompleted && effectiveMax !== Infinity && effectiveMax > effectiveMin) {
-                                          const newDone = sets.filter((s2, i2) => s2.completed || i2 === idx).length;
-                                          if (sets.length === effectiveMax && newDone === effectiveMax) {
-                                            setTimeout(() => {
-                                              setExerciseDone(prev => ({ ...prev, [displayName]: true }));
-                                              setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: true }));
-                                            }, 300);
-                                          }
                                         }
                                       }}
                                       className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
@@ -1299,7 +1294,7 @@ function WorkoutLogTab() {
                                       <input
                                         type="number" inputMode="decimal"
                                         value={s.weight ?? ""}
-                                        onChange={e => setSet(displayName, idx, "weight", e.target.value)}
+                                        onChange={e => setSet(displayName, 0, "weight", e.target.value)}
                                         onWheel={e => (e.target as HTMLInputElement).blur()}
                                         placeholder={prevW != null ? String(prevW) : ""}
                                         className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
@@ -1312,6 +1307,92 @@ function WorkoutLogTab() {
                                       <input
                                         type="number" inputMode="numeric"
                                         value={s.reps ?? ""}
+                                        onChange={e => setSet(displayName, 0, "reps", e.target.value)}
+                                        onWheel={e => (e.target as HTMLInputElement).blur()}
+                                        placeholder={prevR != null ? String(prevR) : ""}
+                                        className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                                          s.completed ? "opacity-50" : ""
+                                        }`}
+                                      />
+                                    </div>
+                                    {/* Myo-reps toggle — small M button */}
+                                    <button
+                                      onClick={() => setExerciseData(prev => {
+                                        const updated = [...(prev[displayName] ?? [])];
+                                        updated[0] = { ...updated[0], myoReps: !updated[0].myoReps, miniSets: '' };
+                                        return { ...prev, [displayName]: updated };
+                                      })}
+                                      title={isMyoReps ? 'Disable myo-reps' : 'Enable myo-reps'}
+                                      className={`w-6 flex-shrink-0 flex items-center justify-center rounded text-[10px] font-bold transition-colors ${
+                                        isMyoReps ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
+                                      }`}
+                                    >
+                                      M
+                                    </button>
+                                  </div>
+                                  {/* Mini-set count row — shown when myo-reps is on */}
+                                  {isMyoReps && (
+                                    <div className="flex items-center gap-2 pl-11">
+                                      <span className="text-[11px] text-muted-foreground flex-shrink-0">Mini-sets:</span>
+                                      <input
+                                        type="number" inputMode="numeric"
+                                        value={s.miniSets ?? ""}
+                                        onChange={e => setExerciseData(prev => {
+                                          const updated = [...(prev[displayName] ?? [])];
+                                          updated[0] = { ...updated[0], miniSets: e.target.value };
+                                          return { ...prev, [displayName]: updated };
+                                        })}
+                                        onWheel={e => (e.target as HTMLInputElement).blur()}
+                                        placeholder="0"
+                                        className="w-20 bg-input border border-primary/40 rounded-lg px-2 py-1.5 text-sm font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                            {/* Subsequent set rows — hidden when myo-reps is on */}
+                            {!isMyoReps && sets.slice(1).map((s, i) => {
+                              const idx = i + 1;
+                              const prevW = prevSets[idx]?.weight;
+                              const prevR = prevSets[idx]?.reps;
+                              return (
+                                <div key={idx} className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => {
+                                        const wasCompleted = s.completed;
+                                        toggleSetCompleted(displayName, idx);
+                                        if (wasCompleted && exerciseDone[displayName]) {
+                                          setExerciseDone(prev => ({ ...prev, [displayName]: false }));
+                                          setCollapsedExercisesRaw(prev => ({ ...prev, [displayName]: false }));
+                                          autoCollapsedRef.current.delete(displayName);
+                                        }
+                                      }}
+                                      className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
+                                        s.completed
+                                          ? "border-green-500 bg-green-500/20 text-green-400"
+                                          : "border-border text-transparent hover:border-primary/60"
+                                      }`}
+                                    >
+                                      <Check size={15} />
+                                    </button>
+                                    <div className="flex-1">
+                                      <input
+                                        type="number" inputMode="decimal"
+                                        value={s.weight ?? ""}
+                                        onChange={e => setSet(displayName, idx, "weight", e.target.value)}
+                                        onWheel={e => (e.target as HTMLInputElement).blur()}
+                                        placeholder={prevW != null ? String(prevW) : ""}
+                                        className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                                          s.completed ? "opacity-50" : ""
+                                        }`}
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <input
+                                        type="number" inputMode="numeric"
+                                        value={s.reps ?? ""}
                                         onChange={e => setSet(displayName, idx, "reps", e.target.value)}
                                         onWheel={e => (e.target as HTMLInputElement).blur()}
                                         placeholder={prevR != null ? String(prevR) : ""}
@@ -1320,26 +1401,23 @@ function WorkoutLogTab() {
                                         }`}
                                       />
                                     </div>
-                                    {/* Remove set button — always visible when more than 1 set */}
-                                    {sets.length > 1 ? (
-                                      <button onClick={() => removeSet(displayName, idx)} className="w-6 flex-shrink-0 flex items-center justify-center text-muted-foreground/50 hover:text-destructive transition-colors">
-                                        <Minus size={14} />
-                                      </button>
-                                    ) : (
-                                      <div className="w-6 flex-shrink-0" />
-                                    )}
+                                    <button onClick={() => removeSet(displayName, idx)} className="w-6 flex-shrink-0 flex items-center justify-center text-muted-foreground/50 hover:text-destructive transition-colors">
+                                      <Minus size={14} />
+                                    </button>
                                   </div>
                                 </div>
                               );
                             })}
                           </div>
-                          {/* Add set button — always visible */}
-                          <button
-                            onClick={() => addSet(displayName)}
-                            className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-                          >
-                            <Plus size={13} /> Add set
-                          </button>
+                          {/* Add set button — hidden when myo-reps is on */}
+                          {!isMyoReps && (
+                            <button
+                              onClick={() => addSet(displayName)}
+                              className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                            >
+                              <Plus size={13} /> Add set
+                            </button>
+                          )}
                         </div>
                       );
                     })()}
@@ -1623,3 +1701,4 @@ export default function CombinedTrainingTab({ defaultSub = "program" }: { defaul
     </div>
   );
 }
+ 

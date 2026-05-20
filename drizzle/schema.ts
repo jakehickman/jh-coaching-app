@@ -49,6 +49,8 @@ export interface WorkoutSet {
   reps?: number | null;
   notes?: string | null;
   completed?: boolean;
+  myoReps?: boolean;
+  miniSets?: number | null;
 }
 
 export interface WorkoutExercise {
