@@ -872,6 +872,14 @@ function WorkoutLogTab() {
       const updated = { ...sets[idx], [field]: val };
       // Do NOT auto-complete on type — user must tap the tick button
       sets[idx] = updated;
+      // Auto-fill weight to subsequent empty set rows
+      if (field === "weight" && val !== "") {
+        for (let i = idx + 1; i < sets.length; i++) {
+          if (sets[i].weight === "" || sets[i].weight == null) {
+            sets[i] = { ...sets[i], weight: val };
+          }
+        }
+      }
       return { ...prev, [exName]: sets };
     });
   }
