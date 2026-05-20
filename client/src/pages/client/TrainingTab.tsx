@@ -1615,8 +1615,11 @@ function WorkoutLogTab() {
                       {completedSets.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {completedSets.map((st: any, idx: number) => (
-                            <span key={idx} className="text-xs bg-card border border-border rounded-lg px-2 py-1 text-foreground">
+                            <span key={idx} className={`text-xs border rounded-lg px-2 py-1 ${st.myoReps ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border text-foreground'}`}>
                               {st.weight != null ? `${st.weight}kg` : '—'} × {st.reps != null ? st.reps : '—'}
+                              {st.myoReps && st.miniSets != null && (
+                                <span className="ml-1 text-[10px] opacity-70">+{st.miniSets} mini</span>
+                              )}
                             </span>
                           ))}
                         </div>
