@@ -892,10 +892,14 @@ function WorkoutLogTab() {
   }
 
   function addSet(exName: string) {
-    setExerciseData(prev => ({
-      ...prev,
-      [exName]: [...(prev[exName] ?? []), { weight: "", reps: "", notes: "", completed: false }],
-    }));
+    setExerciseData(prev => {
+      const existing = prev[exName] ?? [];
+      const lastWeight = [...existing].reverse().find(s => s.weight != null && s.weight !== "")?.weight ?? "";
+      return {
+        ...prev,
+        [exName]: [...existing, { weight: lastWeight, reps: "", notes: "", completed: false }],
+      };
+    });
   }
 
   function toggleSetCompleted(exName: string, idx: number) {
