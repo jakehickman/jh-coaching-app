@@ -25,24 +25,6 @@ function formatSetsRange(s: string): string {
   if (max === 0) return s || "—";
   return min === max ? String(max) : `${min}–${max}`;
 }
-/** Map a rep range string to the number of reps the client should stop dropping by. */
-function getRepDropThreshold(repRange: string): number | null {
-  const map: Record<string, number> = {
-    "4–6": 1,
-    "4-6": 1,
-    "7–9": 2,
-    "7-9": 2,
-    "10–12": 3,
-    "10-12": 3,
-    "12–15": 4,
-    "12-15": 4,
-    "15–20": 5,
-    "15-20": 5,
-  };
-  const key = (repRange ?? "").trim();
-  return map[key] ?? null;
-}
-
 function getYouTubeEmbedUrl(url: string): string | null {
   if (!url) return null;
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\.\w-]+)/);
@@ -1172,15 +1154,6 @@ function WorkoutLogTab() {
                               return <span className="text-muted-foreground/50 font-normal"> · Last: {parts.join(' × ')}</span>;
                             })()}
                           </p>
-                          {(() => {
-                            const dropBy = getRepDropThreshold(ex.reps ?? "");
-                            if (!dropBy) return null;
-                            return (
-                              <p className="text-[11px] text-muted-foreground/50 mt-0.5">
-                                Stop when reps drop by {dropBy}
-                              </p>
-                            );
-                          })()}
                           {(() => {
                             // When a substitution is active, only look up by the substitute name.
                             // Never fall back to the original exercise's note — different movement.
