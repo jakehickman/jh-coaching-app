@@ -1352,20 +1352,33 @@ function WorkoutLogTab() {
                                   </div>
                                   {/* Mini-set count row — shown when myo-reps is on */}
                                   {isMyoReps && (
-                                    <div className="flex items-center gap-2 pl-11">
-                                      <span className="text-[11px] text-muted-foreground flex-shrink-0">Mini-sets:</span>
-                                      <input
-                                        type="number" inputMode="numeric"
-                                        value={s.miniSets ?? ""}
-                                        onChange={e => setExerciseData(prev => {
-                                          const updated = [...(prev[displayName] ?? [])];
-                                          updated[0] = { ...updated[0], miniSets: e.target.value };
-                                          return { ...prev, [displayName]: updated };
-                                        })}
-                                        onWheel={e => (e.target as HTMLInputElement).blur()}
-                                        placeholder="0"
-                                        className="w-20 bg-input border border-primary/40 rounded-lg px-2 py-1.5 text-sm font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-                                      />
+                                    <div className="mt-2 mx-1 flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-4 py-2.5">
+                                      <span className="text-xs font-medium text-primary/80 tracking-wide uppercase">Mini-sets</span>
+                                      <div className="flex items-center gap-3">
+                                        <button
+                                          type="button"
+                                          onClick={() => setExerciseData(prev => {
+                                            const updated = [...(prev[displayName] ?? [])];
+                                            const cur = parseInt(updated[0].miniSets || "0") || 0;
+                                            updated[0] = { ...updated[0], miniSets: String(Math.max(0, cur - 1)) };
+                                            return { ...prev, [displayName]: updated };
+                                          })}
+                                          className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-lg flex items-center justify-center transition-colors"
+                                        >−</button>
+                                        <span className="w-8 text-center text-lg font-bold text-foreground tabular-nums">
+                                          {s.miniSets && s.miniSets !== "" ? s.miniSets : "0"}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => setExerciseData(prev => {
+                                            const updated = [...(prev[displayName] ?? [])];
+                                            const cur = parseInt(updated[0].miniSets || "0") || 0;
+                                            updated[0] = { ...updated[0], miniSets: String(cur + 1) };
+                                            return { ...prev, [displayName]: updated };
+                                          })}
+                                          className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-lg flex items-center justify-center transition-colors"
+                                        >+</button>
+                                      </div>
                                     </div>
                                   )}
                                 </div>
