@@ -1343,11 +1343,11 @@ function WorkoutLogTab() {
                                         return { ...prev, [displayName]: updated };
                                       })}
                                       title={isMyoReps ? 'Disable myo-reps' : 'Enable myo-reps'}
-                                      className={`w-8 flex-shrink-0 flex items-center justify-center rounded text-[10px] font-bold transition-colors ${
+                                      className={`w-6 flex-shrink-0 flex items-center justify-center rounded text-[10px] font-bold transition-colors ${
                                         isMyoReps ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
                                       }`}
                                     >
-                                      MR
+                                      M
                                     </button>
                                   </div>
                                   {/* Mini-set count row — shown when myo-reps is on */}
