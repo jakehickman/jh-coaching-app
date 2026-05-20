@@ -1332,8 +1332,8 @@ function WorkoutLogTab() {
                                         }`}
                                       />
                                     </div>
-                                    {/* Remove set — only show if not done */}
-                                    {!isExDone && sets.length > effectiveMin ? (
+                                    {/* Remove set — only show if not done and more than 1 set */}
+                                    {!isExDone && sets.length > 1 ? (
                                       <button onClick={() => removeSet(displayName, idx)} className="w-6 flex-shrink-0 flex items-center justify-center text-muted-foreground/50 hover:text-destructive transition-colors">
                                         <Minus size={14} />
                                       </button>
@@ -1352,14 +1352,12 @@ function WorkoutLogTab() {
                             </div>
                           ) : showAddOrDone ? (
                             <div className="flex items-center gap-2 mt-3">
-                              {sets.length < effectiveMax && (
-                                <button
-                                  onClick={() => addSet(displayName)}
-                                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-                                >
-                                  <Plus size={13} /> Add set
-                                </button>
-                              )}
+                              <button
+                                onClick={() => addSet(displayName)}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                              >
+                                <Plus size={13} /> Add set
+                              </button>
                               <button
                                 onClick={() => {
                                   setExerciseDone(prev => ({ ...prev, [displayName]: true }));
