@@ -708,16 +708,42 @@ function WorkoutLogTab() {
   const [subSearch, setSubSearch] = useState("");
 
   const MUSCLE_KEYS = ["chest","frontDelts","sideDelts","triceps","lats","upperBack","rearDelts","biceps","quads","hams","glutes","gluteMed","calves","abs"] as const;
+
+  // Returns the set of muscles that contribute >= threshold of the exercise's total volume
+  function primaryMuscles(ex: any, threshold = 0.5): Set<string> {
+    const total = MUSCLE_KEYS.reduce((s, k) => s + (ex[k] ?? 0), 0);
+    if (total === 0) return new Set();
+    return new Set(MUSCLE_KEYS.filter(k => (ex[k] ?? 0) / total >= threshold));
+  }
+
+  // Two exercises match if their primary muscle sets are identical
+  function primaryMusclesMatch(a: any, b: any): boolean {
+    const pa = primaryMuscles(a);
+    const pb = primaryMuscles(b);
+    if (pa.size === 0 || pb.size === 0) return false;
+    if (pa.size !== pb.size) return false;
+    for (const m of pa) if (!pb.has(m)) return false;
+    return true;
+  }
+
+  // Secondary similarity score for sorting within matched results
   function muscleScore(a: any, b: any): number {
     return MUSCLE_KEYS.reduce((sum, k) => sum + (a[k] ?? 0) * (b[k] ?? 0), 0);
   }
+
   function getSimilarExercises(originalName: string): any[] {
     const original = (exerciseLib as any[]).find(e => e.name === originalName);
     if (!original) return (exerciseLib as any[]).filter(e => e.name !== originalName);
-    return (exerciseLib as any[])
-      .filter(e => e.name !== originalName)
+    // Exact primary muscle matches first, then everything else as fallback
+    const exactMatches = (exerciseLib as any[])
+      .filter(e => e.name !== originalName && primaryMusclesMatch(original, e))
       .map(e => ({ ...e, _score: muscleScore(original, e) }))
       .sort((a, b) => b._score - a._score);
+    const fallback = (exerciseLib as any[])
+      .filter(e => e.name !== originalName && !primaryMusclesMatch(original, e))
+      .map(e => ({ ...e, _score: muscleScore(original, e) }))
+      .sort((a, b) => b._score - a._score);
+    return [...exactMatches, ...fallback];
   }
 
   function applySubstitution(originalName: string, newName: string) {
