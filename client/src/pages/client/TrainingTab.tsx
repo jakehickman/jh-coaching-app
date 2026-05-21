@@ -1335,7 +1335,7 @@ function WorkoutLogTab() {
                                         value={s.reps ?? ""}
                                         onChange={e => setSet(displayName, 0, "reps", e.target.value)}
                                         onWheel={e => (e.target as HTMLInputElement).blur()}
-                                        placeholder={prevR != null ? String(prevR) : ""}
+                                        placeholder={s.weight === "" && prevR != null ? String(prevR) : ""}
                                         className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
                                           s.completed ? "opacity-50" : ""
                                         }`}
@@ -1435,7 +1435,7 @@ function WorkoutLogTab() {
                                         value={s.reps ?? ""}
                                         onChange={e => setSet(displayName, idx, "reps", e.target.value)}
                                         onWheel={e => (e.target as HTMLInputElement).blur()}
-                                        placeholder={prevR != null ? String(prevR) : ""}
+                                        placeholder={s.weight === "" && prevR != null ? String(prevR) : ""}
                                         className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
                                           s.completed ? "opacity-50" : ""
                                         }`}
