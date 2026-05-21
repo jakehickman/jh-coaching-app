@@ -1175,8 +1175,8 @@ function WorkoutLogTab() {
                           <p className="text-base font-semibold text-foreground leading-snug">{displayName}</p>
                           {subName && (
                             <button
-                              onClick={e => { e.stopPropagation(); revertSubstitution(subName); }}
-                              title={`Revert to ${subName}`}
+                              onClick={e => { e.stopPropagation(); revertSubstitution(ex.name); }}
+                              title={`Revert to ${ex.name}`}
                               className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded hover:bg-amber-500/30 transition-colors flex items-center gap-0.5"
                             >
                               SUB <X size={9} />
