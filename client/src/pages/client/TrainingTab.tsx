@@ -640,7 +640,8 @@ function WorkoutLogTab() {
   const [expandedSets, setExpandedSets] = useState<Record<string, boolean>>({});
   // null = auto (open if preset exists), true = forced open, false = forced closed
   const [equipmentOpen, setEquipmentOpen] = useState<Record<string, boolean | null>>({});
-  const [prevNoteOpen, setPrevNoteOpen] = useState<Record<string, boolean>>({});
+  const [editingSettingsEx, setEditingSettingsEx] = useState<string | null>(null);
+  const [prevNoteOpen, setPrevNoteOpen] = useState<Record<string, boolean>>({}); 
   const [noteOpen, setNoteOpen] = useState<Record<string, boolean>>({});
   const [collapsedExercises, setCollapsedExercisesRaw] = useState<Record<string, boolean>>({});
   // Tracks exercises the user has manually marked as done (before max sets reached)
@@ -1162,8 +1163,37 @@ function WorkoutLogTab() {
                             >
                               {currentPreset || "Add machine"}
                             </button>
-                            {currentPreset && currentSettings && (
-                              <span className="text-xs text-muted-foreground">{currentSettings}</span>
+                            {/* Inline settings edit — pencil opens input in place */}
+                            {currentPreset && (
+                              editingSettingsEx === displayName ? (
+                                <form
+                                  onSubmit={e => { e.preventDefault(); setEditingSettingsEx(null); }}
+                                  onClick={e => e.stopPropagation()}
+                                  className="flex items-center gap-1"
+                                >
+                                  <input
+                                    autoFocus
+                                    type="text"
+                                    value={currentSettings}
+                                    onChange={e => setMachineSettings(prev => ({ ...prev, [displayName]: e.target.value }))}
+                                    onBlur={() => setEditingSettingsEx(null)}
+                                    placeholder="e.g. Seat 3, pin 8"
+                                    className="bg-secondary border border-border rounded-md px-2 py-0.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-36"
+                                  />
+                                  <button type="submit" className="text-primary hover:text-primary/70 transition-colors">
+                                    <Check size={13} />
+                                  </button>
+                                </form>
+                              ) : (
+                                <button
+                                  onClick={e => { e.stopPropagation(); setEditingSettingsEx(displayName); }}
+                                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+                                >
+                                  {currentSettings
+                                    ? <><span>{currentSettings}</span><Pencil size={11} className="opacity-0 group-hover:opacity-60 transition-opacity" /></>
+                                    : <><span className="text-muted-foreground/50">+ settings</span></>}
+                                </button>
+                              )
                             )}
                           </div>
                         )}
