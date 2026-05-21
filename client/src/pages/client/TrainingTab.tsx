@@ -759,6 +759,20 @@ function WorkoutLogTab() {
     setSubSearch("");
   }
 
+  function revertSubstitution(originalName: string) {
+    // displayName is the substituted exercise name; originalName is what it replaced
+    const displayName = substitutions[originalName];
+    if (!displayName) return;
+    setSubstitutions(prev => { const n = { ...prev }; delete n[originalName]; return n; });
+    setExerciseData(prev => {
+      const existing = prev[displayName] ?? [{ weight: "", reps: "", notes: "" }];
+      const next = { ...prev };
+      delete next[displayName];
+      next[originalName] = existing;
+      return next;
+    });
+  }
+
   // ── Equipment presets ────────────────────────────────────────────────────────────────────────────────
   // PresetSelector sub-component handles all preset mutations internally
   const dailyLogMutation = trpc.dailyLog.upsert.useMutation();
@@ -1160,7 +1174,13 @@ function WorkoutLogTab() {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="text-base font-semibold text-foreground leading-snug">{displayName}</p>
                           {subName && (
-                            <span className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded">SUB</span>
+                            <button
+                              onClick={e => { e.stopPropagation(); revertSubstitution(subName); }}
+                              title={`Revert to ${subName}`}
+                              className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded hover:bg-amber-500/30 transition-colors flex items-center gap-0.5"
+                            >
+                              SUB <X size={9} />
+                            </button>
                           )}
                           {exEmbedUrl && (
                             <button
