@@ -1289,9 +1289,8 @@ function computeCoachMonthlyVolume(
       );
       let setCount = 0;
       for (const st of completedSets) {
-        // Myo-rep sets count as 1 set (the activation set only).
-        // Mini-sets are sub-maximal and not counted as full working sets.
-        setCount += 1;
+        // Myo-rep sets count as 3 working sets (activation + mini-sets ≈ 3 hard sets).
+        setCount += st.myoReps ? 3 : 1;
       }
       if (setCount === 0) continue;
       for (const mg of COACH_MUSCLE_KEYS) {
