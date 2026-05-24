@@ -1783,10 +1783,20 @@ function ExerciseProgressTab({
               const presetsSeen = new Map<string, string>();
               for (const p of presetsRaw) { const key = p.toLowerCase(); if (!presetsSeen.has(key)) presetsSeen.set(key, p); }
               const presets = Array.from(presetsSeen.values());
-              const activeMachineFilter = presetFilter[name] ?? (presets.length > 1 ? presets[0] : 'All');
+              // Check if any entries have no preset at all
+              const hasNoPresetEntries = history.some(e => !e.machinePreset && !e.equipmentDetails);
+              // Build full filter options: named presets + 'No preset' if mixed
+              const filterOptions: string[] = [
+                ...presets,
+                ...(hasNoPresetEntries && presets.length > 0 ? ['No preset'] : []),
+              ];
+              // Default: first named preset if multiple options, otherwise 'All'
+              const activeMachineFilter = presetFilter[name] ?? (filterOptions.length > 1 ? filterOptions[0] : 'All');
               const filteredHistory = activeMachineFilter === 'All'
                 ? history
-                : history.filter(e => (e.machinePreset ?? e.equipmentDetails) === activeMachineFilter);
+                : activeMachineFilter === 'No preset'
+                  ? history.filter(e => !e.machinePreset && !e.equipmentDetails)
+                  : history.filter(e => (e.machinePreset ?? e.equipmentDetails) === activeMachineFilter);
               const last5 = filteredHistory.slice(-5).reverse();
               const latest = last5[0];
               const prev = last5.length > 1 ? last5[1] : null;
@@ -1820,15 +1830,15 @@ function ExerciseProgressTab({
                     </div>
                   </div>
 
-                  {/* Machine preset pills — clickable filters when multiple, static pill when only one */}
-                  {presets.length > 0 && (
+                  {/* Machine preset pills — clickable filters when multiple options, static green pill when only one */}
+                  {filterOptions.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-3">
-                      {presets.length === 1 ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-                          {presets[0]}
+                      {filterOptions.length === 1 ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground border border-primary font-medium">
+                          {filterOptions[0]}
                         </span>
                       ) : (
-                        presets.map(p => (
+                        filterOptions.map(p => (
                           <button
                             key={p}
                             onClick={() => setPresetFilter(prev => ({ ...prev, [name]: p }))}
