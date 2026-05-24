@@ -1210,26 +1210,14 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                 <div className="overflow-x-auto rounded-xl border border-border">
                   <table className="w-full text-sm border-collapse">
                     <thead>
-                      {/* Row 1: session group headers */}
                       <tr className="border-b border-border bg-secondary/50">
-                        <th className="text-left px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold" rowSpan={2}>Muscle</th>
+                        <th className="text-left px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Muscle</th>
                         {days.map(d => (
-                          <th key={d.name} colSpan={2} className="px-1 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center border-l border-border/40">
+                          <th key={d.name} className="px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center border-l border-border/40">
                             {(d.name || 'Day').slice(0, 4)}
                           </th>
                         ))}
-                        <th colSpan={2} className="px-1 py-2 text-[10px] uppercase tracking-wider text-primary font-semibold text-center border-l border-border/40">Wk</th>
-                      </tr>
-                      {/* Row 2: Min / Max sub-headers */}
-                      <tr className="border-b border-border bg-secondary/50">
-                        {days.map(d => (
-                          <>
-                            <th key={`${d.name}-min`} className="px-2 py-1 text-[9px] text-muted-foreground/50 font-normal text-center border-l border-border/40">Min</th>
-                            <th key={`${d.name}-max`} className="px-2 py-1 text-[9px] text-muted-foreground/50 font-normal text-center">Max</th>
-                          </>
-                        ))}
-                        <th className="px-2 py-1 text-[9px] text-muted-foreground/50 font-normal text-center border-l border-border/40">Min</th>
-                        <th className="px-2 py-1 text-[9px] text-muted-foreground/50 font-normal text-center">Max</th>
+                        <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-primary font-semibold text-center border-l border-border/40">Wk</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1239,34 +1227,20 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                         const wk = volumeTable.weeklyTotals[mg.key];
                         const wkMax = wk?.max ?? 0;
                         if (wkMax === 0) return null;
-                        const wkMin = wk?.min ?? 0;
                         return (
                           <tr key={mg.key} className="border-b border-border/50 hover:bg-secondary/20">
                             <td className="px-3 py-2 font-medium text-foreground text-xs whitespace-nowrap">{mg.label}</td>
                             {days.map(d => {
                               const range = volumeTable.dayTotals[d.name || 'Unnamed']?.[mg.key];
-                              const dMin = Math.round(range?.min ?? 0);
                               const dMax = Math.round(range?.max ?? 0);
                               const hasVal = dMax > 0;
                               return (
-                                <>
-                                  <td key={`${d.name}-min`} className="px-2 py-2 text-center border-l border-border/40">
-                                    {hasVal ? <span className="text-xs text-foreground/60">{dMin}</span> : <span className="text-muted-foreground/20 text-xs">—</span>}
-                                  </td>
-                                  <td key={`${d.name}-max`} className="px-2 py-2 text-center">
-                                    {hasVal ? <span className="text-xs text-foreground/80 font-medium">{dMax}</span> : <span className="text-muted-foreground/20 text-xs">—</span>}
-                                  </td>
-                                </>
+                                <td key={d.name} className="px-3 py-2 text-center border-l border-border/40">
+                                  {hasVal ? <span className="text-xs text-foreground/80 font-medium">{dMax}</span> : <span className="text-muted-foreground/20 text-xs">—</span>}
+                                </td>
                               );
                             })}
-                            <td className="px-2 py-2 text-center border-l border-border/40">
-                              <span className={`text-xs font-semibold ${
-                                wkMax >= 10 ? "text-primary" :
-                                wkMax >= 6 ? "text-primary/80" :
-                                "text-muted-foreground"
-                              }`}>{wkMin}</span>
-                            </td>
-                            <td className="px-2 py-2 text-center">
+                            <td className="px-3 py-2 text-center border-l border-border/40">
                               <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-bold ${
                                 wkMax >= 10 ? "bg-primary/20 text-primary" :
                                 wkMax >= 6 ? "bg-primary/10 text-primary/80" :
