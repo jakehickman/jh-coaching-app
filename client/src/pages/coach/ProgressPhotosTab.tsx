@@ -63,6 +63,11 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
     ])
   ).sort((a, b) => a - b);
 
+  // Fetch weeks that actually have photos — used to filter the compare dropdowns
+  const { data: weeksWithPhotos } = trpc.progressPhotos.getWeeks.useQuery({ clientId });
+  const weeksWithPhotosSet = new Set((weeksWithPhotos ?? []).map((w: { weekNumber: number }) => w.weekNumber));
+  const compareWeeks = availableWeeks.filter((w) => weeksWithPhotosSet.has(w));
+
   // Fetch weekly progress data for weight overlays
   const { data: progressData } = trpc.progress.weeklyReview.useQuery({ clientId });
   // Build a map of weekNumber -> dueDate from history
@@ -295,7 +300,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                 <SelectValue placeholder="Week A" />
               </SelectTrigger>
               <SelectContent>
-                {availableWeeks.map((w) => (
+                {compareWeeks.map((w) => (
                   <SelectItem key={w} value={w.toString()}>
                     Week {w}
                   </SelectItem>
@@ -311,7 +316,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                 <SelectValue placeholder="Week B" />
               </SelectTrigger>
               <SelectContent>
-                {availableWeeks.map((w) => (
+                {compareWeeks.map((w) => (
                   <SelectItem key={w} value={w.toString()}>
                     Week {w}
                   </SelectItem>
