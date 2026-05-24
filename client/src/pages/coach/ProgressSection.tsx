@@ -7,7 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus, Activity, History } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus, Activity, History, BarChart2 } from "lucide-react";
 import { useSearch, useLocation } from "wouter";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
@@ -26,7 +26,7 @@ import { CoachCheckInsTab } from "./CoachCheckInsTab";
 import { UnifiedChangeLog } from "./UnifiedChangeLog";
 import { PhasesTab } from "./PhasesTab";
 
-// ─── Collapsible Change History Panel ───────────────────────────────────────
+// --- Collapsible Change History Panel ---------------------------------------
 function ChangeHistoryPanel({ children, label = "Change History" }: { children: React.ReactNode; label?: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -50,7 +50,7 @@ function ChangeHistoryPanel({ children, label = "Change History" }: { children: 
   );
 }
 
-// ─── Cardio & Activity Card ───────────────────────────────────────────
+// --- Cardio & Activity Card -------------------------------------------
 function CardioActivityCard({ clientId }: { clientId: number }) {
   const utils = trpc.useUtils();
   const { data: profile, isLoading } = trpc.profile.getById.useQuery(
@@ -200,7 +200,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
   );
 }
 
-// ─── Nutrition Tab ───────────────────────────────────────────────────────────
+// --- Nutrition Tab -----------------------------------------------------------
 function MealPlanNoteEditor({ entryId, initialNote }: { entryId: number; initialNote?: string | null }) {
   const [note, setNote] = useState(initialNote ?? "");
   const [saved, setSaved] = useState(false);
@@ -356,7 +356,7 @@ function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
   );
 }
 
-// ─── Weekly Calorie Summary ─────────────────────────────────────────────────
+// --- Weekly Calorie Summary -------------------------------------------------
 function WeeklyCalorySummary({
   clientId,
   liveTrainingCal,
@@ -437,7 +437,7 @@ function WeeklyCalorySummary({
   );
 }
 
-// ─── Nutrition Tab (current plan only) ───────────────────────────────────────
+// --- Nutrition Tab (current plan only) ---------------------------------------
 function NutritionTab({ clientId }: { clientId: number }) {
   const { data: trainingPlan, isLoading: loadingTraining } = trpc.mealPlan.getForClient.useQuery(
     { userId: clientId, dayType: "training" },
@@ -602,7 +602,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
   );
 }
 
-// ─── Measurements Tab ────────────────────────────────────────────────────────
+// --- Measurements Tab --------------------------------------------------------
 function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId }: { measurements: any[]; logs?: any[]; chartOnly?: boolean; historyOnly?: boolean; clientId?: number }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -1104,7 +1104,7 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
   );
 }
 
-// ─── Sortable Schedule Slot ─────────────────────────────────────────────────
+// --- Sortable Schedule Slot -------------------------------------------------
 function RecentLogsWithViewMore({ logs, startDate }: { logs: DailyLogRow[]; startDate?: string | null }) {
   const [showAll, setShowAll] = useState(false);
   const INITIAL_DAYS = 7;
@@ -1153,7 +1153,7 @@ function RecentLogsWithViewMore({ logs, startDate }: { logs: DailyLogRow[]; star
   );
 }
 
-// ─── Exercise Progress Tab ───────────────────────────────────────────────────
+// --- Exercise Progress Tab ---------------------------------------------------
 const MUSCLE_LABELS: Record<string, string> = {
   chest: 'Chest', frontDelts: 'Front Delts', sideDelts: 'Side Delts',
   triceps: 'Triceps', lats: 'Lats', upperBack: 'Upper Back',
@@ -1162,7 +1162,7 @@ const MUSCLE_LABELS: Record<string, string> = {
 };
 const MUSCLE_KEYS = Object.keys(MUSCLE_LABELS);
 
-// ─── Section: Workout Sessions Tab ──────────────────────────────────────────
+// --- Section: Workout Sessions Tab ------------------------------------------
 const CAL_MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: any; onClose: () => void; onExerciseClick?: (name: string) => void }) {
@@ -1244,7 +1244,142 @@ function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: an
   );
 }
 
-function WorkoutSessionsTab({ workoutSessions, onExerciseClick }: { workoutSessions: any[]; onExerciseClick?: (name: string) => void }) {
+// --- Monthly Volume helpers (coach side) ------------------------------------
+const COACH_MUSCLE_KEYS = [
+  { key: "quads",      label: "Quads" },
+  { key: "hams",       label: "Hams" },
+  { key: "glutes",     label: "Glute Max" },
+  { key: "gluteMed",   label: "Glute Med" },
+  { key: "chest",      label: "Chest" },
+  { key: "lats",       label: "Lats" },
+  { key: "upperBack",  label: "Upper Back" },
+  { key: "frontDelts", label: "Front Delts" },
+  { key: "sideDelts",  label: "Side Delts" },
+  { key: "rearDelts",  label: "Rear Delts" },
+  { key: "biceps",     label: "Biceps" },
+  { key: "triceps",    label: "Triceps" },
+  { key: "calves",     label: "Calves" },
+  { key: "abs",        label: "Abs" },
+] as const;
+
+function computeCoachMonthlyVolume(
+  sessions: any[],
+  exerciseLib: any[],
+  year: number,
+  month: number
+) {
+  const exMap: Record<string, any> = {};
+  for (const ex of exerciseLib) exMap[ex.name] = ex;
+
+  const totals: Record<string, number> = {};
+  for (const mg of COACH_MUSCLE_KEYS) totals[mg.key] = 0;
+
+  const monthSessions = sessions.filter(s => {
+    const d = new Date(String(s.sessionDate).slice(0, 10) + 'T12:00:00Z');
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+
+  for (const session of monthSessions) {
+    for (const ex of (session.exercises as any[])) {
+      const libEx = exMap[ex.name];
+      if (!libEx) continue;
+      const completedSets = (ex.sets ?? []).filter(
+        (st: any) => st.completed || st.weight != null || st.reps != null
+      );
+      let setCount = 0;
+      for (const st of completedSets) {
+        setCount += st.myoReps ? 1 + (parseInt(st.miniSets || '0') || 0) : 1;
+      }
+      if (setCount === 0) continue;
+      for (const mg of COACH_MUSCLE_KEYS) {
+        const contrib = (libEx[mg.key] ?? 0) as number;
+        if (contrib > 0) totals[mg.key] = (totals[mg.key] ?? 0) + setCount * contrib;
+      }
+    }
+  }
+  for (const mg of COACH_MUSCLE_KEYS) totals[mg.key] = Math.round(totals[mg.key]);
+
+  const weekNums = new Set<number>();
+  for (const s of monthSessions) {
+    const d = new Date(String(s.sessionDate).slice(0, 10) + 'T12:00:00Z');
+    weekNums.add(Math.floor((d.getDate() - 1) / 7));
+  }
+  const weeksWithSessions = Math.max(weekNums.size, 1);
+  const weeklyAvg: Record<string, number> = {};
+  for (const mg of COACH_MUSCLE_KEYS) {
+    weeklyAvg[mg.key] = Math.round((totals[mg.key] / weeksWithSessions) * 10) / 10;
+  }
+  return { totals, weeklyAvg, sessionCount: monthSessions.length };
+}
+
+function MonthlyVolumeCoachPanel({ workoutSessions, exerciseLib, year, month }: {
+  workoutSessions: any[];
+  exerciseLib: any[];
+  year: number;
+  month: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const { totals, weeklyAvg, sessionCount } = computeCoachMonthlyVolume(workoutSessions, exerciseLib, year, month);
+  const activeRows = COACH_MUSCLE_KEYS.filter(mg => totals[mg.key] > 0);
+  const maxTotal = Math.max(...activeRows.map(mg => totals[mg.key]), 1);
+  const monthLabel = new Date(year, month, 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+
+  return (
+    <div className="mt-4 bg-card border border-border rounded-xl overflow-hidden">
+      <button
+        className="w-full flex items-center gap-3 px-4 py-3 select-none"
+        onClick={() => setOpen(o => !o)}
+      >
+        <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+          <BarChart2 size={14} className="text-primary" />
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-sm font-semibold text-foreground">Monthly Volume</p>
+          <p className="text-xs text-muted-foreground">{monthLabel} &middot; {sessionCount} session{sessionCount !== 1 ? 's' : ''}</p>
+        </div>
+        <ChevronDown size={14} className={`text-muted-foreground transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="border-t border-border">
+          {activeRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-5">No sessions logged this month.</p>
+          ) : (
+            <div className="px-4 py-3 space-y-2">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-20 flex-shrink-0">Muscle</span>
+                <span className="flex-1" />
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-10 text-right flex-shrink-0">Total</span>
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-12 text-right flex-shrink-0">Wk avg</span>
+              </div>
+              {[...activeRows]
+                .sort((a, b) => totals[b.key] - totals[a.key])
+                .map(mg => {
+                  const total = totals[mg.key];
+                  const avg = weeklyAvg[mg.key];
+                  const pct = Math.round((total / maxTotal) * 100);
+                  const barColor = total >= 10 ? 'bg-primary' : total >= 6 ? 'bg-primary/70' : 'bg-primary/40';
+                  return (
+                    <div key={mg.key} className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-20 flex-shrink-0 truncate">{mg.label}</span>
+                      <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs font-semibold text-foreground w-10 text-right flex-shrink-0 tabular-nums">{total}</span>
+                      <span className="text-xs text-muted-foreground w-12 text-right flex-shrink-0 tabular-nums">{avg}/wk</span>
+                    </div>
+                  );
+                })}
+              <p className="text-[10px] text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Myo-reps counted as activation + mini-sets.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick }: { workoutSessions: any[]; exerciseLib?: any[]; onExerciseClick?: (name: string) => void }) {
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth()); // 0-indexed
@@ -1308,6 +1443,7 @@ function WorkoutSessionsTab({ workoutSessions, onExerciseClick }: { workoutSessi
   }
 
   return (
+    <>
     <div className="flex gap-4 items-start">
       {/* Calendar */}
       <div className="flex-1 min-w-0">
@@ -1414,10 +1550,19 @@ function WorkoutSessionsTab({ workoutSessions, onExerciseClick }: { workoutSessi
         </div>
       )}
     </div>
+
+    {/* Monthly volume summary — synced to the calendar month */}
+    <MonthlyVolumeCoachPanel
+      workoutSessions={workoutSessions}
+      exerciseLib={exerciseLib}
+      year={calYear}
+      month={calMonth}
+    />
+    </>
   );
 }
 
-// ─── Coach Preset Editor ────────────────────────────────────────────────────
+// --- Coach Preset Editor ----------------------------------------------------
 function CoachPresetEditor({ clientId, exerciseName, onClose }: { clientId: number; exerciseName: string; onClose: () => void }) {
   const utils = trpc.useUtils();
   const { data: presets = [], isLoading } = trpc.equipmentPresets.listForClient.useQuery({ userId: clientId, exerciseName });
@@ -1742,7 +1887,7 @@ function ExerciseProgressTab({
   );
 }
 
-// ─── Section: Client Progress ─────────────────────────────────────────────────
+// --- Section: Client Progress -------------------------------------------------
 const NOTE_CATEGORIES = ["General", "Nutrition", "Training", "Check-in", "Adjustment", "Milestone"];
 
 function CoachingNotesTab({ clientId }: { clientId: number }) {
@@ -1797,7 +1942,7 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
           {notes.map((note: any) => (
             <div key={note.id} className="bg-card border border-border rounded-xl p-4">
               {editingId === note.id ? (
-                /* ── Edit mode ── */
+                /* -- Edit mode -- */
                 <div className="space-y-3">
                   <div className="flex gap-3">
                     <input type="date" value={editForm.noteDate} onChange={e => setEditForm(p => ({ ...p, noteDate: e.target.value }))}
@@ -1823,7 +1968,7 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
                   </div>
                 </div>
               ) : (
-                /* ── View mode ── */
+                /* -- View mode -- */
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
@@ -1852,7 +1997,7 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
   );
 }
 
-// ─── Shared check-in helpers (used in both Clients section and standalone tab) ─────────
+// --- Shared check-in helpers (used in both Clients section and standalone tab) ---------
 
 // Label maps for new diet execution fields
 const DIET_LABEL_MAP: Record<string, string> = {
@@ -1886,7 +2031,7 @@ const fmtCheckInDate = (iso: string) => {
   return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-// ─── Progress Section ────────────────────────────────────────────────
+// --- Progress Section ------------------------------------------------
 
 export default function ProgressSection({ fixedClientId }: { fixedClientId?: number } = {}) {
   const search = useSearch();
@@ -1991,7 +2136,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
     else setLiveRestCal(calories);
   }, []);
 
-  // ── Calendar-day helpers ────────────────────────────────────────────────────
+  // -- Calendar-day helpers ----------------------------------------------------
   const DAY = 86400000;
   function localDateStr(offsetDays: number): string {
     const d = new Date(Date.now() - offsetDays * DAY);
@@ -2007,14 +2152,14 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
   // Previous 7 calendar days (today - 13 days to today - 7 days)
   const prev7 = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= day14 && d < day7; });
 
-  // ── Metric helpers ──────────────────────────────────────────────────────────
+  // -- Metric helpers ----------------------------------------------------------
   function avgOf(arr: (number | null | undefined)[]): number | null {
     const nums = arr.filter((v): v is number => v != null);
     return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
   }
   const pctChange = pctChangeNum;
 
-  // ── 7-day averages ──────────────────────────────────────────────────────────
+  // -- 7-day averages ----------------------------------------------------------
   const curAvgWeight = avgOf(cur7.map(l => l.weight as number | null));
   const prevAvgWeight = avgOf(prev7.map(l => l.weight as number | null));
   const weightPct = pctChange(curAvgWeight, prevAvgWeight);
@@ -2034,7 +2179,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
   const curAvgSteps = avgOf(cur7.map(l => l.stepsCount as number | null));
   const prevAvgSteps = avgOf(prev7.map(l => l.stepsCount as number | null));
 
-  // ── Meal adherence: on-plan days / 7 calendar days (unlogged = non-adherent) ──
+  // -- Meal adherence: on-plan days / 7 calendar days (unlogged = non-adherent) --
   const curOnPlan = cur7.filter(l => (l.offPlanMeals ?? 0) === 0).length;
   // Use 7 calendar days as denominator — missing logs count as non-adherent
   const mealAdherence = Math.round((curOnPlan / 7) * 100);
@@ -2043,7 +2188,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
   // Count days with any off-plan meal (boolean: 1 = yes)
   const offPlanTotal7 = cur7.filter(l => (l.offPlanMeals ?? 0) > 0).length;
 
-  // ── Training adherence: ratio-based prescribed count (avoids cycle-index anchor bug) ──
+  // -- Training adherence: ratio-based prescribed count (avoids cycle-index anchor bug) --
   const schedule = (trainingProgram?.schedule as string[] | null) ?? null;
   const programDays = (trainingProgram?.days as any[] | null) ?? null;
   const rotationLen = schedule?.length ?? programDays?.length ?? 7;
@@ -2077,7 +2222,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
     ? `${trainedInRotation}/${prescribedPerRotation} prescribed (${rotationLen}-day rotation)`
     : `${trainedInRotation} trained days`;
 
-  // ── Weight trend chart: last 14 days ────────────────────────────────────────
+  // -- Weight trend chart: last 14 days ----------------------------------------
   const weightData = allLogs
     .filter(l => l.weight != null)
     .slice(0, 14)
@@ -2088,7 +2233,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
       return { date: `${dy} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(mo)-1]}`, weight: l.weight };
     });
 
-  // ── Measurements comparison ─────────────────────────────────────────────────
+  // -- Measurements comparison -------------------------------------------------
   const sortedMeasurements = [...(measurements ?? [])].sort((a, b) =>
     toLocalDateStr(b.measureDate).localeCompare(toLocalDateStr(a.measureDate))
   );
@@ -2118,7 +2263,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
     ? parseFloat(((latestM.waist as number) - (prevM.waist as number)).toFixed(1))
     : null;
 
-  // ── Metric card helper ──────────────────────────────────────────────────────
+  // -- Metric card helper ------------------------------------------------------
   function ProgCard({ label, value, sub }: {
     label: string; value: string; sub?: string;
   }) {
@@ -2151,7 +2296,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </TabsList>
           </div>
 
-          {/* ── Overview: weekly review, habits, recent logs ── */}
+          {/* -- Overview: weekly review, habits, recent logs -- */}
           <TabsContent value="overview">
             <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -2169,7 +2314,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </div>
           </TabsContent>
 
-          {/* ── Check-ins: Q&A + Timeline sub-tabs ── */}
+          {/* -- Check-ins: Q&A + Timeline sub-tabs -- */}
           <TabsContent value="check-ins">
             <Tabs value={getSubTab("check-ins") || "check-ins-list"} onValueChange={handleSubTabChange} className="w-full">
               <TabsList className="mb-4">
@@ -2185,7 +2330,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </Tabs>
           </TabsContent>
 
-          {/* ── Body Composition: Data / Photos sub-tabs ── */}
+          {/* -- Body Composition: Data / Photos sub-tabs -- */}
           <TabsContent value="body-comp">
             <Tabs value={getSubTab("body-comp") || "data"} onValueChange={handleSubTabChange} className="w-full">
               <TabsList className="mb-4">
@@ -2211,7 +2356,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </Tabs>
           </TabsContent>
 
-          {/* ── Training: Session Log, Exercise Progress, Program, Cardio sub-tabs ── */}
+          {/* -- Training: Session Log, Exercise Progress, Program, Cardio sub-tabs -- */}
           <TabsContent value="training">
             <Tabs value={getSubTab("training") || "session-log"} onValueChange={handleSubTabChange} className="w-full">
               <TabsList className="mb-4">
@@ -2223,6 +2368,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsContent value="session-log">
                 <WorkoutSessionsTab
                   workoutSessions={workoutSessions}
+                  exerciseLib={exerciseLib}
                   onExerciseClick={(name) => {
                     setJumpToExercise(name);
                     setSubTabs(prev => ({ ...prev, training: 'exercise-progress' }));
@@ -2252,7 +2398,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </Tabs>
           </TabsContent>
 
-          {/* ── Nutrition: Meal Plan (editor) ── */}
+          {/* -- Nutrition: Meal Plan (editor) -- */}
           <TabsContent value="nutrition">
             <div className="space-y-4">
               <WeeklyCalorySummary clientId={selectedUserId!} liveTrainingCal={liveTrainingCal} liveRestCal={liveRestCal} />
