@@ -1203,14 +1203,16 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
             {/* Right: sticky weekly volume summary */}
             {volumeTable && (
               <div className="min-w-0 sticky top-4">
-                <SectionLabel>Weekly Volume</SectionLabel>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Cycle: {schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(1)} · sets/wk
-                </p>
                 <div className="overflow-x-auto rounded-xl border border-border">
                   <table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="border-b border-border bg-secondary/50">
+                        <th colSpan={days.length + 2} className="px-3 py-2 text-left">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">Weekly Volume</span>
+                          <span className="ml-2 text-[10px] text-muted-foreground">{schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(1)} · sets/wk</span>
+                        </th>
+                      </tr>
+                      <tr className="border-b border-border bg-secondary/30">
                         <th className="text-left px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Muscle</th>
                         {days.map(d => (
                           <th key={d.name} className="px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center border-l border-border/40">
@@ -1253,7 +1255,6 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                     </tbody>
                   </table>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Only muscle groups with &gt;0 weekly sets shown.</p>
               </div>
             )}
           </div>}
