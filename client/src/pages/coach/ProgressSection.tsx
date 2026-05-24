@@ -1577,14 +1577,16 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
         </div>
       </div>
 
-      {/* Detail panel */}
-      {selectedSession ? (
-        <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} />
-      ) : (
-        <div className="w-72 flex-shrink-0 border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 200 }}>
-          <p className="text-xs text-muted-foreground">Click a session to view details</p>
-        </div>
-      )}
+      {/* Detail panel — mt-[44px] pushes it down past the month nav bar so its border aligns with the calendar grid */}
+      <div className="w-72 flex-shrink-0 mt-[44px]">
+        {selectedSession ? (
+          <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} />
+        ) : (
+          <div className="border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 200 }}>
+            <p className="text-xs text-muted-foreground">Click a session to view details</p>
+          </div>
+        )}
+      </div>
     </div>
 
     {/* Monthly volume summary — same width as the calendar column */}
