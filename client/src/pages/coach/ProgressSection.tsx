@@ -1369,11 +1369,11 @@ function MonthlyVolumeCoachPanel({ workoutSessions, exerciseLib, year, month }: 
                         <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
                       </div>
                       <span className="text-xs font-semibold text-foreground w-10 text-right flex-shrink-0 tabular-nums">{total}</span>
-                      <span className="text-xs text-muted-foreground w-12 text-right flex-shrink-0 tabular-nums">{avg}/wk</span>
+                      <span className="text-xs text-muted-foreground w-8 text-right flex-shrink-0 tabular-nums">{avg}</span>
                     </div>
                   );
                 })}
-              <p className="text-[10px] text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Myo-reps counted as activation + mini-sets.</p>
+              <p className="text-[10px] text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Myo-rep sets counted as 3.</p>
             </div>
           )}
         </div>
