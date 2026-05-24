@@ -700,3 +700,17 @@ export const clientPhases = mysqlTable("client_phases", {
 });
 export type ClientPhase = typeof clientPhases.$inferSelect;
 export type InsertClientPhase = typeof clientPhases.$inferInsert;
+
+// ─── Invite tokens — single-use links for coach to onboard new clients ────────
+export const inviteTokens = mysqlTable("invite_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  coachId: int("coachId").notNull(),          // FK -> users.id (admin)
+  label: varchar("label", { length: 128 }),   // optional label e.g. client name
+  usedByUserId: int("usedByUserId"),          // FK -> users.id — set when redeemed
+  usedAt: timestamp("usedAt"),
+  expiresAt: timestamp("expiresAt"),          // null = never expires
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type InviteToken = typeof inviteTokens.$inferSelect;
+export type InsertInviteToken = typeof inviteTokens.$inferInsert;

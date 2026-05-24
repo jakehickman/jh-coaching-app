@@ -4,7 +4,7 @@ import { useParams, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { Trash2, Users, Eye, Pencil } from "lucide-react";
+import { Trash2, Users, Eye, Pencil, Link2, Copy, Trash } from "lucide-react";
 import ExerciseLibrarySection from "./coach/ExerciseLibrarySection";
 import NutritionDataSection from "./coach/NutritionDataSection";
 import HabitsSection from "./coach/HabitsSection";
@@ -117,6 +117,110 @@ function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => 
 }
 
 // ─── Section: Clients ─────────────────────────────────────────────────────────
+// ─── Invite Links Section ────────────────────────────────────────────────────
+function InviteLinksSection() {
+  const utils = trpc.useUtils();
+  const { data: invites = [] } = trpc.invites.list.useQuery();
+  const createInvite = trpc.invites.create.useMutation({
+    onSuccess: () => utils.invites.list.invalidate(),
+  });
+  const deleteInvite = trpc.invites.delete.useMutation({
+    onSuccess: () => utils.invites.list.invalidate(),
+  });
+  const [label, setLabel] = useState("");
+
+  const getInviteUrl = (token: string) =>
+    `${window.location.origin}/invite/${token}`;
+
+  const handleCreate = () => {
+    createInvite.mutate(
+      { label: label.trim() || undefined },
+      { onSuccess: () => setLabel("") }
+    );
+  };
+
+  const handleCopy = (token: string) => {
+    navigator.clipboard.writeText(getInviteUrl(token));
+    toast.success("Invite link copied");
+  };
+
+  return (
+    <div>
+      <SectionLabel>Invite Links</SectionLabel>
+      <div className="space-y-3">
+        {/* Create new invite */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Label (optional, e.g. client name)"
+            value={label}
+            onChange={e => setLabel(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleCreate()}
+            className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <Button
+            onClick={handleCreate}
+            disabled={createInvite.isPending}
+            size="sm"
+            className="gap-1.5 flex-shrink-0"
+          >
+            <Link2 size={14} />
+            Generate
+          </Button>
+        </div>
+
+        {/* Existing invite tokens */}
+        {invites.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-2">No invite links yet. Generate one above to share with a new client.</p>
+        ) : (
+          <div className="space-y-2">
+            {(invites as any[]).map((invite: any) => (
+              <div
+                key={invite.id}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
+                  invite.usedByUserId
+                    ? "border-border bg-muted/30 opacity-60"
+                    : "border-border bg-card"
+                }`}
+              >
+                <Link2 size={14} className="text-muted-foreground flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {invite.label ?? "Unnamed invite"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {invite.usedByUserId ? (
+                      <span className="text-emerald-400">Used ✓</span>
+                    ) : (
+                      getInviteUrl(invite.token)
+                    )}
+                  </p>
+                </div>
+                {!invite.usedByUserId && (
+                  <button
+                    onClick={() => handleCopy(invite.token)}
+                    className="text-muted-foreground hover:text-primary transition-colors p-2 rounded-lg hover:bg-primary/10 flex-shrink-0"
+                    title="Copy link"
+                  >
+                    <Copy size={14} />
+                  </button>
+                )}
+                <button
+                  onClick={() => deleteInvite.mutate({ id: invite.id })}
+                  className="text-muted-foreground hover:text-destructive transition-colors p-2 rounded-lg hover:bg-destructive/10 flex-shrink-0"
+                  title="Delete invite"
+                >
+                  <Trash size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ClientsSection() {
   const [confirm, ConfirmDialogNode] = useConfirm();
   const [, navigate] = useLocation();
@@ -292,6 +396,9 @@ function ClientsSection() {
       </div>
 
 
+
+      {/* Invite links */}
+      <InviteLinksSection />
 
       {/* Edit dialog */}
       {editingId && <EditClientDialog userId={editingId} onClose={() => setEditingId(null)} />}

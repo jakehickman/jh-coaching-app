@@ -12,6 +12,7 @@ import ClientHub from "./pages/coach/ClientHub";
 import Onboarding from "./pages/Onboarding";
 import GettingStarted from "./pages/GettingStarted";
 import SetFlowMockup from "./pages/client/SetFlowMockup";
+import InvitePage from "./pages/InvitePage";
 
 function AppRoutes() {
   return (
@@ -26,6 +27,7 @@ function AppRoutes() {
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/getting-started" component={GettingStarted} />
       <Route path="/mockup/set-flow" component={SetFlowMockup} />
+      <Route path="/invite/:token" component={InvitePage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

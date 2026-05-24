@@ -51,6 +51,8 @@ import {
   InsertCheckInQuestion,
   clientQuestionOverrides,
   ClientQuestionOverride,
+  inviteTokens,
+  InviteToken,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -2053,4 +2055,34 @@ export async function getActiveQuestionsForClient(
     if (overrideMap.has(q.id)) return overrideMap.get(q.id)!;
     return q.active;
   });
+}
+
+// ─── Invite tokens ────────────────────────────────────────────────────────────
+
+export async function createInviteToken(coachId: number, label: string | null, token: string, expiresAt: Date | null) {
+  const db = await getDb();
+  await db.insert(inviteTokens).values({ token, coachId, label: label ?? undefined, expiresAt: expiresAt ?? undefined });
+}
+
+export async function getInviteToken(token: string): Promise<InviteToken | null> {
+  const db = await getDb();
+  const rows = await db.select().from(inviteTokens).where(eq(inviteTokens.token, token)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function redeemInviteToken(token: string, userId: number) {
+  const db = await getDb();
+  await db.update(inviteTokens)
+    .set({ usedByUserId: userId, usedAt: new Date() })
+    .where(eq(inviteTokens.token, token));
+}
+
+export async function listInviteTokens(coachId: number): Promise<InviteToken[]> {
+  const db = await getDb();
+  return db.select().from(inviteTokens).where(eq(inviteTokens.coachId, coachId));
+}
+
+export async function deleteInviteToken(id: number) {
+  const db = await getDb();
+  await db.delete(inviteTokens).where(eq(inviteTokens.id, id));
 }

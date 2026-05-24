@@ -21,6 +21,18 @@ export function registerOAuthRoutes(app: Express) {
     }
 
     try {
+      // Extract invite token from state if present (encoded as JSON: {redirectUri, inviteToken})
+      let inviteToken: string | undefined;
+      let redirectUri: string | undefined;
+      try {
+        const decoded = JSON.parse(Buffer.from(state, "base64").toString());
+        redirectUri = decoded.redirectUri;
+        inviteToken = decoded.inviteToken;
+      } catch {
+        // Legacy: state is just base64(redirectUri)
+        redirectUri = Buffer.from(state, "base64").toString();
+      }
+
       const tokenResponse = await sdk.exchangeCodeForToken(code, state);
       const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
 
@@ -41,6 +53,24 @@ export function registerOAuthRoutes(app: Express) {
         lastSignedIn: new Date(),
       });
 
+      // Redeem invite token if present — auto-approve and assign to coach
+      if (inviteToken) {
+        try {
+          const invite = await db.getInviteToken(inviteToken);
+          if (invite && !invite.usedByUserId && (!invite.expiresAt || invite.expiresAt > new Date())) {
+            const user = await db.getUserByOpenId(userInfo.openId);
+            if (user) {
+              await db.setUserApproved(user.id, true);
+              await db.redeemInviteToken(inviteToken, user.id);
+              // Ensure client profile exists and is linked to coach
+              await db.upsertClientProfile(user.id, { coachId: invite.coachId });
+            }
+          }
+        } catch (e) {
+          console.error("[OAuth] Invite redemption failed", e);
+        }
+      }
+
       // Notify owner when a new client signs up (fire-and-forget, never blocks login)
       if (isNewUser) {
         const displayName = userInfo.name || userInfo.email || userInfo.openId;
@@ -48,7 +78,9 @@ export function registerOAuthRoutes(app: Express) {
           .then(() =>
             notifyOwner({
               title: "New client signed up",
-              content: `${displayName} just created an account. Go to the Coach Panel to review and approve them.`,
+              content: inviteToken
+                ? `${displayName} joined via invite link and has been auto-approved.`
+                : `${displayName} just created an account. Go to the Coach Panel to review and approve them.`,
             })
           )
           .catch(() => {});
