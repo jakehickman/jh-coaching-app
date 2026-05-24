@@ -1,0 +1,38 @@
+{
+  "query": "SELECT id, userId, sessionDate, dayLabel, createdAt FROM workout_sessions WHERE sessionDate BETWEEN '2026-05-10' AND '2026-05-16' ORDER BY sessionDate, userId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT id, userId, sessionDate, dayLabel, createdAt FROM workout_sessions WHERE sessionDate BETWEEN '2026-05-10' AND '2026-05-16' ORDER BY sessionDate, userId;",
+  "rows": [
+    {
+      "id": "1110001",
+      "userId": "1",
+      "sessionDate": "2026-05-10",
+      "dayLabel": "B",
+      "createdAt": "2026-05-11 04:48:23"
+    },
+    {
+      "id": "1140001",
+      "userId": "1200026",
+      "sessionDate": "2026-05-11",
+      "dayLabel": "A",
+      "createdAt": "2026-05-11 07:53:15"
+    },
+    {
+      "id": "1170001",
+      "userId": "1",
+      "sessionDate": "2026-05-12",
+      "dayLabel": "C",
+      "createdAt": "2026-05-12 08:18:18"
+    },
+    {
+      "id": "1230001",
+      "userId": "1200026",
+      "sessionDate": "2026-05-16",
+      "dayLabel": "B",
+      "createdAt": "2026-05-15 22:04:48"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tsessionDate\tdayLabel\tcreatedAt\n1110001\t1\t2026-05-10\tB\t2026-05-11 04:48:23\n1140001\t1200026\t2026-05-11\tA\t2026-05-11 07:53:15\n1170001\t1\t2026-05-12\tC\t2026-05-12 08:18:18\n1230001\t1200026\t2026-05-16\tB\t2026-05-15 22:04:48\n",
+  "stderr": "",
+  "execution_time_ms": 1839
+}

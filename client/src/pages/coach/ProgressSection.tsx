@@ -1862,7 +1862,9 @@ function ExerciseProgressTab({
                       const rDown = !wUp && !wDown && w != null && pw != null && w === pw && r != null && pr != null && r < pr;
                       const weightStr = w != null ? `${w} kg` : '—';
                       const repsStr = r != null ? ` × ${r}` : '';
-                      const presetStr = presets.length <= 1
+                      // Only show per-row preset label when multiple presets exist (so user knows which machine each entry used).
+                      // When there's only one preset it's already shown as a pill in the header.
+                      const presetStr = presets.length > 1
                         ? (entry.machinePreset || entry.equipmentDetails || null)
                         : null;
                       return (
