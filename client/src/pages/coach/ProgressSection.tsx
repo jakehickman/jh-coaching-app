@@ -1300,15 +1300,16 @@ function computeCoachMonthlyVolume(
   }
   for (const mg of COACH_MUSCLE_KEYS) totals[mg.key] = Math.round(totals[mg.key]);
 
-  const weekNums = new Set<number>();
-  for (const s of monthSessions) {
-    const d = new Date(String(s.sessionDate).slice(0, 10) + 'T12:00:00Z');
-    weekNums.add(Math.floor((d.getDate() - 1) / 7));
-  }
-  const weeksWithSessions = Math.max(weekNums.size, 1);
+  // Divide by the number of full/partial Mon-Sun weeks that overlap the month.
+  // This gives a stable denominator regardless of how many sessions were logged.
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
+  const monFirst = (firstDow + 6) % 7; // 0=Mon
+  const weeksInMonth = Math.ceil((daysInMonth + monFirst) / 7);
+
   const weeklyAvg: Record<string, number> = {};
   for (const mg of COACH_MUSCLE_KEYS) {
-    weeklyAvg[mg.key] = Math.round((totals[mg.key] / weeksWithSessions) * 10) / 10;
+    weeklyAvg[mg.key] = Math.round((totals[mg.key] / weeksInMonth) * 10) / 10;
   }
   return { totals, weeklyAvg, sessionCount: monthSessions.length };
 }
