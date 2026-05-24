@@ -1,0 +1,16 @@
+{
+  "query": "SHOW TABLES LIKE '%ession%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SHOW TABLES LIKE '%ession%';",
+  "rows": [
+    {
+      "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%ession%)": "meso_sessions"
+    },
+    {
+      "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%ession%)": "workout_sessions"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%ession%)\nmeso_sessions\nworkout_sessions\n",
+  "stderr": "",
+  "execution_time_ms": 1775
+}

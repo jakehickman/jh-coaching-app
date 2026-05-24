@@ -1,0 +1,78 @@
+{
+  "query": "DESCRIBE workout_sessions; SELECT * FROM workout_sessions ORDER BY id DESC LIMIT 2;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute DESCRIBE workout_sessions; SELECT * FROM workout_sessions ORDER BY id DESC LIMIT 2;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "userId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "sessionDate",
+      "Type": "date",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "dayLabel",
+      "Type": "varchar(128)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "exercises",
+      "Type": "json",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "notes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    }
+  ],
+  "messages": [
+    "id\tuserId\tsessionDate\tdayLabel\texercises\tnotes\tcreatedAt\tupdatedAt",
+    "1410001\t1200026\t2026-05-22\tB\t[{\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"TRX Split Squat\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"High Incline DB Press\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 24}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 24}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 24}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"DB Hip Thrust\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"1-Arm DB Row\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 16}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 16}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 16}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"DB Lateral Raise\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 12}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 12}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 12}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"Knee Side Plank\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 60, \"weight\": 0}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": null, \"weight\": 0}]}]\tNULL\t2026-05-22 08:44:26\t2026-05-22 08:44:37",
+    "1380001\t1\t2026-05-21\tC\t[{\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym (Inside)\", \"machineSettings\": null, \"name\": \"Cable Pushdown\", \"presetId\": 540001, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 11, \"weight\": 35}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 8, \"weight\": 35}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"Low Incline DB Press\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 28}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 6, \"weight\": 28}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 5, \"weight\": 28}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym Pin Loaded\", \"machineSettings\": \"Seat 9\", \"name\": \"Machine Fly\", \"presetId\": 450005, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 9, \"weight\": 10}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 10}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym\", \"machineSettings\": \"Safety 4\", \"name\": \"Smith JM Press\", \"presetId\": 450002, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 5, \"weight\": 30}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 4, \"weight\": 30}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym (Inside)\", \"machineSettings\": null, \"name\": \"1-Arm Cable Lateral Raise\", \"presetId\": 600001, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 15}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 8, \"weight\": 15}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 6, \"weight\": 15}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym Pin Loaded\", \"machineSettings\": null, \"name\": \"Leg Press\", \"presetId\": 630001, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 120}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 6, \"weight\": 120}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 5, \"weight\": 120}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym Pin Loaded\", \"machineSettings\": null, \"name\": \"Toe Press\", \"presetId\": 630002, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 9, \"weight\": 160}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 160}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 6, \"weight\": 160}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym\", \"machineSettings\": null, \"name\": \"Machine Hip Adduction\", \"presetId\": 450007, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 12, \"weight\": 60}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 11, \"weight\": 60}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 60}]}]\tNULL\t2026-05-21 08:06:16\t2026-05-21 09:06:57"
+  ],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nuserId\tint\tNO\t\tNULL\t\nsessionDate\tdate\tNO\t\tNULL\t\ndayLabel\tvarchar(128)\tNO\t\tNULL\t\nexercises\tjson\tNO\t\tNULL\t\nnotes\ttext\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nid\tuserId\tsessionDate\tdayLabel\texercises\tnotes\tcreatedAt\tupdatedAt\n1410001\t1200026\t2026-05-22\tB\t[{\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"TRX Split Squat\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"High Incline DB Press\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 24}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 24}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 24}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"DB Hip Thrust\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 0}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"1-Arm DB Row\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 16}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 16}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 16}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"DB Lateral Raise\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 12}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 12}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 12}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"Knee Side Plank\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 60, \"weight\": 0}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": null, \"weight\": 0}]}]\tNULL\t2026-05-22 08:44:26\t2026-05-22 08:44:37\n1380001\t1\t2026-05-21\tC\t[{\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym (Inside)\", \"machineSettings\": null, \"name\": \"Cable Pushdown\", \"presetId\": 540001, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 11, \"weight\": 35}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 8, \"weight\": 35}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": null, \"machineSettings\": null, \"name\": \"Low Incline DB Press\", \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 28}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 6, \"weight\": 28}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 5, \"weight\": 28}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym Pin Loaded\", \"machineSettings\": \"Seat 9\", \"name\": \"Machine Fly\", \"presetId\": 450005, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 9, \"weight\": 10}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 10}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym\", \"machineSettings\": \"Safety 4\", \"name\": \"Smith JM Press\", \"presetId\": 450002, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 5, \"weight\": 30}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 4, \"weight\": 30}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym (Inside)\", \"machineSettings\": null, \"name\": \"1-Arm Cable Lateral Raise\", \"presetId\": 600001, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 10, \"weight\": 15}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 8, \"weight\": 15}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 6, \"weight\": 15}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym Pin Loaded\", \"machineSettings\": null, \"name\": \"Leg Press\", \"presetId\": 630001, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 120}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 6, \"weight\": 120}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 5, \"weight\": 120}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym Pin Loaded\", \"machineSettings\": null, \"name\": \"Toe Press\", \"presetId\": 630002, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 9, \"weight\": 160}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 160}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 6, \"weight\": 160}]}, {\"equipmentDetails\": null, \"exerciseNotes\": null, \"machinePreset\": \"Technogym\", \"machineSettings\": null, \"name\": \"Machine Hip Adduction\", \"presetId\": 450007, \"sets\": [{\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 12, \"weight\": 60}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 11, \"weight\": 60}, {\"completed\": true, \"miniSets\": null, \"myoReps\": false, \"notes\": null, \"reps\": 7, \"weight\": 60}]}]\tNULL\t2026-05-21 08:06:16\t2026-05-21 09:06:57\n",
+  "stderr": "",
+  "execution_time_ms": 1997
+}

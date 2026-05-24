@@ -1275,8 +1275,9 @@ function computeCoachMonthlyVolume(
   for (const mg of COACH_MUSCLE_KEYS) totals[mg.key] = 0;
 
   const monthSessions = sessions.filter(s => {
-    const d = new Date(String(s.sessionDate).slice(0, 10) + 'T12:00:00Z');
-    return d.getFullYear() === year && d.getMonth() === month;
+    const iso = toLocalDateStr(s.sessionDate); // handles Date objects & plain strings
+    const d = new Date(iso + 'T12:00:00Z');
+    return d.getUTCFullYear() === year && d.getUTCMonth() === month;
   });
 
   for (const session of monthSessions) {
