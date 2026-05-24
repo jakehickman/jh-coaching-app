@@ -130,14 +130,16 @@ function TabBar<T extends string>({
 // ─── Daily Totals sidebar card ────────────────────────────────────────────────
 
 function DailyTotalsCard({
-  calories, protein, carbs, fiber, fat, treatAllowance = 0, empty = false
+  calories, protein, carbs, fiber, fat, treatAllowance = 0, onTreatAllowanceChange, empty = false
 }: {
   calories: number; protein: number; carbs: number; fiber: number; fat: number;
-  treatAllowance?: number; empty?: boolean;
+  treatAllowance?: number;
+  onTreatAllowanceChange?: (v: string) => void;
+  empty?: boolean;
 }) {
   const totalCal = calories + treatAllowance;
   return (
-    <Card className="sticky top-20">
+    <Card>
       <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Daily Totals</p>
       {empty ? (
         <p className="text-xs text-muted-foreground text-center py-4">Add meals to see daily totals</p>
@@ -160,6 +162,18 @@ function DailyTotalsCard({
               </div>
             ))}
           </div>
+          {onTreatAllowanceChange && (
+            <div className="pt-2 border-t border-border/40">
+              <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground block mb-1.5">Free Calories</label>
+              <input
+                type="number" min={0}
+                value={treatAllowance || ""}
+                onChange={e => onTreatAllowanceChange(e.target.value)}
+                placeholder="0"
+                className="w-full bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          )}
         </div>
       )}
     </Card>
@@ -567,25 +581,11 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                   <Plus size={12} /> Add Meal
                 </button>
 
-                {/* Notes + Free Calories card */}
+                {/* Notes card */}
                 <Card>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">Notes</label>
-                      <textarea value={planNotes} onChange={e => setPlanNotes(e.target.value)} rows={2}
-                        className="w-full bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">Free Calories</label>
-                      <input
-                        type="number" min={0}
-                        value={treatAllowance}
-                        onChange={e => setTreatAllowance(e.target.value)}
-                        placeholder="0"
-                        className="w-full bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-                  </div>
+                  <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground block mb-1.5">Notes</label>
+                  <textarea value={planNotes} onChange={e => setPlanNotes(e.target.value)} rows={2}
+                    className="w-full bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
                 </Card>
 
                 {/* Save button */}
@@ -606,8 +606,8 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                 </div>
               </div>
 
-              {/* Right column: Daily Totals */}
-              <div>
+              {/* Right column: Daily Totals (sticky) */}
+              <div className="sticky top-4 self-start">
                 <DailyTotalsCard
                   calories={dailyTotals.calories}
                   protein={dailyTotals.protein}
@@ -615,6 +615,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                   fiber={dailyTotals.fiber}
                   fat={dailyTotals.fat}
                   treatAllowance={parseInt(treatAllowance) || 0}
+                  onTreatAllowanceChange={setTreatAllowance}
                   empty={meals.length === 0}
                 />
               </div>
