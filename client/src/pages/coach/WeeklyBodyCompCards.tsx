@@ -82,7 +82,7 @@ function getPhaseWeekNumber(phases: any[], weekStart: string): number | null {
 // ── Single week card ──────────────────────────────────────────────────────────
 
 type Week = {
-  weekNumber: number;
+  weekNumber: number | null;
   label: string;
   weekStart: string;
   weekEnd: string;
@@ -145,9 +145,11 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
             {(() => {
               return (
                 <>
-                  <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                    W{week.weekNumber}
-                  </span>
+                  {week.weekNumber != null && (
+                    <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                      W{week.weekNumber}
+                    </span>
+                  )}
                   {phaseLabel && phaseColor && (
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
                       {phaseLabel}
@@ -278,7 +280,8 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
         || w.weighIns?.length > 0 || w.measurementEntries?.length > 0
     )
     .slice()
-    .sort((a, b) => b.weekNumber - a.weekNumber);
+    // Sort newest-first by weekStart date string
+    .sort((a, b) => b.weekStart.localeCompare(a.weekStart));
 
   if (bodyCompWeeks.length === 0) {
     return (
@@ -289,15 +292,12 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
     );
   }
 
-  // Build a lookup so each card can find its previous (older) week for deltas
-  const weekByNumber = Object.fromEntries(bodyCompWeeks.map(w => [w.weekNumber, w]));
-
   return (
     <div className="space-y-3">
-      {bodyCompWeeks.map((week) => {
-        // prevWeek is the week with weekNumber - 1 (the chronologically earlier week)
-        const prevWeek = weekByNumber[week.weekNumber - 1] ?? null;
-        return <WeekCard key={week.weekNumber} week={week} prevWeek={prevWeek} />;
+      {bodyCompWeeks.map((week, idx) => {
+        // prevWeek is the chronologically earlier week (next index in newest-first array)
+        const prevWeek = bodyCompWeeks[idx + 1] ?? null;
+        return <WeekCard key={week.weekStart} week={week} prevWeek={prevWeek} />;
       })}
     </div>
   );

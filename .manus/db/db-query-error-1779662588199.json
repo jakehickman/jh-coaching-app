@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT COUNT(*) as phase_count FROM client_phases WHERE userId = 1;\nSELECT COUNT(*) as log_count, MIN(date) as earliest_log, MAX(date) as latest_log FROM daily_logs WHERE userId = 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute \nSELECT COUNT(*) as phase_count FROM client_phases WHERE userId = 1;\nSELECT COUNT(*) as log_count, MIN(date) as earliest_log, MAX(date) as latest_log FROM daily_logs WHERE userId = 1;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'userid' in 'where clause'"
+  ]
+}

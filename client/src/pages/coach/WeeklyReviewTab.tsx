@@ -7,7 +7,7 @@ import { AlertCircle, ArrowUp, ArrowDown, Minus, ChevronDown } from "lucide-reac
 
 interface Props {
   clientId: number;
-  onWeekClick?: (weekNumber: number) => void;
+  onWeekClick?: (weekNumber: number | null) => void;
 }
 
 type Week = {
@@ -15,7 +15,7 @@ type Week = {
   weekEnd: string;
   label: string;
   isInProgress: boolean;
-  weekNumber: number;
+  weekNumber: number | null;
   phaseLabel?: string | null;
   daysLogged: number;
   avgWeight: number | null;
@@ -278,9 +278,11 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                 {(() => {
                   return (
                     <>
-                      <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                        W{week.weekNumber}
-                      </span>
+                      {week.weekNumber != null && (
+                        <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                          W{week.weekNumber}
+                        </span>
+                      )}
                       {phaseLabel && phaseColor && (
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
                           {phaseLabel}

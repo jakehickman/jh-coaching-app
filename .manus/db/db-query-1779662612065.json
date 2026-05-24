@@ -1,0 +1,19 @@
+{
+  "query": "\nSELECT COUNT(*) as phase_count FROM client_phases WHERE clientId = 1;\nSELECT COUNT(*) as log_count, MIN(logDate) as earliest_log, MAX(logDate) as latest_log FROM daily_logs WHERE userId = 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute \nSELECT COUNT(*) as phase_count FROM client_phases WHERE clientId = 1;\nSELECT COUNT(*) as log_count, MIN(logDate) as earliest_log, MAX(logDate) as latest_log FROM daily_logs WHERE userId = 1;\n",
+  "rows": [
+    {
+      "phase_count": "1"
+    },
+    {
+      "phase_count": "log_count\tearliest_log\tlatest_log"
+    },
+    {
+      "phase_count": "36\t2026-04-08\t2026-05-13"
+    }
+  ],
+  "messages": [],
+  "stdout": "phase_count\n1\nlog_count\tearliest_log\tlatest_log\n36\t2026-04-08\t2026-05-13\n",
+  "stderr": "",
+  "execution_time_ms": 1990
+}
