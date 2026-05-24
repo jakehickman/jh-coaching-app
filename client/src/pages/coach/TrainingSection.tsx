@@ -1200,9 +1200,9 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                 )}
               </div>
             </div>
-            {/* Right: sticky weekly volume summary — mt offsets past the Training Schedule header + day selector row */}
+            {/* Right: sticky weekly volume summary */}
             {volumeTable && (
-              <div className="w-full lg:w-80 xl:w-[420px] 2xl:w-[480px] shrink-0 min-w-0 sticky top-4 lg:mt-[88px]">
+              <div className="w-full lg:w-80 xl:w-[420px] 2xl:w-[480px] shrink-0 min-w-0 sticky top-4">
                 <SectionLabel>Weekly Volume</SectionLabel>
                 <p className="text-xs text-muted-foreground mb-3">
                   Cycle: {schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(1)} · sets/wk
