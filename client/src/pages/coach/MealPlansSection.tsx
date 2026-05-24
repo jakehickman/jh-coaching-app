@@ -414,14 +414,16 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
             onChange={mode => setModeMutation.mutate({ userId: selectedUserId, mode })}
           />
 
-          {/* Secondary tab bar: Training Day | Rest Day — shown for both modes */}
-          <div className="flex items-center border-b border-border/50 mb-5">
-            <TabBar
-              tabs={dayTabs}
-              active={dayType}
-              onChange={setDayType}
-              className="border-b-0 flex-1"
-            />
+          {/* Secondary row: Training Day | Rest Day pills */}
+          <div className="flex items-center gap-2 flex-wrap mb-5">
+            {(dayTabs).map(({ value, label }) => (
+              <button key={value} onClick={() => setDayType(value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  dayType === value ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}>
+                {label}
+              </button>
+            ))}
             {/* Copy from opposite day — only show when opposite has data */}
             {nutritionMode === "meal_plan" && oppositePlan && (oppositePlan.meals as any[])?.length > 0 && (
               <button
@@ -431,7 +433,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                   setPlanNotes(oppositePlan.notes ?? "");
                   toast.success(`Copied from ${oppositeDay} day plan`);
                 }}
-                className="mr-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground border border-border flex items-center gap-1.5 transition-colors"
+                className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground border border-border flex items-center gap-1.5 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                 Copy from {oppositeDay} day
