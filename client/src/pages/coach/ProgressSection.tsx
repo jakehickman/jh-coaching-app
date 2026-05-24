@@ -408,7 +408,7 @@ function WeeklyCalorySummary({
   return (
     <div className="bg-card border border-border rounded-xl p-5 mb-4">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Weekly Average</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Daily Average</p>
         {isLive && (
           <span className="flex items-center gap-1.5 text-[10px] text-primary/80 font-medium">
             <span className="relative flex h-2 w-2">
@@ -569,7 +569,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
           {/* Weekly average calorie summary */}
           {weeklyAvgCalories != null && (
             <div className="bg-card border border-border rounded-xl p-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Weekly Average</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Daily Average</p>
               <div className="flex items-end gap-3">
                 <div>
                   <span className="text-xl font-bold tabular-nums text-foreground">
