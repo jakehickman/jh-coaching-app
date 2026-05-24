@@ -36,4 +36,7 @@ export const dailyLogRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(({ ctx, input }) => db.deleteDailyLog(input.id, ctx.user.id)),
+  deleteForClient: adminProcedure
+    .input(z.object({ id: z.number(), userId: z.number() }))
+    .mutation(({ input }) => db.deleteDailyLog(input.id, input.userId)),
 });

@@ -950,7 +950,15 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
   );
 }
 
-function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDays?: string[] }) {
+function RecentLogsPanel({ logs, visibleDays, clientId }: { logs: DailyLogRow[]; visibleDays?: string[]; clientId?: number }) {
+  const utils = trpc.useUtils();
+  const deleteLog = trpc.dailyLog.deleteForClient.useMutation({
+    onSuccess: () => {
+      utils.dailyLog.listForClient.invalidate({ userId: clientId! });
+      toast.success('Log deleted');
+    },
+    onError: () => toast.error('Failed to delete log'),
+  });
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Build a map of yyyy-mm-dd -> log
@@ -1095,6 +1103,22 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
                     <p className="text-sm text-foreground italic">{log.notes}</p>
                   </div>
                 )}
+                {clientId && log.id && (
+                  <div className="mt-3 pt-3 border-t border-border flex justify-end">
+                    <button
+                      onClick={() => {
+                        if (confirm('Delete this daily log entry?')) {
+                          deleteLog.mutate({ id: log.id!, userId: clientId });
+                          setExpandedId(null);
+                        }
+                      }}
+                      disabled={deleteLog.isPending}
+                      className="text-xs text-rose-400 hover:text-rose-300 border border-rose-500/30 hover:border-rose-400/50 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+                    >
+                      {deleteLog.isPending ? 'Deleting…' : 'Delete log'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1105,7 +1129,7 @@ function RecentLogsPanel({ logs, visibleDays }: { logs: DailyLogRow[]; visibleDa
 }
 
 // --- Sortable Schedule Slot -------------------------------------------------
-function RecentLogsWithViewMore({ logs, startDate }: { logs: DailyLogRow[]; startDate?: string | null }) {
+function RecentLogsWithViewMore({ logs, startDate, clientId }: { logs: DailyLogRow[]; startDate?: string | null; clientId?: number }) {
   const [showAll, setShowAll] = useState(false);
   const INITIAL_DAYS = 7;
 
@@ -1132,7 +1156,7 @@ function RecentLogsWithViewMore({ logs, startDate }: { logs: DailyLogRow[]; star
   return (
     <div>
       <SectionLabel>Recent Daily Logs</SectionLabel>
-      <RecentLogsPanel logs={logs} visibleDays={visibleDays} />
+      <RecentLogsPanel logs={logs} visibleDays={visibleDays} clientId={clientId} />
       {!showAll && hiddenCount > 0 && (
         <button
           onClick={() => setShowAll(true)}
@@ -2344,7 +2368,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 </div>
               </div>
               {(logs ?? []).length > 0 && (
-                <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} />
+                <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} clientId={selectedUserId!} />
               )}
             </div>
           </TabsContent>
