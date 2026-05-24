@@ -179,7 +179,10 @@ export default function MacroTargetsEditor({ clientId }: { clientId: number }) {
       const next = [...m];
       const [moved] = next.splice(from, 1);
       next.splice(to, 0, moved);
-      return next;
+      // Renumber any meal whose name matches the default "Meal N" pattern
+      return next.map((meal, idx) =>
+        /^Meal \d+$/.test(meal.name) ? { ...meal, name: `Meal ${idx + 1}` } : meal
+      );
     });
 
   const updateMeal = (i: number, field: keyof MealState, value: string) =>

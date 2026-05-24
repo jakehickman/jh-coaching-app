@@ -341,7 +341,10 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
     const next = [...m];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
-    return next;
+    // Renumber any meal whose name matches the default "Meal N" pattern
+    return next.map((meal, idx) =>
+      /^Meal \d+$/.test(meal.name) ? { ...meal, name: `Meal ${idx + 1}` } : meal
+    );
   });
   const updateMealName = (i: number, name: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, name } : meal));
   const updateMealTime = (i: number, time: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, time } : meal));
