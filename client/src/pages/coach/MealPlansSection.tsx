@@ -466,8 +466,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                           <ArrowDown size={12} />
                         </button>
                       </div>
-                      <input type="text" value={meal.name} onChange={e => updateMealName(i, e.target.value)}
-                        className="w-32 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground font-semibold focus:outline-none focus:ring-1 focus:ring-primary" />
+                      <span className="text-[13px] text-foreground font-semibold">Meal {i + 1}</span>
                       <div className="flex-1" />
                       <input type="time" value={meal.time ?? ""} onChange={e => updateMealTime(i, e.target.value)}
                         className="w-28 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
