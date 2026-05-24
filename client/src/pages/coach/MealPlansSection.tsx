@@ -392,14 +392,16 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
 
       {selectedUserId && (
         <>
-        {/* Mode toggle — matches Training Day / Rest Day style */}
-        <div className="flex items-center gap-2">
+        {/* Mode toggle — tab bar style */}
+        <div className="flex border-b border-border">
           {(["meal_plan", "macros"] as const).map(m => (
             <button
               key={m}
               onClick={() => setModeMutation.mutate({ userId: selectedUserId, mode: m })}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                nutritionMode === m ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+              className={`px-5 py-2.5 text-sm font-medium transition-colors relative -mb-px ${
+                nutritionMode === m
+                  ? "text-foreground border-b-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground border-b-2 border-transparent"
               }`}
             >
               {m === "meal_plan" ? "Meal Plan" : "Macros"}
