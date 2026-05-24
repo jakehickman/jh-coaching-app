@@ -426,11 +426,7 @@ function WeeklyCalorySummary({
           </span>
           <span className="text-sm text-muted-foreground ml-1.5">kcal / day</span>
         </div>
-        <div className="text-xs text-muted-foreground pb-1">
-          {weeklyTotal >= 1000
-            ? `${(weeklyTotal / 1000).toFixed(1)}k kcal / week`
-            : `${weeklyTotal.toLocaleString()} kcal / week`}
-        </div>
+
       </div>
 
     </div>
@@ -580,11 +576,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
                     {(weeklyAvgCaloriesWithTreat ?? weeklyAvgCalories).toLocaleString()}
                   </span>
                   <span className="text-sm text-muted-foreground ml-1.5">kcal / day</span>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {((weeklyAvgCaloriesWithTreat ?? weeklyAvgCalories) * 7) >= 1000
-                      ? `${((weeklyAvgCaloriesWithTreat ?? weeklyAvgCalories) * 7 / 1000).toFixed(1)}k kcal / week`
-                      : `${((weeklyAvgCaloriesWithTreat ?? weeklyAvgCalories) * 7).toLocaleString()} kcal / week`}
-                  </div>
+
                   {weeklyAvgCaloriesWithTreat != null && (
                     <div className="text-[10px] text-muted-foreground/50 mt-0.5">{weeklyAvgCalories.toLocaleString()} meals + free cal avg</div>
                   )}
