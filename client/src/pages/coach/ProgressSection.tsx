@@ -1301,12 +1301,21 @@ function computeCoachMonthlyVolume(
   }
   for (const mg of COACH_MUSCLE_KEYS) totals[mg.key] = Math.round(totals[mg.key]);
 
-  // Divide by the number of full/partial Mon-Sun weeks that overlap the month.
-  // This gives a stable denominator regardless of how many sessions were logged.
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // For the current month: divide by weeks elapsed so far (up to and including today's week).
+  // For past months: divide by the total number of Mon-Sun weeks that overlap the month.
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
   const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
-  const monFirst = (firstDow + 6) % 7; // 0=Mon
-  const weeksInMonth = Math.ceil((daysInMonth + monFirst) / 7);
+  const monFirst = (firstDow + 6) % 7; // days before first Monday (0=Mon offset)
+  let weeksInMonth: number;
+  if (isCurrentMonth) {
+    // How many full/partial Mon-Sun weeks have started up to today
+    const dayOfMonth = today.getDate(); // 1-based
+    weeksInMonth = Math.ceil((dayOfMonth + monFirst) / 7);
+  } else {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    weeksInMonth = Math.ceil((daysInMonth + monFirst) / 7);
+  }
 
   const weeklyAvg: Record<string, number> = {};
   for (const mg of COACH_MUSCLE_KEYS) {
