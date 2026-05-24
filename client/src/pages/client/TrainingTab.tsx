@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon, BarChart2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -361,6 +361,187 @@ function PresetSelector({
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+// ─── MonthlyVolumePanel ─────────────────────────────────────────────────────
+const MUSCLE_KEYS_ORDERED = [
+  { key: "quads",      label: "Quads" },
+  { key: "hams",       label: "Hams" },
+  { key: "glutes",     label: "Glute Max" },
+  { key: "gluteMed",   label: "Glute Med" },
+  { key: "chest",      label: "Chest" },
+  { key: "lats",       label: "Lats" },
+  { key: "upperBack",  label: "Upper Back" },
+  { key: "frontDelts", label: "Front Delts" },
+  { key: "sideDelts",  label: "Side Delts" },
+  { key: "rearDelts",  label: "Rear Delts" },
+  { key: "biceps",     label: "Biceps" },
+  { key: "triceps",    label: "Triceps" },
+  { key: "calves",     label: "Calves" },
+  { key: "abs",        label: "Abs" },
+] as const;
+
+type MKey = typeof MUSCLE_KEYS_ORDERED[number]["key"];
+
+function computeMonthlyVolume(
+  sessions: any[],
+  exerciseLib: any[],
+  year: number,
+  month: number // 0-based
+): { totals: Record<MKey, number>; weeklyAvg: Record<MKey, number>; sessionCount: number } {
+  const exMap: Record<string, any> = {};
+  for (const ex of exerciseLib) exMap[ex.name] = ex;
+
+  const totals: Record<string, number> = {};
+  for (const mg of MUSCLE_KEYS_ORDERED) totals[mg.key] = 0;
+
+  // Filter sessions to the selected month
+  const monthSessions = sessions.filter(s => {
+    const d = new Date(String(s.sessionDate).slice(0, 10) + 'T12:00:00Z');
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+
+  for (const session of monthSessions) {
+    for (const ex of (session.exercises as any[])) {
+      const libEx = exMap[ex.name];
+      if (!libEx) continue;
+      // Count only completed/logged sets
+      const completedSets = (ex.sets ?? []).filter(
+        (st: any) => st.completed || st.weight != null || st.reps != null
+      );
+      // For myo-reps: count activation set + mini-sets as individual sets
+      let setCount = 0;
+      for (const st of completedSets) {
+        if (st.myoReps) {
+          setCount += 1 + (parseInt(st.miniSets || '0') || 0);
+        } else {
+          setCount += 1;
+        }
+      }
+      if (setCount === 0) continue;
+      // Distribute sets across muscle groups by contribution
+      for (const mg of MUSCLE_KEYS_ORDERED) {
+        const contrib = (libEx[mg.key] ?? 0) as number;
+        if (contrib > 0) {
+          totals[mg.key] = (totals[mg.key] ?? 0) + setCount * contrib;
+        }
+      }
+    }
+  }
+
+  // Round totals
+  for (const mg of MUSCLE_KEYS_ORDERED) {
+    totals[mg.key] = Math.round(totals[mg.key]);
+  }
+
+  // Weekly average: number of weeks that had at least one session
+  const weekNums = new Set<number>();
+  for (const s of monthSessions) {
+    const d = new Date(String(s.sessionDate).slice(0, 10) + 'T12:00:00Z');
+    // ISO week within the month — use day-of-month / 7 bucket
+    weekNums.add(Math.floor((d.getDate() - 1) / 7));
+  }
+  const weeksWithSessions = Math.max(weekNums.size, 1);
+
+  const weeklyAvg: Record<string, number> = {};
+  for (const mg of MUSCLE_KEYS_ORDERED) {
+    weeklyAvg[mg.key] = Math.round((totals[mg.key] / weeksWithSessions) * 10) / 10;
+  }
+
+  return { totals: totals as Record<MKey, number>, weeklyAvg: weeklyAvg as Record<MKey, number>, sessionCount: monthSessions.length };
+}
+
+function MonthlyVolumePanel({ sessions, exerciseLib }: { sessions: any[]; exerciseLib: any[] }) {
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const [open, setOpen] = useState(true);
+
+  const { totals, weeklyAvg, sessionCount } = computeMonthlyVolume(sessions, exerciseLib, year, month);
+
+  const activeRows = MUSCLE_KEYS_ORDERED.filter(mg => totals[mg.key] > 0);
+  const maxTotal = Math.max(...activeRows.map(mg => totals[mg.key]), 1);
+
+  const monthLabel = new Date(year, month, 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+
+  function prevMonth() {
+    if (month === 0) { setMonth(11); setYear(y => y - 1); }
+    else setMonth(m => m - 1);
+  }
+  function nextMonth() {
+    const nextIsAfterNow = year > now.getFullYear() || (year === now.getFullYear() && month >= now.getMonth());
+    if (nextIsAfterNow) return;
+    if (month === 11) { setMonth(0); setYear(y => y + 1); }
+    else setMonth(m => m + 1);
+  }
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Header */}
+      <button
+        className="w-full flex items-center gap-3 px-4 py-3 select-none"
+        onClick={() => setOpen(o => !o)}
+      >
+        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+          <BarChart2 size={16} className="text-primary" />
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-sm font-semibold text-foreground">Monthly Volume</p>
+          <p className="text-xs text-muted-foreground">{monthLabel} &middot; {sessionCount} session{sessionCount !== 1 ? 's' : ''}</p>
+        </div>
+        <ChevronDown size={15} className={`text-muted-foreground transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="border-t border-border">
+          {/* Month navigator */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
+            <button onClick={prevMonth} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+              <ChevronLeft size={14} />
+            </button>
+            <span className="text-xs font-medium text-foreground">{monthLabel}</span>
+            <button onClick={nextMonth} disabled={isCurrentMonth} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30">
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          {activeRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">No sessions logged this month.</p>
+          ) : (
+            <div className="px-4 py-3 space-y-2">
+              {/* Column headers */}
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-20 flex-shrink-0">Muscle</span>
+                <span className="flex-1" />
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-10 text-right flex-shrink-0">Total</span>
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-12 text-right flex-shrink-0">Wk avg</span>
+              </div>
+              {activeRows
+                .sort((a, b) => totals[b.key] - totals[a.key])
+                .map(mg => {
+                  const total = totals[mg.key];
+                  const avg = weeklyAvg[mg.key];
+                  const pct = Math.round((total / maxTotal) * 100);
+                  const barColor = total >= 10 ? 'bg-primary' : total >= 6 ? 'bg-primary/70' : 'bg-primary/40';
+                  return (
+                    <div key={mg.key} className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-20 flex-shrink-0 truncate">{mg.label}</span>
+                      <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs font-semibold text-foreground w-10 text-right flex-shrink-0 tabular-nums">{total}</span>
+                      <span className="text-xs text-muted-foreground w-12 text-right flex-shrink-0 tabular-nums">{avg}/wk</span>
+                    </div>
+                  );
+                })}
+              <p className="text-[10px] text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Myo-reps counted as activation + mini-sets.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1700,6 +1881,11 @@ function WorkoutLogTab() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Monthly volume summary */}
+      {sessions.length > 0 && (
+        <MonthlyVolumePanel sessions={sessions} exerciseLib={exerciseLib} />
       )}
 
       {/* Past sessions ─ accordion timeline */}
