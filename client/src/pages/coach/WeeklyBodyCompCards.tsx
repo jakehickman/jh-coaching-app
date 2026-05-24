@@ -87,6 +87,7 @@ type Week = {
   weekStart: string;
   weekEnd: string;
   isInProgress: boolean;
+  phaseLabel?: string | null;
   avgWeight: number | null;
   avgWaist: number | null;
   avgSkinfold: number | null;
@@ -107,7 +108,7 @@ type Week = {
   }[];
 };
 
-function WeekCard({ week, prevWeek, phases }: { week: Week; prevWeek: Week | null; phases: any[] }) {
+function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
   const [expanded, setExpanded] = useState(false);
 
   const weightDeltaKg = week.avgWeight != null && prevWeek?.avgWeight != null
@@ -127,7 +128,7 @@ function WeekCard({ week, prevWeek, phases }: { week: Week; prevWeek: Week | nul
   const hasAnyData = week.avgWeight != null || week.avgWaist != null || week.avgSkinfold != null;
   const hasDetail = week.weighIns.length > 0 || week.measurementEntries.length > 0;
 
-  const phaseLabel = getPhaseForWeek(phases, week.weekStart);
+  const phaseLabel = (week as any).phaseLabel ?? null;
   const phaseColor = phaseLabel ? (PHASE_COLORS[phaseLabel] ?? { bg: "bg-secondary", text: "text-muted-foreground", border: "border-border" }) : null;
 
   return (
@@ -142,12 +143,10 @@ function WeekCard({ week, prevWeek, phases }: { week: Week; prevWeek: Week | nul
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-0.5">
             {(() => {
-              const phaseWk = getPhaseWeekNumber(phases, week.weekStart);
-              const wNum = phaseWk ?? week.weekNumber;
               return (
                 <>
                   <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                    W{wNum}
+                    W{week.weekNumber}
                   </span>
                   {phaseLabel && phaseColor && (
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
@@ -255,11 +254,6 @@ function WeekCard({ week, prevWeek, phases }: { week: Week; prevWeek: Week | nul
 
 export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
   const tzOffsetMinutes = -new Date().getTimezoneOffset();
-  const { data: phasesData } = trpc.phases.list.useQuery(
-    { clientId },
-    { enabled: !!clientId }
-  );
-  const phases = (phasesData as any[]) ?? [];
   const { data, isLoading } = trpc.progress.weeklyReview.useQuery(
     { clientId, tzOffsetMinutes },
     { enabled: !!clientId, staleTime: 60_000 }
@@ -303,7 +297,7 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
       {bodyCompWeeks.map((week) => {
         // prevWeek is the week with weekNumber - 1 (the chronologically earlier week)
         const prevWeek = weekByNumber[week.weekNumber - 1] ?? null;
-        return <WeekCard key={week.weekNumber} week={week} prevWeek={prevWeek} phases={phases} />;
+        return <WeekCard key={week.weekNumber} week={week} prevWeek={prevWeek} />;
       })}
     </div>
   );
