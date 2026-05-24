@@ -1289,7 +1289,9 @@ function computeCoachMonthlyVolume(
       );
       let setCount = 0;
       for (const st of completedSets) {
-        setCount += st.myoReps ? 1 + (parseInt(st.miniSets || '0') || 0) : 1;
+        // Myo-rep sets count as 1 set (the activation set only).
+        // Mini-sets are sub-maximal and not counted as full working sets.
+        setCount += 1;
       }
       if (setCount === 0) continue;
       for (const mg of COACH_MUSCLE_KEYS) {
@@ -1309,7 +1311,7 @@ function computeCoachMonthlyVolume(
 
   const weeklyAvg: Record<string, number> = {};
   for (const mg of COACH_MUSCLE_KEYS) {
-    weeklyAvg[mg.key] = Math.round((totals[mg.key] / weeksInMonth) * 10) / 10;
+    weeklyAvg[mg.key] = Math.round(totals[mg.key] / weeksInMonth);
   }
   return { totals, weeklyAvg, sessionCount: monthSessions.length };
 }
@@ -1810,22 +1812,28 @@ function ExerciseProgressTab({
                     </div>
                   </div>
 
-                  {/* Machine preset filter — only shown when multiple presets exist */}
-                  {presets.length > 1 && (
+                  {/* Machine preset pills — clickable filters when multiple, static pill when only one */}
+                  {presets.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-3">
-                      {presets.map(p => (
-                        <button
-                          key={p}
-                          onClick={() => setPresetFilter(prev => ({ ...prev, [name]: p }))}
-                          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
-                            activeMachineFilter === p
-                              ? 'bg-primary text-primary-foreground border-primary font-medium'
-                              : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      ))}
+                      {presets.length === 1 ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                          {presets[0]}
+                        </span>
+                      ) : (
+                        presets.map(p => (
+                          <button
+                            key={p}
+                            onClick={() => setPresetFilter(prev => ({ ...prev, [name]: p }))}
+                            className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                              activeMachineFilter === p
+                                ? 'bg-primary text-primary-foreground border-primary font-medium'
+                                : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))
+                      )}
                     </div>
                   )}
 
