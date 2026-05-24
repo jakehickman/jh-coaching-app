@@ -1103,9 +1103,10 @@ function RecentLogsPanel({ logs, visibleDays, clientId }: { logs: DailyLogRow[];
                         }
                       }}
                       disabled={deleteLog.isPending}
-                      className="text-xs text-rose-400 hover:text-rose-300 border border-rose-500/30 hover:border-rose-400/50 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+                      className="p-1.5 text-muted-foreground hover:text-rose-400 transition-colors disabled:opacity-50 rounded"
+                      title="Delete log"
                     >
-                      {deleteLog.isPending ? 'Deleting…' : 'Delete log'}
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 )}
