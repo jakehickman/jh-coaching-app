@@ -413,35 +413,35 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
       )}
 
       {selectedUserId && nutritionMode === "meal_plan" && (
+        <>
+        {/* Day-type tabs — span full width above both columns */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {(["training", "rest"] as const).map(t => (
+            <button key={t} onClick={() => setDayType(t)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+                dayType === t ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}>
+              {t === "training" ? "Training Day" : "Rest Day"}
+            </button>
+          ))}
+          {oppositePlan && (oppositePlan.meals as any[])?.length > 0 && (
+            <button
+              onClick={() => {
+                if (!window.confirm(`Copy meals from ${oppositeDay} day plan? This will replace the current meals.`)) return;
+                setMeals(JSON.parse(JSON.stringify((oppositePlan.meals as any[]) ?? [])));
+                setPlanNotes(oppositePlan.notes ?? "");
+                toast.success(`Copied from ${oppositeDay} day plan`);
+              }}
+              className="ml-auto px-3 py-2 rounded-lg text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground border border-border flex items-center gap-1.5"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              Copy from {oppositeDay} day
+            </button>
+          )}
+        </div>
+
         <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:items-start">
         <div className="space-y-6">
-          <div className="flex items-center gap-2 flex-wrap">
-            {(["training", "rest"] as const).map(t => (
-              <button key={t} onClick={() => setDayType(t)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
-                  dayType === t ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-                }`}>
-                {t === "training" ? "Training Day" : "Rest Day"}
-              </button>
-            ))}
-            {oppositePlan && (oppositePlan.meals as any[])?.length > 0 && (
-              <button
-                onClick={() => {
-                  if (!window.confirm(`Copy meals from ${oppositeDay} day plan? This will replace the current meals.`)) return;
-                  setMeals(JSON.parse(JSON.stringify((oppositePlan.meals as any[]) ?? [])));
-                  setPlanNotes(oppositePlan.notes ?? "");
-                  toast.success(`Copied from ${oppositeDay} day plan`);
-                }}
-                className="ml-auto px-3 py-2 rounded-lg text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground border border-border flex items-center gap-1.5"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                Copy from {oppositeDay} day
-              </button>
-            )}
-          </div>
-
-          {/* Daily totals — removed inline strip; sticky right panel handles this */}
-
           <div className="space-y-4">
             {meals.map((meal, i) => (
               <Card key={i}>
@@ -641,8 +641,9 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
               <p className="text-xs text-muted-foreground text-center py-2">Add meals to see daily totals</p>
             )}
           </Card>
-        </div>
-        </div>
+        </div>{/* end right column */}
+        </div>{/* end grid */}
+        </>
       )}
     </div>
   );
