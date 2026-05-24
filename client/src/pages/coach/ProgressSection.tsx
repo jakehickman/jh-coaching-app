@@ -1563,13 +1563,18 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
       )}
     </div>
 
-    {/* Monthly volume summary — synced to the calendar month */}
-    <MonthlyVolumeCoachPanel
-      workoutSessions={workoutSessions}
-      exerciseLib={exerciseLib}
-      year={calYear}
-      month={calMonth}
-    />
+    {/* Monthly volume summary — same width as the calendar column */}
+    <div className="flex gap-4 items-start">
+      <div className="flex-1 min-w-0">
+        <MonthlyVolumeCoachPanel
+          workoutSessions={workoutSessions}
+          exerciseLib={exerciseLib}
+          year={calYear}
+          month={calMonth}
+        />
+      </div>
+      <div className="w-72 flex-shrink-0" />
+    </div>
     </>
   );
 }
