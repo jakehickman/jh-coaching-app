@@ -1,27 +1,18 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import * as db from "../db";
+import { getDb } from "../db";
+import { clientPhases } from "../../drizzle/schema";
+import { eq, asc } from "drizzle-orm";
 
 const DAY_NAME_TO_DOW: Record<string, number> = {
   sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
   thursday: 4, friday: 5, saturday: 6,
 };
 
-/** Return the ISO date string (YYYY-MM-DD) for a given Date (UTC) */
-function toDateStr(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
 /**
- * Given a check-in day name (e.g. "wednesday") and a start date,
- * compute the first due date (first occurrence of that weekday AFTER start date,
- * or +7 if start date falls on that weekday), then generate weekly period
- * boundaries going backwards from today.
- *
- * Each period: { weekStart, weekEnd, label, isInProgress, weekNumber }
- * weekEnd   = the check-in day (inclusive end of the period)
- * weekStart = weekEnd - 6 days
- * weekNumber = 1-based index from the client's first full week (oldest = 1)
+ * Legacy fallback: anchor weeks to the client's check-in day.
+ * Used when no phases have started yet.
  */
 function buildWeekPeriods(
   checkInDay: string,
@@ -29,73 +20,109 @@ function buildWeekPeriods(
   today: Date,
   maxWeeks = 52,
   tzOffsetMinutes = 0
-): Array<{ weekStart: string; weekEnd: string; label: string; isInProgress: boolean; weekNumber: number }> {
+): Array<{ weekStart: string; weekEnd: string; label: string; isInProgress: boolean; weekNumber: number; phaseLabel?: string }> {
   const dow = DAY_NAME_TO_DOW[checkInDay.toLowerCase()] ?? 1;
   const start = new Date(startDate + "T00:00:00Z");
-
-  // Find first due date: first occurrence of dow AFTER start (not on start)
   const startDow = start.getUTCDay();
   let daysUntilFirst = (dow - startDow + 7) % 7;
-  if (daysUntilFirst === 0) daysUntilFirst = 7; // same weekday → next week
+  if (daysUntilFirst === 0) daysUntilFirst = 7;
   const firstDue = new Date(start);
   firstDue.setUTCDate(start.getUTCDate() + daysUntilFirst);
-
-  // Compute local today using the client's timezone offset
   const localMs = today.getTime() + tzOffsetMinutes * 60 * 1000;
   const localToday = new Date(localMs);
   const todayMs = Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate());
   const firstDueMs = firstDue.getTime();
-
-  if (firstDueMs > todayMs) return []; // no periods yet
-
+  if (firstDueMs > todayMs) return [];
   const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-
-  // Most recent past due date (≤ today)
   const weeksSinceFirst = Math.floor((todayMs - firstDueMs) / msPerWeek);
   const latestPastDueMs = firstDueMs + weeksSinceFirst * msPerWeek;
-
-  // Next due date (> today) — this is the end of the current in-progress week
   const nextDueMs = latestPastDueMs + msPerWeek;
-
-  const periods: Array<{ weekStart: string; weekEnd: string; label: string; isInProgress: boolean; weekNumber: number }> = [];
-
-  // Always include the current in-progress week (from day after last due → next due)
+  const periods: Array<{ weekStart: string; weekEnd: string; label: string; isInProgress: boolean; weekNumber: number; phaseLabel?: string }> = [];
   const inProgressWeekStart = new Date(latestPastDueMs + 24 * 60 * 60 * 1000);
   const inProgressWeekEnd = new Date(nextDueMs);
-  const inProgressLabel = `${inProgressWeekStart.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} – ${inProgressWeekEnd.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
-  const totalWeeks = weeksSinceFirst + 2; // +1 for 1-based, +1 for in-progress week
-
-  periods.push({
-    weekStart: toDateStr(inProgressWeekStart),
-    weekEnd: toDateStr(inProgressWeekEnd),
-    label: inProgressLabel,
-    isInProgress: true,
-    weekNumber: totalWeeks,
-  });
-
-  // Then add completed weeks newest-first
+  const inProgressLabel = `${inProgressWeekStart.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} \u2013 ${inProgressWeekEnd.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+  const totalWeeks = weeksSinceFirst + 2;
+  periods.push({ weekStart: toDateStr(inProgressWeekStart), weekEnd: toDateStr(inProgressWeekEnd), label: inProgressLabel, isInProgress: true, weekNumber: totalWeeks });
   for (let i = 0; i < maxWeeks; i++) {
     const weekEndMs = latestPastDueMs - i * msPerWeek;
     if (weekEndMs < firstDueMs) break;
-
     const weekEnd = new Date(weekEndMs);
     const weekStart = new Date(weekEndMs - 6 * 24 * 60 * 60 * 1000);
+    const label = `${weekStart.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} \u2013 ${weekEnd.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+    periods.push({ weekStart: toDateStr(weekStart), weekEnd: toDateStr(weekEnd), label, isInProgress: false, weekNumber: totalWeeks - 1 - i });
+  }
+  return periods;
+}
 
-    const label = `${weekStart.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} – ${weekEnd.toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+/** Return the ISO date string (YYYY-MM-DD) for a given Date (UTC) */
+function toDateStr(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
 
-    // weekNumber: oldest week = 1, newest completed = totalWeeks - 1
-    const weekNumber = totalWeeks - 1 - i;
+/**
+ * Build weekly periods from phase boundaries.
+ * Each phase contributes 7-day blocks starting from phase.startDate.
+ * The last block of the current (open-ended) phase may be in-progress.
+ * Returns periods newest-first.
+ */
+function buildPhaseWeekPeriods(
+  phases: Array<{ startDate: string; endDate: string | null; label: string }>,
+  today: Date,
+  tzOffsetMinutes = 0
+): Array<{ weekStart: string; weekEnd: string; label: string; isInProgress: boolean; weekNumber: number; phaseLabel: string }> {
+  if (phases.length === 0) return [];
 
-    periods.push({
-      weekStart: toDateStr(weekStart),
-      weekEnd: toDateStr(weekEnd),
-      label,
-      isInProgress: false,
-      weekNumber,
-    });
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const msPerWeek = 7 * msPerDay;
+
+  // Compute local today
+  const localMs = today.getTime() + tzOffsetMinutes * 60 * 1000;
+  const localToday = new Date(localMs);
+  const todayStr = toDateStr(new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())));
+
+  const allPeriods: Array<{ weekStart: string; weekEnd: string; label: string; isInProgress: boolean; weekNumber: number; phaseLabel: string }> = [];
+
+  for (const phase of phases) {
+    const phaseStartMs = new Date(phase.startDate + "T00:00:00Z").getTime();
+    // Phase end: either explicit endDate or today (open-ended)
+    const phaseEndStr = phase.endDate ?? todayStr;
+    const phaseEndMs = new Date(phaseEndStr + "T00:00:00Z").getTime();
+
+    if (phaseStartMs > new Date(todayStr + "T00:00:00Z").getTime()) continue; // future phase
+
+    // Slice phase into 7-day blocks from phaseStart
+    let weekNum = 1;
+    let blockStartMs = phaseStartMs;
+
+    while (blockStartMs <= phaseEndMs) {
+      const blockEndMs = blockStartMs + msPerWeek - msPerDay; // inclusive end (6 days later)
+      const effectiveEndMs = Math.min(blockEndMs, phaseEndMs);
+      const weekStartStr = toDateStr(new Date(blockStartMs));
+      const weekEndStr = toDateStr(new Date(effectiveEndMs));
+
+      // Skip if this block hasn't started yet relative to today
+      if (weekStartStr > todayStr) break;
+
+      const isInProgress = !phase.endDate && effectiveEndMs >= new Date(todayStr + "T00:00:00Z").getTime();
+
+      const label = `${new Date(blockStartMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} – ${new Date(effectiveEndMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+
+      allPeriods.push({
+        weekStart: weekStartStr,
+        weekEnd: weekEndStr,
+        label,
+        isInProgress,
+        weekNumber: weekNum,
+        phaseLabel: phase.label,
+      });
+
+      weekNum++;
+      blockStartMs += msPerWeek;
+    }
   }
 
-  return periods;
+  // Return newest-first
+  return allPeriods.reverse();
 }
 
 function avg(vals: (number | null | undefined)[]): number | null {
@@ -135,13 +162,44 @@ export const progressRouter = router({
         db.listWorkoutSessions(clientId),
       ]);
 
-      if (!profile || !profile.checkInDay || !profile.startDate) {
+      if (!profile) {
         return { weeks: [] };
       }
 
+      // Fetch phases for this client (oldest-first)
+      const dbConn = await getDb();
+      let phases: Array<{ startDate: string; endDate: string | null; label: string }> = [];
+      if (dbConn) {
+        const rows = await dbConn
+          .select()
+          .from(clientPhases)
+          .where(eq(clientPhases.clientId, clientId))
+          .orderBy(asc(clientPhases.startDate));
+        phases = rows.map((r) => ({
+          label: r.label,
+          startDate: r.startDate instanceof Date ? r.startDate.toISOString().slice(0, 10) : String(r.startDate),
+          endDate: r.endDate == null ? null : r.endDate instanceof Date ? r.endDate.toISOString().slice(0, 10) : String(r.endDate),
+        }));
+      }
+
       const today = new Date();
-      const startDateStr = typeof profile.startDate === "string" ? profile.startDate : toDateStr(profile.startDate as Date);
-      const periods = buildWeekPeriods(profile.checkInDay, startDateStr, today, 52, tzOffsetMinutes);
+      let periods: Array<{ weekStart: string; weekEnd: string; label: string; isInProgress: boolean; weekNumber: number; phaseLabel?: string }>;
+
+      // Use phase-based weeks if any phases have already started; otherwise fall back to check-in-day anchoring
+      const localMs = today.getTime() + tzOffsetMinutes * 60 * 1000;
+      const localToday = new Date(localMs);
+      const todayStr = toDateStr(new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())));
+      const startedPhases = phases.filter(p => p.startDate <= todayStr);
+
+      if (startedPhases.length > 0) {
+        periods = buildPhaseWeekPeriods(phases, today, tzOffsetMinutes);
+      } else if (profile.checkInDay && profile.startDate) {
+        // No phases started yet — fall back to check-in-day anchored weeks (no phaseLabel)
+        const startDateStr = typeof profile.startDate === "string" ? profile.startDate : toDateStr(profile.startDate as Date);
+        periods = buildWeekPeriods(profile.checkInDay, startDateStr, today, 52, tzOffsetMinutes);
+      } else {
+        return { weeks: [] };
+      }
 
       // Build weeks newest-first; we need the next item (older week) for deltas
       const rawWeeks = periods.map((period) => {
@@ -221,6 +279,7 @@ export const progressRouter = router({
           label: period.label,
           isInProgress: period.isInProgress,
           weekNumber: period.weekNumber,
+          phaseLabel: (period as any).phaseLabel ?? null,
           daysLogged: periodLogs.length,
           // Body composition
           avgWeight,

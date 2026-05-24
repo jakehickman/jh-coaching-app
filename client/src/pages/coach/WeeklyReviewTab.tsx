@@ -16,6 +16,7 @@ type Week = {
   label: string;
   isInProgress: boolean;
   weekNumber: number;
+  phaseLabel?: string | null;
   daysLogged: number;
   avgWeight: number | null;
   avgWeightPct: number | null;
@@ -175,11 +176,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
   const [expandedInit, setExpandedInit] = useState(false);
 
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
-  const { data: phasesData } = trpc.phases.list.useQuery(
-    { clientId },
-    { enabled: !!clientId }
-  );
-  const phases = (phasesData as any[]) ?? [];
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
     { clientId, tzOffsetMinutes },
     { enabled: !!clientId, staleTime: 0, retry: 1 }
@@ -257,7 +253,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
           ? parseFloat(((weightDeltaKg / prev.avgWeight) * 100).toFixed(1))
           : null;
 
-        const phaseLabel = getPhaseForWeek(phases, week.weekStart, week.weekEnd);
+        const phaseLabel = (week as any).phaseLabel ?? null;
         const phaseColor = phaseLabel ? (PHASE_COLORS[phaseLabel] ?? { bg: "bg-secondary", text: "text-muted-foreground", border: "border-border" }) : null;
 
         return (
@@ -280,12 +276,10 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
             >
               <div className="flex items-center gap-2 min-w-0">
                 {(() => {
-                  const phaseWk = getPhaseWeekNumber(phases, week.weekStart);
-                  const wNum = phaseWk ?? week.weekNumber;
                   return (
                     <>
                       <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                        W{wNum}
+                        W{week.weekNumber}
                       </span>
                       {phaseLabel && phaseColor && (
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
