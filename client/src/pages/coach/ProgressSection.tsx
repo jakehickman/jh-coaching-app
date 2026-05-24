@@ -1480,34 +1480,33 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
 
   return (
     <>
-    <div className="flex gap-4 items-start">
-      {/* Calendar */}
-      <div className="flex-1 min-w-0">
-        {/* Month nav */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => changeMonth(-1)}
-              className="w-7 h-7 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-            >
-              <ChevronDown className="w-3.5 h-3.5 rotate-90" />
-            </button>
-            <span className="text-sm font-bold text-foreground min-w-[120px] text-center">
-              {CAL_MONTH_NAMES[calMonth]} {calYear}
-            </span>
-            <button
-              onClick={() => changeMonth(1)}
-              className="w-7 h-7 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-            >
-              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
-            </button>
-          </div>
-          <span className="text-[11px] text-muted-foreground">
-            <span className="font-semibold text-foreground">{monthSessionCount}</span> session{monthSessionCount !== 1 ? 's' : ''} this month
-          </span>
-        </div>
+    {/* Month nav — spans full width above both columns */}
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => changeMonth(-1)}
+          className="w-7 h-7 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+        >
+          <ChevronDown className="w-3.5 h-3.5 rotate-90" />
+        </button>
+        <span className="text-sm font-bold text-foreground min-w-[120px] text-center">
+          {CAL_MONTH_NAMES[calMonth]} {calYear}
+        </span>
+        <button
+          onClick={() => changeMonth(1)}
+          className="w-7 h-7 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+        >
+          <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+        </button>
+      </div>
+      <span className="text-[11px] text-muted-foreground">
+        <span className="font-semibold text-foreground">{monthSessionCount}</span> session{monthSessionCount !== 1 ? 's' : ''} this month
+      </span>
+    </div>
 
-        {/* Grid */}
+    <div className="grid grid-cols-[1fr_288px] gap-4 items-start">
+      {/* Calendar grid */}
+      <div className="min-w-0">
         <div className="border border-border rounded-xl overflow-hidden">
           {/* Weekday headers */}
           <div className="grid grid-cols-7 bg-muted/30 border-b border-border divide-x divide-border">
@@ -1581,23 +1580,21 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
       {selectedSession ? (
         <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} />
       ) : (
-        <div className="w-72 flex-shrink-0 border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 200 }}>
+        <div className="border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 200 }}>
           <p className="text-xs text-muted-foreground">Click a session to view details</p>
         </div>
       )}
     </div>
 
-    {/* Monthly volume summary — same width as the calendar column */}
-    <div className="flex gap-4 items-start">
-      <div className="flex-1 min-w-0">
-        <MonthlyVolumeCoachPanel
-          workoutSessions={workoutSessions}
-          exerciseLib={exerciseLib}
-          year={calYear}
-          month={calMonth}
-        />
-      </div>
-      <div className="w-72 flex-shrink-0" />
+    {/* Monthly volume summary — spans only the calendar column */}
+    <div className="grid grid-cols-[1fr_288px] gap-4 items-start">
+      <MonthlyVolumeCoachPanel
+        workoutSessions={workoutSessions}
+        exerciseLib={exerciseLib}
+        year={calYear}
+        month={calMonth}
+      />
+      <div />
     </div>
     </>
   );
