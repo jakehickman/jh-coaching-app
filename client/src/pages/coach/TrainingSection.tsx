@@ -1209,6 +1209,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                       <tr className="border-b border-border bg-secondary/50">
                         <th colSpan={days.length + 2} className="px-3 py-2 text-left">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">Weekly Volume</span>
+                          <span className="ml-2 text-[10px] text-muted-foreground">{schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(1)} · sets/wk</span>
                         </th>
                       </tr>
                       <tr className="border-b border-border bg-secondary/30">

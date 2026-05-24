@@ -432,7 +432,7 @@ function WeeklyCalorySummary({
             : `${weeklyTotal.toLocaleString()} kcal / week`}
         </div>
       </div>
-      <p className="text-xs text-muted-foreground/60 mt-2">{scheduleLabel}</p>
+
     </div>
   );
 }
@@ -590,9 +590,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
                   )}
                 </div>
               </div>
-              {scheduleLabel && (
-                <p className="text-xs text-muted-foreground/60 mt-2">{scheduleLabel}</p>
-              )}
+
             </div>
           )}
         </>
