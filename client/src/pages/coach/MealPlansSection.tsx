@@ -55,7 +55,7 @@ function FoodCombobox({
         onBlur={() => setTimeout(() => { setOpen(false); setHighlightedIdx(-1); }, 150)}
         onKeyDown={handleKeyDown}
         placeholder="Search food…"
-        className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        className="w-full bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
       />
       {open && filtered.length > 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto">
@@ -526,7 +526,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                                 onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextFoodInput(); } }}
                                 className="w-16 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
                               />
-                              <div className="text-xs text-muted-foreground w-28 leading-tight">
+                              <div className="text-[13px] text-muted-foreground w-28 leading-tight">
                                 <span className="whitespace-nowrap">{isServingBased ? selectedFood.servingUnit : "g"}</span>
                                 {isServingBased && effectiveGrams ? <span className="whitespace-nowrap text-muted-foreground/50"> ({effectiveGrams}g)</span> : null}
                               </div>
@@ -534,8 +534,8 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                             <div className="w-24 shrink-0 text-[11px] leading-tight">
                               {hasData ? (
                                 <>
-                                  <span className="text-foreground font-medium text-xs">{m.calories} kcal</span>
-                                  <div className="text-muted-foreground text-xs">P{m.protein} C{m.carbs} F{m.fat}</div>
+                                  <span className="text-foreground font-medium text-[11px]">{m.calories} kcal</span>
+                                  <div className="text-muted-foreground text-[11px]">P{m.protein} C{m.carbs} F{m.fat}</div>
                                 </>
                               ) : <span className="text-muted-foreground/30">—</span>}
                             </div>
@@ -574,7 +574,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                     <div>
                       <label className="text-xs font-medium text-muted-foreground block mb-1.5">Notes</label>
                       <textarea value={planNotes} onChange={e => setPlanNotes(e.target.value)} rows={2}
-                        className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+                        className="w-full bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
                     </div>
                     <div>
                       <label className="text-xs font-medium text-muted-foreground block mb-1.5">Free Calories</label>
@@ -583,7 +583,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                         value={treatAllowance}
                         onChange={e => setTreatAllowance(e.target.value)}
                         placeholder="0"
-                        className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="w-full bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   </div>
