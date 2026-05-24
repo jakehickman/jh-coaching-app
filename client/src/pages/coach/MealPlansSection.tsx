@@ -415,7 +415,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
           />
 
           {/* Secondary row: Training Day | Rest Day pills */}
-          <div className="flex items-center gap-2 flex-wrap mb-5">
+          <div className="flex items-center gap-2 flex-wrap mt-4 mb-5">
             {(dayTabs).map(({ value, label }) => (
               <button key={value} onClick={() => setDayType(value)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -455,32 +455,33 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                 {meals.map((meal, i) => (
                   <Card key={i}>
                     {/* Card header */}
-                    <div className="flex items-center gap-3 pb-3 mb-3 border-b border-border/50">
-                      <div className="flex flex-col gap-0.5 shrink-0">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex flex-col gap-0.5 shrink-0 text-muted-foreground">
                         <button onClick={() => i > 0 && moveMeal(i, i - 1)} disabled={i === 0}
-                          className="text-muted-foreground hover:text-foreground disabled:opacity-20 leading-none p-0.5">
+                          className="hover:text-foreground disabled:opacity-20 leading-none p-0.5">
                           <ArrowUp size={12} />
                         </button>
                         <button onClick={() => i < meals.length - 1 && moveMeal(i, i + 1)} disabled={i === meals.length - 1}
-                          className="text-muted-foreground hover:text-foreground disabled:opacity-20 leading-none p-0.5">
+                          className="hover:text-foreground disabled:opacity-20 leading-none p-0.5">
                           <ArrowDown size={12} />
                         </button>
                       </div>
                       <input type="text" value={meal.name} onChange={e => updateMealName(i, e.target.value)}
-                        className="flex-1 bg-transparent border-none text-sm font-semibold text-foreground focus:outline-none focus:ring-0 placeholder:text-muted-foreground" />
+                        className="w-32 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground font-semibold focus:outline-none focus:ring-1 focus:ring-primary" />
+                      <div className="flex-1" />
                       <input type="time" value={meal.time ?? ""} onChange={e => updateMealTime(i, e.target.value)}
-                        className="w-28 bg-secondary border border-border rounded-lg px-2 py-1.5 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-                      <button onClick={() => removeMeal(i)} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
+                        className="w-28 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                      <button onClick={() => removeMeal(i)} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
                         <Trash2 size={14} />
                       </button>
                     </div>
 
                     {/* Column headers */}
-                    <div className="flex items-center gap-2 px-0.5 mb-2">
-                      <p className="flex-1 text-[11px] uppercase tracking-wider text-muted-foreground/60">Food</p>
-                      <p className="w-16 text-[11px] uppercase tracking-wider text-muted-foreground/60 text-right">Amount</p>
-                      <p className="w-28 text-[11px] uppercase tracking-wider text-muted-foreground/60">Unit</p>
-                      <p className="w-24 text-[11px] uppercase tracking-wider text-muted-foreground/60">Macros</p>
+                    <div className="flex items-center gap-2 px-1 mb-2">
+                      <p className="flex-1 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Food</p>
+                      <p className="w-16 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground text-right">Amount</p>
+                      <p className="w-28 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Unit</p>
+                      <p className="w-24 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Macros</p>
                       <p className="w-4"></p>
                     </div>
 
@@ -523,7 +524,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                                 value={item.grams}
                                 onChange={e => updateItem(i, j, "grams", e.target.value)}
                                 onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextFoodInput(); } }}
-                                className="w-16 bg-secondary border border-border rounded-lg px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
+                                className="w-16 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
                               />
                               <div className="text-xs text-muted-foreground w-28 leading-tight">
                                 <span className="whitespace-nowrap">{isServingBased ? selectedFood.servingUnit : "g"}</span>
@@ -548,7 +549,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
 
                     {/* Add item + meal subtotal */}
                     <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/30">
-                      <button onClick={() => addItem(i)} className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors">
+                      <button onClick={() => addItem(i)} className="flex items-center gap-1 text-[13px] text-primary hover:text-primary/80 transition-colors">
                         <Plus size={12} /> Add Item
                       </button>
                       {(meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
@@ -563,8 +564,8 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
 
                 {/* Add Meal */}
                 <button onClick={addMeal}
-                  className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors py-1">
-                  <Plus size={14} /> Add Meal
+                  className="flex items-center gap-1 text-[13px] text-primary hover:text-primary/80 mt-1">
+                  <Plus size={12} /> Add Meal
                 </button>
 
                 {/* Notes + Free Calories card */}
