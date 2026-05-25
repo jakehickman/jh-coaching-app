@@ -288,9 +288,25 @@ function MealPlanTab() {
             </Card>
           )}
 
+          {/* In-flow free calories card at bottom of page */}
           {!!treatAllowanceKcal && (
-            <div className="fixed bottom-[68px] left-0 right-0 z-20 px-4 max-w-2xl mx-auto">
-              <Card className="border-pink-500/30 bg-card/95 backdrop-blur-sm shadow-lg shadow-pink-500/10">
+            <Card className="border-pink-500/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Candy size={14} className="text-pink-400" />
+                  <p className="text-[10px] text-pink-400 uppercase tracking-wider font-semibold">
+                    {dayType === "training" ? "Training Day" : "Rest Day"} Free Calories
+                  </p>
+                </div>
+                <span className="text-lg font-bold text-pink-400">{treatAllowanceKcal} kcal</span>
+              </div>
+            </Card>
+          )}
+
+          {/* Fixed floating card above bottom nav */}
+          {!!treatAllowanceKcal && (
+            <div className="fixed bottom-[84px] left-0 right-0 z-20 px-4 max-w-2xl mx-auto pointer-events-none">
+              <Card className="border-pink-500/30 bg-card/95 backdrop-blur-sm shadow-lg shadow-pink-500/10 pointer-events-auto">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Candy size={14} className="text-pink-400" />
