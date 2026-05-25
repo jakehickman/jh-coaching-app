@@ -195,7 +195,7 @@ function MealPlanTab() {
                 ].map(({ label, value, unit, highlight }) => (
                   <div key={label} className={`flex flex-col items-center px-2 py-2 rounded-lg ${ highlight ? "bg-primary/15 border border-primary/30" : "bg-secondary/60" }`}>
                     <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                    <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{value} {unit}</span>
+                    <span className={`text-sm font-bold mt-0.5 ${ highlight ? "text-primary" : "text-foreground" }`}>{value}{highlight ? '' : ` ${unit}`}</span>
                   </div>
                 ))}
               </div>
