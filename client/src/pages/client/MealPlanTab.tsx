@@ -300,9 +300,6 @@ function MealPlanTab() {
                   </div>
                   <span className="text-lg font-bold text-pink-400">{treatAllowanceKcal} kcal</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Spend this on whatever you like — not tracked in your macros.
-                </p>
               </Card>
             </div>
           )}
