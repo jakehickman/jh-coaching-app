@@ -1304,8 +1304,13 @@ function computeCoachMonthlyVolume(
       );
       let setCount = 0;
       for (const st of completedSets) {
-        // Myo-rep sets count as 3 working sets (activation + mini-sets ≈ 3 hard sets).
-        setCount += st.myoReps ? 3 : 1;
+        // Rest-pause: activation set = 1, then every 2 mini-sets = 1 extra effective set
+        if (st.myoReps) {
+          const mini = parseInt(st.miniSets || '0') || 0;
+          setCount += 1 + Math.floor(mini / 2);
+        } else {
+          setCount += 1;
+        }
       }
       if (setCount === 0) continue;
       for (const mg of COACH_MUSCLE_KEYS) {
@@ -1397,7 +1402,7 @@ function MonthlyVolumeCoachPanel({ workoutSessions, exerciseLib, year, month }: 
                     </div>
                   );
                 })}
-              <p className="text-[10px] text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Myo-rep sets counted as 3.</p>
+              <p className="text-[10px] text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Rest-pause: activation set + 1 per 2 mini-sets.</p>
             </div>
           )}
         </div>

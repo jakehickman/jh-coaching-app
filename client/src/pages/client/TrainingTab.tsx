@@ -410,11 +410,12 @@ function computeMonthlyVolume(
       const completedSets = (ex.sets ?? []).filter(
         (st: any) => st.completed || st.weight != null || st.reps != null
       );
-      // For myo-reps: count activation set + mini-sets as individual sets
+      // For rest-pause: activation set counts as 1, then every 2 mini-sets = 1 extra set
       let setCount = 0;
       for (const st of completedSets) {
         if (st.myoReps) {
-          setCount += 1 + (parseInt(st.miniSets || '0') || 0);
+          const mini = parseInt(st.miniSets || '0') || 0;
+          setCount += 1 + Math.floor(mini / 2);
         } else {
           setCount += 1;
         }
@@ -536,7 +537,7 @@ function MonthlyVolumePanel({ sessions, exerciseLib }: { sessions: any[]; exerci
                     </div>
                   );
                 })}
-              <p className="text-[10px] text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Myo-reps counted as activation + mini-sets.</p>
+              <p className="text-[10px] text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Rest-pause: activation set + 1 per 2 mini-sets.</p>
             </div>
           )}
         </div>
@@ -1102,8 +1103,11 @@ function WorkoutLogTab() {
     setExerciseData(prev => {
       const sets = [...(prev[exName] ?? [])];
       sets[idx] = { ...sets[idx], completed: !sets[idx].completed };
-      const allDone = sets.length > 0 && sets.every(s => s.completed);
-      // Auto-collapse when all sets complete, auto-expand when any set unchecked
+      const isRestPause = !!sets[0]?.myoReps;
+      // Rest-pause: complete when set 0 is ticked; normal: complete when all sets ticked
+      const allDone = isRestPause
+        ? sets.length > 0 && sets[0].completed
+        : sets.length > 0 && sets.every(s => s.completed);
       setCollapsedExercisesRaw(c => {
         const next = { ...c, [exName]: allDone };
         if (selectedDay) saveCollapsed(sessionDate, selectedDay, next);
@@ -1444,10 +1448,19 @@ function WorkoutLogTab() {
                     )}
                   </div>
 
-                  {isCollapsed && sets.length > 0 && sets.every(s => s.completed) && (
-                    <p className="text-xs font-semibold tracking-widest text-green-500 text-left pt-0 pb-1">COMPLETE</p>
-                  )}
-                  {isCollapsed && sets.length > 0 && !sets.every(s => s.completed) && (() => {
+                  {isCollapsed && sets.length > 0 && (() => {
+                    const isRestPause = !!sets[0]?.myoReps;
+                    const isDone = isRestPause ? sets[0]?.completed : sets.every(s => s.completed);
+                    if (isDone) {
+                      return <p className="text-xs font-semibold tracking-widest text-green-500 text-left pt-0 pb-1">COMPLETE</p>;
+                    }
+                    if (isRestPause) {
+                      return (
+                        <p className="text-xs font-semibold tracking-widest text-amber-400/80 text-left pt-0 pb-1 flex items-center gap-1">
+                          <PauseCircle size={11} className="inline-block" /> REST-PAUSE
+                        </p>
+                      );
+                    }
                     const completedCount = sets.filter(s => s.completed).length;
                     return (
                       <p className="text-xs font-semibold tracking-widest text-amber-400/80 text-left pt-0 pb-1">
