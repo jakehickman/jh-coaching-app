@@ -1088,28 +1088,12 @@ function WorkoutLogTab() {
     });
   }
 
-  function autoFillWeight(exName: string, idx: number, val: string) {
-    if (!val) return;
-    setExerciseData(prev => {
-      const sets = [...(prev[exName] ?? [])];
-      let changed = false;
-      for (let i = idx + 1; i < sets.length; i++) {
-        if (sets[i].weight === "" || sets[i].weight == null) {
-          sets[i] = { ...sets[i], weight: val };
-          changed = true;
-        }
-      }
-      return changed ? { ...prev, [exName]: sets } : prev;
-    });
-  }
-
   function addSet(exName: string) {
     setExerciseData(prev => {
       const existing = prev[exName] ?? [];
-      const lastWeight = [...existing].reverse().find(s => s.weight != null && s.weight !== "")?.weight ?? "";
       return {
         ...prev,
-        [exName]: [...existing, { weight: lastWeight, reps: "", notes: "", completed: false }],
+        [exName]: [...existing, { weight: "", reps: "", notes: "", completed: false }],
       };
     });
   }
@@ -1512,7 +1496,6 @@ function WorkoutLogTab() {
                                         type="number" inputMode="decimal"
                                         value={s.weight ?? ""}
                                         onChange={e => setSet(displayName, 0, "weight", e.target.value)}
-                                        onBlur={e => autoFillWeight(displayName, 0, e.target.value)}
                                         onWheel={e => (e.target as HTMLInputElement).blur()}
                                         placeholder={prevW != null ? String(prevW) : ""}
                                         className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
@@ -1613,7 +1596,6 @@ function WorkoutLogTab() {
                                         type="number" inputMode="decimal"
                                         value={s.weight ?? ""}
                                         onChange={e => setSet(displayName, idx, "weight", e.target.value)}
-                                        onBlur={e => autoFillWeight(displayName, idx, e.target.value)}
                                         onWheel={e => (e.target as HTMLInputElement).blur()}
                                         placeholder={prevW != null ? String(prevW) : ""}
                                         className={`w-full bg-input border border-border rounded-lg px-2 py-2 text-base font-semibold text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
