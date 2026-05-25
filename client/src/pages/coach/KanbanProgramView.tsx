@@ -603,26 +603,15 @@ export default function KanbanProgramView({
         <div className="overflow-x-auto">
           <table className="text-[12px] border-collapse w-auto">
             <thead>
-              {/* Row 1: session group headers */}
+              {/* Single header row: day names + Wk */}
               <tr>
-                <th className="text-left text-[10px] uppercase tracking-wider text-muted-foreground pr-4 pb-0 font-medium" rowSpan={2}>Muscle</th>
+                <th className="text-left text-[10px] uppercase tracking-wider text-muted-foreground pr-4 pb-1.5 font-medium">Muscle</th>
                 {days.map((d, i) => (
-                  <th key={i} colSpan={2} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground px-1 pb-0 font-medium border-l border-border/20">
+                  <th key={i} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground px-3 pb-1.5 font-medium border-l border-border/20">
                     {d.name || `Day ${i + 1}`}
                   </th>
                 ))}
-                <th colSpan={2} className="text-center text-[10px] uppercase tracking-wider text-primary/70 px-1 pb-0 font-medium border-l border-border/20">Wk</th>
-              </tr>
-              {/* Row 2: Min / Max sub-headers */}
-              <tr>
-                {days.map((_, i) => (
-                  <>
-                    <th key={`${i}-min`} className="text-center text-[9px] text-muted-foreground/50 px-2 pb-1.5 font-normal border-l border-border/20">Min</th>
-                    <th key={`${i}-max`} className="text-center text-[9px] text-muted-foreground/50 px-2 pb-1.5 font-normal">Max</th>
-                  </>
-                ))}
-                <th className="text-center text-[9px] text-muted-foreground/50 px-2 pb-1.5 font-normal border-l border-border/20">Min</th>
-                <th className="text-center text-[9px] text-muted-foreground/50 px-2 pb-1.5 font-normal">Max</th>
+                <th className="text-center text-[10px] uppercase tracking-wider text-primary/70 px-3 pb-1.5 font-medium border-l border-border/20">Wk</th>
               </tr>
             </thead>
             <tbody>
@@ -631,30 +620,20 @@ export default function KanbanProgramView({
                   <td className="pr-4 py-1 text-muted-foreground/80 whitespace-nowrap font-medium text-[11px] uppercase tracking-wide">{mg.label}</td>
                   {days.map((d, i) => {
                     const range = volumeTable.dayTotals[d.name || "Unnamed"]?.[mg.key] as any;
-                    const minV = Math.round(range?.min ?? 0);
                     const maxV = Math.round(range?.max ?? 0);
                     const hasVal = maxV > 0;
                     return (
-                      <>
-                        <td key={`${i}-min`} className="text-center px-2 py-1 tabular-nums border-l border-border/20">
-                          {hasVal ? <span className="text-foreground/70">{minV}</span> : <span className="text-muted-foreground/20">&mdash;</span>}
-                        </td>
-                        <td key={`${i}-max`} className="text-center px-2 py-1 tabular-nums">
-                          {hasVal ? <span className="text-foreground/80 font-medium">{maxV}</span> : <span className="text-muted-foreground/20">&mdash;</span>}
-                        </td>
-                      </>
+                      <td key={i} className="text-center px-3 py-1 tabular-nums border-l border-border/20">
+                        {hasVal ? <span className="text-foreground/80 font-medium">{maxV}</span> : <span className="text-muted-foreground/20">&mdash;</span>}
+                      </td>
                     );
                   })}
-                  {/* Weekly totals */}
+                  {/* Weekly total */}
                   {(() => {
                     const wk = volumeTable.weeklyTotals[mg.key] as any;
-                    const wkMin = Math.round(wk?.min ?? 0);
                     const wkMax = Math.round(wk?.max ?? 0);
                     return (
-                      <>
-                        <td className="text-center px-2 py-1 tabular-nums font-semibold text-primary border-l border-border/20">{wkMin}</td>
-                        <td className="text-center px-2 py-1 tabular-nums font-semibold text-primary">{wkMax}</td>
-                      </>
+                      <td className="text-center px-3 py-1 tabular-nums font-semibold text-primary border-l border-border/20">{wkMax || <span className="text-muted-foreground/20">&mdash;</span>}</td>
                     );
                   })()}
                 </tr>
