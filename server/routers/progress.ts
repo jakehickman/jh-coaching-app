@@ -48,13 +48,17 @@ type WeekPeriod = {
 };
 
 /**
- * Build calendar weeks anchored to startDate (7-day blocks: startDate, startDate+7, …).
- * Returns newest-first, up to maxWeeks.
- * weekNumber and phaseLabel are always null here — the caller overlays phase info.
+ * Build week periods from anchorDate to today, splitting at phase boundaries.
+ * - Pre-phase periods use 7-day blocks anchored to anchorDate; weekNumber = null.
+ * - When a phase starts mid-block, the current block is closed early (ending the day
+ *   before the phase start), and a new phase-anchored 7-day block begins.
+ * - Phase periods are numbered W1, W2, … from the phase startDate.
+ * - Returns newest-first.
  */
-function buildCalendarWeeks(
-  startDate: string,
+function buildPeriodsWithPhases(
+  anchorDate: string,
   today: Date,
+  phases: Array<{ startDate: string; endDate: string | null; label: string }>,
   maxWeeks = 104,
   tzOffsetMinutes = 0
 ): WeekPeriod[] {
@@ -64,76 +68,85 @@ function buildCalendarWeeks(
   const localMs = today.getTime() + tzOffsetMinutes * 60 * 1000;
   const localToday = new Date(localMs);
   const todayStr = toDateStr(new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())));
-
-  const anchorMs = new Date(startDate + "T00:00:00Z").getTime();
   const todayMs = new Date(todayStr + "T00:00:00Z").getTime();
 
+  const anchorMs = new Date(anchorDate + "T00:00:00Z").getTime();
   if (anchorMs > todayMs) return [];
 
-  // How many complete weeks since anchor
-  const weeksSince = Math.floor((todayMs - anchorMs) / msPerWeek);
+  // Collect all phase start dates that fall after anchorDate and on/before today
+  // These are the "split points" where we restart 7-day counting.
+  const splitPoints: Array<{ ms: number; label: string }> = phases
+    .map((p) => ({ ms: new Date(p.startDate + "T00:00:00Z").getTime(), label: p.label }))
+    .filter((sp) => sp.ms > anchorMs && sp.ms <= todayMs)
+    .sort((a, b) => a.ms - b.ms);
 
-  const periods: WeekPeriod[] = [];
-
-  // Current in-progress week
-  const curWeekStartMs = anchorMs + weeksSince * msPerWeek;
-  const curWeekEndMs = curWeekStartMs + msPerWeek - msPerDay;
-  const curLabel = `${new Date(curWeekStartMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} \u2013 ${new Date(curWeekEndMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
-  periods.push({
-    weekStart: toDateStr(new Date(curWeekStartMs)),
-    weekEnd: toDateStr(new Date(curWeekEndMs)),
-    label: curLabel,
-    isInProgress: true,
-    weekNumber: null,
-    phaseLabel: null,
-  });
-
-  // Past complete weeks (newest first)
-  for (let i = 1; i <= maxWeeks && i <= weeksSince; i++) {
-    const weekStartMs = anchorMs + (weeksSince - i) * msPerWeek;
-    const weekEndMs = weekStartMs + msPerWeek - msPerDay;
-    const label = `${new Date(weekStartMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} \u2013 ${new Date(weekEndMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
-    periods.push({
-      weekStart: toDateStr(new Date(weekStartMs)),
-      weekEnd: toDateStr(new Date(weekEndMs)),
-      label,
-      isInProgress: false,
-      weekNumber: null,
-      phaseLabel: null,
-    });
+  // Build segments: each segment has its own anchor and optional phase info
+  type Segment = { anchorMs: number; phaseLabel: string | null };
+  const segments: Segment[] = [{ anchorMs, phaseLabel: null }];
+  for (const sp of splitPoints) {
+    // Find the phase that starts at this split point
+    const phase = phases.find((p) => new Date(p.startDate + "T00:00:00Z").getTime() === sp.ms);
+    segments.push({ anchorMs: sp.ms, phaseLabel: phase?.label ?? null });
   }
 
-  return periods;
-}
+  // For each segment, build periods forward from its anchor until the next segment's anchor (or today)
+  const allPeriods: WeekPeriod[] = [];
 
-/**
- * Overlay phase information onto calendar weeks.
- * For each week that falls within a phase, assign the phase's weekNumber and phaseLabel.
- * weekNumber = 1-based index within the phase (W1 = first 7 days of the phase).
- */
-function overlayPhaseInfo(
-  periods: WeekPeriod[],
-  phases: Array<{ startDate: string; endDate: string | null; label: string }>
-): WeekPeriod[] {
-  const msPerDay = 24 * 60 * 60 * 1000;
-  const msPerWeek = 7 * msPerDay;
+  for (let si = 0; si < segments.length; si++) {
+    const seg = segments[si];
+    const segEndMs = si + 1 < segments.length ? segments[si + 1].anchorMs - msPerDay : null; // last day before next segment
+    const segAnchorMs = seg.anchorMs;
 
-  return periods.map((period) => {
-    // Find the phase that contains this week's start date
-    const phase = phases.find((p) => {
-      const afterStart = period.weekStart >= p.startDate;
-      const beforeEnd = p.endDate == null || period.weekStart <= p.endDate;
-      return afterStart && beforeEnd;
-    });
+    // How many complete 7-day blocks fit in this segment before today
+    const segCeilingMs = segEndMs ?? todayMs;
+    const weeksSince = Math.floor((segCeilingMs - segAnchorMs) / msPerWeek);
 
-    if (!phase) return period;
+    // Current in-progress week for this segment (only the last segment has one)
+    const isLastSegment = si === segments.length - 1;
 
-    const phaseStartMs = new Date(phase.startDate + "T00:00:00Z").getTime();
-    const weekStartMs = new Date(period.weekStart + "T00:00:00Z").getTime();
-    const weekNumber = Math.floor((weekStartMs - phaseStartMs) / msPerWeek) + 1;
+    if (isLastSegment) {
+      // In-progress week starts at segAnchorMs + weeksSince * msPerWeek
+      const curWeekStartMs = segAnchorMs + weeksSince * msPerWeek;
+      const curWeekEndMs = curWeekStartMs + msPerWeek - msPerDay;
+      const weekNumber = seg.phaseLabel != null ? weeksSince + 1 : null;
+      const curLabel = `${new Date(curWeekStartMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} \u2013 ${new Date(curWeekEndMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+      allPeriods.push({
+        weekStart: toDateStr(new Date(curWeekStartMs)),
+        weekEnd: toDateStr(new Date(curWeekEndMs)),
+        label: curLabel,
+        isInProgress: true,
+        weekNumber,
+        phaseLabel: seg.phaseLabel,
+      });
+    }
 
-    return { ...period, weekNumber, phaseLabel: phase.label };
-  });
+    // Complete weeks in this segment (newest first within segment)
+    const completedWeeks = isLastSegment ? weeksSince : weeksSince + 1;
+    for (let i = 1; i <= completedWeeks && allPeriods.length <= maxWeeks; i++) {
+      const weekIdx = isLastSegment ? weeksSince - i : completedWeeks - i;
+      const weekStartMs = segAnchorMs + weekIdx * msPerWeek;
+      // Week end: either the day before next segment starts, or normal 7-day end
+      const normalWeekEndMs = weekStartMs + msPerWeek - msPerDay;
+      const weekEndMs = (!isLastSegment && i === 1 && segEndMs != null)
+        ? segEndMs  // last week of this segment ends the day before the next phase starts
+        : normalWeekEndMs;
+      const weekNumber = seg.phaseLabel != null ? weekIdx + 1 : null;
+      const label = `${new Date(weekStartMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} \u2013 ${new Date(weekEndMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+      allPeriods.push({
+        weekStart: toDateStr(new Date(weekStartMs)),
+        weekEnd: toDateStr(new Date(weekEndMs)),
+        label,
+        isInProgress: false,
+        weekNumber,
+        phaseLabel: seg.phaseLabel,
+      });
+    }
+  }
+
+  // Sort newest-first
+  allPeriods.sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+
+  return allPeriods;
 }
 
 export const progressRouter = router({
@@ -184,13 +197,8 @@ export const progressRouter = router({
       const anchorDate = startDateStr ?? earliestLog;
       if (!anchorDate) return { weeks: [] };
 
-      // Build plain calendar weeks from anchor date
-      let periods = buildCalendarWeeks(anchorDate, today, 104, tzOffsetMinutes);
-
-      // Overlay phase W-numbers where applicable
-      if (phases.length > 0) {
-        periods = overlayPhaseInfo(periods, phases);
-      }
+      // Build periods, splitting at phase boundaries and assigning W-numbers within phases
+      const periods = buildPeriodsWithPhases(anchorDate, today, phases, 104, tzOffsetMinutes);
 
       // Build weeks newest-first; we need the next item (older week) for deltas
       const rawWeeks = periods.map((period) => {
