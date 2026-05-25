@@ -289,17 +289,22 @@ function MealPlanTab() {
           )}
 
           {!!treatAllowanceKcal && (
-            <Card className="border-pink-500/20 bg-pink-500/5">
-              <div className="flex items-center gap-2 mb-1">
-                <Candy size={14} className="text-pink-400" />
-                <p className="text-[10px] text-pink-400 uppercase tracking-wider font-semibold">
-                  {dayType === "training" ? "Training Day" : "Rest Day"} Free Calories
+            <div className="sticky bottom-4 z-10">
+              <Card className="border-pink-500/30 bg-card/95 backdrop-blur-sm shadow-lg shadow-pink-500/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Candy size={14} className="text-pink-400" />
+                    <p className="text-[10px] text-pink-400 uppercase tracking-wider font-semibold">
+                      {dayType === "training" ? "Training Day" : "Rest Day"} Free Calories
+                    </p>
+                  </div>
+                  <span className="text-lg font-bold text-pink-400">{treatAllowanceKcal} kcal</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Spend this on whatever you like — not tracked in your macros.
                 </p>
-              </div>
-              <p className="text-sm text-foreground">
-                You have <span className="font-bold text-pink-400">{treatAllowanceKcal} kcal</span> to spend on whatever you like.
-              </p>
-            </Card>
+              </Card>
+            </div>
           )}
         </div>
       )}
