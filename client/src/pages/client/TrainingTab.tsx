@@ -1883,11 +1883,6 @@ function WorkoutLogTab() {
         </div>
       )}
 
-      {/* Monthly volume summary */}
-      {sessions.length > 0 && (
-        <MonthlyVolumePanel sessions={sessions} exerciseLib={exerciseLib} />
-      )}
-
       {/* Past sessions ─ accordion timeline */}
       {sessions.length > 0 && (
         <div className={selectedDay ? "pb-24" : ""}>
