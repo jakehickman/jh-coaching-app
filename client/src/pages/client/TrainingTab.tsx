@@ -1102,6 +1102,13 @@ function WorkoutLogTab() {
     setExerciseData(prev => {
       const sets = [...(prev[exName] ?? [])];
       sets[idx] = { ...sets[idx], completed: !sets[idx].completed };
+      const allDone = sets.length > 0 && sets.every(s => s.completed);
+      // Auto-collapse when all sets complete, auto-expand when any set unchecked
+      setCollapsedExercisesRaw(c => {
+        const next = { ...c, [exName]: allDone };
+        if (selectedDay) saveCollapsed(sessionDate, selectedDay, next);
+        return next;
+      });
       return { ...prev, [exName]: sets };
     });
   }
