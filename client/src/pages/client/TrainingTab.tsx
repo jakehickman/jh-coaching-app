@@ -1329,15 +1329,7 @@ function WorkoutLogTab() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="text-base font-semibold text-foreground leading-snug">{displayName}</p>
-                          {subName && (
-                            <button
-                              onClick={e => { e.stopPropagation(); revertSubstitution(ex.name); }}
-                              title={`Revert to ${ex.name}`}
-                              className="text-[10px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded hover:bg-amber-500/30 transition-colors flex items-center gap-0.5"
-                            >
-                              SUB <X size={9} />
-                            </button>
-                          )}
+
                           {exEmbedUrl && (
                             <button
                               onClick={e => { e.stopPropagation(); setVideoModal({ name: displayName, embedUrl: exEmbedUrl }); }}
@@ -1430,9 +1422,20 @@ function WorkoutLogTab() {
                             <History size={15} />
                           </button>
                           <button
-                            onClick={e => { e.stopPropagation(); setSubPicker({ originalName: ex.name }); setSubSearch(""); }}
-                            title="Substitute exercise"
-                            className="flex items-center justify-center w-9 h-9 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (subName) {
+                                revertSubstitution(ex.name);
+                              } else {
+                                setSubPicker({ originalName: ex.name }); setSubSearch("");
+                              }
+                            }}
+                            title={subName ? `Revert to ${ex.name}` : "Substitute exercise"}
+                            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
+                              subName
+                                ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
+                                : "bg-secondary text-muted-foreground hover:text-foreground"
+                            }`}
                           >
                             <Shuffle size={15} />
                           </button>
