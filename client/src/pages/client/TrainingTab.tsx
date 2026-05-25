@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon, BarChart2 } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon, BarChart2, PauseCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -1526,25 +1526,25 @@ function WorkoutLogTab() {
                                         }`}
                                       />
                                     </div>
-                                    {/* Myo-reps toggle — small M button */}
+                                    {/* Rest-pause toggle — icon button */}
                                     <button
                                       onClick={() => setExerciseData(prev => {
                                         const updated = [...(prev[displayName] ?? [])];
                                         updated[0] = { ...updated[0], myoReps: !updated[0].myoReps, miniSets: '' };
                                         return { ...prev, [displayName]: updated };
                                       })}
-                                      title={isMyoReps ? 'Disable myo-reps' : 'Enable myo-reps'}
-                                      className={`w-6 flex-shrink-0 flex items-center justify-center rounded text-[10px] font-bold transition-colors ${
+                                      title={isMyoReps ? 'Disable rest-pause' : 'Enable rest-pause'}
+                                      className={`w-6 flex-shrink-0 flex items-center justify-center rounded transition-colors ${
                                         isMyoReps ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
                                       }`}
                                     >
-                                      M
+                                      <PauseCircle size={14} />
                                     </button>
                                   </div>
                                    {/* Mini-set count row — shown when myo-reps is on */}
                                    {isMyoReps && (
                                      <div className="mt-2 ml-11 mr-8 flex items-center justify-between px-1 py-1">
-                                       <span className="text-xs text-muted-foreground">Mini-sets</span>
+                                       <span className="text-xs text-muted-foreground">Rest-pause sets</span>
                                        <div className="flex items-center gap-3">
                                          <button
                                            type="button"
