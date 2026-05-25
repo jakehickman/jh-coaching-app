@@ -289,7 +289,7 @@ function MealPlanTab() {
           )}
 
           {!!treatAllowanceKcal && (
-            <div className="sticky bottom-4 z-10">
+            <div className="fixed bottom-[68px] left-0 right-0 z-20 px-4 max-w-2xl mx-auto">
               <Card className="border-pink-500/30 bg-card/95 backdrop-blur-sm shadow-lg shadow-pink-500/10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
