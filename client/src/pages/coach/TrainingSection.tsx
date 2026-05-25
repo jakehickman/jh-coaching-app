@@ -181,16 +181,16 @@ function SortableExerciseRow({
 
   return (
     <div ref={setNodeRef} style={style} className="space-y-1">
-      <div className="grid grid-cols-12 gap-1 items-center">
+      <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-1 items-center">
         <div
           {...attributes}
           {...listeners}
-          className="col-span-1 flex justify-center text-muted-foreground cursor-grab active:cursor-grabbing hover:text-foreground touch-none"
+          className="flex justify-center text-muted-foreground cursor-grab active:cursor-grabbing hover:text-foreground touch-none px-0.5"
         >
           <GripVertical size={13} />
         </div>
         {/* Searchable exercise dropdown */}
-        <div className="col-span-6 relative">
+        <div className="relative min-w-0">
           <input
             type="text"
             data-day={dayIdx}
@@ -234,19 +234,19 @@ function SortableExerciseRow({
           value={ex.sets}
           onChange={e => updateExercise(dayIdx, exIdx, "sets", e.target.value)}
           onKeyDown={handleSetsKeyDown}
-          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
+          className="w-10 bg-secondary border border-border rounded px-1.5 py-1.5 text-[13px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary" />
         <select
           ref={repsRef as any}
           value={REPS_OPTIONS.includes(ex.reps) ? ex.reps : "__custom__"}
           onChange={e => {
             if (e.target.value !== "__custom__") updateExercise(dayIdx, exIdx, "reps", e.target.value);
           }}
-          className="col-span-2 bg-secondary border border-border rounded px-2 py-1.5 text-[13px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer">
+          className="w-16 bg-secondary border border-border rounded px-1 py-1.5 text-[13px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer">
           {REPS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
           {!REPS_OPTIONS.includes(ex.reps) && ex.reps && <option value="__custom__">{ex.reps}</option>}
           {!ex.reps && <option value="__custom__">—</option>}
         </select>
-        <div className="col-span-1 flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-1">
           <button
             onClick={() => setShowNotes(n => !n)}
             title="Toggle notes"

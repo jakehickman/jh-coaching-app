@@ -301,7 +301,7 @@ function KanbanColumn({
 
   return (
     <div
-      className={`flex flex-col bg-card border rounded-xl transition-all flex-shrink-0 w-56 xl:w-64 ${
+      className={`flex flex-col bg-card border rounded-xl transition-all flex-shrink-0 w-64 xl:w-72 ${
         isDragTarget ? "border-primary/60 ring-1 ring-primary/30" : "border-border"
       }`}
       style={{ maxHeight: "calc(100vh - 260px)" }}
