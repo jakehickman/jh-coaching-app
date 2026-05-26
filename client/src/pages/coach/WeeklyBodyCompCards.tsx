@@ -162,7 +162,7 @@ function WeekCard({ week, prevWeek }: { week: Week; prevWeek: Week | null }) {
               <span className="text-[10px] font-medium text-primary bg-primary/10 rounded px-1.5 py-0.5">In Progress</span>
             )}
           </div>
-          <span className="text-[11px] text-muted-foreground">{week.label}</span>
+          <span className="text-sm font-semibold text-foreground">{week.label}</span>
         </div>
 
         {/* Metrics */}
