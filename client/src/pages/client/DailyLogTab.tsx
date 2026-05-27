@@ -35,7 +35,8 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
     allDays.push(iso);
   }
   const loggedDays = allDays.filter(iso => !!logMap[iso]);
-  const days = showAll ? loggedDays : loggedDays.slice(0, 7);
+  // Show all days (including empty ones) so gaps are visible
+  const days = showAll ? allDays : allDays.slice(0, 14);
 
   function fmtDay(iso: string) {
     const [y, m, d] = iso.split('-');
@@ -129,14 +130,14 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
           </div>
         );
       })}
-      {loggedDays.length > 7 && (
+      {allDays.length > 14 && (
         <button
           onClick={() => setShowAll(v => !v)}
           className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted-foreground hover:text-foreground border-t border-border hover:bg-muted/20 transition-colors"
         >
           {showAll
             ? <><ChevronUp className="w-3.5 h-3.5" /> Show less</>
-            : <><ChevronDown className="w-3.5 h-3.5" /> View more ({loggedDays.length - 7} older entries)</>}
+            : <><ChevronDown className="w-3.5 h-3.5" /> View more ({allDays.length - 14} older days)</>}
         </button>
       )}
     </div>
