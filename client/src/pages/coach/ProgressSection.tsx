@@ -1190,7 +1190,10 @@ function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: an
     acc + (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null).length, 0);
   const hasIncomplete = exercises.some((ex: any) => {
     const sets = ex.sets ?? [];
-    return sets.length > 0 && sets.filter((s: any) => s.completed).length < sets.length;
+    if (sets.length === 0) return false;
+    const isMiniSets = !!sets[0]?.myoReps;
+    if (isMiniSets) return !sets[0]?.completed;
+    return sets.filter((s: any) => s.completed).length < sets.length;
   });
 
   return (
@@ -1526,7 +1529,10 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
                   acc + (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null).length, 0);
                 hasIncomplete = exercises.some((ex: any) => {
                   const sets = ex.sets ?? [];
-                  return sets.length > 0 && sets.filter((s: any) => s.completed).length < sets.length;
+                  if (sets.length === 0) return false;
+                  const isMiniSets = !!sets[0]?.myoReps;
+                  if (isMiniSets) return !sets[0]?.completed;
+                  return sets.filter((s: any) => s.completed).length < sets.length;
                 });
               }
 
