@@ -1457,7 +1457,7 @@ function WorkoutLogTab() {
                     if (isRestPause) {
                       return (
                         <p className="text-xs font-semibold tracking-widest text-amber-400/80 text-left pt-0 pb-1 flex items-center gap-1">
-                          <Zap size={11} className="inline-block" /> REST-PAUSE
+                          <Zap size={11} className="inline-block" /> MINI SETS
                         </p>
                       );
                     }
@@ -1546,7 +1546,7 @@ function WorkoutLogTab() {
                                         updated[0] = { ...updated[0], myoReps: !updated[0].myoReps, miniSets: '' };
                                         return { ...prev, [displayName]: updated };
                                       })}
-                                      title={isMyoReps ? 'Disable rest-pause' : 'Enable rest-pause'}
+                                      title={isMyoReps ? 'Disable mini sets' : 'Enable mini sets'}
                                       className={`w-6 flex-shrink-0 flex items-center justify-center rounded transition-colors ${
                                         isMyoReps ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
                                       }`}
@@ -1557,7 +1557,7 @@ function WorkoutLogTab() {
                                    {/* Mini-set count row — shown when myo-reps is on */}
                                    {isMyoReps && (
                                      <div className="mt-2 ml-11 mr-8 flex items-center justify-between px-1 py-1">
-                                       <span className="text-xs text-muted-foreground">Rest-pause sets</span>
+                                       <span className="text-xs text-muted-foreground">Mini sets</span>
                                        <div className="flex items-center gap-3">
                                          <button
                                            type="button"
