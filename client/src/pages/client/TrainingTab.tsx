@@ -1452,7 +1452,26 @@ function WorkoutLogTab() {
                     const isRestPause = !!sets[0]?.myoReps;
                     const isDone = isRestPause ? sets[0]?.completed : sets.every(s => s.completed);
                     if (isDone) {
-                      return <p className="text-xs font-semibold tracking-widest text-green-500 text-left pt-0 pb-1">COMPLETE</p>;
+                      // Find the set with the highest weight (or first completed set)
+                      const completedSets = sets.filter(s => s.completed && s.weight !== '' && s.weight != null);
+                      const topSet = completedSets.reduce<typeof sets[0] | null>((best, s) => {
+                        if (!best) return s;
+                        return parseFloat(String(s.weight)) >= parseFloat(String(best.weight)) ? s : best;
+                      }, null);
+                      const totalDone = sets.filter(s => s.completed).length;
+                      return (
+                        <div className="flex items-center gap-3 pb-1">
+                          <p className="text-xs font-semibold tracking-widest text-green-500">COMPLETE</p>
+                          {topSet && (
+                            <p className="text-xs text-muted-foreground">
+                              {topSet.weight}kg × {topSet.reps}
+                              {!isRestPause && totalDone > 0 && (
+                                <span className="ml-2 text-muted-foreground/60">· {totalDone} {totalDone === 1 ? 'set' : 'sets'}</span>
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      );
                     }
                     if (isRestPause) {
                       return (
