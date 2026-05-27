@@ -1282,7 +1282,10 @@ function WorkoutLogTab() {
           const subName = substitutions[ex.name];
           const displayName = subName ?? ex.name;
           const sets = exerciseData[displayName] ?? [];
-          return sets.length > 0 && sets.every(s => s.completed);
+          if (sets.length === 0) return false;
+          // Mini-sets: complete when activation set (index 0) is ticked
+          const isMinSets = !!sets[0]?.myoReps;
+          return isMinSets ? !!sets[0]?.completed : sets.every(s => s.completed);
         }).length;
         const progressPct = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
 
