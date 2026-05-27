@@ -1197,7 +1197,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: an
   });
 
   return (
-    <div className="w-72 flex-shrink-0 border border-border rounded-xl bg-card overflow-hidden sticky top-4">
+    <div className="w-80 flex-shrink-0 border border-border rounded-xl bg-card overflow-hidden sticky top-4">
       {/* Header */}
       <div className="flex items-start justify-between px-4 py-3 border-b border-border bg-muted/30">
         <div>
@@ -1237,10 +1237,10 @@ function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: an
                 {onExerciseClick ? (
                   <button
                     onClick={() => onExerciseClick(ex.name)}
-                    className="text-xs font-semibold text-foreground flex-1 truncate text-left hover:text-primary hover:underline transition-colors"
+                    className="text-xs font-semibold text-foreground flex-1 min-w-0 text-left hover:text-primary hover:underline transition-colors"
                   >{ex.name}</button>
                 ) : (
-                  <p className="text-xs font-semibold text-foreground flex-1 truncate">{ex.name}</p>
+                  <p className="text-xs font-semibold text-foreground flex-1 min-w-0">{ex.name}</p>
                 )}
                 {isMiniSets && (
                   <Zap size={10} className="text-amber-400 shrink-0" />
