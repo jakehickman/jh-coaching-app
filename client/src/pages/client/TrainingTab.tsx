@@ -1468,6 +1468,9 @@ function WorkoutLogTab() {
                           {topSet && (
                             <p className="text-xs text-muted-foreground">
                               {topSet.weight}kg × {topSet.reps}
+                              {isRestPause && sets[0]?.miniSets && String(sets[0].miniSets) !== '' && (
+                                <span className="ml-2 text-muted-foreground/60">· {sets[0].miniSets} mini sets</span>
+                              )}
                               {!isRestPause && totalDone > 0 && (
                                 <span className="ml-2 text-muted-foreground/60">· {totalDone} {totalDone === 1 ? 'set' : 'sets'}</span>
                               )}
