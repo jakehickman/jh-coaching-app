@@ -7,7 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus, Activity, History, BarChart2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus, Activity, History, BarChart2, Zap } from "lucide-react";
 import { useSearch, useLocation } from "wouter";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
@@ -1219,15 +1219,19 @@ function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: an
           {exercises.map((ex: any, i: number) => {
             const allSets: any[] = ex.sets ?? [];
             const totalExSets = allSets.length;
+            const isMiniSets = !!allSets[0]?.myoReps;
             const completedSets = allSets.filter((s: any) => s.completed || s.weight != null || s.reps != null);
             const isSkipped = completedSets.length === 0 && totalExSets > 0;
             const firstSet = completedSets[0];
             const setStr = firstSet
               ? `${firstSet.weight != null ? firstSet.weight + ' kg' : '—'} × ${firstSet.reps != null ? firstSet.reps : '—'}`
               : null;
+            const miniSetsCount = isMiniSets && allSets[0]?.miniSets && String(allSets[0].miniSets) !== '' ? allSets[0].miniSets : null;
             const setsLabel = isSkipped
               ? 'skipped'
-              : `${completedSets.length} set${completedSets.length !== 1 ? 's' : ''}`;
+              : isMiniSets
+                ? miniSetsCount ? `1 + ${miniSetsCount} mini sets` : '1 mini set'
+                : `${completedSets.length} set${completedSets.length !== 1 ? 's' : ''}`;
             return (
               <div key={i} className="flex items-center gap-2 py-1.5 border-b border-border/30 last:border-0">
                 {onExerciseClick ? (
@@ -1238,13 +1242,16 @@ function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: an
                 ) : (
                   <p className="text-xs font-semibold text-foreground flex-1 truncate">{ex.name}</p>
                 )}
+                {isMiniSets && (
+                  <Zap size={10} className="text-amber-400 shrink-0" />
+                )}
                 {ex.substitutedFor && (
                   <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded shrink-0">SUB</span>
                 )}
                 {setStr && (
                   <span className="text-[11px] text-muted-foreground shrink-0">{setStr}</span>
                 )}
-                <span className={`text-[11px] shrink-0 ${isSkipped ? 'text-amber-400/80' : 'text-muted-foreground/60'}`}>
+                <span className={`text-[11px] shrink-0 ${isSkipped ? 'text-amber-400/80' : isMiniSets ? 'text-amber-400/70' : 'text-muted-foreground/60'}`}>
                   {setsLabel}
                 </span>
               </div>
