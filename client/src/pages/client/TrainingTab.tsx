@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon, BarChart2, PauseCircle } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon, BarChart2, Zap } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -1457,7 +1457,7 @@ function WorkoutLogTab() {
                     if (isRestPause) {
                       return (
                         <p className="text-xs font-semibold tracking-widest text-amber-400/80 text-left pt-0 pb-1 flex items-center gap-1">
-                          <PauseCircle size={11} className="inline-block" /> REST-PAUSE
+                          <Zap size={11} className="inline-block" /> REST-PAUSE
                         </p>
                       );
                     }
@@ -1551,7 +1551,7 @@ function WorkoutLogTab() {
                                         isMyoReps ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
                                       }`}
                                     >
-                                      <PauseCircle size={14} />
+                                      <Zap size={14} />
                                     </button>
                                   </div>
                                    {/* Mini-set count row — shown when myo-reps is on */}
