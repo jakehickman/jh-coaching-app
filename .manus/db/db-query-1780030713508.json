@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, programName, JSON_LENGTH(days) as day_count FROM training_programs WHERE userId = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT id, programName, JSON_LENGTH(days) as day_count FROM training_programs WHERE userId = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "programName": "NULL",
+      "day_count": "4"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tprogramName\tday_count\n1\tNULL\t4\n",
+  "stderr": "",
+  "execution_time_ms": 1840
+}

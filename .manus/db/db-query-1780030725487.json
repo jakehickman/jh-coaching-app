@@ -1,0 +1,13 @@
+{
+  "query": "SELECT JSON_EXTRACT(days, '$[0]') as day0 FROM training_programs WHERE userId = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT JSON_EXTRACT(days, '$[0]') as day0 FROM training_programs WHERE userId = 1;",
+  "rows": [
+    {
+      "day0": "{\"exercises\": [{\"name\": \"Flat Smith Press\", \"notes\": \"\", \"reps\": \"4–6\", \"sets\": \"3\"}, {\"name\": \"High Incline DB Press\", \"notes\": \"\", \"reps\": \"7–9\", \"sets\": \"3\"}, {\"name\": \"Low Incline Cable Fly\", \"notes\": \"\", \"reps\": \"10–12\", \"sets\": \"3\"}, {\"name\": \"Cable Overhead Extension\", \"notes\": \"\", \"reps\": \"10–12\", \"sets\": \"3\"}, {\"name\": \"Leg Extension\", \"notes\": \"\", \"reps\": \"10–12\", \"sets\": \"3\"}, {\"name\": \"Smith Squat\", \"notes\": \"\", \"reps\": \"4–6\", \"sets\": \"3\"}, {\"name\": \"1-Leg Standing Calf Raise\", \"notes\": \"\", \"reps\": \"10–12\", \"sets\": \"3\"}, {\"name\": \"45° Side Lying DB Lateral Raise\", \"notes\": \"\", \"reps\": \"12–15\", \"sets\": \"3\"}], \"focus\": \"\", \"name\": \"A\"}"
+    }
+  ],
+  "messages": [],
+  "stdout": "day0\n{\"exercises\": [{\"name\": \"Flat Smith Press\", \"notes\": \"\", \"reps\": \"4–6\", \"sets\": \"3\"}, {\"name\": \"High Incline DB Press\", \"notes\": \"\", \"reps\": \"7–9\", \"sets\": \"3\"}, {\"name\": \"Low Incline Cable Fly\", \"notes\": \"\", \"reps\": \"10–12\", \"sets\": \"3\"}, {\"name\": \"Cable Overhead Extension\", \"notes\": \"\", \"reps\": \"10–12\", \"sets\": \"3\"}, {\"name\": \"Leg Extension\", \"notes\": \"\", \"reps\": \"10–12\", \"sets\": \"3\"}, {\"name\": \"Smith Squat\", \"notes\": \"\", \"reps\": \"4–6\", \"sets\": \"3\"}, {\"name\": \"1-Leg Standing Calf Raise\", \"notes\": \"\", \"reps\": \"10–12\", \"sets\": \"3\"}, {\"name\": \"45° Side Lying DB Lateral Raise\", \"notes\": \"\", \"reps\": \"12–15\", \"sets\": \"3\"}], \"focus\": \"\", \"name\": \"A\"}\n",
+  "stderr": "",
+  "execution_time_ms": 1829
+}

@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, JSON_TYPE(days) as days_type, CHAR_LENGTH(days) as days_len FROM training_programs WHERE userId = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT id, JSON_TYPE(days) as days_type, CHAR_LENGTH(days) as days_len FROM training_programs WHERE userId = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "days_type": "ARRAY",
+      "days_len": "2547"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdays_type\tdays_len\n1\tARRAY\t2547\n",
+  "stderr": "",
+  "execution_time_ms": 2060
+}

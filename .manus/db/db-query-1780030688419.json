@@ -1,0 +1,34 @@
+{
+  "query": "SHOW TABLES LIKE '%training%'; SHOW TABLES LIKE '%session%'; SHOW TABLES LIKE '%workout%'; SHOW TABLES LIKE '%exercise%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SHOW TABLES LIKE '%training%'; SHOW TABLES LIKE '%session%'; SHOW TABLES LIKE '%workout%'; SHOW TABLES LIKE '%exercise%';",
+  "rows": [
+    {
+      "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%training%)": "training_programs"
+    },
+    {
+      "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%training%)": "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%session%)"
+    },
+    {
+      "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%training%)": "meso_sessions"
+    },
+    {
+      "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%training%)": "workout_sessions"
+    },
+    {
+      "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%training%)": "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%workout%)"
+    },
+    {
+      "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%training%)": "workout_sessions"
+    },
+    {
+      "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%training%)": "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%exercise%)"
+    },
+    {
+      "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%training%)": "exercise_library"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_HZf6zqYa94nKHY3YxXLHa5 (%training%)\ntraining_programs\nTables_in_HZf6zqYa94nKHY3YxXLHa5 (%session%)\nmeso_sessions\nworkout_sessions\nTables_in_HZf6zqYa94nKHY3YxXLHa5 (%workout%)\nworkout_sessions\nTables_in_HZf6zqYa94nKHY3YxXLHa5 (%exercise%)\nexercise_library\n",
+  "stderr": "",
+  "execution_time_ms": 2372
+}

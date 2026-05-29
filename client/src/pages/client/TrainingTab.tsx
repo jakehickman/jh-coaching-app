@@ -265,7 +265,7 @@ function PresetSelector({
       <PopoverContent
         align="start"
         sideOffset={6}
-        className="w-64 p-0 bg-[#1a1a1a] border border-border rounded-xl shadow-xl overflow-hidden"
+        className="w-72 p-0 bg-[#1a1a1a] border border-border rounded-xl shadow-xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Preset list */}
@@ -276,40 +276,40 @@ function PresetSelector({
           {(presetList as any[]).map((p: any) => (
             <div key={p.id}>
               {renamingId === p.id ? (
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
+                <div className="flex items-center gap-2 px-3 py-3 border-b border-border/50">
                   <input
                     autoFocus
                     type="text"
                     value={renameValue}
                     onChange={e => setRenameValue(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") setRenamingId(null); }}
-                    className="flex-1 bg-secondary border border-border rounded-md px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="flex-1 bg-secondary border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
-                  <button onClick={commitRename} className="text-primary"><Check size={13} /></button>
-                  <button onClick={() => setRenamingId(null)} className="text-muted-foreground"><X size={13} /></button>
+                  <button onClick={commitRename} className="p-2 text-primary"><Check size={16} /></button>
+                  <button onClick={() => setRenamingId(null)} className="p-2 text-muted-foreground"><X size={16} /></button>
                 </div>
               ) : (
                 <div
-                  className={`flex items-center gap-2 px-3 py-2.5 border-b border-border/50 cursor-pointer transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-3.5 border-b border-border/50 cursor-pointer transition-colors ${
                     currentPreset === p.presetName ? "bg-primary/10" : "hover:bg-white/5 active:bg-white/10"
                   }`}
                   onClick={() => handlePickPreset(p)}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm truncate ${ currentPreset === p.presetName ? "text-primary font-medium" : "text-foreground" }`}>{p.presetName}</p>
+                    <p className={`text-base truncate ${ currentPreset === p.presetName ? "text-primary font-medium" : "text-foreground" }`}>{p.presetName}</p>
                   </div>
-                  <div className="flex items-center gap-0.5 flex-shrink-0">
-                    {currentPreset === p.presetName && <Check size={13} className="text-primary mr-0.5" />}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {currentPreset === p.presetName && <Check size={15} className="text-primary mr-1" />}
                     <button
                       onClick={e => { e.stopPropagation(); setRenamingId(p.id); setRenamingFrom(p.presetName); setRenameValue(p.presetName); }}
-                      className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors"
+                      className="p-2.5 rounded text-muted-foreground hover:text-foreground transition-colors"
                       title="Rename"
-                    ><Pencil size={12} /></button>
+                    ><Pencil size={15} /></button>
                     <button
                       onClick={e => { e.stopPropagation(); handleDeletePreset(p); }}
-                      className="p-1.5 rounded text-muted-foreground hover:text-red-400 transition-colors"
+                      className="p-2.5 rounded text-muted-foreground hover:text-red-400 transition-colors"
                       title="Delete"
-                    ><Trash2 size={12} /></button>
+                    ><Trash2 size={15} /></button>
                   </div>
                 </div>
               )}
@@ -327,7 +327,7 @@ function PresetSelector({
               onChange={e => onSettingsChange(e.target.value)}
               onBlur={e => handleSettingsBlur(e.target.value)}
               placeholder="e.g. Seat 3, pin 8"
-              className="w-full bg-secondary border border-border rounded-md px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full bg-secondary border border-border rounded-md px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
         )}
@@ -335,7 +335,7 @@ function PresetSelector({
         {/* Add new machine */}
         <div className="border-t border-border/50">
           {addingNew ? (
-            <div className="flex items-center gap-2 px-3 py-2">
+            <div className="flex items-center gap-2 px-3 py-3">
               <input
                 ref={addInputRef}
                 autoFocus
@@ -344,17 +344,17 @@ function PresetSelector({
                 onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") saveNewPreset(); if (e.key === "Escape") { setAddingNew(false); setNewName(""); } }}
                 placeholder="Machine name…"
-                className="flex-1 bg-secondary border border-border rounded-md px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                className="flex-1 bg-secondary border border-border rounded-md px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
-              <button onClick={saveNewPreset} className="text-primary"><Check size={14} /></button>
-              <button onClick={() => { setAddingNew(false); setNewName(""); }} className="text-muted-foreground"><X size={14} /></button>
+              <button onClick={saveNewPreset} className="p-2 text-primary"><Check size={16} /></button>
+              <button onClick={() => { setAddingNew(false); setNewName(""); }} className="p-2 text-muted-foreground"><X size={16} /></button>
             </div>
           ) : (
             <button
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-primary text-xs hover:bg-white/5 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-4 text-primary text-sm hover:bg-white/5 transition-colors"
               onClick={() => { setAddingNew(true); setTimeout(() => addInputRef.current?.focus(), 50); }}
             >
-              <Plus size={13} />
+              <Plus size={16} />
               Add machine
             </button>
           )}
