@@ -1270,7 +1270,10 @@ function WorkoutLogTab() {
         // (different movement / load range). We only record an entry for the name under which
         // the exercise was actually performed (ex.name), never under ex.substitutedFor.
         const prevExMap: Record<string, Array<{ weight: number | null; reps: number | null }>> = {};
-        const prevMachinePresetMap: Record<string, string> = {};
+        // Use presetId (stable FK) for matching — immune to preset renames.
+        // Fall back to name string only for legacy sessions that predate presetId.
+        const prevMachinePresetIdMap: Record<string, number> = {};
+        const prevMachinePresetNameMap: Record<string, string> = {};
         for (const s of pastSessions) {
           for (const ex of (s.exercises as any[])) {
             // Only record the first (most recent) occurrence that has actual set data.
@@ -1280,9 +1283,10 @@ function WorkoutLogTab() {
               const filteredSets = (ex.sets ?? []).filter((set: any) => set.weight != null || set.reps != null);
               if (filteredSets.length > 0) {
                 prevExMap[ex.name] = filteredSets;
-                // Record the preset from the SAME session as the performance data
-                const preset = ex.machinePreset || ex.equipmentDetails || null;
-                if (preset) prevMachinePresetMap[ex.name] = preset;
+                // Record the preset ID (preferred) and name (fallback) from the same session
+                if (ex.presetId) prevMachinePresetIdMap[ex.name] = ex.presetId;
+                const presetName = ex.machinePreset || ex.equipmentDetails || null;
+                if (presetName) prevMachinePresetNameMap[ex.name] = presetName;
               }
             }
           }
@@ -1329,13 +1333,21 @@ function WorkoutLogTab() {
               const exVideoUrl = videoMap[displayName] ?? videoMap[ex.name];
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
               const currentPreset = machinePreset[displayName] ?? "";
+              const currentPresetId = machinePresetId[displayName] ?? null;
               const currentSettings = machineSettings[displayName] ?? "";
               const hasEquipment = !!(equipmentDetails[displayName]?.trim()) || !!currentPreset;
-              // Only show Last figures when the previous session used the same machine preset.
-              // If either side has a preset and they don't match, suppress Last to avoid
-              // comparing numbers from different machines.
-              const prevPreset = prevMachinePresetMap[displayName] ?? prevMachinePresetMap[ex.name] ?? "";
-              const presetMatches = (!currentPreset && !prevPreset) || (currentPreset === prevPreset);
+              // Match by presetId (stable FK) when available; fall back to name string for
+              // legacy sessions saved before presetId was introduced.
+              const prevPresetId = prevMachinePresetIdMap[displayName] ?? prevMachinePresetIdMap[ex.name] ?? null;
+              const prevPresetName = prevMachinePresetNameMap[displayName] ?? prevMachinePresetNameMap[ex.name] ?? "";
+              const presetMatches = (() => {
+                // Neither side has a preset — always show last performance
+                if (!currentPreset && !prevPresetName) return true;
+                // Both have IDs — use stable ID comparison
+                if (currentPresetId && prevPresetId) return currentPresetId === prevPresetId;
+                // One or both sides lack an ID — fall back to name comparison
+                return currentPreset === prevPresetName;
+              })();
               const prevSets = presetMatches ? rawPrevSets : [];
               const isSheetOpen = !!equipmentOpen[displayName];
               return (
