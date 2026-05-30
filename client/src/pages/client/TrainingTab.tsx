@@ -1059,11 +1059,13 @@ function WorkoutLogTab() {
       .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)))[0];
     const prefillEquipment: Record<string, string> = {};
     const prefillMachinePreset: Record<string, string> = {};
+    const prefillMachinePresetId: Record<string, number> = {};
     const prefillMachineSettings: Record<string, string> = {};
     if (prevForDay) {
       for (const ex of (prevForDay.exercises as any[])) {
         if (ex.equipmentDetails) prefillEquipment[ex.name] = ex.equipmentDetails;
         if (ex.machinePreset) prefillMachinePreset[ex.name] = ex.machinePreset;
+        if (ex.presetId) prefillMachinePresetId[ex.name] = ex.presetId;
         if (ex.machineSettings) prefillMachineSettings[ex.name] = ex.machineSettings;
       }
     }
@@ -1071,6 +1073,7 @@ function WorkoutLogTab() {
     setSessionNotes('');
     setEquipmentDetails(prefillEquipment);
     setMachinePreset(prefillMachinePreset);
+    setMachinePresetId(prefillMachinePresetId);
     setMachineSettings(prefillMachineSettings);
     setExerciseNotes({});
     setSubstitutions({});
@@ -1265,29 +1268,29 @@ function WorkoutLogTab() {
         const pastSessions = [...sessions]
           .filter(s => toLocalDateStr(s.sessionDate) < sessionDate)
           .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)));
-        // For last-performance we look up per exercise name across all past sessions.
-        // A substitution's sets should NOT count as last performance for the original exercise
-        // (different movement / load range). We only record an entry for the name under which
-        // the exercise was actually performed (ex.name), never under ex.substitutedFor.
-        const prevExMap: Record<string, Array<{ weight: number | null; reps: number | null }>> = {};
-        // Use presetId (stable FK) for matching — immune to preset renames.
-        // Fall back to name string only for legacy sessions that predate presetId.
-        const prevMachinePresetIdMap: Record<string, number> = {};
-        const prevMachinePresetNameMap: Record<string, string> = {};
+        // For last-performance we need to find, per exercise, the most recent session
+        // where the same machine preset was used (so switching machines shows the last
+        // numbers on THAT machine, not the last numbers on any machine).
+        //
+        // Build a flat list of all past exercise entries with set data, newest first.
+        // At render time we scan this list to find the best match for each exercise.
+        type PastExEntry = {
+          name: string;
+          sets: Array<{ weight: number | null; reps: number | null }>;
+          presetId: number | null;
+          presetName: string;
+        };
+        const allPastEntries: PastExEntry[] = [];
         for (const s of pastSessions) {
           for (const ex of (s.exercises as any[])) {
-            // Only record the first (most recent) occurrence that has actual set data.
-            // Skip sessions where the exercise was present but no sets were logged,
-            // so the lookback continues to find the last session with real numbers.
-            if (!(ex.name in prevExMap)) {
-              const filteredSets = (ex.sets ?? []).filter((set: any) => set.weight != null || set.reps != null);
-              if (filteredSets.length > 0) {
-                prevExMap[ex.name] = filteredSets;
-                // Record the preset ID (preferred) and name (fallback) from the same session
-                if (ex.presetId) prevMachinePresetIdMap[ex.name] = ex.presetId;
-                const presetName = ex.machinePreset || ex.equipmentDetails || null;
-                if (presetName) prevMachinePresetNameMap[ex.name] = presetName;
-              }
+            const filteredSets = (ex.sets ?? []).filter((set: any) => set.weight != null || set.reps != null);
+            if (filteredSets.length > 0) {
+              allPastEntries.push({
+                name: ex.name,
+                sets: filteredSets,
+                presetId: ex.presetId ?? null,
+                presetName: ex.machinePreset || ex.equipmentDetails || "",
+              });
             }
           }
         }
@@ -1325,30 +1328,35 @@ function WorkoutLogTab() {
               const displayName = subName ?? ex.name;
               const sets = exerciseData[displayName] ?? [{ weight: "", reps: "", notes: "" }];
               const isCollapsed = collapsedExercises[displayName] ?? false;
-              // When a substitution is active, only look up by the sub name.
-              // Never fall back to the original exercise's last performance — different movement.
-              const rawPrevSets = subName
-                ? (prevExMap[displayName] ?? [])
-                : (prevExMap[ex.name] ?? []);
               const exVideoUrl = videoMap[displayName] ?? videoMap[ex.name];
               const exEmbedUrl = exVideoUrl ? getYouTubeEmbedUrl(exVideoUrl) : null;
               const currentPreset = machinePreset[displayName] ?? "";
               const currentPresetId = machinePresetId[displayName] ?? null;
               const currentSettings = machineSettings[displayName] ?? "";
               const hasEquipment = !!(equipmentDetails[displayName]?.trim()) || !!currentPreset;
-              // Match by presetId (stable FK) when available; fall back to name string for
-              // legacy sessions saved before presetId was introduced.
-              const prevPresetId = prevMachinePresetIdMap[displayName] ?? prevMachinePresetIdMap[ex.name] ?? null;
-              const prevPresetName = prevMachinePresetNameMap[displayName] ?? prevMachinePresetNameMap[ex.name] ?? "";
-              const presetMatches = (() => {
-                // Neither side has a preset — always show last performance
-                if (!currentPreset && !prevPresetName) return true;
-                // Both have IDs — use stable ID comparison
-                if (currentPresetId && prevPresetId) return currentPresetId === prevPresetId;
-                // One or both sides lack an ID — fall back to name comparison
-                return currentPreset === prevPresetName;
+              // Find the most recent past entry for this exercise whose preset matches the
+              // currently selected preset. Matching uses presetId (stable FK) when both sides
+              // have one; falls back to name string for legacy sessions.
+              // If no preset is selected, use the most recent entry regardless of preset.
+              const lookupName = subName ? displayName : ex.name;
+              const prevSets = (() => {
+                const candidates = allPastEntries.filter(e => e.name === lookupName);
+                if (candidates.length === 0) return [];
+                // No preset selected on current exercise → show most recent regardless
+                if (!currentPreset) return candidates[0].sets;
+                // Preset selected → find most recent entry with same preset
+                for (const entry of candidates) {
+                  // Both sides have IDs: use stable ID comparison
+                  if (currentPresetId && entry.presetId) {
+                    if (currentPresetId === entry.presetId) return entry.sets;
+                  } else {
+                    // One or both sides lack an ID: fall back to name comparison
+                    if (currentPreset && currentPreset === entry.presetName) return entry.sets;
+                  }
+                }
+                // No matching preset found in history
+                return [];
               })();
-              const prevSets = presetMatches ? rawPrevSets : [];
               const isSheetOpen = !!equipmentOpen[displayName];
               return (
                 <Card key={displayName}>
@@ -1399,9 +1407,7 @@ function WorkoutLogTab() {
                                 }
                               }}
                             />
-                            {currentPreset && currentSettings && (
-                              <span className="text-xs text-muted-foreground">{currentSettings}</span>
-                            )}
+
                           </div>
                         )}
 
