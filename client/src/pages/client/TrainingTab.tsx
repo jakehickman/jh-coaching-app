@@ -1502,34 +1502,55 @@ function WorkoutLogTab() {
                       }, null);
                       const totalDone = sets.filter(s => s.completed).length;
                       return (
-                        <div className="flex items-center gap-3 pb-1">
-                          <p className="text-xs font-semibold tracking-widest text-green-500">COMPLETE</p>
-                          {topSet && (
-                            <p className="text-xs text-muted-foreground">
-                              {topSet.weight}kg × {topSet.reps}
-                              {isRestPause && sets[0]?.miniSets && String(sets[0].miniSets) !== '' && (
-                                <span className="ml-2 text-muted-foreground/60">· 1 + {sets[0].miniSets} mini sets</span>
-                              )}
-                              {!isRestPause && totalDone > 0 && (
-                                <span className="ml-2 text-muted-foreground/60">· {totalDone} {totalDone === 1 ? 'set' : 'sets'}</span>
-                              )}
-                            </p>
+                        <div className="space-y-1.5 pb-1">
+                          <div className="flex items-center gap-3">
+                            <p className="text-xs font-semibold tracking-widest text-green-500">COMPLETE</p>
+                            {topSet && (
+                              <p className="text-xs text-muted-foreground">
+                                {topSet.weight}kg × {topSet.reps}
+                                {isRestPause && sets[0]?.miniSets && String(sets[0].miniSets) !== '' && (
+                                  <span className="ml-2 text-muted-foreground/60">· 1 + {sets[0].miniSets} mini sets</span>
+                                )}
+                                {!isRestPause && totalDone > 0 && (
+                                  <span className="ml-2 text-muted-foreground/60">· {totalDone} {totalDone === 1 ? 'set' : 'sets'}</span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                          {currentPreset && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-primary/40 text-primary text-[11px] font-medium">
+                              {currentPreset}
+                            </span>
                           )}
                         </div>
                       );
                     }
                     if (isRestPause) {
                       return (
-                        <p className="text-xs font-semibold tracking-widest text-amber-400/80 text-left pt-0 pb-1 flex items-center gap-1">
-                          <Zap size={11} className="inline-block" /> MINI SETS
-                        </p>
+                        <div className="space-y-1.5 pb-1">
+                          <p className="text-xs font-semibold tracking-widest text-amber-400/80 text-left flex items-center gap-1">
+                            <Zap size={11} className="inline-block" /> MINI SETS
+                          </p>
+                          {currentPreset && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-primary/40 text-primary text-[11px] font-medium">
+                              {currentPreset}
+                            </span>
+                          )}
+                        </div>
                       );
                     }
                     const completedCount = sets.filter(s => s.completed).length;
                     return (
-                      <p className="text-xs font-semibold tracking-widest text-amber-400/80 text-left pt-0 pb-1">
-                        {completedCount === 0 ? 'INCOMPLETE' : `${completedCount}/${sets.length} SETS`}
-                      </p>
+                      <div className="space-y-1.5 pb-1">
+                        <p className="text-xs font-semibold tracking-widest text-amber-400/80 text-left">
+                          {completedCount === 0 ? 'INCOMPLETE' : `${completedCount}/${sets.length} SETS`}
+                        </p>
+                        {currentPreset && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-primary/40 text-primary text-[11px] font-medium">
+                            {currentPreset}
+                          </span>
+                        )}
+                      </div>
                     );
                   })()}
 
