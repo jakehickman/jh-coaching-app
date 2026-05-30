@@ -1119,16 +1119,6 @@ function WorkoutLogTab() {
     setExerciseData(prev => {
       const sets = [...(prev[exName] ?? [])];
       sets[idx] = { ...sets[idx], completed: !sets[idx].completed };
-      const isRestPause = !!sets[0]?.myoReps;
-      // Rest-pause: complete when set 0 is ticked; normal: complete when all sets ticked
-      const allDone = isRestPause
-        ? sets.length > 0 && sets[0].completed
-        : sets.length > 0 && sets.every(s => s.completed);
-      setCollapsedExercisesRaw(c => {
-        const next = { ...c, [exName]: allDone };
-        if (selectedDay) saveCollapsed(sessionDate, selectedDay, next);
-        return next;
-      });
       return { ...prev, [exName]: sets };
     });
   }
@@ -1702,15 +1692,51 @@ function WorkoutLogTab() {
                               );
                             })}
                           </div>
-                          {/* Add set button — hidden when myo-reps is on */}
-                          {!isMyoReps && (
-                            <button
-                              onClick={() => addSet(displayName)}
-                              className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-                            >
-                              <Plus size={13} /> Add set
-                            </button>
-                          )}
+                          {/* Add set / Complete buttons */}
+                          {(() => {
+                            const allTicked = isMyoReps
+                              ? !!sets[0]?.completed
+                              : sets.length > 0 && sets.every(s => s.completed);
+                            if (allTicked) {
+                              return (
+                                <div className="flex items-center gap-2 mt-3">
+                                  {!isMyoReps && (
+                                    <button
+                                      onClick={() => addSet(displayName)}
+                                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                                    >
+                                      <Plus size={13} /> Add set
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => {
+                                      setExerciseDone(prev => ({ ...prev, [displayName]: true }));
+                                      setCollapsedExercisesRaw(prev => {
+                                        const next = { ...prev, [displayName]: true };
+                                        if (selectedDay) saveCollapsed(sessionDate, selectedDay, next);
+                                        return next;
+                                      });
+                                      autoCollapsedRef.current.add(displayName);
+                                    }}
+                                    className={`${isMyoReps ? 'w-full' : 'flex-1'} flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors`}
+                                  >
+                                    <Check size={13} /> Complete
+                                  </button>
+                                </div>
+                              );
+                            }
+                            if (!isMyoReps) {
+                              return (
+                                <button
+                                  onClick={() => addSet(displayName)}
+                                  className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                                >
+                                  <Plus size={13} /> Add set
+                                </button>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       );
                     })()}
