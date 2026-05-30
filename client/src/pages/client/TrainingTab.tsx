@@ -1001,6 +1001,16 @@ function WorkoutLogTab() {
         const allDone = sets.length > 0 && sets.every(s => s.completed);
         collapsed[exName] = allDone ? (persisted[exName] ?? true) : false;
       }
+      // Restore exerciseDone from draft
+      const draftDone: Record<string, boolean> = {};
+      for (const [exName, sets] of Object.entries(migratedData)) {
+        const isMyoReps = !!sets[0]?.myoReps;
+        const allDone = isMyoReps
+          ? sets.length > 0 && !!sets[0]?.completed
+          : sets.length > 0 && sets.every(s => s.completed);
+        if (allDone) draftDone[exName] = true;
+      }
+      setExerciseDone(draftDone);
       setCollapsedExercisesRaw(collapsed);
       return;
     }
@@ -1043,6 +1053,17 @@ function WorkoutLogTab() {
         const allDone = sets.length > 0 && sets.every(s => s.completed);
         defaultCollapsed[ex.name] = allDone ? (persisted[ex.name] ?? true) : false;
       }
+      // Restore exerciseDone: any exercise where all sets are completed was previously marked done
+      const restoredDone: Record<string, boolean> = {};
+      for (const ex of (existing.exercises as any[])) {
+        const sets = exData[ex.name] ?? [];
+        const isMyoReps = !!sets[0]?.myoReps;
+        const allDone = isMyoReps
+          ? sets.length > 0 && !!sets[0]?.completed
+          : sets.length > 0 && sets.every(s => s.completed);
+        if (allDone) restoredDone[ex.name] = true;
+      }
+      setExerciseDone(restoredDone);
       setCollapsedExercisesRaw(defaultCollapsed);
       saveCollapsed(date, label, defaultCollapsed);
       return;
@@ -1291,11 +1312,8 @@ function WorkoutLogTab() {
         const completedExercises = (dayDef?.exercises ?? []).filter(ex => {
           const subName = substitutions[ex.name];
           const displayName = subName ?? ex.name;
-          const sets = exerciseData[displayName] ?? [];
-          if (sets.length === 0) return false;
-          // Mini-sets: complete when activation set (index 0) is ticked
-          const isMinSets = !!sets[0]?.myoReps;
-          return isMinSets ? !!sets[0]?.completed : sets.every(s => s.completed);
+          // Only count exercises where the user explicitly pressed "Complete"
+          return !!exerciseDone[displayName];
         }).length;
         const progressPct = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
 
