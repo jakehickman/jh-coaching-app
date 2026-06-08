@@ -1,0 +1,190 @@
+{
+  "query": "SELECT * FROM equipment_presets LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT * FROM equipment_presets LIMIT 20;",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "exerciseName": "Standing Leg Curl",
+      "presetName": "T&V Pro Max",
+      "lastSettings": "NULL",
+      "createdAt": "2026-04-14 10:08:28",
+      "updatedAt": "2026-04-27 04:52:17"
+    },
+    {
+      "id": "3",
+      "userId": "1",
+      "exerciseName": "Overhand Machine Shoulder Press",
+      "presetName": "T&V Strength",
+      "lastSettings": "NULL",
+      "createdAt": "2026-04-14 10:24:29",
+      "updatedAt": "2026-04-27 02:01:14"
+    },
+    {
+      "id": "4",
+      "userId": "1",
+      "exerciseName": "Seated Machine Lateral Raise",
+      "presetName": "T&V Strength",
+      "lastSettings": "Seat 1",
+      "createdAt": "2026-04-14 10:24:44",
+      "updatedAt": "2026-04-27 02:02:12"
+    },
+    {
+      "id": "6",
+      "userId": "1",
+      "exerciseName": "Machine Hip Thrust",
+      "presetName": "T&V Pro Max",
+      "lastSettings": "NULL",
+      "createdAt": "2026-04-14 10:41:05",
+      "updatedAt": "2026-04-27 00:20:09"
+    },
+    {
+      "id": "8",
+      "userId": "1",
+      "exerciseName": "Hack Squat",
+      "presetName": "T&V Strength",
+      "lastSettings": "Angle 8",
+      "createdAt": "2026-04-14 10:42:26",
+      "updatedAt": "2026-04-25 00:52:45"
+    },
+    {
+      "id": "9",
+      "userId": "1",
+      "exerciseName": "Lying Leg Curl",
+      "presetName": "T&V Pro Max",
+      "lastSettings": "Ankle 3",
+      "createdAt": "2026-04-14 10:42:57",
+      "updatedAt": "2026-04-30 01:11:17"
+    },
+    {
+      "id": "10",
+      "userId": "1",
+      "exerciseName": "Machine Crunch",
+      "presetName": "T&V Pro Max",
+      "lastSettings": "",
+      "createdAt": "2026-04-14 10:43:08",
+      "updatedAt": "2026-05-07 08:47:42"
+    },
+    {
+      "id": "11",
+      "userId": "1",
+      "exerciseName": "Chest Supported Machine Row",
+      "presetName": "T&V Strength",
+      "lastSettings": "Seat 7; chest pad 5",
+      "createdAt": "2026-04-14 10:43:36",
+      "updatedAt": "2026-04-27 02:06:07"
+    },
+    {
+      "id": "12",
+      "userId": "1",
+      "exerciseName": "Toe Press",
+      "presetName": "T&V Strength 45°",
+      "lastSettings": "NULL",
+      "createdAt": "2026-04-14 10:45:54",
+      "updatedAt": "2026-04-26 04:21:48"
+    },
+    {
+      "id": "13",
+      "userId": "1",
+      "exerciseName": "Machine Fly",
+      "presetName": "T&V Pro Max",
+      "lastSettings": "Seat 8",
+      "createdAt": "2026-04-14 10:46:28",
+      "updatedAt": "2026-05-02 04:12:01"
+    },
+    {
+      "id": "14",
+      "userId": "1",
+      "exerciseName": "Machine Hip Adduction",
+      "presetName": "T&V Pro Max",
+      "lastSettings": "Seat 5",
+      "createdAt": "2026-04-14 10:46:49",
+      "updatedAt": "2026-05-02 04:04:45"
+    },
+    {
+      "id": "30001",
+      "userId": "1",
+      "exerciseName": "Leg Extension",
+      "presetName": "T&V Pro Max",
+      "lastSettings": "Seat 8; ankle 3",
+      "createdAt": "2026-04-14 12:59:22",
+      "updatedAt": "2026-04-27 02:02:26"
+    },
+    {
+      "id": "90001",
+      "userId": "1",
+      "exerciseName": "1-Arm Cable Reverse Fly",
+      "presetName": "T&V Freedom Trainer",
+      "lastSettings": "",
+      "createdAt": "2026-04-21 00:52:50",
+      "updatedAt": "2026-05-10 05:38:04"
+    },
+    {
+      "id": "90002",
+      "userId": "1",
+      "exerciseName": "1-Arm Facing Away Cable Curl",
+      "presetName": "T&V Freedom Trainer",
+      "lastSettings": "NULL",
+      "createdAt": "2026-04-21 01:05:28",
+      "updatedAt": "2026-04-21 01:05:28"
+    },
+    {
+      "id": "90003",
+      "userId": "1",
+      "exerciseName": "Machine Hip Thrust",
+      "presetName": "T&V Strength 3D Hip Thrust",
+      "lastSettings": "NULL",
+      "createdAt": "2026-04-21 01:20:06",
+      "updatedAt": "2026-04-21 01:20:06"
+    },
+    {
+      "id": "120001",
+      "userId": "1",
+      "exerciseName": "Neutral Machine Shoulder Press",
+      "presetName": "T&V Strength",
+      "lastSettings": "Seat 3",
+      "createdAt": "2026-04-23 01:13:53",
+      "updatedAt": "2026-04-27 04:50:12"
+    },
+    {
+      "id": "120002",
+      "userId": "1",
+      "exerciseName": "Cable Pushdown",
+      "presetName": "T&V Freedom Trainer",
+      "lastSettings": "NULL",
+      "createdAt": "2026-04-23 01:31:50",
+      "updatedAt": "2026-04-28 00:04:10"
+    },
+    {
+      "id": "150001",
+      "userId": "1",
+      "exerciseName": "Smith Split Squat",
+      "presetName": "T&V Pro Max",
+      "lastSettings": "Safety 5",
+      "createdAt": "2026-04-24 05:18:16",
+      "updatedAt": "2026-04-30 00:46:13"
+    },
+    {
+      "id": "150002",
+      "userId": "1",
+      "exerciseName": "1-Arm Cable Diagonal Pulldown",
+      "presetName": "T&V Pro Max",
+      "lastSettings": "",
+      "createdAt": "2026-04-24 05:36:48",
+      "updatedAt": "2026-05-07 08:58:07"
+    },
+    {
+      "id": "180001",
+      "userId": "1",
+      "exerciseName": "Cable Overhead Extension",
+      "presetName": "T&V Freedom Trainer",
+      "lastSettings": "NULL",
+      "createdAt": "2026-04-25 00:16:34",
+      "updatedAt": "2026-04-25 00:16:34"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\texerciseName\tpresetName\tlastSettings\tcreatedAt\tupdatedAt\n1\t1\tStanding Leg Curl\tT&V Pro Max\tNULL\t2026-04-14 10:08:28\t2026-04-27 04:52:17\n3\t1\tOverhand Machine Shoulder Press\tT&V Strength\tNULL\t2026-04-14 10:24:29\t2026-04-27 02:01:14\n4\t1\tSeated Machine Lateral Raise\tT&V Strength\tSeat 1\t2026-04-14 10:24:44\t2026-04-27 02:02:12\n6\t1\tMachine Hip Thrust\tT&V Pro Max\tNULL\t2026-04-14 10:41:05\t2026-04-27 00:20:09\n8\t1\tHack Squat\tT&V Strength\tAngle 8\t2026-04-14 10:42:26\t2026-04-25 00:52:45\n9\t1\tLying Leg Curl\tT&V Pro Max\tAnkle 3\t2026-04-14 10:42:57\t2026-04-30 01:11:17\n10\t1\tMachine Crunch\tT&V Pro Max\t\t2026-04-14 10:43:08\t2026-05-07 08:47:42\n11\t1\tChest Supported Machine Row\tT&V Strength\tSeat 7; chest pad 5\t2026-04-14 10:43:36\t2026-04-27 02:06:07\n12\t1\tToe Press\tT&V Strength 45°\tNULL\t2026-04-14 10:45:54\t2026-04-26 04:21:48\n13\t1\tMachine Fly\tT&V Pro Max\tSeat 8\t2026-04-14 10:46:28\t2026-05-02 04:12:01\n14\t1\tMachine Hip Adduction\tT&V Pro Max\tSeat 5\t2026-04-14 10:46:49\t2026-05-02 04:04:45\n30001\t1\tLeg Extension\tT&V Pro Max\tSeat 8; ankle 3\t2026-04-14 12:59:22\t2026-04-27 02:02:26\n90001\t1\t1-Arm Cable Reverse Fly\tT&V Freedom Trainer\t\t2026-04-21 00:52:50\t2026-05-10 05:38:04\n90002\t1\t1-Arm Facing Away Cable Curl\tT&V Freedom Trainer\tNULL\t2026-04-21 01:05:28\t2026-04-21 01:05:28\n90003\t1\tMachine Hip Thrust\tT&V Strength 3D Hip Thrust\tNULL\t2026-04-21 01:20:06\t2026-04-21 01:20:06\n120001\t1\tNeutral Machine Shoulder Press\tT&V Strength\tSeat 3\t2026-04-23 01:13:53\t2026-04-27 04:50:12\n120002\t1\tCable Pushdown\tT&V Freedom Trainer\tNULL\t2026-04-23 01:31:50\t2026-04-28 00:04:10\n150001\t1\tSmith Split Squat\tT&V Pro Max\tSafety 5\t2026-04-24 05:18:16\t2026-04-30 00:46:13\n150002\t1\t1-Arm Cable Diagonal Pulldown\tT&V Pro Max\t\t2026-04-24 05:36:48\t2026-05-07 08:58:07\n180001\t1\tCable Overhead Extension\tT&V Freedom Trainer\tNULL\t2026-04-25 00:16:34\t2026-04-25 00:16:34\n",
+  "stderr": "",
+  "execution_time_ms": 1838
+}

@@ -268,6 +268,7 @@ function PresetSelector({
           side="bottom"
           className="h-[85vh] p-0 flex flex-col rounded-t-2xl bg-[#141414] border-t border-border"
           onClick={e => e.stopPropagation()}
+          hideCloseButton
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
