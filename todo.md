@@ -654,3 +654,17 @@
 - [x] Mark as Reviewed also advances the cycle (no separate Mark Complete needed)
 - [x] Fix 20 pre-existing TS syntax errors in CheckInsSection.tsx (were stale watcher errors, tsc passes clean)
 - [x] Add confirmation prompt before Mark as Reviewed advances the cycle
+
+## Nutrition / Meal Logging Feature
+
+- [x] Database: meal_logs table (id, userId, loggedAt, mealType, name, portionSize, hungerRating, fullnessRating, photoUrl, photoKey, notes, isOffPlan)
+- [x] Server: mealLogs tRPC router (log, updateFullness, edit, delete, listByDay, listAll, insights, listForClient, insightsForClient, weeklySummaryForClient)
+- [x] Client: NutritionTab — Today screen (greeting, meal list, log sheet, fullness banner, hunger scale reference)
+- [x] Client: NutritionTab — History screen (day-by-day navigation, meal detail expand)
+- [x] Client: NutritionTab — Insights screen (stat cards, ideal zone bar, hunger/fullness distributions, meal timing)
+- [x] Client: Replace Meal Plan tab with Nutrition tab in DashboardShell and ClientDashboard
+- [x] Coach: CoachNutritionTab — Insights view (stat cards, ideal zone bar, distributions, timing)
+- [x] Coach: CoachNutritionTab — Meal Log view (full meal list with photos, grouped by date)
+- [x] Coach: Replace old Meal Plan editor in ProgressSection nutrition tab with CoachNutritionTab
+- [x] Coach: Augment weeklyReview procedure with meal log metrics per week
+- [x] Coach: Add meal log tiles to WeeklyReviewTab Nutrition MetricGroup

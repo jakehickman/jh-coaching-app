@@ -13,3 +13,4 @@ export { progressPhotosRouter } from "./progressPhotos";
 export { questionsRouter } from "./questions";
 export { phasesRouter } from "./phases";
 export { invitesRouter } from "./invites";
+export { mealLogsRouter } from "./mealLogs";

@@ -16,6 +16,7 @@ import {
   Menu,
   Users,
   Utensils,
+  UtensilsCrossed,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -31,7 +32,7 @@ interface NavItem {
 const clientNav: NavItem[] = [
   { href: "/dashboard/overview",      label: "Home",          icon: <Home size={22} /> },
   { href: "/dashboard/daily-log",     label: "Daily Log",     icon: <ClipboardList size={22} /> },
-  { href: "/dashboard/meal-plan",     label: "Meal Plan",     icon: <Utensils size={22} /> },
+  { href: "/dashboard/nutrition",    label: "Nutrition",    icon: <Utensils size={22} /> },
   { href: "/dashboard/training",      label: "Training",      icon: <Dumbbell size={22} /> },
   { href: "/dashboard/check-ins",      label: "Check-in",      icon: <ClipboardCheck size={22} /> },
 ];

@@ -2,8 +2,8 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import * as db from "../db";
 import { getDb } from "../db";
-import { clientPhases } from "../../drizzle/schema";
-import { eq, asc } from "drizzle-orm";
+import { clientPhases, mealLogs } from "../../drizzle/schema";
+import { eq, asc, and, gte, lte } from "drizzle-orm";
 
 /** Return the ISO date string (YYYY-MM-DD) for a given Date (UTC) */
 function toDateStr(d: Date): string {
@@ -155,6 +155,11 @@ export const progressRouter = router({
     .query(async ({ input }) => {
       const { clientId, tzOffsetMinutes } = input;
 
+      const dbConn2 = await getDb();
+      const allMealLogs = dbConn2
+        ? await dbConn2.select().from(mealLogs).where(eq(mealLogs.userId, clientId))
+        : [];
+
       const [profile, logs, meas, sessions] = await Promise.all([
         db.getClientProfile(clientId),
         db.getDailyLogs(clientId, 9999),
@@ -167,7 +172,7 @@ export const progressRouter = router({
       }
 
       // Fetch phases for this client (oldest-first)
-      const dbConn = await getDb();
+      const dbConn = dbConn2;
       let phases: Array<{ startDate: string; endDate: string | null; label: string }> = [];
       if (dbConn) {
         const rows = await dbConn
@@ -226,9 +231,23 @@ export const progressRouter = router({
         // Training — sessions logged only (no adherence %)
         const sessionsCompleted = periodSessions.length;
 
-        // Nutrition
+        // Nutrition (daily log)
         const totalOffPlan = sum(periodLogs.map((l) => l.offPlanMeals));
         const avgCaffeine = avg(periodLogs.map((l) => l.caffeineServings));
+
+        // Nutrition (meal logs)
+        const periodMealLogs = allMealLogs.filter((m) => {
+          const d = m.loggedAt instanceof Date ? m.loggedAt.toISOString().slice(0, 10) : String(m.loggedAt).slice(0, 10);
+          return d >= period.weekStart && d <= period.weekEnd;
+        });
+        const mealsOnly = periodMealLogs.filter((m) => m.mealType === "meal");
+        const mealLogCount = mealsOnly.length;
+        const mealLogTreats = periodMealLogs.filter((m) => m.mealType === "treat").length;
+        const ratedMeals = mealsOnly.filter((m) => m.hungerRating != null && m.fullnessRating != null);
+        const idealZoneMeals = ratedMeals.filter((m) => m.hungerRating! >= 3 && m.hungerRating! <= 4 && m.fullnessRating! >= 6 && m.fullnessRating! <= 7);
+        const mealLogAvgHunger = avg(mealsOnly.map((m) => m.hungerRating));
+        const mealLogAvgFullness = avg(mealsOnly.map((m) => m.fullnessRating));
+        const mealLogIdealZonePct = ratedMeals.length > 0 ? Math.round((idealZoneMeals.length / ratedMeals.length) * 100) : null;
 
         // Recovery
         const avgHunger = avg(periodLogs.map((l) => l.hungerLevel));
@@ -291,6 +310,11 @@ export const progressRouter = router({
           // Nutrition
           totalOffPlan,
           avgCaffeine,
+          mealLogCount,
+          mealLogTreats,
+          mealLogAvgHunger: mealLogAvgHunger != null ? parseFloat(mealLogAvgHunger.toFixed(1)) : null,
+          mealLogAvgFullness: mealLogAvgFullness != null ? parseFloat(mealLogAvgFullness.toFixed(1)) : null,
+          mealLogIdealZonePct,
           // Recovery
           avgHunger,
           avgSleepQuality,

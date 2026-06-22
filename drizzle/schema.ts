@@ -714,3 +714,25 @@ export const inviteTokens = mysqlTable("invite_tokens", {
 });
 export type InviteToken = typeof inviteTokens.$inferSelect;
 export type InsertInviteToken = typeof inviteTokens.$inferInsert;
+
+// ─── Intuitive Eating / Meal Logs ────────────────────────────────────────────
+// One row per logged meal/treat. Client logs; coach reads.
+export const mealLogs = mysqlTable("meal_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),               // FK -> users.id (client)
+  loggedAt: timestamp("loggedAt").notNull(),     // when the meal was logged (UTC)
+  mealType: mysqlEnum("mealType", ["meal", "treat"]).notNull(),
+  name: varchar("name", { length: 256 }),        // optional label / description
+  photoUrl: text("photoUrl"),                    // S3 public URL
+  photoKey: varchar("photoKey", { length: 512 }), // S3 key for deletion
+  portionSize: mysqlEnum("portionSize", ["small", "medium", "large"]),
+  hungerRating: int("hungerRating"),             // 1-10, meals only
+  fullnessRating: int("fullnessRating"),         // 1-10, meals only, set after eating
+  isOffPlan: boolean("isOffPlan").default(false).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MealLog = typeof mealLogs.$inferSelect;
+export type InsertMealLog = typeof mealLogs.$inferInsert;

@@ -17,6 +17,7 @@ import { CoachHabitsPanel } from "./HabitsSection";
 import { WeeklyReviewTab } from "./WeeklyReviewTab";
 import TrainingSection from "./TrainingSection";
 import MealPlansSection from "./MealPlansSection";
+import { CoachNutritionTab } from "./CoachNutritionTab";
 import { ProgressPhotosTab } from "./ProgressPhotosTab";
 import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import ProgramChangeLogTab from "./ProgramChangeLogTab";
@@ -2463,15 +2464,9 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </Tabs>
           </TabsContent>
 
-          {/* -- Nutrition: Meal Plan (editor) -- */}
+          {/* -- Nutrition: Meal Log + Insights -- */}
           <TabsContent value="nutrition">
-            <div className="space-y-4">
-              <WeeklyCalorySummary clientId={selectedUserId!} liveTrainingCal={liveTrainingCal} liveRestCal={liveRestCal} />
-              <MealPlansSection fixedClientId={selectedUserId!} onLiveTotals={handleLiveTotals} />
-              <ChangeHistoryPanel label="Nutrition Change History">
-                <MacroPlanHistoryTab clientId={selectedUserId!} />
-              </ChangeHistoryPanel>
-            </div>
+            <CoachNutritionTab clientId={selectedUserId!} />
           </TabsContent>
 
 

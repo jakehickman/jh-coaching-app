@@ -27,6 +27,7 @@ import {
   questionsRouter,
   phasesRouter,
   invitesRouter,
+  mealLogsRouter,
 } from "./routers/index";
 
 export const appRouter = router({
@@ -57,6 +58,7 @@ export const appRouter = router({
   questions: questionsRouter,
   phases: phasesRouter,
   invites: invitesRouter,
+  mealLogs: mealLogsRouter,
 });
 
 export type AppRouter = typeof appRouter;

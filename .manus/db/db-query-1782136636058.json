@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `meal_logs` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `userId` int NOT NULL,\n  `loggedAt` timestamp NOT NULL,\n  `mealType` enum('meal','treat') NOT NULL,\n  `name` varchar(256),\n  `photoUrl` text,\n  `photoKey` varchar(512),\n  `portionSize` enum('small','medium','large'),\n  `hungerRating` int,\n  `fullnessRating` int,\n  `isOffPlan` boolean NOT NULL DEFAULT false,\n  `notes` text,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `meal_logs_userId_idx` (`userId`),\n  KEY `meal_logs_loggedAt_idx` (`loggedAt`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute CREATE TABLE IF NOT EXISTS `meal_logs` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `userId` int NOT NULL,\n  `loggedAt` timestamp NOT NULL,\n  `mealType` enum('meal','treat') NOT NULL,\n  `name` varchar(256),\n  `photoUrl` text,\n  `photoKey` varchar(512),\n  `portionSize` enum('small','medium','large'),\n  `hungerRating` int,\n  `fullnessRating` int,\n  `isOffPlan` boolean NOT NULL DEFAULT false,\n  `notes` text,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `meal_logs_userId_idx` (`userId`),\n  KEY `meal_logs_loggedAt_idx` (`loggedAt`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2702
+}

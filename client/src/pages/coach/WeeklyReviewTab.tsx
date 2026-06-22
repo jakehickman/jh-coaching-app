@@ -353,6 +353,31 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                     {/* Nutrition */}
                     <MetricGroup label="Nutrition">
                       <Tile
+                        label="Meals logged"
+                        value={(week as any).mealLogCount > 0 ? String((week as any).mealLogCount) : "—"}
+                        muted={!(week as any).mealLogCount}
+                      />
+                      <Tile
+                        label="Treats"
+                        value={(week as any).mealLogTreats > 0 ? String((week as any).mealLogTreats) : "—"}
+                        muted={!(week as any).mealLogTreats}
+                      />
+                      <Tile
+                        label="Avg hunger"
+                        value={(week as any).mealLogAvgHunger != null ? String((week as any).mealLogAvgHunger) : "—"}
+                        muted={(week as any).mealLogAvgHunger == null}
+                      />
+                      <Tile
+                        label="Avg fullness"
+                        value={(week as any).mealLogAvgFullness != null ? String((week as any).mealLogAvgFullness) : "—"}
+                        muted={(week as any).mealLogAvgFullness == null}
+                      />
+                      <Tile
+                        label="Ideal zone"
+                        value={(week as any).mealLogIdealZonePct != null ? `${(week as any).mealLogIdealZonePct}%` : "—"}
+                        muted={(week as any).mealLogIdealZonePct == null}
+                      />
+                      <Tile
                         label="Off-Plan Meals"
                         value={week.totalOffPlan != null ? String(week.totalOffPlan) : "—"}
                         muted={week.totalOffPlan == null}

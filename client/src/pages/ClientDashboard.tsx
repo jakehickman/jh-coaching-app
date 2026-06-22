@@ -9,7 +9,7 @@ import { Eye, X } from "lucide-react";
 import OverviewTab from "./client/OverviewTab";
 import DailyLogTab from "./client/DailyLogTab";
 import MeasurementsTab from "./client/MeasurementsTab";
-import CombinedMealPlanTab from "./client/MealPlanTab";
+import { CombinedNutritionTab } from "./client/NutritionTab";
 import CombinedTrainingTab from "./client/TrainingTab";
 import CheckInsTab from "./client/CheckInsTab";
 
@@ -72,8 +72,9 @@ export default function ClientDashboard() {
       case "daily-log":    return <DailyLogTab key="daily-log" />;
       case "check-ins":    return <CheckInsTab key="check-ins" />;
       case "measurements": return <MeasurementsTab key="measurements" />;
-      case "meal-plan":    return <CombinedMealPlanTab key="meal-plan" defaultSub="plan" />;
-      case "shopping":     return <CombinedMealPlanTab key="shopping" defaultSub="shopping" />;
+      case "meal-plan":    return <CombinedNutritionTab key="nutrition" defaultSub="today" />;
+      case "nutrition":    return <CombinedNutritionTab key="nutrition" defaultSub="today" />;
+      case "shopping":     return <CombinedNutritionTab key="nutrition-history" defaultSub="history" />;
       case "training":     return <CombinedTrainingTab key="training" defaultSub="program" />;
       case "workout-log":  return <CombinedTrainingTab key="workout-log" defaultSub="log" />;
       default:             return <OverviewTab key="overview" />;
