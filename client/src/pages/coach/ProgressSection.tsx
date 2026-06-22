@@ -1197,7 +1197,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: an
   });
 
   return (
-    <div className="w-80 flex-shrink-0 border border-border rounded-xl bg-card overflow-hidden sticky top-4">
+    <div className="w-full lg:w-80 flex-shrink-0 border border-border rounded-xl bg-card overflow-hidden lg:sticky lg:top-4">
       {/* Header */}
       <div className="flex items-start justify-between px-4 py-3 border-b border-border bg-muted/30">
         <div>
@@ -1214,7 +1214,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: an
         </button>
       </div>
       {/* Exercise list */}
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+      <div className="overflow-y-auto lg:max-h-[calc(100vh-300px)]">
         <div className="px-4 py-3 space-y-3">
           {exercises.map((ex: any, i: number) => {
             const allSets: any[] = ex.sets ?? [];
@@ -1510,7 +1510,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
       </span>
     </div>
 
-    <div className="grid grid-cols-[1fr_288px] gap-4 items-start">
+    <div className="flex flex-col lg:grid lg:grid-cols-[1fr_288px] gap-4 items-start">
       {/* Calendar grid */}
       <div className="min-w-0">
         <div className="border border-border rounded-xl overflow-hidden">
@@ -1596,7 +1596,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
     </div>
 
     {/* Monthly volume summary — spans only the calendar column */}
-    <div className="grid grid-cols-[1fr_288px] gap-4 items-start">
+    <div className="flex flex-col lg:grid lg:grid-cols-[1fr_288px] gap-4 items-start">
       <MonthlyVolumeCoachPanel
         workoutSessions={workoutSessions}
         exerciseLib={exerciseLib}
