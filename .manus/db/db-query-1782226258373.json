@@ -1,0 +1,18 @@
+{
+  "query": "SELECT \n  COUNT(*) as total_logs,\n  SUM(CASE WHEN hungerLevel IS NOT NULL THEN 1 ELSE 0 END) as has_hunger,\n  SUM(CASE WHEN lissMinutes IS NOT NULL THEN 1 ELSE 0 END) as has_liss,\n  SUM(CASE WHEN offPlanMeal IS NOT NULL AND offPlanMeal != 0 THEN 1 ELSE 0 END) as has_off_plan_meal,\n  SUM(CASE WHEN offPlanMeals IS NOT NULL AND offPlanMeals != 0 THEN 1 ELSE 0 END) as has_off_plan_meals,\n  SUM(CASE WHEN trainingType IS NOT NULL THEN 1 ELSE 0 END) as has_training_type\nFROM daily_logs WHERE userId = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT \n  COUNT(*) as total_logs,\n  SUM(CASE WHEN hungerLevel IS NOT NULL THEN 1 ELSE 0 END) as has_hunger,\n  SUM(CASE WHEN lissMinutes IS NOT NULL THEN 1 ELSE 0 END) as has_liss,\n  SUM(CASE WHEN offPlanMeal IS NOT NULL AND offPlanMeal != 0 THEN 1 ELSE 0 END) as has_off_plan_meal,\n  SUM(CASE WHEN offPlanMeals IS NOT NULL AND offPlanMeals != 0 THEN 1 ELSE 0 END) as has_off_plan_meals,\n  SUM(CASE WHEN trainingType IS NOT NULL THEN 1 ELSE 0 END) as has_training_type\nFROM daily_logs WHERE userId = 1;",
+  "rows": [
+    {
+      "total_logs": "46",
+      "has_hunger": "39",
+      "has_liss": "23",
+      "has_off_plan_meal": "0",
+      "has_off_plan_meals": "18",
+      "has_training_type": "29"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_logs\thas_hunger\thas_liss\thas_off_plan_meal\thas_off_plan_meals\thas_training_type\n46\t39\t23\t0\t18\t29\n",
+  "stderr": "",
+  "execution_time_ms": 1764
+}

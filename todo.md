@@ -718,3 +718,15 @@
 - [x] Overview: daily log summary → expandable weekly table (avg weight, steps, meals, treats, sleep, compliance)
 - [x] Overview: remove Recent daily logs section
 - [x] Body Comp Data: replace 7-day summary with full measurement history table (date, weight, waist, hip, skinfolds, total, Δ weight, Δ total, notes, edit/delete)
+
+## Coach Overview & Body Comp Data Refinements (Jun 23 round 2)
+- [x] Weekly review table: show 7-day periods from client start date (not rolling from today), show all periods regardless of data
+- [x] Weekly review table: full width (move habits panel underneath)
+- [x] Weekly review table: default to last 4 weeks, expand 4 more rows at a time
+- [x] Weekly review table: remove hunger/fullness columns
+- [x] Weekly review table: audit vs previous version — confirm no missing columns
+- [x] Habits panel: revert to monthly heatmap (was working before, restore that layout)
+- [x] Clean Jake demo data: all daily_log fields are still valid schema columns, nothing to remove
+- [x] Body Comp Data: combine Waist value+delta under single "Waist" header; same for Skinfold; rename Hips to Hip; reorder Hip after Waist
+- [x] Body Comp Data: add Weight column (weight logged on that date)
+- [x] Body Comp Data: remove edit/delete actions from coach view

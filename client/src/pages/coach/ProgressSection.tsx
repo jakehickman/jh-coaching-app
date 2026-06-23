@@ -2361,18 +2361,14 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </TabsList>
           </div>
 
-          {/* -- Overview: weekly review, habits -- */}
+          {/* -- Overview: weekly review (full width), habits below -- */}
           <TabsContent value="overview">
             <div className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <div>
-                  <SectionLabel>Weekly Review</SectionLabel>
-                  <WeeklyReviewTab clientId={selectedUserId!} />
-                </div>
-                <div>
-                  <CoachHabitsPanel clientId={selectedUserId!} />
-                </div>
+              <div>
+                <SectionLabel>Weekly Review</SectionLabel>
+                <WeeklyReviewTab clientId={selectedUserId!} />
               </div>
+              <CoachHabitsPanel clientId={selectedUserId!} />
             </div>
           </TabsContent>
 

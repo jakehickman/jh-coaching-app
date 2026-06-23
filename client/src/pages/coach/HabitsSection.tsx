@@ -1,152 +1,211 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { Plus, Pencil, Trash2, CheckSquare, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckSquare, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionLabel } from "./shared";
 import { useConfirm } from "@/components/ConfirmDialog";
 
 // ─── CoachHabitsPanel (used inside ProgressSection) ─────────────────────────
 
+function HabitMonthCalendar({
+  habitId,
+  assignedAt,
+  completedSet,
+  calMonth,
+}: {
+  habitId: number;
+  assignedAt: string; // yyyy-mm-dd
+  completedSet: Set<string>; // "habitId:yyyy-mm-dd"
+  calMonth: Date;
+}) {
+  const year = calMonth.getFullYear();
+  const month = calMonth.getMonth();
+  const dayLetters = ["M", "T", "W", "T", "F", "S", "S"];
+  const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
+  const startOffset = (firstDow + 6) % 7; // Mon-based
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+
+  const cells: (number | null)[] = [
+    ...Array(startOffset).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return (
+    <div>
+      {/* Day-of-week header */}
+      <div className="grid grid-cols-7 mb-0.5">
+        {dayLetters.map((l, i) => (
+          <div key={i} className="text-center text-[9px] font-medium text-muted-foreground py-0.5">
+            {l}
+          </div>
+        ))}
+      </div>
+      {/* Day cells */}
+      <div className="grid grid-cols-7 gap-y-0.5">
+        {cells.map((day, idx) => {
+          if (day === null) return <div key={`pad-${idx}`} />;
+          const iso = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const beforeAssigned = iso < assignedAt;
+          const isFuture = iso > todayStr;
+          const done = completedSet.has(`${habitId}:${iso}`);
+          const isToday = iso === todayStr;
+
+          let bg = "bg-muted/30";
+          if (!beforeAssigned && !isFuture) {
+            bg = done ? "bg-primary" : "bg-muted";
+          }
+
+          return (
+            <div
+              key={iso}
+              title={iso}
+              className={`flex items-center justify-center rounded-sm mx-0.5 ${isToday ? "ring-1 ring-primary/60" : ""}`}
+              style={{ aspectRatio: "1" }}
+            >
+              <div
+                className={`w-full h-full rounded-sm ${
+                  beforeAssigned || isFuture ? "opacity-0" : bg
+                }`}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function CoachHabitsPanel({ clientId }: { clientId: number }) {
+  const [calMonth, setCalMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+
+  // Fetch from start of displayed month
+  const fromDate = useMemo(() => {
+    return `${calMonth.getFullYear()}-${String(calMonth.getMonth() + 1).padStart(2, "0")}-01`;
+  }, [calMonth]);
+
   const { data: habits = [] } = trpc.habits.clientHabits.useQuery(
     { clientId },
     { enabled: !!clientId }
   );
-  const from14 = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 13);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }, []);
+
   const { data: completions = [] } = trpc.habits.clientCompletions.useQuery(
-    { clientId, fromDate: from14 },
+    { clientId, fromDate },
     { enabled: !!clientId }
   );
 
   if (!clientId || habits.length === 0) return null;
 
-  // Build last 14 days (oldest first)
-  const last14: string[] = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    last14.push(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-    );
-  }
-
   // Normalise a date value to yyyy-mm-dd using LOCAL timezone
-  const normCompDate = (val: any): string => {
+  const normDate = (val: any): string => {
     if (!val) return "";
     const d = val instanceof Date ? val : new Date(String(val));
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   };
 
   const completedSet = new Set(
-    completions.map((c: any) => `${c.habitId}:${normCompDate(c.completedDate)}`)
+    completions.map((c: any) => `${c.habitId}:${normDate(c.completedDate)}`)
   );
 
-  const todayStr = last14[last14.length - 1];
+  const todayStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+
+  // Per-habit stats for the displayed month
+  const year = calMonth.getFullYear();
+  const month = calMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const habitStats = habits.map((h: any) => {
-    const assignedDateStr = normCompDate(h.assignedAt);
-    const eligible14 = last14.filter(
-      (d) => d >= assignedDateStr && d <= todayStr
-    );
-    const done14 = eligible14.filter((d) =>
-      completedSet.has(`${h.id}:${d}`)
-    ).length;
-    const pct14 =
-      eligible14.length > 0
-        ? Math.round((done14 / eligible14.length) * 100)
-        : 0;
-    // Streak: walk backwards from today
-    let streak = 0;
-    let startedCounting = false;
-    for (let i = 0; i < 14; i++) {
-      const d = last14[last14.length - 1 - i];
-      if (!d || d < assignedDateStr) break;
-      const done = completedSet.has(`${h.id}:${d}`);
-      if (!startedCounting) {
-        if (!done && i === 0) continue;
-        startedCounting = true;
-      }
-      if (done) streak++;
-      else break;
+    const assignedDateStr = normDate(h.assignedAt);
+    const eligible: string[] = [];
+    const done: string[] = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      if (iso < assignedDateStr || iso > todayStr) continue;
+      eligible.push(iso);
+      if (completedSet.has(`${h.id}:${iso}`)) done.push(iso);
     }
-    return { ...h, pct14, streak, done14, eligible14: eligible14.length };
+    const pct = eligible.length > 0 ? Math.round((done.length / eligible.length) * 100) : 0;
+    return { ...h, pct, doneDays: done.length, eligibleDays: eligible.length, assignedDateStr };
   });
 
-  // Group last14 into 2 weeks
-  const weeks = [
-    last14.slice(0, 7),
-    last14.slice(7, 14),
-  ];
-  const weekLabels = ["Prev week", "This week"];
+  const prevMonth = () => setCalMonth(new Date(year, month - 1, 1));
+  const nextMonth = () => setCalMonth(new Date(year, month + 1, 1));
+  const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth();
 
   return (
     <div>
-      <SectionLabel>Habit Adherence (14 Days)</SectionLabel>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="flex items-center justify-between mb-3">
+        <SectionLabel>Habit Adherence</SectionLabel>
+        {/* Month nav */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={prevMonth}
+            className="p-1.5 rounded-md text-muted-foreground hover:bg-muted/40 transition-colors"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <span className="text-xs font-medium text-foreground min-w-[90px] text-center">
+            {monthNames[month]} {year}
+          </span>
+          <button
+            onClick={nextMonth}
+            disabled={isCurrentMonth}
+            className="p-1.5 rounded-md text-muted-foreground hover:bg-muted/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {habitStats.map((h: any) => (
           <div key={h.id} className="bg-card border border-border rounded-xl p-4">
+            {/* Habit name + % */}
             <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">{h.name}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{h.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {h.frequency === "daily" ? "Daily" : `${h.targetDays}x/week`}
-                  {h.streak > 0 ? ` · ${h.streak}-day streak` : ""}
+                  {h.eligibleDays > 0 && ` · ${h.doneDays}/${h.eligibleDays} days`}
                 </p>
               </div>
               <span
-                className={`text-sm font-bold ${
-                  h.pct14 >= 80
+                className={`text-sm font-bold ml-2 flex-shrink-0 ${
+                  h.pct >= 80
                     ? "text-green-500"
-                    : h.pct14 >= 50
+                    : h.pct >= 50
                     ? "text-amber-500"
+                    : h.eligibleDays === 0
+                    ? "text-muted-foreground"
                     : "text-red-500"
                 }`}
               >
-                {h.pct14}%
+                {h.eligibleDays > 0 ? `${h.pct}%` : "—"}
               </span>
             </div>
-            {/* 2-week dot grid */}
-            <div className="space-y-1.5">
-              {weeks.map((week, wi) => (
-                <div key={wi} className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground w-16 shrink-0">
-                    {weekLabels[wi]}
-                  </span>
-                  <div className="flex gap-1">
-                    {week.map((d) => {
-                      // Blank spacer for dates before this habit was assigned
-                      if (d < normCompDate(h.assignedAt)) {
-                        return <div key={d} className="w-5 h-5 rounded-sm bg-transparent" />;
-                      }
-                      const done = completedSet.has(`${h.id}:${d}`);
-                      return (
-                        <div
-                          key={d}
-                          title={d}
-                          className={`w-5 h-5 rounded-sm ${
-                            done ? "bg-primary" : "bg-muted"
-                          }`}
-                        />
-                      );
-                    })}
-                  </div>
-                  {(() => {
-                    const habitStart = normCompDate(h.assignedAt);
-                    const eligibleDays = week.filter(d => d >= habitStart);
-                    const doneDays = eligibleDays.filter(d => completedSet.has(`${h.id}:${d}`)).length;
-                    return (
-                      <span className="text-[10px] text-muted-foreground">
-                        {doneDays}/{eligibleDays.length}
-                      </span>
-                    );
-                  })()}
-                </div>
-              ))}
-            </div>
+
+            {/* Monthly heatmap */}
+            <HabitMonthCalendar
+              habitId={h.id}
+              assignedAt={h.assignedDateStr}
+              completedSet={completedSet}
+              calMonth={calMonth}
+            />
           </div>
         ))}
       </div>
@@ -158,261 +217,218 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
 
 export default function HabitsSection() {
   const [confirm, ConfirmDialogNode] = useConfirm();
+  const [search, setSearch] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editFrequency, setEditFrequency] = useState<"daily" | "x_per_week">("daily");
+  const [editTargetDays, setEditTargetDays] = useState(5);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newFrequency, setNewFrequency] = useState<"daily" | "x_per_week">("daily");
+  const [newTargetDays, setNewTargetDays] = useState(5);
+
   const utils = trpc.useUtils();
   const { data: habits = [], isLoading } = trpc.habits.list.useQuery();
-  const { data: allUsers = [] } = trpc.users.list.useQuery();
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [search, setSearch] = useState("");
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    frequency: "daily" as "daily" | "x_per_week",
-    targetDays: 3,
-  });
 
-  // Track per-habit assignment state (set of clientIds)
-  const [assigningHabitId, setAssigningHabitId] = useState<number | null>(null);
-  const { data: habitAssignments = [] } = trpc.habits.getAssignments.useQuery(
-    { habitId: assigningHabitId! },
-    { enabled: assigningHabitId != null }
-  );
-
-  const create = trpc.habits.create.useMutation({
+  const createMut = trpc.habits.create.useMutation({
     onSuccess: () => {
       utils.habits.list.invalidate();
-      setShowForm(false);
-      resetForm();
+      setShowAdd(false);
+      setNewName("");
     },
   });
 
-  const update = trpc.habits.update.useMutation({
+  const updateMut = trpc.habits.update.useMutation({
     onSuccess: () => {
       utils.habits.list.invalidate();
       setEditingId(null);
-      resetForm();
     },
   });
 
-  const del = trpc.habits.delete.useMutation({
+  const deleteMut = trpc.habits.delete.useMutation({
     onSuccess: () => utils.habits.list.invalidate(),
   });
 
-  const setAssignments = trpc.habits.setAssignments.useMutation({
-    onSuccess: () => utils.habits.list.invalidate(),
-  });
-
-  function resetForm() {
-    setForm({ name: "", description: "", frequency: "daily", targetDays: 3 });
-  }
-
-  function startEdit(h: any) {
-    setEditingId(h.id);
-    setForm({
-      name: h.name,
-      description: h.description ?? "",
-      frequency: h.frequency,
-      targetDays: h.targetDays ?? 3,
-    });
-    setShowForm(true);
-  }
-
-  const filtered = habits.filter((h: any) =>
+  const filtered = (habits as any[]).filter((h) =>
     h.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const clients = (allUsers as any[]).filter((u: any) => u.role === "user");
-
-  // Build a map of habitId -> Set<clientId> from the habits data (using assignedUsers if present)
-  function getAssignedClientIds(h: any): Set<number> {
-    if (Array.isArray(h.assignedUsers)) {
-      return new Set(h.assignedUsers.map((a: any) => a.clientId ?? a.userId));
-    }
-    return new Set();
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {ConfirmDialogNode}
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 flex-1 max-w-sm">
+          <Search size={15} className="text-muted-foreground shrink-0" />
           <input
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search habits..."
-            className="pl-9 pr-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-64"
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
         </div>
-        <Button
-          size="sm"
-          onClick={() => { setEditingId(null); resetForm(); setShowForm(true); }}
-          className="flex items-center gap-1.5"
-        >
-          <Plus className="w-4 h-4" /> New Habit
+        <Button size="sm" onClick={() => setShowAdd((v) => !v)} className="flex items-center gap-1.5">
+          <Plus size={14} />
+          Add Habit
         </Button>
       </div>
 
-      {/* Create / Edit Form */}
-      {showForm && (
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <p className="text-sm font-semibold text-foreground">{editingId ? "Edit Habit" : "New Habit"}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Name</label>
+      {/* Add form */}
+      {showAdd && (
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-foreground">New Habit</p>
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Habit name"
+            className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <div className="flex gap-3">
+            <select
+              value={newFrequency}
+              onChange={(e) => setNewFrequency(e.target.value as "daily" | "x_per_week")}
+              className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none"
+            >
+              <option value="daily">Daily</option>
+            <option value="x_per_week">x per week</option>
+            </select>
+              {newFrequency === "x_per_week" && (
               <input
-                value={form.name}
-                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                type="number"
+                min={1}
+                max={7}
+                value={newTargetDays}
+                onChange={(e) => setNewTargetDays(Number(e.target.value))}
+                className="w-20 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none"
               />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Frequency</label>
-              <select
-                value={form.frequency}
-                onChange={e => setForm(p => ({ ...p, frequency: e.target.value as "daily" | "x_per_week" }))}
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="daily">Daily</option>
-                <option value="x_per_week">X per week</option>
-              </select>
-            </div>
-            {form.frequency === "x_per_week" && (
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">Target Days / Week</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={7}
-                  value={form.targetDays}
-                  onChange={e => setForm(p => ({ ...p, targetDays: parseInt(e.target.value) || 1 }))}
-                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
             )}
-            <div className="sm:col-span-2">
-              <label className="text-xs text-muted-foreground block mb-1">Description (optional)</label>
-              <input
-                value={form.description}
-                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
           </div>
           <div className="flex gap-2">
             <Button
               size="sm"
-              onClick={() => {
-                if (!form.name.trim()) return;
-                if (editingId) {
-                  update.mutate({ id: editingId, name: form.name, description: form.description || undefined, frequency: form.frequency, targetDays: form.targetDays });
-                } else {
-                  create.mutate({ name: form.name, description: form.description || undefined, frequency: form.frequency, targetDays: form.targetDays });
-                }
-              }}
-              disabled={!form.name.trim() || create.isPending || update.isPending}
+              disabled={!newName.trim() || createMut.isPending}
+              onClick={() =>
+                createMut.mutate({
+                  name: newName.trim(),
+                  frequency: newFrequency,
+                  targetDays: newFrequency === "x_per_week" ? newTargetDays : undefined,
+                })
+              }
             >
-              {editingId ? "Save Changes" : "Create Habit"}
+              {createMut.isPending ? "Saving..." : "Save"}
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => { setShowForm(false); setEditingId(null); resetForm(); }}
-            >
+            <Button size="sm" variant="ghost" onClick={() => setShowAdd(false)}>
               Cancel
             </Button>
           </div>
         </div>
       )}
 
-      {/* Habits table */}
+      {/* Habit list */}
       {isLoading ? (
         <div className="space-y-2">
-          {[1, 2, 3].map(i => <div key={i} className="h-14 bg-muted rounded-xl animate-pulse" />)}
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-14 bg-muted rounded-xl animate-pulse" />
+          ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <CheckSquare className="w-10 h-10 mb-3 opacity-30" />
-          <p className="text-base font-medium">No habits yet</p>
-          <p className="text-sm mt-1">Create a habit and assign it to clients.</p>
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+          <CheckSquare size={32} className="mb-3 opacity-30" />
+          <p className="text-sm font-medium">No habits yet</p>
+          <p className="text-xs mt-1">Add a habit above to get started.</p>
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Habit</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Frequency</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Assigned To</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.map((h: any) => {
-                const assignedIds = getAssignedClientIds(h);
-                return (
-                  <tr key={h.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-foreground">{h.name}</p>
-                      {h.description && <p className="text-xs text-muted-foreground">{h.description}</p>}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {h.frequency === "daily" ? "Daily" : `${h.targetDays}x / week`}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {clients.map((u: any) => {
-                          const isAssigned = assignedIds.has(u.id);
-                          return (
-                            <button
-                              key={u.id}
-                              onClick={() => {
-                                const newIds = new Set(assignedIds);
-                                if (isAssigned) newIds.delete(u.id);
-                                else newIds.add(u.id);
-                                setAssignments.mutate({ habitId: h.id, clientIds: Array.from(newIds) });
-                              }}
-                              className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
-                                isAssigned
-                                  ? "bg-primary/20 border-primary/40 text-primary"
-                                  : "bg-transparent border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                              }`}
-                            >
-                              {u.displayName ?? u.email}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1 justify-end">
-                        <button
-                          onClick={() => startEdit(h)}
-                          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={async () => {
-                            const ok = await confirm({
-                              title: "Delete habit?",
-                              description: `"${h.name}" will be removed from all clients.`,
-                            });
-                            if (ok) del.mutate({ id: h.id });
-                          }}
-                          disabled={del.isPending}
-                          className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors rounded disabled:opacity-50"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {filtered.map((h: any) => (
+            <div key={h.id} className="bg-card border border-border rounded-xl p-4">
+              {editingId === h.id ? (
+                <div className="space-y-3">
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <div className="flex gap-3">
+                    <select
+                      value={editFrequency}
+                      onChange={(e) => setEditFrequency(e.target.value as "daily" | "x_per_week")}
+                      className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="x_per_week">x per week</option>
+                    </select>
+                    {editFrequency === "x_per_week" && (
+                      <input
+                        type="number"
+                        min={1}
+                        max={7}
+                        value={editTargetDays}
+                        onChange={(e) => setEditTargetDays(Number(e.target.value))}
+                        className="w-20 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none"
+                      />
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      disabled={!editName.trim() || updateMut.isPending}
+                      onClick={() =>
+                        updateMut.mutate({
+                          id: h.id,
+                          name: editName.trim(),
+                          frequency: editFrequency,
+                          targetDays: editFrequency === "x_per_week" ? editTargetDays : undefined,
+                        })
+                      }
+                    >
+                      {updateMut.isPending ? "Saving..." : "Save"}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{h.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {h.frequency === "daily" ? "Daily" : `${h.targetDays}x/week`}
+                      {(h.assignedUsers?.length ?? 0) > 0 &&
+                        ` · ${h.assignedUsers.length} client${h.assignedUsers.length !== 1 ? "s" : ""}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        setEditingId(h.id);
+                        setEditName(h.name);
+                        setEditFrequency((h.frequency ?? "daily") as "daily" | "x_per_week");
+                        setEditTargetDays(h.targetDays ?? 5);
+                      }}
+                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: "Delete habit?",
+                          description: `Remove "${h.name}" from the habit library?`,
+                          variant: "destructive",
+                        });
+                        if (ok) deleteMut.mutate({ id: h.id });
+                      }}
+                      className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors rounded"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

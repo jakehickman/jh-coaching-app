@@ -244,13 +244,8 @@ export const progressRouter = router({
         };
       });
 
-      // Filter out weeks with no data at all (except the current in-progress week)
-      const weeksWithData = rawWeeks.filter((w) =>
-        w.isInProgress ||
-        w.daysLogged > 0 ||
-        w.measurementEntries.length > 0 ||
-        w.sessionsCompleted > 0
-      );
+      // Keep ALL periods from start date (including empty ones) — the UI will show them as blank rows
+      const weeksWithData = rawWeeks;
 
       // Compute avgWeightPct: % change vs previous week's avgWeight
       const weeks = weeksWithData.map((w, idx) => {

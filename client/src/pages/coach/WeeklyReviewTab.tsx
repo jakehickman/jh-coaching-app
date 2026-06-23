@@ -29,13 +29,11 @@ type Week = {
   stepGoal: number | null;
   mealLogCount?: number | null;
   mealLogTreats?: number | null;
-  mealLogAvgHunger?: number | null;
-  mealLogAvgFullness?: number | null;
-  mealLogIdealZonePct?: number | null;
   weighIns?: { logDate: string; weight: number }[];
 };
 
-const DEFAULT_VISIBLE = 8;
+const DEFAULT_VISIBLE = 4;
+const EXPAND_STEP = 4;
 
 function fmt(val: number | null | undefined, decimals = 1): string {
   if (val == null) return "—";
@@ -46,40 +44,15 @@ function fmtK(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
 }
 
-function DeltaBadge({ curr, prev, unit = "", invert = false, decimals = 1 }: {
-  curr: number | null;
-  prev: number | null;
-  unit?: string;
-  invert?: boolean;
-  decimals?: number;
-}) {
-  if (curr == null || prev == null) return null;
-  const delta = curr - prev;
-  if (Math.abs(delta) < 0.005) return <span className="text-[10px] text-muted-foreground"><Minus size={9} className="inline" /></span>;
-  const isGood = invert ? delta < 0 : delta > 0;
-  const color = isGood ? "text-green-400" : "text-red-400";
-  const Icon = delta > 0 ? ArrowUp : ArrowDown;
-  return (
-    <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${color}`}>
-      <Icon size={9} />
-      {Math.abs(delta).toFixed(decimals)}{unit}
-    </span>
-  );
-}
-
 function WeekRow({ week, prev, isExpanded, onToggle }: {
   week: Week;
   prev: Week | null;
   isExpanded: boolean;
   onToggle: () => void;
 }) {
-  const hasData = week.daysLogged > 0 || (week.weighIns?.length ?? 0) > 0;
+  const hasData = week.daysLogged > 0 || (week.weighIns?.length ?? 0) > 0 || week.sessionsCompleted > 0;
 
   const weightDeltaPct = week.avgWeightPct;
-  const waistDelta = week.avgWaist != null && prev?.avgWaist != null
-    ? parseFloat((week.avgWaist - prev.avgWaist).toFixed(1)) : null;
-  const skinfoldDelta = week.avgSkinfold != null && prev?.avgSkinfold != null
-    ? parseFloat((week.avgSkinfold - prev.avgSkinfold).toFixed(1)) : null;
 
   const stepsVal = week.avgSteps != null ? fmtK(Math.round(week.avgSteps)) : "—";
   const stepsGoal = week.stepGoal != null ? `/${fmtK(week.stepGoal)}` : "";
@@ -89,12 +62,16 @@ function WeekRow({ week, prev, isExpanded, onToggle }: {
       {/* Summary row */}
       <tr
         className={`border-b border-border/40 transition-colors ${
-          week.isInProgress ? "bg-amber-500/5" : hasData ? "hover:bg-muted/20 cursor-pointer" : "opacity-40"
+          week.isInProgress
+            ? "bg-amber-500/5"
+            : hasData
+            ? "hover:bg-muted/20 cursor-pointer"
+            : "opacity-40"
         }`}
         onClick={() => hasData && onToggle()}
       >
         {/* Week label */}
-        <td className="px-3 py-2.5 min-w-[130px]">
+        <td className="px-3 py-2.5 min-w-[140px]">
           <div className="flex items-center gap-1.5">
             {hasData ? (
               isExpanded
@@ -117,7 +94,7 @@ function WeekRow({ week, prev, isExpanded, onToggle }: {
         {/* Days logged */}
         <td className="px-3 py-2.5 text-center">
           <span className={`text-xs tabular-nums ${hasData ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-            {hasData ? week.daysLogged : "—"}
+            {hasData ? `${week.daysLogged}/7` : "—"}
           </span>
         </td>
 
@@ -197,7 +174,7 @@ function WeekRow({ week, prev, isExpanded, onToggle }: {
                 </div>
               )}
 
-              {/* Recovery & Activity detail */}
+              {/* Recovery detail */}
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recovery</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
@@ -207,34 +184,16 @@ function WeekRow({ week, prev, isExpanded, onToggle }: {
                       <span className="text-[11px] font-medium tabular-nums">{fmt(week.avgSleepQuality)}/5</span>
                     </div>
                   )}
-                  {week.avgHunger != null && (
+                  {week.avgStress != null && (
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">Hunger</span>
-                      <span className="text-[11px] font-medium tabular-nums">{fmt(week.avgHunger)}/5</span>
+                      <span className="text-[11px] text-muted-foreground">Stress</span>
+                      <span className="text-[11px] font-medium tabular-nums">{fmt(week.avgStress)}/5</span>
                     </div>
                   )}
                   {week.avgCaffeine != null && (
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] text-muted-foreground">Caffeine</span>
                       <span className="text-[11px] font-medium tabular-nums">{fmt(week.avgCaffeine)} srv</span>
-                    </div>
-                  )}
-                  {week.mealLogAvgHunger != null && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">Pre-meal hunger</span>
-                      <span className="text-[11px] font-medium tabular-nums">{week.mealLogAvgHunger}</span>
-                    </div>
-                  )}
-                  {week.mealLogAvgFullness != null && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">Post-meal fullness</span>
-                      <span className="text-[11px] font-medium tabular-nums">{week.mealLogAvgFullness}</span>
-                    </div>
-                  )}
-                  {week.mealLogIdealZonePct != null && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">Ideal zone</span>
-                      <span className="text-[11px] font-medium tabular-nums">{week.mealLogIdealZonePct}%</span>
                     </div>
                   )}
                 </div>
@@ -248,7 +207,7 @@ function WeekRow({ week, prev, isExpanded, onToggle }: {
 }
 
 export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
-  const [showAll, setShowAll] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
@@ -308,7 +267,9 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
     );
   }
 
-  const visibleWeeks = showAll ? weeks : weeks.slice(0, DEFAULT_VISIBLE);
+  const visibleWeeks = weeks.slice(0, visibleCount);
+  const remaining = weeks.length - visibleCount;
+  const nextBatch = Math.min(EXPAND_STEP, remaining);
 
   return (
     <div className="mt-2">
@@ -317,7 +278,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground min-w-[130px]">Week</th>
+                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground min-w-[140px]">Week</th>
                 <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Days</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Weight</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Steps</th>
@@ -342,15 +303,15 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         </div>
       </div>
 
-      {weeks.length > DEFAULT_VISIBLE && (
+      {remaining > 0 && (
         <div className="flex justify-center mt-2">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowAll((v) => !v)}
+            onClick={() => setVisibleCount(v => v + EXPAND_STEP)}
             className="text-muted-foreground hover:text-foreground"
           >
-            {showAll ? "Show less" : `Show all ${weeks.length} weeks`}
+            Show {nextBatch} more {nextBatch === 1 ? "week" : "weeks"} ({remaining} remaining)
           </Button>
         </div>
       )}
