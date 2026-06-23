@@ -1,8 +1,8 @@
 import { trpc } from "@/lib/trpc";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
 import { toast } from "sonner";
-import { ChevronDown, ChevronUp, Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, TrendingDown, TrendingUp } from "lucide-react";
 import { toUTCDateStr as toLocalDateStr, localToday } from "@/lib/dates";
 import { SectionLabel, Card, DateInput } from "./shared";
 
@@ -14,16 +14,40 @@ function avg(vals: (number | null | undefined)[]): number | null {
   return Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10;
 }
 
-function fmt(v: number | null | undefined, unit = "") {
-  if (v == null) return "—";
-  return `${v}${unit}`;
-}
-
 function fmtDate(d: Date | string | null | undefined) {
   if (!d) return "";
   const s = typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
-  const [y, m, day] = s.split("-");
-  return `${day}/${m}/${y}`;
+  if (s.length < 10) return s;
+  const dt = new Date(s + "T12:00:00Z");
+  const day = dt.getUTCDate();
+  const month = dt.toLocaleDateString("en-AU", { month: "long", timeZone: "UTC" });
+  const year = dt.getUTCFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+function Delta({
+  curr,
+  prev,
+  unit = "",
+  lowerIsBetter = true,
+}: {
+  curr: number | null;
+  prev: number | null;
+  unit?: string;
+  lowerIsBetter?: boolean;
+}) {
+  if (curr == null || prev == null) return null;
+  const diff = Math.round((curr - prev) * 10) / 10;
+  if (diff === 0) return <span className="text-xs text-muted-foreground">—</span>;
+  const improved = lowerIsBetter ? diff < 0 : diff > 0;
+  const sign = diff > 0 ? "+" : "";
+  const Icon = diff < 0 ? TrendingDown : TrendingUp;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${improved ? "text-primary" : "text-amber-400"}`}>
+      <Icon size={11} />
+      {sign}{diff}{unit}
+    </span>
+  );
 }
 
 // ─── SkinfoldInput ────────────────────────────────────────────────────────────
@@ -58,19 +82,19 @@ function SkinfoldInput({
   );
 }
 
-// ─── HistoryRow ───────────────────────────────────────────────────────────────
+// ─── MeasurementCard ─────────────────────────────────────────────────────────
 
-function HistoryRow({
+function MeasurementCard({
   entry,
+  prev,
   onDelete,
   readOnly,
 }: {
   entry: any;
+  prev: any | null;
   onDelete: () => void;
   readOnly: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
-
   const umbAvg = avg([entry.umbilical1, entry.umbilical2, entry.umbilical3, entry.umbilical4, entry.umbilical5]);
   const supAvg = avg([entry.suprailiac1, entry.suprailiac2, entry.suprailiac3, entry.suprailiac4, entry.suprailiac5]);
   const calfAvg = avg([entry.calf1, entry.calf2, entry.calf3, entry.calf4, entry.calf5]);
@@ -80,97 +104,90 @@ function HistoryRow({
       ? Math.round((umbAvg + supAvg + calfAvg + thighAvg) * 10) / 10
       : null;
 
+  const prevUmbAvg = prev ? avg([prev.umbilical1, prev.umbilical2, prev.umbilical3, prev.umbilical4, prev.umbilical5]) : null;
+  const prevSupAvg = prev ? avg([prev.suprailiac1, prev.suprailiac2, prev.suprailiac3, prev.suprailiac4, prev.suprailiac5]) : null;
+  const prevCalfAvg = prev ? avg([prev.calf1, prev.calf2, prev.calf3, prev.calf4, prev.calf5]) : null;
+  const prevThighAvg = prev ? avg([prev.thigh1, prev.thigh2, prev.thigh3, prev.thigh4, prev.thigh5]) : null;
+  const prevTotal =
+    prevUmbAvg != null && prevSupAvg != null && prevCalfAvg != null && prevThighAvg != null
+      ? Math.round((prevUmbAvg + prevSupAvg + prevCalfAvg + prevThighAvg) * 10) / 10
+      : null;
+
+  const skinfoldSites = [
+    { label: "Umbilical", curr: umbAvg, prev: prevUmbAvg },
+    { label: "Suprailiac", curr: supAvg, prev: prevSupAvg },
+    { label: "Calf", curr: calfAvg, prev: prevCalfAvg },
+    { label: "Thigh", curr: thighAvg, prev: prevThighAvg },
+  ];
+
   return (
-    <div className="border-b border-border last:border-0">
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/30 transition-colors"
-      >
-        <div>
-          <p className="text-sm font-semibold text-foreground">{fmtDate(entry.measureDate)}</p>
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-            {entry.waist != null && (
-              <span className="text-[11px] text-muted-foreground">Waist {entry.waist} cm</span>
-            )}
-            {entry.hips != null && (
-              <span className="text-[11px] text-muted-foreground">Hips {entry.hips} cm</span>
-            )}
-            {totalAvg != null && (
-              <span className="text-[11px] text-primary font-medium">Total {totalAvg} mm</span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {!readOnly && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-            >
-              <Trash2 size={14} />
-            </button>
+    <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-foreground">{fmtDate(entry.measureDate)}</p>
+        {!readOnly && (
+          <button
+            onClick={onDelete}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
+      </div>
+
+      {/* Circumferences */}
+      {(entry.waist != null || entry.hips != null) && (
+        <div className="grid grid-cols-2 gap-3">
+          {entry.waist != null && (
+            <div className="bg-secondary/50 rounded-lg px-3 py-2.5">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Waist</p>
+              <p className="text-base font-semibold text-foreground">{entry.waist} <span className="text-xs font-normal text-muted-foreground">cm</span></p>
+              <Delta curr={entry.waist} prev={prev?.waist ?? null} unit=" cm" />
+            </div>
           )}
-          {expanded ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          )}
-        </div>
-      </button>
-
-      {expanded && (
-        <div className="px-4 pb-4 bg-muted/20 border-t border-border">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-3">
-            {entry.waist != null && (
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Waist</p>
-                <p className="text-sm font-semibold text-foreground">{entry.waist} cm</p>
-              </div>
-            )}
-            {entry.hips != null && (
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hips</p>
-                <p className="text-sm font-semibold text-foreground">{entry.hips} cm</p>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-3 space-y-2">
-            {[
-              { label: "Umbilical", vals: [entry.umbilical1, entry.umbilical2, entry.umbilical3, entry.umbilical4, entry.umbilical5], avg: umbAvg },
-              { label: "Suprailiac", vals: [entry.suprailiac1, entry.suprailiac2, entry.suprailiac3, entry.suprailiac4, entry.suprailiac5], avg: supAvg },
-              { label: "Calf", vals: [entry.calf1, entry.calf2, entry.calf3, entry.calf4, entry.calf5], avg: calfAvg },
-              { label: "Thigh", vals: [entry.thigh1, entry.thigh2, entry.thigh3, entry.thigh4, entry.thigh5], avg: thighAvg },
-            ].map(({ label, vals, avg: a }) => {
-              const readings = vals.filter((v) => v != null);
-              if (readings.length === 0) return null;
-              return (
-                <div key={label} className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground w-24">{label}</p>
-                  <div className="flex gap-1.5 flex-wrap justify-end">
-                    {readings.map((v, i) => (
-                      <span key={i} className="text-xs text-foreground bg-secondary px-1.5 py-0.5 rounded">
-                        {v}
-                      </span>
-                    ))}
-                    {a != null && readings.length > 1 && (
-                      <span className="text-xs text-primary font-medium ml-1">avg {a}</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {totalAvg != null && (
-            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Total skinfolds</p>
-              <p className="text-sm font-semibold text-primary">{totalAvg} mm</p>
+          {entry.hips != null && (
+            <div className="bg-secondary/50 rounded-lg px-3 py-2.5">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Hips</p>
+              <p className="text-base font-semibold text-foreground">{entry.hips} <span className="text-xs font-normal text-muted-foreground">cm</span></p>
+              <Delta curr={entry.hips} prev={prev?.hips ?? null} unit=" cm" />
             </div>
           )}
         </div>
+      )}
+
+      {/* Skinfolds */}
+      {skinfoldSites.some(s => s.curr != null) && (
+        <div>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">Skinfolds</p>
+          <div className="grid grid-cols-2 gap-2">
+            {skinfoldSites.map(({ label, curr, prev: p }) =>
+              curr != null ? (
+                <div key={label} className="bg-secondary/50 rounded-lg px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground mb-0.5">{label}</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-semibold text-foreground">{curr} <span className="text-xs font-normal text-muted-foreground">mm</span></span>
+                    <Delta curr={curr} prev={p} unit=" mm" />
+                  </div>
+                </div>
+              ) : null
+            )}
+          </div>
+
+          {totalAvg != null && (
+            <div className="mt-2 bg-secondary/50 rounded-lg px-3 py-2.5 flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">Total skinfolds</p>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-primary">{totalAvg} mm</span>
+                <Delta curr={totalAvg} prev={prevTotal} unit=" mm" />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Notes */}
+      {entry.notes && (
+        <p className="text-xs text-muted-foreground italic border-t border-border pt-3">{entry.notes}</p>
       )}
     </div>
   );
@@ -226,7 +243,6 @@ function siteToFields(site: SkinfoldSite, prefix: string) {
 export default function MeasurementsTab() {
   const today = localToday();
   const { viewAsUserId } = useViewAs();
-  const utils = trpc.useUtils();
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<MeasureForm>(() => blankForm(today));
@@ -277,18 +293,11 @@ export default function MeasurementsTab() {
     });
   };
 
-  const handleDelete = (id: number) => {
-    deleteMutation.mutate({ id });
-  };
-
   return (
     <div className="space-y-6">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Measurements</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Waist, hips and skinfold readings</p>
-        </div>
+        <h2 className="text-lg font-semibold text-foreground">Measurements</h2>
         {!viewAsUserId && (
           <button
             onClick={() => {
@@ -297,7 +306,7 @@ export default function MeasurementsTab() {
             }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            <Plus size={15} />
+            <Plus size={14} />
             Add
           </button>
         )}
@@ -347,26 +356,10 @@ export default function MeasurementsTab() {
           <div>
             <SectionLabel>Skinfolds — 5 readings per site</SectionLabel>
             <div className="space-y-4">
-              <SkinfoldInput
-                label="Umbilical"
-                values={form.umbilical}
-                onChange={(i, v) => setSite("umbilical", i, v)}
-              />
-              <SkinfoldInput
-                label="Suprailiac"
-                values={form.suprailiac}
-                onChange={(i, v) => setSite("suprailiac", i, v)}
-              />
-              <SkinfoldInput
-                label="Calf"
-                values={form.calf}
-                onChange={(i, v) => setSite("calf", i, v)}
-              />
-              <SkinfoldInput
-                label="Thigh"
-                values={form.thigh}
-                onChange={(i, v) => setSite("thigh", i, v)}
-              />
+              <SkinfoldInput label="Umbilical" values={form.umbilical} onChange={(i, v) => setSite("umbilical", i, v)} />
+              <SkinfoldInput label="Suprailiac" values={form.suprailiac} onChange={(i, v) => setSite("suprailiac", i, v)} />
+              <SkinfoldInput label="Calf" values={form.calf} onChange={(i, v) => setSite("calf", i, v)} />
+              <SkinfoldInput label="Thigh" values={form.thigh} onChange={(i, v) => setSite("thigh", i, v)} />
             </div>
           </div>
 
@@ -399,25 +392,23 @@ export default function MeasurementsTab() {
       )}
 
       {/* History */}
-      <div>
-        <SectionLabel>History</SectionLabel>
-        {entries.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl px-4 py-8 text-center">
-            <p className="text-sm text-muted-foreground">No measurements logged yet</p>
-          </div>
-        ) : (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            {entries.map((entry: any) => (
-              <HistoryRow
-                key={entry.id}
-                entry={entry}
-                onDelete={() => handleDelete(entry.id)}
-                readOnly={!!viewAsUserId}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {entries.length === 0 ? (
+        <div className="bg-card border border-border rounded-xl px-4 py-8 text-center">
+          <p className="text-sm text-muted-foreground">No measurements logged yet</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {entries.map((entry: any, idx: number) => (
+            <MeasurementCard
+              key={entry.id}
+              entry={entry}
+              prev={idx < entries.length - 1 ? entries[idx + 1] : null}
+              onDelete={() => deleteMutation.mutate({ id: entry.id })}
+              readOnly={!!viewAsUserId}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

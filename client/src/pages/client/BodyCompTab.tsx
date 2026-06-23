@@ -18,8 +18,12 @@ function avg(vals: (number | null | undefined)[]): number | null {
 function fmtDate(d: Date | string | null | undefined) {
   if (!d) return "";
   const s = typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
-  const [y, m, day] = s.split("-");
-  return `${day}/${m}/${y}`;
+  if (s.length < 10) return s;
+  const dt = new Date(s + "T12:00:00Z");
+  const day = dt.getUTCDate();
+  const month = dt.toLocaleDateString("en-AU", { month: "long", timeZone: "UTC" });
+  const year = dt.getUTCFullYear();
+  return `${day} ${month} ${year}`;
 }
 function delta(curr: number | null, prev: number | null, unit: string, lowerIsBetter = true) {
   if (curr == null || prev == null) return null;

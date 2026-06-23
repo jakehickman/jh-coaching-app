@@ -621,9 +621,12 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
   }
 
   function fmtDate(iso: string) {
-    const [y, m, d] = iso.split('-');
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+    if (!iso || iso.length < 10) return iso;
+    const dt = new Date(iso.slice(0, 10) + "T12:00:00Z");
+    const day = dt.getUTCDate();
+    const month = dt.toLocaleDateString("en-AU", { month: "long", timeZone: "UTC" });
+    const year = dt.getUTCFullYear();
+    return `${day} ${month} ${year}`;
   }
 
   function diffBadge(curr: number | null, prev: number | null, invertGood = false) {

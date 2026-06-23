@@ -8,8 +8,12 @@ function fmt(val: number | null | undefined, decimals = 1): string {
 }
 
 function fmtDate(d: string): string {
-  const dt = new Date(d + "T00:00:00");
-  return dt.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+  if (!d || d.length < 10) return d;
+  const dt = new Date(d.slice(0, 10) + "T12:00:00Z");
+  const day = dt.getUTCDate();
+  const month = dt.toLocaleDateString("en-AU", { month: "long", timeZone: "UTC" });
+  const year = dt.getUTCFullYear();
+  return `${day} ${month} ${year}`;
 }
 
 type DeltaProps = { delta: number | null; unit?: string; invert?: boolean; decimals?: number };

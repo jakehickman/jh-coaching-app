@@ -32,13 +32,16 @@ export function localToday(): string {
 }
 
 /**
- * Format a yyyy-mm-dd string as dd/mm/yyyy for display.
+ * Format a yyyy-mm-dd string as "13 May 2026" for display.
  */
 export function fmtDate(iso: unknown): string {
-  const s = String(iso ?? "");
-  const parts = s.slice(0, 10).split("-");
-  if (parts.length !== 3) return s;
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  const s = String(iso ?? "").slice(0, 10);
+  if (!s || s.length < 10) return s;
+  const d = new Date(s + "T12:00:00Z");
+  const day = d.getUTCDate();
+  const month = d.toLocaleDateString("en-AU", { month: "long", timeZone: "UTC" });
+  const year = d.getUTCFullYear();
+  return `${day} ${month} ${year}`;
 }
 
 /**

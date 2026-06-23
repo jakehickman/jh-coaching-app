@@ -178,10 +178,16 @@ export function MeasurementsCard({
   toLocalDateStr: (d: unknown) => string;
 }) {
   const [showMeasureDetail, setShowMeasureDetail] = useState(false);
-  const latestDate = toDateStr(latestM.measureDate).split("-").reverse().join("/");
-  const prevDate = prevM
-    ? toDateStr(prevM.measureDate).split("-").reverse().join("/")
-    : null;
+  function fmtIso(iso: string) {
+    if (!iso || iso.length < 10) return iso;
+    const dt = new Date(iso.slice(0, 10) + "T12:00:00Z");
+    const day = dt.getUTCDate();
+    const month = dt.toLocaleDateString("en-AU", { month: "long", timeZone: "UTC" });
+    const year = dt.getUTCFullYear();
+    return `${day} ${month} ${year}`;
+  }
+  const latestDate = fmtIso(toDateStr(latestM.measureDate));
+  const prevDate = prevM ? fmtIso(toDateStr(prevM.measureDate)) : null;
 
   function siteAvg(vals: (number | null | undefined)[]): number | null {
     const nums = vals.filter((v): v is number => v != null);
