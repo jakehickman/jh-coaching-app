@@ -12,6 +12,8 @@ import {
   Plus,
   Pencil,
   Trash2,
+  UtensilsCrossed,
+  Cookie,
 } from "lucide-react";
 import {
   Sheet,
@@ -592,8 +594,10 @@ function MealRow({
       <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-secondary flex items-center justify-center">
         {meal.photoUrl ? (
           <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
+        ) : isMeal ? (
+          <UtensilsCrossed size={22} className="text-muted-foreground/50" />
         ) : (
-          <span className="text-muted-foreground text-xs">No photo</span>
+          <Cookie size={22} className="text-muted-foreground/50" />
         )}
       </div>
 
