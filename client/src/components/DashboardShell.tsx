@@ -7,16 +7,13 @@ import {
   Salad,
   ChevronLeft,
   CheckSquare,
-  ClipboardCheck,
   ClipboardList,
   Dumbbell,
-  Home,
   LogOut,
   Menu,
-  Ruler,
+  Scale,
   Users,
   Utensils,
-  UtensilsCrossed,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -28,13 +25,12 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-// ─── Client nav: all tabs in a single scrollable bottom bar ─────────────────
+// ─── Client nav: 4 tabs ─────────────────────────────────────────────────────
 const clientNav: NavItem[] = [
-  { href: "/dashboard/overview",      label: "Home",          icon: <Home size={22} /> },
-  { href: "/dashboard/daily-log",     label: "Daily Log",     icon: <ClipboardList size={22} /> },
-  { href: "/dashboard/nutrition",    label: "Nutrition",    icon: <Utensils size={22} /> },
-  { href: "/dashboard/training",      label: "Training",      icon: <Dumbbell size={22} /> },
-  { href: "/dashboard/measurements",  label: "Measurements",  icon: <Ruler size={22} /> },
+  { href: "/dashboard/daily-log", label: "Daily Log", icon: <ClipboardList size={22} /> },
+  { href: "/dashboard/body-comp", label: "Body Comp", icon: <Scale size={22} /> },
+  { href: "/dashboard/nutrition", label: "Nutrition", icon: <Utensils size={22} /> },
+  { href: "/dashboard/training",  label: "Training",  icon: <Dumbbell size={22} /> },
 ];
 
 const coachNav: NavItem[] = [
@@ -269,7 +265,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">JH Coaching</p>
           <p className="text-sm font-bold text-foreground mt-0.5">
-            {clientNav.find(n => location === n.href || (n.href !== "/dashboard/overview" && location.startsWith(n.href)))?.label ?? "Dashboard"}
+            {clientNav.find(n => location === n.href || location.startsWith(n.href))?.label ?? "Dashboard"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -292,35 +288,29 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
         {children}
       </main>
 
-      {/* Scrollable bottom navigation bar — all 7 tabs in one row */}
+      {/* Bottom navigation bar — 4 evenly-spaced tabs */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 bg-sidebar border-t border-border">
-        {/* Scroll hint gradient on the right edge */}
-        <div className="relative max-w-2xl mx-auto">
-          <div
-            className="flex items-stretch overflow-x-auto scrollbar-none"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {clientNav.map(item => {
-              const isActive = location === item.href || (item.href !== "/dashboard/overview" && location.startsWith(item.href));
-              return (
-                <Link
-                  key={item.href}
-                  href={`${item.href}${viewAsParams}`}
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-1.5 py-3 transition-colors min-h-[68px] flex-shrink-0 w-[82px]",
-                    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <span className="relative inline-flex">
-                    {item.icon}
-                  </span>
-                  <span className={cn("text-[11px] font-medium leading-none whitespace-nowrap", isActive ? "text-primary" : "text-muted-foreground")}>
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
+        <div className="max-w-2xl mx-auto flex items-stretch">
+          {clientNav.map(item => {
+            const isActive = location === item.href || location.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={`${item.href}${viewAsParams}`}
+                className={cn(
+                  "flex flex-1 flex-col items-center justify-center gap-1.5 py-3 transition-colors min-h-[68px]",
+                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <span className="relative inline-flex">
+                  {item.icon}
+                </span>
+                <span className={cn("text-[11px] font-medium leading-none whitespace-nowrap", isActive ? "text-primary" : "text-muted-foreground")}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </nav>
     </div>

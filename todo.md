@@ -617,17 +617,17 @@
 - [x] Replace raw markdown textarea + toolbar with Tiptap WYSIWYG editor (bold, heading, bullet list)
 
 ## Phases Feature
-- [ ] Phases: add phases table to DB schema and run migration
-- [ ] Phases: tRPC procedures (list, create, update, delete)
-- [ ] Phases: PhasesTab component with timeline (past/active/upcoming), add/edit/delete phase UI
-- [ ] Phases: phase summary card (body comp changes + bracketing photos) for completed phases
-- [ ] Phases: Current Phase badge in client header (visible on all tabs)
-- [ ] Phases: wire Phases tab into ProgressSection tab bar
+- [x] Phases: add phases table to DB schema and run migration (REMOVED — phases feature removed)
+- [x] Phases: tRPC procedures (list, create, update, delete) (REMOVED — phases feature removed)
+- [x] Phases: PhasesTab component with timeline (past/active/upcoming), add/edit/delete phase UI (REMOVED — phases feature removed)
+- [x] Phases: phase summary card (body comp changes + bracketing photos) for completed phases (REMOVED — phases feature removed)
+- [x] Phases: Current Phase badge in client header (visible on all tabs) (REMOVED — phases feature removed)
+- [x] Phases: wire Phases tab into ProgressSection tab bar (REMOVED — phases feature removed)
 
 ## Phase Weight Planning
-- [ ] Add startWeight and targetWeight columns to client_phases table
-- [ ] Auto-populate startWeight from most recent logged weight when creating a phase
-- [ ] Show calculated rate of change (% body weight per week) on phase cards
+- [x] Add startWeight and targetWeight columns to client_phases table (REMOVED — phases feature removed)
+- [x] Auto-populate startWeight from most recent logged weight when creating a phase (REMOVED — phases feature removed)
+- [x] Show calculated rate of change (% body weight per week) on phase cards (REMOVED — phases feature removed)
 - [x] Fix coach Recent Daily Logs: was capped at 14 days, now shows all days from client start date with dynamic "View more" count
 - [x] Daily log: amber border/ring on unfilled fields so incomplete entries are visually obvious
 - [x] Training tab: group program change log entries by date into a single card per day (also applied to Cardio change log)
@@ -683,3 +683,12 @@
 - [x] Fix habits section on Overview: single day-letter header row above all habits, not repeated per habit
 - [x] Remove Getting Started Guide link from Overview
 - [x] Redesign colour scheme: darker bg, higher contrast cards, better visual hierarchy
+
+## Nav Restructure (Jun 2026)
+- [x] Remove Overview tab from client nav and ClientDashboard routing
+- [x] Remove Check-ins tab from client nav and ClientDashboard routing
+- [x] Rename Measurements tab to Body Comp in nav and routing
+- [x] Build BodyCompTab: weight trend chart (14-day) + measurements history
+- [x] Move interactive habits grid into DailyLogTab (already present from earlier work)
+- [x] Update DashboardShell clientNav to 4 tabs: Daily Log, Body Comp, Nutrition, Training
+- [x] Set default route to daily-log (was overview)

@@ -6,17 +6,16 @@ import { ViewAsContext } from "@/contexts/ViewAsContext";
 import { trpc } from "@/lib/trpc";
 import { Eye, X } from "lucide-react";
 
-import OverviewTab from "./client/OverviewTab";
 import DailyLogTab from "./client/DailyLogTab";
 import { CombinedNutritionTab } from "./client/NutritionTab";
 import CombinedTrainingTab from "./client/TrainingTab";
-import MeasurementsTab from "./client/MeasurementsTab";
+import BodyCompTab from "./client/BodyCompTab";
 
 export default function ClientDashboard() {
   const params = useParams<{ tab?: string }>();
   const [, navigate] = useLocation();
   const search = useSearch();
-  const tab = params.tab ?? "overview";
+  const tab = params.tab ?? "daily-log";
 
   // Parse ?viewAs=<userId>&viewAsName=<name> from the URL
   const searchParams = useMemo(() => new URLSearchParams(search), [search]);
@@ -46,8 +45,6 @@ export default function ClientDashboard() {
 
   // Clear the query cache only when *entering* viewAs mode (viewAsUserId
   // changes from null to a real id, or switches to a different client id).
-  // Clearing on every mount (including null -> null) wipes auth.me and
-  // causes an infinite loading spinner.
   const queryClient = useQueryClient();
   const prevViewAsRef = useRef<number | null>(undefined as unknown as null);
   useEffect(() => {
@@ -61,21 +58,23 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (!params.tab) {
       const qs = search ? `?${search}` : "";
-      navigate(`/dashboard/overview${qs}`);
+      navigate(`/dashboard/daily-log${qs}`);
     }
   }, [params.tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderTab = () => {
     switch (tab) {
-      case "overview":     return <OverviewTab key="overview" />;
       case "daily-log":    return <DailyLogTab key="daily-log" />;
-      case "meal-plan":    return <CombinedNutritionTab key="nutrition" defaultSub="today" />;
+      case "body-comp":    return <BodyCompTab key="body-comp" />;
       case "nutrition":    return <CombinedNutritionTab key="nutrition" defaultSub="today" />;
+      case "meal-plan":    return <CombinedNutritionTab key="nutrition" defaultSub="today" />;
       case "shopping":     return <CombinedNutritionTab key="nutrition-history" defaultSub="history" />;
       case "training":     return <CombinedTrainingTab key="training" defaultSub="program" />;
       case "workout-log":  return <CombinedTrainingTab key="workout-log" defaultSub="log" />;
-      case "measurements": return <MeasurementsTab key="measurements" />;
-      default:             return <OverviewTab key="overview" />;
+      // legacy redirects
+      case "overview":     return <DailyLogTab key="daily-log" />;
+      case "measurements": return <BodyCompTab key="body-comp" />;
+      default:             return <DailyLogTab key="daily-log" />;
     }
   };
 
@@ -89,7 +88,7 @@ export default function ClientDashboard() {
               <span>Viewing as <strong>{resolvedName}</strong> — read-only mode</span>
             </div>
             <button
-              onClick={() => navigate("/dashboard/overview")}
+              onClick={() => navigate("/dashboard/daily-log")}
               className="flex items-center gap-1.5 text-xs hover:text-amber-200 transition-colors"
             >
               <X size={13} /> Exit
