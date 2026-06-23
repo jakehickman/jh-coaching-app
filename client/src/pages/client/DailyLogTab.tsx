@@ -473,7 +473,13 @@ export default function DailyLogTab() {
                   isSelected ? 'text-primary-foreground' : isToday ? 'text-primary' : 'text-foreground'
                 }`}>{dayNum}</span>
                 <span className={`w-1 h-1 rounded-full ${
-                  isSelected ? 'bg-primary-foreground/70' : hasLog ? 'bg-primary' : 'bg-transparent'
+                  isSelected
+                    ? 'bg-primary-foreground/70'
+                    : hasLog
+                    ? 'bg-primary'
+                    : !isFuture && !isPast
+                    ? 'bg-amber-500/70'
+                    : 'bg-transparent'
                 }`} />
               </button>
             );
