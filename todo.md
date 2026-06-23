@@ -668,3 +668,8 @@
 - [x] Coach: Replace old Meal Plan editor in ProgressSection nutrition tab with CoachNutritionTab
 - [x] Coach: Augment weeklyReview procedure with meal log metrics per week
 - [x] Coach: Add meal log tiles to WeeklyReviewTab Nutrition MetricGroup
+- [x] Measurements tab: DB schema (measurements table with waist, hips, skinfolds)
+- [x] Measurements tab: tRPC router (list, create, delete)
+- [x] Measurements tab: MeasurementsTab client component with entry form + history
+- [x] Measurements tab: add to clientNav and ClientDashboard routing
+- [x] Remove off-plan meals counter from client Daily Log tab

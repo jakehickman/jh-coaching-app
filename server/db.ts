@@ -336,6 +336,7 @@ export async function addMeasurement(data: {
   userId: number;
   measureDate: string;
   waist?: number;
+  hips?: number;
   umbilical1?: number; umbilical2?: number; umbilical3?: number; umbilical4?: number; umbilical5?: number;
   suprailiac1?: number; suprailiac2?: number; suprailiac3?: number; suprailiac4?: number; suprailiac5?: number;
   calf1?: number; calf2?: number; calf3?: number; calf4?: number; calf5?: number;
@@ -350,6 +351,7 @@ export async function addMeasurement(data: {
 export async function updateMeasurement(id: number, userId: number, data: {
   measureDate?: string;
   waist?: number | null;
+  hips?: number | null;
   umbilical1?: number | null; umbilical2?: number | null; umbilical3?: number | null; umbilical4?: number | null; umbilical5?: number | null;
   suprailiac1?: number | null; suprailiac2?: number | null; suprailiac3?: number | null; suprailiac4?: number | null; suprailiac5?: number | null;
   calf1?: number | null; calf2?: number | null; calf3?: number | null; calf4?: number | null; calf5?: number | null;

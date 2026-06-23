@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE measurements ADD COLUMN hips FLOAT NULL AFTER waist;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute ALTER TABLE measurements ADD COLUMN hips FLOAT NULL AFTER waist;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2240
+}

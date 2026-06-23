@@ -10,6 +10,7 @@ import OverviewTab from "./client/OverviewTab";
 import DailyLogTab from "./client/DailyLogTab";
 import { CombinedNutritionTab } from "./client/NutritionTab";
 import CombinedTrainingTab from "./client/TrainingTab";
+import MeasurementsTab from "./client/MeasurementsTab";
 
 export default function ClientDashboard() {
   const params = useParams<{ tab?: string }>();
@@ -73,6 +74,7 @@ export default function ClientDashboard() {
       case "shopping":     return <CombinedNutritionTab key="nutrition-history" defaultSub="history" />;
       case "training":     return <CombinedTrainingTab key="training" defaultSub="program" />;
       case "workout-log":  return <CombinedTrainingTab key="workout-log" defaultSub="log" />;
+      case "measurements": return <MeasurementsTab key="measurements" />;
       default:             return <OverviewTab key="overview" />;
     }
   };

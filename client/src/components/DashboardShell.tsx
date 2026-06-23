@@ -13,6 +13,7 @@ import {
   Home,
   LogOut,
   Menu,
+  Ruler,
   Users,
   Utensils,
   UtensilsCrossed,
@@ -33,6 +34,7 @@ const clientNav: NavItem[] = [
   { href: "/dashboard/daily-log",     label: "Daily Log",     icon: <ClipboardList size={22} /> },
   { href: "/dashboard/nutrition",    label: "Nutrition",    icon: <Utensils size={22} /> },
   { href: "/dashboard/training",      label: "Training",      icon: <Dumbbell size={22} /> },
+  { href: "/dashboard/measurements",  label: "Measurements",  icon: <Ruler size={22} /> },
 ];
 
 const coachNav: NavItem[] = [

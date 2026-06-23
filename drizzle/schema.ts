@@ -136,6 +136,8 @@ export const measurements = mysqlTable("measurements", {
   measureDate: date("measureDate").notNull(),
   // Waist circumference (cm)
   waist: float("waist"),
+  // Hip circumference (cm)
+  hips: float("hips"),
   // Skinfold thickness — 5 readings per site (mm), averaged in coach view
   umbilical1: float("umbilical1"),
   umbilical2: float("umbilical2"),

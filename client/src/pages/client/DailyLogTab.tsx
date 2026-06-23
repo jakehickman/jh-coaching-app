@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, Pencil, CheckSquare, Square, Utensils, Activity } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Pencil, CheckSquare, Square, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr, localToday } from "@/lib/dates";
 import { SectionLabel, Card, DateInput, ScoreInput, DailyLogRow } from "./shared";
@@ -46,7 +46,6 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
     const d = new Date(iso + 'T00:00:00');
     return d.toLocaleDateString('en-AU', { weekday: 'short' });
   }
-  const hasOffPlanMeals = (v: unknown) => typeof v === 'number' ? v > 0 : (v === true || v === 1 || v === '1');
   const isTrained = (v: unknown) => v === true || v === 1 || v === '1';
 
   return (
@@ -77,7 +76,6 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
                     <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
                       trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                     }`}>{sessionLabel}</span>
-                    {hasOffPlanMeals(log.offPlanMeals) ? <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-medium bg-amber-500/20 text-amber-400" title="Off-plan meal"><Utensils size={11} /></span> : null}
                     {((log as any).lissMinutes ?? 0) > 0 ? <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-medium bg-blue-500/20 text-blue-400" title="LISS Cardio"><Activity size={11} />{(log as any).lissMinutes}m</span> : null}
                   </>
                 ) : (
@@ -231,14 +229,13 @@ type DailyForm = {
   sleepQuality: number | null;
   hungerLevel: number | null;
   stressLevel: number | null;
-  offPlanMeals: boolean;
   notes: string;
 };
 
 const blank: DailyForm = {
   weight: "", sleepHours: "", caffeineServings: "", trainingCompleted: false,
   trainingType: "", stepsCount: "", lissMinutes: "", sleepQuality: null, hungerLevel: null, stressLevel: null,
-  offPlanMeals: false, notes: "",
+  notes: "",
 };
 
 export default function DailyLogTab() {
@@ -337,7 +334,6 @@ export default function DailyLogTab() {
           sleepQuality: existing.sleepQuality ?? null,
           hungerLevel: existing.hungerLevel ?? null,
           stressLevel: (existing as any).stressLevel ?? null,
-          offPlanMeals: (existing.offPlanMeals ?? 0) > 0,
           notes: existing.notes ?? "",
         }, newKey);
       } else {
@@ -363,8 +359,7 @@ export default function DailyLogTab() {
         lissMinutes: (existing as any).lissMinutes?.toString() ?? "",
         sleepQuality: existing.sleepQuality ?? null,
         hungerLevel: existing.hungerLevel ?? null,
-        stressLevel: (existing as any).stressLevel ?? null,
-          offPlanMeals: (existing.offPlanMeals ?? 0) > 0,
+          stressLevel: (existing as any).stressLevel ?? null,
           notes: existing.notes ?? "",
         });
     } else {
@@ -400,7 +395,6 @@ export default function DailyLogTab() {
       sleepQuality: form.sleepQuality ?? undefined,
       hungerLevel: form.hungerLevel ?? undefined,
       stressLevel: form.stressLevel ?? undefined,
-      offPlanMeals: form.offPlanMeals ?? false,
       notes: form.notes || undefined,
     });
   };
@@ -471,28 +465,6 @@ export default function DailyLogTab() {
           <ScoreInput label="Hunger Level" value={form.hungerLevel} onChange={v => setForm(p => ({ ...p, hungerLevel: v }))} max={5} />
           <ScoreInput label="Stress Level" value={form.stressLevel} onChange={v => setForm(p => ({ ...p, stressLevel: v }))} max={5} />
         </Card>
-      </div>
-
-      <div>
-        <SectionLabel>Nutrition</SectionLabel>
-        <button
-          type="button"
-          onClick={() => setForm(p => ({ ...p, offPlanMeals: !p.offPlanMeals }))}
-          className={`w-full rounded-xl border transition-all duration-200 px-4 py-4 flex items-center justify-between ${
-            form.offPlanMeals
-              ? 'bg-amber-500/10 border-amber-500/50'
-              : 'bg-secondary border-border'
-          }`}
-        >
-          <p className={`text-base font-medium transition-colors ${
-            form.offPlanMeals ? 'text-amber-400' : 'text-foreground'
-          }`}>Off Plan Meal</p>
-          <div className={`w-7 h-7 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-            form.offPlanMeals ? 'bg-amber-500 border-amber-500' : 'border-border bg-transparent'
-          }`}>
-            {form.offPlanMeals && <Check size={16} className="text-white" />}
-          </div>
-        </button>
       </div>
 
       <div>
