@@ -148,8 +148,8 @@ function RatingPicker({
 }) {
   const idealFn = type === "hunger" ? isIdealHunger : isIdealFullness;
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2 justify-center flex-wrap">
+    <div className="space-y-3">
+      <div className="flex gap-1.5 justify-between">
         {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
           const ideal = idealFn(n);
           const selected = value === n;
@@ -158,7 +158,7 @@ function RatingPicker({
               key={n}
               onClick={() => onChange(n)}
               className={cn(
-                "w-11 h-11 rounded-full text-base font-bold transition-all border-2",
+                "flex-1 h-10 rounded-lg text-sm font-bold transition-all border-2",
                 selected
                   ? ideal
                     ? "bg-green-500 border-green-500 text-white"
@@ -174,14 +174,9 @@ function RatingPicker({
         })}
       </div>
       {value != null && (
-        <div className="text-center">
-          <span className={cn("text-2xl font-bold", idealFn(value) ? "text-green-400" : "text-amber-400")}>
-            {value}
-          </span>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {SCALE[value - 1].label} — {SCALE[value - 1].desc}
-          </p>
-        </div>
+        <p className={cn("text-sm text-center", idealFn(value) ? "text-green-400" : "text-amber-400")}>
+          {SCALE[value - 1].label} — {SCALE[value - 1].desc}
+        </p>
       )}
     </div>
   );
@@ -342,7 +337,7 @@ function LogSheet({
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Name (optional)"
+          placeholder="Description"
           className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
 
@@ -350,7 +345,7 @@ function LogSheet({
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes (optional)"
+          placeholder="Notes"
           rows={3}
           className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
         />
@@ -518,7 +513,7 @@ function EditSheet({
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Meal name (optional)"
+            placeholder="Description"
             className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
 
@@ -558,7 +553,7 @@ function EditSheet({
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Notes (optional)"
+            placeholder="Notes"
             rows={2}
             className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
           />
