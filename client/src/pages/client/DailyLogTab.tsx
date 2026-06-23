@@ -54,7 +54,13 @@ function WeekSummaryPanel({
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       {weekDays.map((iso) => {
         const log = logMap[iso] ?? null;
-        const hasData = !!log;
+        // A log is "complete" only if all required fields are present
+        const hasData = !!log &&
+          log.weight != null &&
+          log.sleepHours != null &&
+          log.sleepQuality != null &&
+          log.stepsCount != null &&
+          (log as any).stressLevel != null;
         const isFuture = iso > today;
         const isPast = startDate ? iso < startDate : false;
         const isSelected = iso === selectedDate;
@@ -407,11 +413,21 @@ export default function DailyLogTab() {
 
   const canGoForward = weekBack > 0;
 
+  // A day is "complete" (green) only if all required fields are filled.
+  // Required: weight, sleepHours, sleepQuality, stepsCount, stressLevel.
+  // Notes is optional and does not affect completeness.
   const loggedDates = useMemo(() => {
     const s = new Set<string>();
     for (const l of logs ?? []) {
       const d = toLocalDateStr(l.logDate);
-      if (d) s.add(d);
+      if (!d) continue;
+      const complete =
+        l.weight != null &&
+        l.sleepHours != null &&
+        l.sleepQuality != null &&
+        l.stepsCount != null &&
+        (l as any).stressLevel != null;
+      if (complete) s.add(d);
     }
     return s;
   }, [logs]);
