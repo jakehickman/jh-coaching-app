@@ -51,7 +51,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
 
   // Fetch weeks that have photos — used for both upload selector and compare dropdowns
   const { data: weeksWithPhotos } = trpc.progressPhotos.getWeeks.useQuery({ clientId });
-  const availableWeeks: number[] = (weeksWithPhotos ?? []).map((w: any) => w.weekNumber as number).sort((a, b) => a - b);
+  const availableWeeks: number[] = (weeksWithPhotos ?? []).slice().sort((a: number, b: number) => a - b);
   const compareWeeks = availableWeeks;
 
   const [uploadWeek, setUploadWeek] = useState<number | null>(null);
