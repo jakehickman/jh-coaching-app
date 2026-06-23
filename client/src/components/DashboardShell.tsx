@@ -11,7 +11,7 @@ import {
   Dumbbell,
   LogOut,
   Menu,
-  Scale,
+  PersonStanding,
   Users,
   Utensils,
   X,
@@ -28,7 +28,7 @@ interface NavItem {
 // ─── Client nav: 4 tabs ─────────────────────────────────────────────────────
 const clientNav: NavItem[] = [
   { href: "/dashboard/daily-log", label: "Daily Log", icon: <ClipboardList size={22} /> },
-  { href: "/dashboard/body-comp", label: "Body Comp", icon: <Scale size={22} /> },
+  { href: "/dashboard/body-comp", label: "Body Comp", icon: <PersonStanding size={22} /> },
   { href: "/dashboard/nutrition", label: "Nutrition", icon: <Utensils size={22} /> },
   { href: "/dashboard/training",  label: "Training",  icon: <Dumbbell size={22} /> },
 ];
