@@ -281,6 +281,27 @@ function LogSheet({
             </div>
           )}
 
+          {/* Portion — treats only */}
+          {mealType === "treat" && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
+              <div className="flex gap-2">
+                {(["small", "medium", "large"] as const).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPortion(portion === p ? null : p)}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
+                      portion === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Photo */}
           <div>
             {photoPreview ? (
@@ -322,25 +343,6 @@ function LogSheet({
             placeholder="Name (optional)"
             className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
-
-          {/* Portion */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
-            <div className="flex gap-2">
-              {(["small", "medium", "large"] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPortion(portion === p ? null : p)}
-                  className={cn(
-                    "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
-                    portion === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
-                  )}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Notes */}
           <textarea
@@ -517,23 +519,25 @@ function EditSheet({
             className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
 
-          <div>
-            <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
-            <div className="flex gap-2">
-              {(["small", "medium", "large"] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPortion(portion === p ? null : p)}
-                  className={cn(
-                    "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
-                    portion === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
-                  )}
-                >
-                  {p}
-                </button>
-              ))}
+          {meal?.mealType === "treat" && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
+              <div className="flex gap-2">
+                {(["small", "medium", "large"] as const).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPortion(portion === p ? null : p)}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
+                      portion === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {meal?.mealType === "meal" && (
             <>
