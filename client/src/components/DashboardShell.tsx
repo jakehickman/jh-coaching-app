@@ -18,7 +18,7 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 
 // ─── Global fullness reminder ─────────────────────────────────────────────────
@@ -392,13 +392,34 @@ function ClientLayout({
   const [dismissedId, setDismissedId] = useState<number | null>(null);
   const [fullnessOpen, setFullnessOpen] = useState(false);
   const [fullnessMealId, setFullnessMealId] = useState<number | null>(null);
+  const [, forceUpdate] = useState(0);
   const utils = trpc.useUtils();
 
   const showBanner = unratedMeal != null && dismissedId !== unratedMeal.id;
 
+  // Update the "X ago" label every 30 seconds while banner is visible
+  useEffect(() => {
+    if (!showBanner) return;
+    const id = setInterval(() => forceUpdate(n => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, [showBanner]);
+
   function handleRateFullness() {
     setFullnessMealId(unratedMeal!.id);
     setFullnessOpen(true);
+  }
+
+  function formatTimeAgo(ts: string | number) {
+    const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+    if (diff < 60) return "just now";
+    const mins = Math.floor(diff / 60);
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs} hr ago`;
+  }
+
+  function formatTime(ts: string | number) {
+    return new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   }
 
   return (
@@ -427,18 +448,27 @@ function ClientLayout({
       </header>
 
       {/* Global fullness reminder banner */}
-      {showBanner && (
-        <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-primary/10 border-b border-primary/20 text-sm">
-          <span className="text-muted-foreground text-xs truncate">How full are you after your last meal?</span>
-          <div className="flex items-center gap-2 shrink-0">
+      {showBanner && unratedMeal && (
+        <div className="flex items-center justify-between gap-2 px-4 py-2 bg-card border-b border-border text-sm">
+          {/* Left: meal type + time */}
+          <span className="text-foreground font-medium text-xs shrink-0">
+            {unratedMeal.mealType === 'meal' ? 'Meal' : 'Treat'}
+            <span className="text-muted-foreground font-normal"> · {formatTime(unratedMeal.loggedAt)}</span>
+          </span>
+          {/* Centre: time ago */}
+          <span className="text-muted-foreground text-xs flex-1 text-center">
+            {formatTimeAgo(unratedMeal.loggedAt)}
+          </span>
+          {/* Right: Rate Fullness button + dismiss */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={handleRateFullness}
-              className="text-xs font-semibold px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              className="text-xs font-semibold px-3 py-1 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
             >
-              Rate
+              Rate Fullness
             </button>
-            <button onClick={() => setDismissedId(unratedMeal!.id)} className="text-muted-foreground hover:text-foreground">
-              <X size={14} />
+            <button onClick={() => setDismissedId(unratedMeal.id)} className="text-muted-foreground hover:text-foreground p-0.5">
+              <X size={13} />
             </button>
           </div>
         </div>
