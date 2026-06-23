@@ -9,7 +9,8 @@ export const invitesRouter = router({
   /** Coach creates a new invite token */
   create: adminProcedure
     .input(z.object({
-      label: z.string().max(128).optional(),
+      label: z.string().min(1).max(128),
+      email: z.string().email().optional(),
       expiresInDays: z.number().int().min(1).max(365).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -17,7 +18,7 @@ export const invitesRouter = router({
       const expiresAt = input.expiresInDays
         ? new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000)
         : null;
-      await db.createInviteToken(ctx.user.id, input.label ?? null, token, expiresAt);
+      await db.createInviteToken(ctx.user.id, input.label, token, expiresAt, input.email ?? null);
       return { token };
     }),
 
@@ -38,6 +39,6 @@ export const invitesRouter = router({
       if (invite.usedByUserId) throw new TRPCError({ code: "FORBIDDEN", message: "Invite already used" });
       if (invite.expiresAt && invite.expiresAt < new Date())
         throw new TRPCError({ code: "FORBIDDEN", message: "Invite has expired" });
-      return { valid: true, label: invite.label };
+      return { valid: true, label: invite.label, profileEmail: invite.profileEmail };
     }),
 });

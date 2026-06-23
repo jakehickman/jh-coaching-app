@@ -708,7 +708,8 @@ export const inviteTokens = mysqlTable("invite_tokens", {
   id: int("id").autoincrement().primaryKey(),
   token: varchar("token", { length: 64 }).notNull().unique(),
   coachId: int("coachId").notNull(),          // FK -> users.id (admin)
-  label: varchar("label", { length: 128 }),   // optional label e.g. client name
+  label: varchar("label", { length: 128 }),   // client name set by coach
+  profileEmail: varchar("profileEmail", { length: 320 }), // optional email set by coach
   usedByUserId: int("usedByUserId"),          // FK -> users.id — set when redeemed
   usedAt: timestamp("usedAt"),
   expiresAt: timestamp("expiresAt"),          // null = never expires

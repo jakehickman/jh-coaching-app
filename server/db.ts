@@ -2059,9 +2059,9 @@ export async function getActiveQuestionsForClient(
 
 // ─── Invite tokens ────────────────────────────────────────────────────────────
 
-export async function createInviteToken(coachId: number, label: string | null, token: string, expiresAt: Date | null) {
+export async function createInviteToken(coachId: number, label: string | null, token: string, expiresAt: Date | null, profileEmail?: string | null) {
   const db = await getDb();
-  await db.insert(inviteTokens).values({ token, coachId, label: label ?? undefined, expiresAt: expiresAt ?? undefined });
+  await db.insert(inviteTokens).values({ token, coachId, label: label ?? undefined, expiresAt: expiresAt ?? undefined, profileEmail: profileEmail ?? undefined });
 }
 
 export async function getInviteToken(token: string): Promise<InviteToken | null> {
