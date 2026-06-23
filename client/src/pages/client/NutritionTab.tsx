@@ -26,7 +26,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 
 // ─── Scale ────────────────────────────────────────────────────────────────────
 
@@ -190,8 +189,6 @@ function RatingPicker({
 
 // ─── Log Sheet ────────────────────────────────────────────────────────────────
 
-type LogStep = "type" | "hunger" | "details";
-
 function LogSheet({
   open,
   onClose,
@@ -201,41 +198,32 @@ function LogSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [step, setStep] = useState<LogStep>("type");
   const [mealType, setMealType] = useState<"meal" | "treat">("meal");
   const [hunger, setHunger] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [portion, setPortion] = useState<"small" | "medium" | "large" | null>(null);
-  const [isOffPlan, setIsOffPlan] = useState(false);
   const [notes, setNotes] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoData, setPhotoData] = useState<{ base64: string; mimeType: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const logMutation = trpc.mealLogs.log.useMutation({
-    onSuccess: () => {
-      onSaved();
-      onClose();
-    },
+    onSuccess: () => { onSaved(); onClose(); },
     onError: (e) => toast.error(e.message),
   });
 
   function reset() {
-    setStep("type");
     setMealType("meal");
     setHunger(null);
     setName("");
     setPortion(null);
-    setIsOffPlan(false);
     setNotes("");
     setPhotoPreview(null);
     setPhotoData(null);
   }
 
-  function handleClose() {
-    reset();
-    onClose();
-  }
+  function handleClose() { reset(); onClose(); }
 
   async function handlePhoto(file: File) {
     const data = await fileToBase64(file);
@@ -252,155 +240,122 @@ function LogSheet({
       mimeType: photoData?.mimeType as any,
       portionSize: portion ?? undefined,
       hungerRating: mealType === "meal" ? (hunger ?? undefined) : undefined,
-      isOffPlan,
+      isOffPlan: false,
       notes: notes || undefined,
     });
   }
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto" hideCloseButton>
-        <SheetHeader className="flex flex-row items-center justify-between mb-4">
-          <SheetTitle>
-            {step === "type" ? "What are you logging?" : step === "hunger" ? "How hungry are you?" : "Add details"}
-          </SheetTitle>
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[92vh] overflow-y-auto pb-8" hideCloseButton>
+        {/* Header */}
+        <SheetHeader className="flex flex-row items-center justify-between mb-5">
+          <SheetTitle>Log meal</SheetTitle>
           <button onClick={handleClose} className="text-muted-foreground hover:text-foreground p-1">
             <X size={20} />
           </button>
         </SheetHeader>
 
-        {/* Step 1 — Type */}
-        {step === "type" && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              {(["meal", "treat"] as const).map((t) => (
+        <div className="space-y-5">
+          {/* Meal / Treat toggle */}
+          <div className="flex gap-2 p-1 bg-secondary rounded-xl">
+            {(["meal", "treat"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => { setMealType(t); if (t === "treat") setHunger(null); }}
+                className={cn(
+                  "flex-1 py-2 rounded-lg text-sm font-semibold transition-all capitalize",
+                  mealType === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          {/* Hunger scale — meals only */}
+          {mealType === "meal" && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wide">How hungry are you?</p>
+              <RatingPicker value={hunger} onChange={setHunger} type="hunger" />
+            </div>
+          )}
+
+          {/* Photo */}
+          <div>
+            {photoPreview ? (
+              <div className="relative">
+                <img src={photoPreview} alt="Meal" className="w-full h-44 object-cover rounded-xl" />
                 <button
-                  key={t}
-                  onClick={() => {
-                    setMealType(t);
-                    setStep(t === "meal" ? "hunger" : "details");
-                  }}
+                  onClick={() => { setPhotoPreview(null); setPhotoData(null); }}
+                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5"
+                >
+                  <X size={14} className="text-white" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
+                >
+                  <Camera size={16} /> Camera
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
+                >
+                  <ImageIcon size={16} /> Gallery
+                </button>
+                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
+              </div>
+            )}
+          </div>
+
+          {/* Name */}
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Name (optional)"
+            className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+
+          {/* Portion */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
+            <div className="flex gap-2">
+              {(["small", "medium", "large"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPortion(portion === p ? null : p)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 transition-all",
-                    mealType === t ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/50"
+                    "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
+                    portion === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
                   )}
                 >
-                  <span className="text-lg font-bold text-foreground capitalize">{t}</span>
-                  <span className="text-xs text-muted-foreground text-center leading-tight">
-                    {t === "meal" ? "Rate hunger before & fullness after" : "No ratings needed"}
-                  </span>
+                  {p}
                 </button>
               ))}
             </div>
           </div>
-        )}
 
-        {/* Step 2 — Hunger */}
-        {step === "hunger" && (
-          <div className="space-y-6">
-            <RatingPicker value={hunger} onChange={setHunger} type="hunger" />
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep("type")} className="flex-1">Back</Button>
-              <Button onClick={() => setStep("details")} className="flex-1" disabled={hunger == null}>Next</Button>
-            </div>
-          </div>
-        )}
+          {/* Notes */}
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Notes (optional)"
+            rows={2}
+            className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+          />
 
-        {/* Step 3 — Details */}
-        {step === "details" && (
-          <div className="space-y-5">
-            {/* Photo */}
-            <div>
-              {photoPreview ? (
-                <div className="relative">
-                  <img src={photoPreview} alt="Meal" className="w-full h-40 object-cover rounded-xl" />
-                  <button
-                    onClick={() => { setPhotoPreview(null); setPhotoData(null); }}
-                    className="absolute top-2 right-2 bg-black/60 rounded-full p-1"
-                  >
-                    <X size={14} className="text-white" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
-                  >
-                    <Camera size={16} /> Take photo
-                  </button>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
-                  >
-                    <ImageIcon size={16} /> Choose photo
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Name */}
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Meal name (optional)"
-              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-
-            {/* Portion */}
-            <div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
-              <div className="flex gap-2">
-                {(["small", "medium", "large"] as const).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPortion(portion === p ? null : p)}
-                    className={cn(
-                      "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
-                      portion === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
-                    )}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Off Plan */}
-            <div className="flex items-center gap-3 py-1">
-              <Checkbox
-                id="offplan"
-                checked={isOffPlan}
-                onCheckedChange={(v) => setIsOffPlan(!!v)}
-              />
-              <label htmlFor="offplan" className="text-sm text-foreground cursor-pointer">Off plan meal</label>
-            </div>
-
-            {/* Notes */}
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Notes (optional)"
-              rows={2}
-              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-            />
-
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep(mealType === "meal" ? "hunger" : "type")} className="flex-1">Back</Button>
-              <Button onClick={handleSave} className="flex-1" disabled={logMutation.isPending}>
-                {logMutation.isPending ? "Saving..." : "Save"}
-              </Button>
-            </div>
-          </div>
-        )}
+          {/* Save */}
+          <Button onClick={handleSave} className="w-full" disabled={logMutation.isPending}>
+            {logMutation.isPending ? "Saving..." : "Log meal"}
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   );
@@ -472,7 +427,6 @@ function EditSheet({
   const [portion, setPortion] = useState<"small" | "medium" | "large" | null>(null);
   const [hunger, setHunger] = useState<number | null>(null);
   const [fullness, setFullness] = useState<number | null>(null);
-  const [isOffPlan, setIsOffPlan] = useState(false);
   const [notes, setNotes] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoData, setPhotoData] = useState<{ base64: string; mimeType: string } | null>(null);
@@ -484,7 +438,6 @@ function EditSheet({
       setPortion(meal.portionSize ?? null);
       setHunger(meal.hungerRating ?? null);
       setFullness(meal.fullnessRating ?? null);
-      setIsOffPlan(meal.isOffPlan ?? false);
       setNotes(meal.notes ?? "");
       setPhotoPreview(meal.photoUrl ?? null);
       setPhotoData(null);
@@ -510,7 +463,7 @@ function EditSheet({
       portionSize: portion,
       hungerRating: meal.mealType === "meal" ? hunger : undefined,
       fullnessRating: meal.mealType === "meal" ? fullness : undefined,
-      isOffPlan,
+      isOffPlan: false,
       notes: notes || null,
       imageBase64: photoData?.base64,
       mimeType: photoData?.mimeType as any,
@@ -595,15 +548,6 @@ function EditSheet({
             </>
           )}
 
-          <div className="flex items-center gap-3 py-1">
-            <Checkbox
-              id="offplan-edit"
-              checked={isOffPlan}
-              onCheckedChange={(v) => setIsOffPlan(!!v)}
-            />
-            <label htmlFor="offplan-edit" className="text-sm text-foreground cursor-pointer">Off plan meal</label>
-          </div>
-
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -655,8 +599,8 @@ function MealRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           <span className="text-xs text-muted-foreground">{time}</span>
-          {meal.isOffPlan && (
-            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">Off Plan</span>
+            {false && (
+              <span className="hidden">Off Plan</span>
           )}
         </div>
         {meal.name && <p className="text-sm font-medium text-foreground truncate">{meal.name}</p>}
