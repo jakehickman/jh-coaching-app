@@ -245,121 +245,124 @@ function LogSheet({
     });
   }
 
+  if (!open) return null;
+
   return (
-    <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[92vh] overflow-y-auto px-4 pb-8" hideCloseButton>
-        {/* Header */}
-        <SheetHeader className="flex flex-row items-center justify-between mb-5">
-          <SheetTitle>Log meal</SheetTitle>
-          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground p-1">
-            <X size={20} />
-          </button>
-        </SheetHeader>
+    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-border shrink-0">
+        <h2 className="text-lg font-semibold text-foreground">Log meal</h2>
+        <button onClick={handleClose} className="text-muted-foreground hover:text-foreground p-1">
+          <X size={22} />
+        </button>
+      </div>
 
-        <div className="space-y-5">
-          {/* Meal / Treat toggle */}
-          <div className="flex gap-2 p-1 bg-secondary rounded-xl">
-            {(["meal", "treat"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => { setMealType(t); if (t === "treat") setHunger(null); }}
-                className={cn(
-                  "flex-1 py-2 rounded-lg text-sm font-semibold transition-all capitalize",
-                  mealType === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          {/* Hunger scale — meals only */}
-          {mealType === "meal" && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wide">How hungry are you?</p>
-              <RatingPicker value={hunger} onChange={setHunger} type="hunger" />
-            </div>
-          )}
-
-          {/* Portion — treats only */}
-          {mealType === "treat" && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
-              <div className="flex gap-2">
-                {(["small", "medium", "large"] as const).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPortion(portion === p ? null : p)}
-                    className={cn(
-                      "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
-                      portion === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
-                    )}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Photo */}
-          <div>
-            {photoPreview ? (
-              <div className="relative">
-                <img src={photoPreview} alt="Meal" className="w-full h-44 object-cover rounded-xl" />
-                <button
-                  onClick={() => { setPhotoPreview(null); setPhotoData(null); }}
-                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5"
-                >
-                  <X size={14} className="text-white" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
-                >
-                  <Camera size={16} /> Camera
-                </button>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
-                >
-                  <ImageIcon size={16} /> Gallery
-                </button>
-                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
-              </div>
-            )}
-          </div>
-
-          {/* Name */}
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Name (optional)"
-            className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-
-          {/* Notes */}
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Notes (optional)"
-            rows={2}
-            className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-          />
-
-          {/* Save */}
-          <Button onClick={handleSave} className="w-full" disabled={logMutation.isPending}>
-            {logMutation.isPending ? "Saving..." : "Log meal"}
-          </Button>
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5">
+        {/* Meal / Treat toggle */}
+        <div className="flex gap-2 p-1 bg-secondary rounded-xl">
+          {(["meal", "treat"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => { setMealType(t); if (t === "treat") setHunger(null); }}
+              className={cn(
+                "flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all capitalize",
+                mealType === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {t}
+            </button>
+          ))}
         </div>
-      </SheetContent>
-    </Sheet>
+
+        {/* Hunger scale — meals only */}
+        {mealType === "meal" && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wide">How hungry are you?</p>
+            <RatingPicker value={hunger} onChange={setHunger} type="hunger" />
+          </div>
+        )}
+
+        {/* Portion — treats only */}
+        {mealType === "treat" && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
+            <div className="flex gap-2">
+              {(["small", "medium", "large"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPortion(portion === p ? null : p)}
+                  className={cn(
+                    "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
+                    portion === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+                  )}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Photo */}
+        <div>
+          {photoPreview ? (
+            <div className="relative">
+              <img src={photoPreview} alt="Meal" className="w-full h-52 object-cover rounded-xl" />
+              <button
+                onClick={() => { setPhotoPreview(null); setPhotoData(null); }}
+                className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5"
+              >
+                <X size={14} className="text-white" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
+              >
+                <Camera size={16} /> Camera
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
+              >
+                <ImageIcon size={16} /> Gallery
+              </button>
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
+            </div>
+          )}
+        </div>
+
+        {/* Name */}
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Name (optional)"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+        />
+
+        {/* Notes */}
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Notes (optional)"
+          rows={3}
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+        />
+      </div>
+
+      {/* Sticky footer */}
+      <div className="px-4 pb-8 pt-3 border-t border-border shrink-0">
+        <Button onClick={handleSave} className="w-full h-12 text-base" disabled={logMutation.isPending}>
+          {logMutation.isPending ? "Saving..." : "Log meal"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
