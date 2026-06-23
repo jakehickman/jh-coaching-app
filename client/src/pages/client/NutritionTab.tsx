@@ -866,7 +866,6 @@ function TodayScreen() {
   const [editOpen, setEditOpen] = useState(false);
   const [editMeal, setEditMeal] = useState<any | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<any | null>(null);
-  const [bannerDismissed, setBannerDismissed] = useState<number | null>(null);
 
   const todayStr = toLocalDateStr(new Date());
   const { data: meals = [], refetch } = trpc.mealLogs.listByDay.useQuery(
@@ -887,44 +886,8 @@ function TodayScreen() {
   const mealCount = todayMeals.filter((m) => m.mealType === "meal").length;
   const treatCount = todayMeals.filter((m) => m.mealType === "treat").length;
 
-  // Fullness banner: most recent meal with no fullness rating, logged within 2 hours
-  const bannerMeal = (() => {
-    const now = Date.now();
-    const unrated = todayMeals
-      .filter((m) => m.mealType === "meal" && m.fullnessRating == null)
-      .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
-    const candidate = unrated[0];
-    if (!candidate) return null;
-    const age = now - new Date(candidate.loggedAt).getTime();
-    if (age > 2 * 60 * 60 * 1000) return null;
-    if (bannerDismissed === candidate.id) return null;
-    return candidate;
-  })();
-
   return (
     <div className="space-y-4">
-      {/* Fullness banner */}
-      {bannerMeal && (
-        <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-primary/10 border border-primary/30 rounded-xl text-sm">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-muted-foreground shrink-0 truncate">
-              {bannerMeal.name || "Meal"} · {formatTime(new Date(bannerMeal.loggedAt))}
-            </span>
-            <span className="text-xs text-muted-foreground shrink-0">{timeAgo(new Date(bannerMeal.loggedAt))}</span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => { setFullnessMealId(bannerMeal.id); setFullnessOpen(true); }}
-              className="text-xs font-semibold px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-            >
-              Rate fullness
-            </button>
-            <button onClick={() => setBannerDismissed(bannerMeal.id)} className="text-muted-foreground hover:text-foreground">
-              <X size={14} />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Stat chips */}
       <div className="flex gap-2">
