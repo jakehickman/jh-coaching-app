@@ -760,12 +760,12 @@ export default function BodyCompTab() {
         {/* Empty state when nothing selected */}
         {!selectedDate && entries.length === 0 && (
           <div className="bg-card border border-border rounded-xl px-4 py-8 text-center">
-            <p className="text-sm text-muted-foreground">No measurements logged yet</p>
+            <p className="text-sm text-muted-foreground">No measurements logged.</p>
           </div>
         )}
         {!selectedDate && entries.length > 0 && (
           <div className="bg-card border border-border rounded-xl px-4 py-6 text-center">
-            <p className="text-sm text-muted-foreground">Tap a day to view details</p>
+            <p className="text-sm text-muted-foreground">Select a day to view details.</p>
           </div>
         )}
       </div>
