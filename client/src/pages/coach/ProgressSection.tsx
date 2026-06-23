@@ -23,7 +23,6 @@ import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import ProgramChangeLogTab from "./ProgramChangeLogTab";
 import CardioChangeLogTab from "./CardioChangeLogTab";
 
-import { CoachCheckInsTab } from "./CoachCheckInsTab";
 import { UnifiedChangeLog } from "./UnifiedChangeLog";
 import { PhasesTab } from "./PhasesTab";
 
@@ -2160,7 +2159,6 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
       }
     }
   }, [urlClientId, clients, urlSynced, fixedClientId]);
-  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const { data: logs } = trpc.dailyLog.listForClient.useQuery(
     { userId: selectedUserId!, limit: 60 },
     { enabled: !!selectedUserId }
@@ -2345,7 +2343,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
     <div className="space-y-5">
       {!fixedClientId && (
         <div>
-          <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} />
+          <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
         </div>
       )}
 
@@ -2355,7 +2353,6 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           <div className="-mx-4 px-4 lg:-mx-6 lg:px-6 pt-2 pb-2 border-b border-border/40">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
               <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
@@ -2380,21 +2377,6 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </div>
           </TabsContent>
 
-          {/* -- Check-ins: Q&A + Timeline sub-tabs -- */}
-          <TabsContent value="check-ins">
-            <Tabs value={getSubTab("check-ins") || "check-ins-list"} onValueChange={handleSubTabChange} className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="check-ins-list">Check-ins</TabsTrigger>
-                <TabsTrigger value="timeline">Timeline</TabsTrigger>
-              </TabsList>
-              <TabsContent value="check-ins-list">
-                <CoachCheckInsTab clientId={selectedUserId!} />
-              </TabsContent>
-              <TabsContent value="timeline">
-                <PhasesTab clientId={selectedUserId!} />
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
 
           {/* -- Body Composition: Data / Photos sub-tabs -- */}
           <TabsContent value="body-comp">

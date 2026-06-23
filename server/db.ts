@@ -150,7 +150,6 @@ export async function getAllUsers() {
       lastSignedIn: users.lastSignedIn,
       createdAt: users.createdAt,
       displayName: clientProfiles.displayName,
-      checkInDay: clientProfiles.checkInDay,
       startDate: clientProfiles.startDate,
     })
     .from(users)
@@ -1425,10 +1424,9 @@ export async function deleteCheckIn(id: number): Promise<void> {
   await db.delete(checkInSubmissions).where(eq(checkInSubmissions.id, id));
 }
 
-// ─── Update check-in day ─────────────────────────────────────────────────────
+// ─── Update client profile extended ─────────────────────────────────────────
 
 export async function updateClientProfileExtended(userId: number, data: {
-  checkInDay?: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | null;
   stepGoal?: number | null;
   lissSessionsPerWeek?: number | null;
   lissMinutesPerSession?: number | null;

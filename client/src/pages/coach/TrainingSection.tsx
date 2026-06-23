@@ -373,28 +373,6 @@ function FoodCombobox({
 // ─── Section: Clients ─────────────────────────────────────────────────────────
 function ClientsSection() {
   const { data: allUsers, refetch } = trpc.users.list.useQuery();
-  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
-  const [seenKeys, setSeenKeys] = useState<Record<number, number>>(() => {
-    const out: Record<number, number> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k?.startsWith('coach:seen:checkin:')) {
-        const id = parseInt(k.replace('coach:seen:checkin:', ''), 10);
-        out[id] = parseInt(localStorage.getItem(k) ?? '0', 10);
-      }
-    }
-    return out;
-  });
-  useEffect(() => {
-    const handler = (e: StorageEvent) => {
-      if (e.key?.startsWith('coach:seen:checkin:')) {
-        const id = parseInt(e.key.replace('coach:seen:checkin:', ''), 10);
-        setSeenKeys(prev => ({ ...prev, [id]: parseInt(e.newValue ?? '0', 10) }));
-      }
-    };
-    window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
-  }, []);
   const utils = trpc.useUtils();
   const setApproved = trpc.users.setApproved.useMutation({
     onSuccess: () => {
@@ -432,7 +410,6 @@ function ClientsSection() {
   const [form, setForm] = useState({
     displayName: "",
     startDate: "", notes: "",
-    checkInDay: "" as "" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
     stepGoal: "",
   });
 
@@ -442,11 +419,10 @@ function ClientsSection() {
         displayName: (profile as any).displayName ?? "",
         startDate: profile.startDate ? toLocalDateStr(profile.startDate) : "",
         notes: profile.notes ?? "",
-        checkInDay: ((profile as any).checkInDay ?? "") as any,
         stepGoal: (profile as any).stepGoal?.toString() ?? "",
       });
     } else {
-      setForm({ displayName: "", startDate: "", notes: "", checkInDay: "", stepGoal: "" });
+      setForm({ displayName: "", startDate: "", notes: "", stepGoal: "" });
     }
   }, [profile, selectedId]);
 
@@ -548,19 +524,6 @@ function ClientsSection() {
                     <DateInput value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground block mb-1">Check-in Day</label>
-                    <select
-                      value={form.checkInDay}
-                      onChange={e => setForm(p => ({ ...p, checkInDay: e.target.value as any }))}
-                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">Not set</option>
-                      {['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => (
-                        <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
                     <label className="text-xs text-muted-foreground block mb-1">Daily Step Goal</label>
                     <input
                       type="number"
@@ -590,7 +553,6 @@ function ClientsSection() {
                     });
                     updateClientConfig.mutate({
                       userId: selectedId,
-                      checkInDay: form.checkInDay || null,
                       stepGoal: form.stepGoal ? parseInt(form.stepGoal) : null,
                     });
                   }}
@@ -690,8 +652,6 @@ function SortableDayCard({
 export default function TrainingSection({ fixedClientId }: { fixedClientId?: number } = {}) {
   const { clients, selectedUserId: selectorUserId, setSelectedUserId } = useClientSelector();
   const selectedUserId = fixedClientId ?? selectorUserId;
-  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
-
   // Compute which client userIds have an unsaved training draft in localStorage
   const [trainingDraftUserIds, setTrainingDraftUserIds] = useState<Set<number>>(() => {
     const ids = new Set<number>();
@@ -1011,7 +971,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
     <div className="space-y-6">
       {!fixedClientId && (
         <div>
-          <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} draftUserIds={trainingDraftUserIds} />
+          <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} draftUserIds={trainingDraftUserIds} />
         </div>
       )}
       {selectedUserId && (

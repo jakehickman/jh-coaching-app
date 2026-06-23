@@ -260,46 +260,6 @@ export default function OverviewTab() {
   const cur7Steps = cur7Logs.filter(l => l.stepsCount != null).map(l => l.stepsCount as number);
   const avgSteps7 = cur7Steps.length > 0 ? Math.round(cur7Steps.reduce((a, b) => a + b, 0) / cur7Steps.length) : null;
 
-  const checkInDay = (profile as any)?.checkInDay as string | null | undefined;
-  const todayDayName = new Date().toLocaleDateString('en-AU', { weekday: 'long' }).toLowerCase();
-  const isStartDate = (() => {
-    const startDate = (profile as any)?.startDate;
-    if (!startDate) return false;
-    const start = new Date(startDate);
-    const today = new Date();
-    return start.getFullYear() === today.getFullYear() &&
-      start.getMonth() === today.getMonth() &&
-      start.getDate() === today.getDate();
-  })();
-  const isCheckInDay = !!checkInDay && todayDayName === checkInDay && !isStartDate;
-  const tomorrowDayName = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toLocaleDateString('en-AU', { weekday: 'long' }).toLowerCase();
-  })();
-  const isCheckInTomorrow = !!checkInDay && tomorrowDayName === checkInDay && !isStartDate;
-  const getMondayStr = () => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    d.setDate(d.getDate() + diff);
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  };
-  const [mondayStr] = useMemo(() => [getMondayStr()], []);
-  const { data: currentCycleOwn } = trpc.checkIn.myCurrentCycle.useQuery(
-    undefined,
-    { enabled: isCheckInDay && !viewAsUserId, staleTime: 0 }
-  );
-  const { data: clientCycleAdmin } = trpc.checkIn.clientCurrentCycle.useQuery(
-    { clientId: viewAsUserId! },
-    { enabled: isCheckInDay && !!viewAsUserId, staleTime: 0 }
-  );
-  const currentCycle = viewAsUserId ? clientCycleAdmin : currentCycleOwn;
-  const { data: hasSubmittedThisWeek } = trpc.checkIn.myHasSubmittedThisWeek.useQuery(
-    undefined,
-    { enabled: isCheckInDay && !viewAsUserId, staleTime: 0 }
-  );
-  const alreadySubmittedThisWeek = currentCycle?.status === "submitted" || hasSubmittedThisWeek === true;
 
 
   return (
@@ -313,24 +273,6 @@ export default function OverviewTab() {
                 Week {activePhaseWeek} / {activePhaseTotalWeeks}
               </span>
             )}
-          </div>
-        </div>
-      )}
-      {isCheckInDay && !alreadySubmittedThisWeek && (
-        <div className="bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 flex items-center gap-3">
-          <span className="text-xl">📋</span>
-          <div>
-            <p className="text-sm font-semibold text-primary">Today is your check-in day</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Head to the Check-in tab to submit your weekly check-in.</p>
-          </div>
-        </div>
-      )}
-      {!isCheckInDay && isCheckInTomorrow && (
-        <div className="bg-secondary border border-border rounded-xl px-4 py-3 flex items-center gap-3">
-          <span className="text-xl">🔔</span>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Check-in is tomorrow</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Get ready to take your measurements and progress photos.</p>
           </div>
         </div>
       )}

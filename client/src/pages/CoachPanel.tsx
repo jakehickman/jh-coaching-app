@@ -11,17 +11,11 @@ import HabitsSection from "./coach/HabitsSection";
 import TrainingSection from "./coach/TrainingSection";
 import MealPlansSection from "./coach/MealPlansSection";
 import ProgressSection from "./coach/ProgressSection";
-import CheckInsKanban from "./coach/CheckInsKanban";
 import { Button } from "@/components/ui/button";
 import { SectionLabel, Card, DateInput } from "./coach/shared";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 import { useConfirm } from "@/components/ConfirmDialog";
-
-// ─── Check-in status type ─────────────────────────────────────────────────────
-type ClientCheckInStatus = 'overdue' | 'upcoming' | 'submitted' | 'no-cycle';
-// Three actionable badge states derived from cycle status + review state
-type BadgeState = 'overdue' | 'unreviewed' | 'up-to-date' | 'none';
 
 // ─── Edit Client Dialog ───────────────────────────────────────────────────────
 function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => void }) {
@@ -33,14 +27,13 @@ function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => 
   const updateClientConfig = trpc.clientConfig.update.useMutation({
     onSuccess: () => { toast.success("Config updated"); utils.profile.getById.invalidate({ userId }); }
   });
-  const [form, setForm] = useState({ displayName: "", startDate: "", notes: "", checkInDay: "" as any, stepGoal: "", photoType: "standard" as "standard" | "athlete" });
+  const [form, setForm] = useState({ displayName: "", startDate: "", notes: "", stepGoal: "", photoType: "standard" as "standard" | "athlete" });
   useEffect(() => {
     if (profile) {
       setForm({
         displayName: (profile as any).displayName ?? "",
         startDate: profile.startDate ? toLocalDateStr(profile.startDate) : "",
         notes: profile.notes ?? "",
-        checkInDay: ((profile as any).checkInDay ?? "") as any,
         stepGoal: (profile as any).stepGoal?.toString() ?? "",
         photoType: ((profile as any).photoType ?? "standard") as "standard" | "athlete",
       });
@@ -59,21 +52,9 @@ function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => 
           <input type="text" value={form.displayName} onChange={e => setForm((p: any) => ({ ...p, displayName: e.target.value }))}
             className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Start Date</label>
-            <DateInput value={form.startDate} onChange={v => setForm((p: any) => ({ ...p, startDate: v }))} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Check-in Day</label>
-            <select value={form.checkInDay} onChange={e => setForm((p: any) => ({ ...p, checkInDay: e.target.value as any }))}
-              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
-              <option value="">Not set</option>
-              {['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => (
-                <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Start Date</label>
+          <DateInput value={form.startDate} onChange={v => setForm((p: any) => ({ ...p, startDate: v }))} />
         </div>
         <div>
           <label className="text-xs text-muted-foreground block mb-1">Progress Photo Type</label>
@@ -104,7 +85,7 @@ function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => 
         <button
           onClick={() => {
             upsertProfile.mutate({ userId, displayName: form.displayName || undefined, startDate: form.startDate || undefined, notes: form.notes || null, photoType: form.photoType });
-            updateClientConfig.mutate({ userId, checkInDay: form.checkInDay || null, stepGoal: form.stepGoal ? parseInt(form.stepGoal) : null });
+            updateClientConfig.mutate({ userId, stepGoal: form.stepGoal ? parseInt(form.stepGoal) : null });
           }}
           disabled={upsertProfile.isPending || updateClientConfig.isPending}
           className="w-full py-2 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
@@ -225,8 +206,6 @@ function ClientsSection() {
   const [confirm, ConfirmDialogNode] = useConfirm();
   const [, navigate] = useLocation();
   const { data: allUsers } = trpc.users.list.useQuery();
-  const { data: clientStatuses = [] } = trpc.checkIn.clientStatusList.useQuery();
-  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const utils = trpc.useUtils();
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -242,44 +221,12 @@ function ClientsSection() {
   const clients = allUsers ?? [];
   const admins = (allUsers ?? []).filter(u => u.role === 'admin');
 
-  // Get server-computed cycle status
-  function getCycleStatus(userId: number): ClientCheckInStatus {
-    const entry = clientStatuses.find((s: any) => s.clientId === userId);
-    if (!entry) return 'no-cycle';
-    return entry.status as ClientCheckInStatus;
-  }
-
-  // Derive the three actionable badge states
-  function getBadge(userId: number): BadgeState {
-    const cycleStatus = getCycleStatus(userId);
-    if (cycleStatus === 'overdue') return 'overdue';
-    if (cycleStatus === 'submitted') {
-      const latest = (latestCheckIns as any[]).find((c: any) => c.clientId === userId);
-      if (latest && !latest.reviewedAt) return 'unreviewed';
-      return 'up-to-date';
-    }
-    // upcoming or no-cycle — no actionable badge
-    return 'none';
-  }
-
-  // Sort: overdue first, then unreviewed, then up-to-date, then rest
-  const sortedClients = [...clients].sort((a, b) => {
-    const order: Record<BadgeState, number> = { overdue: 0, unreviewed: 1, 'up-to-date': 2, none: 3 };
-    return order[getBadge(a.id)] - order[getBadge(b.id)];
-  });
-
   const nonAdminClients = clients.filter(u => u.role !== 'admin');
   const totalClients = nonAdminClients.length;
   const approvedCount = nonAdminClients.filter(u => (u as any).approved).length;
   const pendingCount = nonAdminClients.filter(u => !(u as any).approved).length;
-  const overdueCount = clients.filter(u => getBadge(u.id) === 'overdue').length;
+  const sortedClients = [...clients];
 
-  function StatusBadge({ badge }: { badge: BadgeState }) {
-    if (badge === 'overdue') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">Overdue</span>;
-    if (badge === 'unreviewed') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Unreviewed</span>;
-    if (badge === 'up-to-date') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Up to Date</span>;
-    return null;
-  }
 
   return (
     <div className="space-y-6">
@@ -300,10 +247,7 @@ function ClientsSection() {
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pending</p>
           <p className="text-2xl font-bold text-foreground">{pendingCount}</p>
         </div>
-        <div className="bg-card border border-border rounded-xl px-5 py-4">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Overdue</p>
-          <p className={`text-2xl font-bold ${overdueCount > 0 ? 'text-red-400' : 'text-foreground'}`}>{overdueCount}</p>
-        </div>
+
       </div>
 
       {/* Client roster */}
@@ -311,9 +255,6 @@ function ClientsSection() {
         <SectionLabel>Clients</SectionLabel>
         <div className="space-y-2">
           {sortedClients.map(user => {
-            const badge = getBadge(user.id);
-            const latest = (latestCheckIns as any[]).find((c: any) => c.clientId === user.id);
-            const checkInDay = (user as any).checkInDay as string | null;
             return (
               <div
                 key={user.id}
@@ -329,7 +270,6 @@ function ClientsSection() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-foreground">{user.name ?? "Unnamed"}</p>
-                    <StatusBadge badge={badge} />
                     {user.role === 'admin' && (
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">admin</span>
                     )}
@@ -339,17 +279,6 @@ function ClientsSection() {
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                     <p className="text-xs text-muted-foreground">{user.email ?? "No email"}</p>
-                    {checkInDay && (
-                      <p className="text-xs text-muted-foreground/60">
-                        Check-in: <span className="capitalize">{checkInDay}</span>
-                      </p>
-                    )}
-                    {latest && (
-                      <p className="text-xs text-muted-foreground/60">
-                        Last: {new Date(latest.submittedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
-                        {latest.reviewedAt ? '' : <span className="text-amber-400/80 ml-1">· Unreviewed</span>}
-                      </p>
-                    )}
                   </div>
                 </div>
 
@@ -412,7 +341,6 @@ const SECTION_MAP: Record<string, () => React.ReactNode> = {
   training: () => <SectionErrorBoundary sectionName="Training Programs"><TrainingSection /></SectionErrorBoundary>,
   "meal-plans": () => <SectionErrorBoundary sectionName="Meal Plans"><MealPlansSection /></SectionErrorBoundary>,
   progress: () => <SectionErrorBoundary sectionName="Client Progress"><ProgressSection /></SectionErrorBoundary>,
-  "check-ins": () => <SectionErrorBoundary sectionName="Check-ins"><CheckInsKanban /></SectionErrorBoundary>,
   "exercise-library": () => <SectionErrorBoundary sectionName="Exercise Library"><ExerciseLibrarySection /></SectionErrorBoundary>,
   "nutrition-data": () => <SectionErrorBoundary sectionName="Nutrition Data"><NutritionDataSection /></SectionErrorBoundary>,
   habits: () => <SectionErrorBoundary sectionName="Habits"><HabitsSection /></SectionErrorBoundary>,
@@ -422,7 +350,6 @@ const SECTION_TITLES: Record<string, string> = {
   training: "Training Programs",
   "meal-plans": "Meal Plans",
   progress: "Client Progress",
-  "check-ins": "Check-ins",
   "exercise-library": "Exercise Library",
   "nutrition-data": "Nutrition Data",
   habits: "Habits",

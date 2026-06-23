@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import {
   BookOpen,
   Salad,
-  CalendarCheck,
   ChevronLeft,
   CheckSquare,
   ClipboardCheck,
@@ -38,7 +37,6 @@ const clientNav: NavItem[] = [
 
 const coachNav: NavItem[] = [
   { href: "/coach/clients",          label: "Clients",          icon: <Users size={18} /> },
-  { href: "/coach/check-ins",        label: "Check-ins",         icon: <CalendarCheck size={18} /> },
   { href: "/coach/exercise-library", label: "Exercise Library",  icon: <BookOpen size={18} /> },
   { href: "/coach/nutrition-data",   label: "Nutrition Data",    icon: <Salad size={18} /> },
   { href: "/coach/habits",           label: "Habits",            icon: <CheckSquare size={18} /> },
@@ -72,86 +70,6 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
     enabled: mode === "coach" && user?.role === "admin",
     refetchInterval: 60_000,
   });
-
-  // Unreviewed check-in count — poll every 5 minutes
-  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery(undefined, {
-    enabled: mode === "coach" && user?.role === "admin",
-    refetchInterval: 300_000,
-  });
-  // Server-side client status list (replaces overdueClients)
-  const { data: clientStatusList = [] } = trpc.checkIn.clientStatusList.useQuery(undefined, {
-    enabled: mode === "coach" && user?.role === "admin",
-    refetchInterval: 300_000,
-  });
-
-  // Compute badge count: unreviewed submissions + overdue clients (not double-counted)
-  const checkInsAttentionCount = (() => {
-    const now = new Date();
-    const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    const todayJsDay = now.getUTCDay();
-    const daysFromMonday = todayJsDay === 0 ? 6 : todayJsDay - 1;
-    const mondayUtc = new Date(todayUtc);
-    mondayUtc.setUTCDate(todayUtc.getUTCDate() - daysFromMonday);
-
-    const unreviewedIds = new Set<number>();
-    const overdueIds = new Set<number>();
-
-    // Unreviewed: has a submission this week that hasn't been reviewed
-    for (const ci of latestCheckIns as any[]) {
-      if (ci.submittedAt && !ci.reviewedAt) {
-        const submittedUtc = new Date(Date.UTC(
-          new Date(ci.submittedAt).getUTCFullYear(),
-          new Date(ci.submittedAt).getUTCMonth(),
-          new Date(ci.submittedAt).getUTCDate()
-        ));
-        if (submittedUtc >= mondayUtc) {
-          unreviewedIds.add(ci.clientId);
-        }
-      }
-    }
-
-    // Overdue: from server-side calculation
-    for (const o of clientStatusList as any[]) {
-      if (o.status === "overdue") overdueIds.add(o.clientId);
-    }
-
-    // Combine: count clients that need attention (unreviewed OR overdue, not double-counted)
-    const allIds = new Set([...Array.from(unreviewedIds), ...Array.from(overdueIds)]);
-    return allIds.size;
-  })();
-
-  // Client: check-in day badge — show dot on Check-in tab on assigned day when not yet submitted
-  const weekStartDate = (() => {
-    const d = new Date();
-    const day = d.getDay(); // 0=Sun
-    const diff = (day === 0 ? -6 : 1 - day); // shift to Monday
-    d.setDate(d.getDate() + diff);
-    return d.toISOString().split("T")[0];
-  })();
-  const { data: currentCycleData } = trpc.checkIn.myCurrentCycle.useQuery(
-    undefined,
-    { enabled: mode === "client", refetchInterval: 300_000 }
-  );
-  const { data: clientProfile } = trpc.profile.get.useQuery(undefined, {
-    enabled: mode === "client",
-  });
-  // Determine if today is the client's check-in day
-  const isClientCheckInDay = (() => {
-    if (mode !== "client") return false;
-    const checkInDay = (clientProfile as any)?.checkInDay as string | undefined;
-    if (!checkInDay) return false;
-    const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
-    return new Date().getDay() === (dayMap[checkInDay] ?? -1);
-  })();
-  // Direct submission lookup — covers the case where the coach reviewed and advanced the cycle
-  // on the same day (resetting status to 'upcoming' even though the client already submitted).
-  const { data: hasSubmittedThisWeekDot } = trpc.checkIn.myHasSubmittedThisWeek.useQuery(
-    undefined,
-    { enabled: mode === "client" && isClientCheckInDay, staleTime: 0, refetchInterval: 300_000 }
-  );
-  const showCheckInBadge = isClientCheckInDay
-    && currentCycleData?.status !== "submitted"
-    && hasSubmittedThisWeekDot !== true;
 
 
 
@@ -275,11 +193,6 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                       {pendingCount}
                     </span>
                   )}
-                  {item.href === "/coach/check-ins" && checkInsAttentionCount > 0 && (
-                    <span className="ml-auto flex-shrink-0 min-w-[18px] h-4 px-1 rounded-full bg-primary text-black text-[10px] font-bold flex items-center justify-center">
-                      {checkInsAttentionCount}
-                    </span>
-                  )}
 
                 </Link>
               );
@@ -398,9 +311,6 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                 >
                   <span className="relative inline-flex">
                     {item.icon}
-                    {item.href === "/dashboard/check-ins" && showCheckInBadge && (
-                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary border-2 border-sidebar" />
-                    )}
                   </span>
                   <span className={cn("text-[11px] font-medium leading-none whitespace-nowrap", isActive ? "text-primary" : "text-muted-foreground")}>
                     {item.label}

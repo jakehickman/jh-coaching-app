@@ -49,48 +49,10 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
   const poses: string[] = photoType === "athlete" ? [...ATHLETE_POSES] : [...STANDARD_POSES];
   const utils = trpc.useUtils();
 
-  // Fetch available weeks from check-in history
-  const { data: historyData } = trpc.checkIn.clientHistory.useQuery({ clientId });
-  // Also fetch the current cycle so the in-progress week appears in the selector
-  const { data: currentCycle } = trpc.checkIn.clientCurrentCycle.useQuery({ clientId });
-  const availableWeeks = Array.from(
-    new Set([
-      ...(historyData ?? [])
-        .map((h) => h.weekNumber)
-        .filter((w): w is number => w !== null && w > 0),
-      // Include the current in-progress week even if it has no history entry yet
-      ...(currentCycle?.weekNumber != null && currentCycle.weekNumber > 0 ? [currentCycle.weekNumber] : []),
-    ])
-  ).sort((a, b) => a - b);
-
-  // Fetch weeks that actually have photos — used to filter the compare dropdowns
+  // Fetch weeks that have photos — used for both upload selector and compare dropdowns
   const { data: weeksWithPhotos } = trpc.progressPhotos.getWeeks.useQuery({ clientId });
-  const weeksWithPhotosSet = new Set((weeksWithPhotos ?? []).map((w: { weekNumber: number }) => w.weekNumber));
-  const compareWeeks = availableWeeks.filter((w) => weeksWithPhotosSet.has(w));
-
-  // Fetch weekly progress data for weight overlays
-  const { data: progressData } = trpc.progress.weeklyReview.useQuery({ clientId });
-  // Build a map of weekNumber -> dueDate from history
-  const weekDueDateMap = Object.fromEntries(
-    (historyData ?? [])
-      .filter((h) => h.weekNumber != null)
-      .map((h) => [h.weekNumber!, h.dueDate as string])
-  );
-  // Build a map of weekNumber -> weight logged on the check-in due date
-  // We look through each week's weighIns for an entry matching the dueDate
-  const weekWeightMap = Object.fromEntries(
-    (progressData?.weeks ?? [])
-      .filter((w) => w.weekNumber != null)
-      .flatMap((w) => {
-        const dueDate = weekDueDateMap[w.weekNumber!];
-        if (!dueDate) return [];
-        // Find the weigh-in on the due date
-        const entry = (w.weighIns as Array<{ logDate: string; weight: number }>)
-          .find((wi) => wi.logDate === dueDate);
-        if (!entry) return [];
-        return [[w.weekNumber!, entry.weight]];
-      })
-  );
+  const availableWeeks: number[] = (weeksWithPhotos ?? []).map((w: any) => w.weekNumber as number).sort((a, b) => a - b);
+  const compareWeeks = availableWeeks;
 
   const [uploadWeek, setUploadWeek] = useState<number | null>(null);
   const [compareWeekA, setCompareWeekA] = useState<number | null>(null);
@@ -353,11 +315,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                           ) : (
                             <div className="w-full aspect-[9/16] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
                           )}
-                          {weekWeightMap[compareWeekA!] != null && (
-                            <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[11px] font-semibold px-2 py-0.5 rounded pointer-events-none">
-                              {weekWeightMap[compareWeekA!].toFixed(1)} kg
-                            </div>
-                          )}
+                
                         </div>
                       </div>
                       {/* Week B column */}
@@ -369,11 +327,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                           ) : (
                             <div className="w-full aspect-[9/16] flex items-center justify-center text-xs text-muted-foreground/50 italic">No photo</div>
                           )}
-                          {weekWeightMap[compareWeekB!] != null && (
-                            <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[11px] font-semibold px-2 py-0.5 rounded pointer-events-none">
-                              {weekWeightMap[compareWeekB!].toFixed(1)} kg
-                            </div>
-                          )}
+                
                         </div>
                       </div>
                     </div>

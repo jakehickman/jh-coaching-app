@@ -1,6 +1,4 @@
 import { trpc } from "@/lib/trpc";
-import MeasurementsTab from "./MeasurementsTab";
-import { cn } from "@/lib/utils";
 import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useViewAs } from "@/contexts/ViewAsContext";
@@ -411,28 +409,8 @@ export default function DailyLogTab() {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
   };
 
-  const [subTab, setSubTab] = useState<"daily" | "measurements">("daily");
-
   return (
-    <div>
-      {/* Sub-tab toggle */}
-      <div className="flex bg-secondary rounded-xl p-1 mb-6">
-        {(["daily", "measurements"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setSubTab(t)}
-            className={cn(
-              "flex-1 py-1.5 rounded-md text-sm font-medium transition-colors",
-              subTab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {t === "daily" ? "Daily" : "Measurements"}
-          </button>
-        ))}
-      </div>
-
-      {subTab === "measurements" && <MeasurementsTab />}
-      {subTab === "daily" && <div className="space-y-6">
+    <div className="space-y-6">
       <div>
         <SectionLabel>Date</SectionLabel>
         <DateInput
@@ -535,7 +513,6 @@ export default function DailyLogTab() {
         <SectionLabel>Recent Logs</SectionLabel>
         <RecentLogsPanel logs={logs ?? []} startDate={profile?.startDate ? toLocalDateStr(profile.startDate) : undefined} />
       </div>
-      </div>}
     </div>
   );
 }

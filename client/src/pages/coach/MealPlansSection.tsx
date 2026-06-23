@@ -185,7 +185,6 @@ function DailyTotalsCard({
 export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixedClientId?: number; onLiveTotals?: (dayType: "training" | "rest", calories: number) => void } = {}) {
   const { clients, selectedUserId: selectorUserId, setSelectedUserId } = useClientSelector();
   const selectedUserId = fixedClientId ?? selectorUserId;
-  const { data: latestCheckIns = [] } = trpc.checkIn.latestPerClient.useQuery();
   const [dayType, setDayType] = useState<"training" | "rest">("training");
 
   // Track which clients have unsaved drafts
@@ -415,7 +414,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
       {/* Client selector */}
       {!fixedClientId && (
         <div className="mb-5">
-          <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} latestCheckIns={latestCheckIns} draftUserIds={mealDraftUserIds} />
+          <ClientCombobox clients={clients} selectedUserId={selectedUserId} onSelect={setSelectedUserId} draftUserIds={mealDraftUserIds} />
         </div>
       )}
 

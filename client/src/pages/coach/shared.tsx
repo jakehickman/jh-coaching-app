@@ -85,40 +85,14 @@ export function ClientCombobox({
   clients,
   selectedUserId,
   onSelect,
-  latestCheckIns = [],
   draftUserIds,
 }: {
   clients: { id: number; name?: string | null }[];
   selectedUserId: number | null;
   onSelect: (id: number) => void;
-  latestCheckIns?: { clientId: number; submittedAt: Date | string }[];
   draftUserIds?: Set<number>;
 }) {
   const [open, setOpen] = useState(false);
-  const [seenKeys, setSeenKeys] = useState<Record<number, number>>(() => {
-    const out: Record<number, number> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k?.startsWith("coach:seen:checkin:")) {
-        const id = parseInt(k.replace("coach:seen:checkin:", ""), 10);
-        out[id] = parseInt(localStorage.getItem(k) ?? "0", 10);
-      }
-    }
-    return out;
-  });
-  useEffect(() => {
-    const handler = (e: StorageEvent) => {
-      if (e.key?.startsWith("coach:seen:checkin:")) {
-        const id = parseInt(e.key.replace("coach:seen:checkin:", ""), 10);
-        setSeenKeys((prev) => ({
-          ...prev,
-          [id]: parseInt(e.newValue ?? "0", 10),
-        }));
-      }
-    };
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
-  }, []);
 
   const selected = clients.find((c) => c.id === selectedUserId);
   return (
@@ -153,14 +127,6 @@ export function ClientCombobox({
             <CommandEmpty>No clients found.</CommandEmpty>
             <CommandGroup>
               {clients.map((c) => {
-                const ci = latestCheckIns.find((x) => x.clientId === c.id);
-                const ciTime = ci ? new Date(ci.submittedAt).getTime() : 0;
-                const seenTime = seenKeys[c.id] ?? 0;
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const _hasRecentCheckIn =
-                  ci &&
-                  Math.floor((Date.now() - ciTime) / 86400000) <= 7 &&
-                  ciTime > seenTime;
                 return (
                   <CommandItem
                     key={c.id}
@@ -424,12 +390,10 @@ export function ProgressHistoryTable({
   logs,
   measurements,
   startDate,
-  checkInDay,
 }: {
   logs: DailyLogRow[];
   measurements: any[];
   startDate?: string | null;
-  checkInDay?: string | null;
 }) {
   function siteAvg(vals: (number | null | undefined)[]): number | null {
     const nums = vals.filter((v): v is number => v != null);
@@ -475,7 +439,7 @@ export function ProgressHistoryTable({
   // Period N (Week N): starts the day after the previous check-in day,
   //   ends on the next check-in day (always 7 days once rolling).
   // Default check-in day: Wednesday (3). Falls back to Wednesday if unset.
-  const checkInDow = checkInDay ? (DAY_NAME_TO_DOW[checkInDay.toLowerCase()] ?? 3) : 3;
+  const checkInDow = 1; // Monday-based weeks
 
   // Find the first check-in day on or after firstDate
   const firstDateMs = new Date(firstDate + "T00:00:00").getTime();

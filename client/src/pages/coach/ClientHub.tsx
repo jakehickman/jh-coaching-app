@@ -29,7 +29,7 @@ export default function ClientHub() {
 
   const clientId = parseInt(id ?? "0", 10);
 
-  // Fetch all users to get name/email/checkInDay for the header
+  // Fetch all users to get name/email for the header
   const { data: allUsers } = trpc.users.list.useQuery();
   const clientUser = allUsers?.find((u) => u.id === clientId);
 
@@ -42,9 +42,6 @@ export default function ClientHub() {
   }
 
   const displayName = (clientUser as any)?.displayName ?? clientUser?.name ?? "Client";
-  const checkInDay = (clientUser as any)?.checkInDay
-    ? ((clientUser as any).checkInDay as string).charAt(0).toUpperCase() + ((clientUser as any).checkInDay as string).slice(1)
-    : null;
 
   // Current phase badge
   const { data: phases = [] } = trpc.phases.list.useQuery(
@@ -81,11 +78,7 @@ export default function ClientHub() {
             {clientUser?.email && (
               <span className="text-xs text-muted-foreground">{clientUser.email}</span>
             )}
-            {checkInDay && (
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                Check-in: {checkInDay}
-              </span>
-            )}
+
             {activePhase && (() => {
               const c = PHASE_COLORS[activePhase.label] ?? { bg: "bg-secondary", text: "text-muted-foreground" };
               return (
