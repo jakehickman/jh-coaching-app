@@ -175,42 +175,19 @@ function HabitsCard({ date, weekDays }: { date: string; weekDays: string[] }) {
     <div>
       <SectionLabel>Habits</SectionLabel>
       <Card className="p-0 overflow-hidden">
-        {/* Header row: day letters */}
-        <div className="flex items-center px-4 py-2 border-b border-border">
-          <div className="flex-1 min-w-0" /> {/* spacer for habit name column */}
-          <div className="flex gap-1.5">
-            {weekDays.map((iso, i) => {
-              const isSelected = iso === date;
-              const isToday = iso === today;
-              return (
-                <div
-                  key={iso}
-                  className={`w-7 text-center text-[10px] font-semibold ${
-                    isSelected ? 'text-primary' : isToday ? 'text-primary/70' : 'text-muted-foreground'
-                  }`}
-                >
-                  {dayLetters[i]}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Habit rows */}
+        {/* Habit rows — stacked: name on top, sparkline below */}
         {habits.map((h: any, i: number) => {
           return (
             <div
               key={h.id}
-              className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-border' : ''}`}
+              className={`px-4 py-3 space-y-2 ${i > 0 ? 'border-t border-border' : ''}`}
             >
-              {/* Habit name */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{h.name}</p>
-              </div>
+              {/* Habit name — full width, no truncation */}
+              <p className="text-sm font-medium text-foreground">{h.name}</p>
 
-              {/* 7-dot sparkline */}
-              <div className="flex gap-1.5 flex-shrink-0">
-                {weekDays.map((iso) => {
+              {/* Day letters + dots row */}
+              <div className="flex gap-1.5">
+                {weekDays.map((iso, idx) => {
                   const key = `${h.id}:${iso}`;
                   const serverDone = completions.some(
                     (c: any) => c.habitId === h.id && normDate(c.completedDate) === iso
@@ -221,31 +198,37 @@ function HabitsCard({ date, weekDays }: { date: string; weekDays: string[] }) {
                   const canToggle = !viewAsUserId && !isFuture;
 
                   return (
-                    <button
-                      key={iso}
-                      onClick={() => canToggle && toggleMutation.mutate({ habitId: h.id, date: iso })}
-                      disabled={!canToggle || toggleMutation.isPending}
-                      title={canToggle ? (done ? 'Mark incomplete' : 'Mark complete') : undefined}
-                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-all touch-manipulation ${
-                        isFuture
-                          ? 'opacity-20 cursor-not-allowed'
-                          : canToggle
-                          ? 'hover:scale-110 active:scale-95 cursor-pointer'
-                          : 'cursor-default'
-                      } ${
-                        done
-                          ? 'bg-primary'
-                          : isSelected
-                          ? 'bg-muted border-2 border-primary/40'
-                          : 'bg-muted/50 border border-border'
-                      }`}
-                    >
-                      {done && (
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none" className="text-primary-foreground">
-                          <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </button>
+                    <div key={iso} className="flex flex-col items-center gap-1 flex-1">
+                      {/* Day letter */}
+                      <span className={`text-[10px] font-semibold ${
+                        isSelected ? 'text-primary' : iso === today ? 'text-primary/70' : 'text-muted-foreground'
+                      }`}>{dayLetters[idx]}</span>
+                      {/* Dot */}
+                      <button
+                        onClick={() => canToggle && toggleMutation.mutate({ habitId: h.id, date: iso })}
+                        disabled={!canToggle || toggleMutation.isPending}
+                        title={canToggle ? (done ? 'Mark incomplete' : 'Mark complete') : undefined}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center transition-all touch-manipulation ${
+                          isFuture
+                            ? 'opacity-20 cursor-not-allowed'
+                            : canToggle
+                            ? 'hover:scale-110 active:scale-95 cursor-pointer'
+                            : 'cursor-default'
+                        } ${
+                          done
+                            ? 'bg-primary'
+                            : isSelected
+                            ? 'bg-muted border-2 border-primary/40'
+                            : 'bg-muted/50 border border-border'
+                        }`}
+                      >
+                        {done && (
+                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none" className="text-primary-foreground">
+                            <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   );
                 })}
               </div>
