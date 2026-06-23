@@ -115,13 +115,15 @@ function WeekSummaryPanel({
               )}
             </div>
 
-            {/* Weight */}
+            {/* Weight — show if available, greyed if log incomplete */}
             <div className="flex-shrink-0 text-right">
-              {hasData && log.weight != null ? (
-                <span className="text-sm font-semibold text-foreground">{log.weight} kg</span>
-              ) : (
-                <span className="text-sm text-muted-foreground/30">—</span>
-              )}
+              {log?.weight != null ? (
+                <span className={`text-sm font-semibold ${hasData ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {log.weight} kg
+                </span>
+              ) : !isFuture && !isPast ? (
+                <span className="text-sm text-muted-foreground/40">—</span>
+              ) : null}
             </div>
           </button>
         );
