@@ -435,7 +435,7 @@ function ClientLayout({
               onClick={handleRateFullness}
               className="text-xs font-semibold px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
             >
-              Rate fullness
+              Rate
             </button>
             <button onClick={() => setDismissedId(unratedMeal!.id)} className="text-muted-foreground hover:text-foreground">
               <X size={14} />

@@ -830,7 +830,7 @@ function MealRow({
                   onClick={() => onRateFullness(meal)}
                   className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-colors"
                 >
-                  Rate fullness
+                  Rate
                 </button>
               )}
             </div>
