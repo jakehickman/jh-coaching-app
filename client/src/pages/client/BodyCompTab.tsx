@@ -2,12 +2,13 @@ import { trpc } from "@/lib/trpc";
 import { useState, useMemo } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
 import { toast } from "sonner";
-import { Trash2, Plus, TrendingDown, TrendingUp } from "lucide-react";
+import { Trash2, Plus, TrendingDown, TrendingUp, ChevronDown } from "lucide-react";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
-import { Card, DateInput } from "./shared";
+import { Card } from "@/components/ui/card";
+import { DateInput } from "@/pages/client/shared";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 function avg(vals: (number | null | undefined)[]): number | null {
@@ -15,38 +16,35 @@ function avg(vals: (number | null | undefined)[]): number | null {
   if (nums.length === 0) return null;
   return Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10;
 }
-function fmtDate(d: Date | string | null | undefined) {
-  if (!d) return "";
-  const s = typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
-  if (s.length < 10) return s;
-  const dt = new Date(s + "T12:00:00Z");
-  const day = dt.getUTCDate();
-  const month = dt.toLocaleDateString("en-AU", { month: "long", timeZone: "UTC" });
-  const year = dt.getUTCFullYear();
-  return `${day} ${month} ${year}`;
+
+function totalSkinfold(entry: any): number | null {
+  const u = avg([entry.umbilical1, entry.umbilical2, entry.umbilical3, entry.umbilical4, entry.umbilical5]);
+  const s = avg([entry.suprailiac1, entry.suprailiac2, entry.suprailiac3, entry.suprailiac4, entry.suprailiac5]);
+  const c = avg([entry.calf1, entry.calf2, entry.calf3, entry.calf4, entry.calf5]);
+  const t = avg([entry.thigh1, entry.thigh2, entry.thigh3, entry.thigh4, entry.thigh5]);
+  if (u == null || s == null || c == null || t == null) return null;
+  return Math.round((u + s + c + t) * 10) / 10;
 }
+
 function delta(curr: number | null, prev: number | null, unit: string, lowerIsBetter = true) {
   if (curr == null || prev == null) return null;
-  const diff = Math.round((curr - prev) * 10) / 10;
+  const diff = parseFloat((curr - prev).toFixed(1));
   if (diff === 0) return null;
-  const positive = diff > 0;
-  const good = lowerIsBetter ? !positive : positive;
-  return { diff, positive, good, label: `${positive ? "+" : ""}${diff} ${unit}` };
+  const good = lowerIsBetter ? diff < 0 : diff > 0;
+  return { label: `${diff > 0 ? "+" : ""}${diff} ${unit}`, good };
+}
+
+function fmtDate(iso: string) {
+  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const [y, m, d] = iso.split("-");
+  return `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
 }
 
 // ─── SkinfoldInput ─────────────────────────────────────────────────────────────
-function SkinfoldInput({
-  label,
-  values,
-  onChange,
-}: {
-  label: string;
-  values: (string | "")[];
-  onChange: (idx: number, val: string) => void;
-}) {
+function SkinfoldInput({ label, values, onChange }: { label: string; values: string[]; onChange: (i: number, v: string) => void }) {
   return (
     <div>
-      <label className="text-sm text-muted-foreground block mb-2">{label} (mm)</label>
+      <label className="text-sm text-muted-foreground block mb-1.5">{label}</label>
       <div className="flex gap-2">
         {values.map((v, i) => (
           <input
@@ -56,8 +54,8 @@ function SkinfoldInput({
             min="0"
             value={v}
             onChange={(e) => onChange(i, e.target.value)}
+            className="flex-1 min-w-0 bg-secondary border border-border rounded-lg px-2 py-2.5 text-sm text-center text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder={`${i + 1}`}
-            className="flex-1 min-w-0 bg-secondary border border-border rounded-lg px-2 py-3 text-sm text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary"
           />
         ))}
       </div>
@@ -65,7 +63,7 @@ function SkinfoldInput({
   );
 }
 
-// ─── HistoryCard ────────────────────────────────────────────────────────────────
+// ─── HistoryCard ──────────────────────────────────────────────────────────────
 function HistoryCard({
   entry,
   prevEntry,
@@ -81,24 +79,19 @@ function HistoryCard({
   const supAvg = avg([entry.suprailiac1, entry.suprailiac2, entry.suprailiac3, entry.suprailiac4, entry.suprailiac5]);
   const calfAvg = avg([entry.calf1, entry.calf2, entry.calf3, entry.calf4, entry.calf5]);
   const thighAvg = avg([entry.thigh1, entry.thigh2, entry.thigh3, entry.thigh4, entry.thigh5]);
-  const totalAvg =
-    umbAvg != null && supAvg != null && calfAvg != null && thighAvg != null
-      ? Math.round((umbAvg + supAvg + calfAvg + thighAvg) * 10) / 10
-      : null;
+  const total = totalSkinfold(entry);
 
   const prevUmbAvg = prevEntry ? avg([prevEntry.umbilical1, prevEntry.umbilical2, prevEntry.umbilical3, prevEntry.umbilical4, prevEntry.umbilical5]) : null;
   const prevSupAvg = prevEntry ? avg([prevEntry.suprailiac1, prevEntry.suprailiac2, prevEntry.suprailiac3, prevEntry.suprailiac4, prevEntry.suprailiac5]) : null;
   const prevCalfAvg = prevEntry ? avg([prevEntry.calf1, prevEntry.calf2, prevEntry.calf3, prevEntry.calf4, prevEntry.calf5]) : null;
   const prevThighAvg = prevEntry ? avg([prevEntry.thigh1, prevEntry.thigh2, prevEntry.thigh3, prevEntry.thigh4, prevEntry.thigh5]) : null;
-  const prevTotalAvg = prevEntry && prevUmbAvg != null && prevSupAvg != null && prevCalfAvg != null && prevThighAvg != null
-    ? Math.round((prevUmbAvg + prevSupAvg + prevCalfAvg + prevThighAvg) * 10) / 10
-    : null;
+  const prevTotal = prevEntry ? totalSkinfold(prevEntry) : null;
 
   function DeltaBadge({ curr, prev, unit, lowerIsBetter = true }: { curr: number | null; prev: number | null; unit: string; lowerIsBetter?: boolean }) {
     const d = delta(curr, prev, unit, lowerIsBetter);
     if (!d) return null;
     return (
-      <span className={`text-xs font-medium ml-1 ${d.good ? "text-primary" : "text-amber-400"}`}>
+      <span className={`text-xs font-medium ml-1.5 ${d.good ? "text-primary" : "text-amber-400"}`}>
         {d.label}
       </span>
     );
@@ -121,7 +114,7 @@ function HistoryCard({
 
       {/* Circumferences */}
       {(entry.waist != null || entry.hips != null) && (
-        <div className="grid grid-cols-2 gap-3 pb-3 border-b border-border">
+        <div className="grid grid-cols-2 gap-3">
           {entry.waist != null && (
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist</p>
@@ -165,12 +158,12 @@ function HistoryCard({
               );
             })}
           </div>
-          {totalAvg != null && (
-            <div className="flex items-center justify-between pt-2 border-t border-border">
+          {total != null && (
+            <div className="flex items-center justify-between pt-1">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Skinfolds</span>
               <span className="text-sm font-bold text-primary">
-                {totalAvg} mm
-                <DeltaBadge curr={totalAvg} prev={prevTotalAvg} unit="mm" lowerIsBetter />
+                {total} mm
+                <DeltaBadge curr={total} prev={prevTotal} unit="mm" lowerIsBetter />
               </span>
             </div>
           )}
@@ -178,7 +171,7 @@ function HistoryCard({
       )}
 
       {entry.notes && (
-        <p className="text-xs text-muted-foreground italic border-t border-border pt-2">{entry.notes}</p>
+        <p className="text-xs text-muted-foreground italic">{entry.notes}</p>
       )}
     </div>
   );
@@ -208,17 +201,6 @@ export default function BodyCompTab() {
   const { data: logsAdmin } = trpc.dailyLog.listForClient.useQuery({ userId: viewAsUserId!, limit: 60 }, { enabled: !!viewAsUserId });
   const logs = viewAsUserId ? logsAdmin : logsOwn;
 
-  const weightData = useMemo(() => {
-    return (logs ?? [])
-      .filter(l => l.weight != null)
-      .slice(0, 28)
-      .reverse()
-      .map(l => {
-        const iso = toLocalDateStr(l.logDate);
-        return { date: iso.slice(5), weight: l.weight };
-      });
-  }, [logs]);
-
   const DAY = 86400000;
   const localDateStr = (offsetDays: number) => {
     const d = new Date(Date.now() - offsetDays * DAY);
@@ -228,6 +210,7 @@ export default function BodyCompTab() {
   const day6ago = localDateStr(6);
   const day7ago = localDateStr(7);
   const day13ago = localDateStr(13);
+
   const allLogs = logs ?? [];
   const thisWeekWeights = allLogs
     .filter(l => { const d = toLocalDateStr(l.logDate); return d >= day6ago && d <= today && l.weight != null; })
@@ -252,6 +235,7 @@ export default function BodyCompTab() {
   const entries = viewAsUserId ? entriesAdmin : entriesOwn;
 
   const [showForm, setShowForm] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [form, setForm] = useState(() => blankForm(today));
 
   const setSite = (site: "umbilical" | "suprailiac" | "calf" | "thigh", idx: number, val: string) => {
@@ -313,68 +297,156 @@ export default function BodyCompTab() {
     deleteMutation.mutate({ id });
   };
 
+  // ── chart data ──
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  // Weight + Waist chart: daily weight from logs + waist from measurements
+  const combinedTrendData = useMemo(() => {
+    // Build a map of waist by date from measurements
+    const waistByDate: Record<string, number> = {};
+    (entries as any[]).forEach((m: any) => {
+      if (m.waist != null) waistByDate[m.measureDate] = m.waist;
+    });
+    // Build weight data from daily logs (last 60 days)
+    const weightPoints = (logs ?? [])
+      .filter(l => l.weight != null)
+      .slice(0, 60)
+      .reverse()
+      .map(l => {
+        const iso = toLocalDateStr(l.logDate);
+        const [, mo, d] = iso.split("-");
+        return {
+          isoDate: iso,
+          date: `${parseInt(d)} ${months[parseInt(mo) - 1]}`,
+          weight: l.weight as number,
+          waist: waistByDate[iso] ?? null,
+        };
+      });
+    return weightPoints;
+  }, [logs, entries]);
+
+  const hasWeightWaist = combinedTrendData.filter(d => d.weight != null).length > 1;
+
+  // Skinfold vs Weight chart: one point per measurement, avg weight from surrounding 7-day window
+  const skinfoldWeightData = useMemo(() => {
+    const sorted = [...(entries as any[])].sort((a, b) => a.measureDate.localeCompare(b.measureDate));
+    return sorted
+      .map(m => {
+        const total = totalSkinfold(m);
+        if (total == null) return null;
+        const iso = m.measureDate;
+        const [, mo, d] = iso.split("-");
+        const dateLabel = `${parseInt(d)} ${months[parseInt(mo) - 1]}`;
+        // avg weight from daily logs in ±3 days window
+        const msDate = new Date(iso).getTime();
+        const weekLogs = (logs ?? []).filter(l => {
+          const lMs = new Date(toLocalDateStr(l.logDate)).getTime();
+          return Math.abs(lMs - msDate) <= 3 * DAY && l.weight != null;
+        });
+        const wAvg = weekLogs.length > 0
+          ? Math.round((weekLogs.reduce((s: number, l: any) => s + l.weight, 0) / weekLogs.length) * 10) / 10
+          : null;
+        return { isoDate: iso, date: dateLabel, skinfold: total, avgWeight: wAvg };
+      })
+      .filter((x): x is NonNullable<typeof x> => x != null);
+  }, [entries, logs]);
+
+  const hasSkinfold = skinfoldWeightData.length > 1;
+
+  // Visible entries: 3 most recent unless showAll
+  const visibleEntries = showAll ? (entries as any[]) : (entries as any[]).slice(0, 3);
+
   return (
     <div className="space-y-5 pb-24">
 
-      {/* ── Weight section: compact inline avg + trend chart ── */}
-      {(avgWeight || weightData.length > 0) && (
-        <Card className="p-0 overflow-hidden">
-          {/* Header row with avg */}
-          {avgWeight && (
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border">
-              <div>
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-0.5">7-Day Avg Weight</p>
-                <p className="text-2xl font-bold text-foreground">{avgWeight} kg</p>
-              </div>
-              {weightChangePct && weightChangeDir && (
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${
-                  weightChangeDir === "down" ? "bg-primary/15 text-primary" : "bg-amber-400/15 text-amber-400"
-                }`}>
-                  {weightChangeDir === "down"
-                    ? <TrendingDown size={15} />
-                    : <TrendingUp size={15} />
-                  }
-                  {Number(weightChangePct) > 0 ? "+" : ""}{weightChangePct}% vs prev week
-                </div>
-              )}
-            </div>
-          )}
-          {/* Chart */}
-          {weightData.length > 0 && (
-            <div className="px-2 pt-3 pb-2">
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={weightData} margin={{ left: -20, right: 8, top: 4, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
-                    interval="preserveStartEnd"
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={["auto", "auto"]}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }}
-                    labelStyle={{ color: "var(--foreground)" }}
-                    itemStyle={{ color: "var(--primary)" }}
-                    formatter={(v: any) => [`${v} kg`, "Weight"]}
-                  />
-                  <Line type="monotone" dataKey="weight" stroke="var(--primary)" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+      {/* ── 7-Day Avg Weight card ── */}
+      {avgWeight && (
+        <Card className="flex items-center justify-between px-4 py-3">
+          <div>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-0.5">7-Day Avg Weight</p>
+            <p className="text-2xl font-bold text-foreground">{avgWeight} kg</p>
+          </div>
+          {weightChangePct && weightChangeDir && (
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${
+              weightChangeDir === "down" ? "bg-primary/15 text-primary" : "bg-amber-400/15 text-amber-400"
+            }`}>
+              {weightChangeDir === "down" ? <TrendingDown size={15} /> : <TrendingUp size={15} />}
+              {Number(weightChangePct) > 0 ? "+" : ""}{weightChangePct}% vs prev week
             </div>
           )}
         </Card>
       )}
 
+      {/* ── Weight & Waist chart ── */}
+      {hasWeightWaist && (
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Weight &amp; Waist</p>
+          <ResponsiveContainer width="100%" height={200}>
+            <ComposedChart data={combinedTrendData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="date" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} interval="preserveStartEnd" tickLine={false} />
+              <YAxis yAxisId="weight" tick={{ fill: "#3b82f6", fontSize: 10 }} width={36} domain={["auto", "auto"]} tickLine={false} axisLine={false} />
+              <YAxis yAxisId="waist" orientation="right" tick={{ fill: "#f59e0b", fontSize: 10 }} width={36} domain={["auto", "auto"]} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }}
+                labelStyle={{ color: "var(--foreground)" }}
+                formatter={(v: number, name: string) => name === "weight" ? [`${v} kg`, "Weight"] : [`${v} cm`, "Waist"]}
+              />
+              <Area yAxisId="weight" type="monotone" dataKey="weight" stroke="#3b82f6" fill="#3b82f622" strokeWidth={2} dot={{ r: 2, fill: "#3b82f6" }} connectNulls />
+              <Line yAxisId="waist" type="monotone" dataKey="waist" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, fill: "#f59e0b" }} connectNulls />
+            </ComposedChart>
+          </ResponsiveContainer>
+          <div className="flex items-center gap-4 mt-2 justify-center">
+            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className="w-3 h-0.5 bg-blue-500 inline-block rounded" />
+              Weight (kg)
+            </span>
+            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className="w-3 h-0.5 bg-amber-500 inline-block rounded" />
+              Waist (cm)
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Skinfold vs Weight chart ── */}
+      {hasSkinfold && (
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Skinfold vs Weight</p>
+          <ResponsiveContainer width="100%" height={200}>
+            <ComposedChart data={skinfoldWeightData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="date" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} interval="preserveStartEnd" tickLine={false} />
+              <YAxis yAxisId="skinfold" tick={{ fill: "#22c55e", fontSize: 10 }} width={36} domain={["auto", "auto"]} tickLine={false} axisLine={false} />
+              <YAxis yAxisId="weight" orientation="right" tick={{ fill: "#3b82f6", fontSize: 10 }} width={36} domain={["auto", "auto"]} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }}
+                labelStyle={{ color: "var(--foreground)" }}
+                formatter={(v: number, name: string) =>
+                  name === "skinfold" ? [`${v} mm`, "Total Skinfold"] : [`${v} kg`, "Weight"]
+                }
+              />
+              <Line yAxisId="skinfold" type="monotone" dataKey="skinfold" stroke="#22c55e" strokeWidth={2} dot={{ r: 4, fill: "#22c55e", stroke: "#22c55e" }} connectNulls />
+              <Line yAxisId="weight" type="monotone" dataKey="avgWeight" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4, fill: "#3b82f6", stroke: "#3b82f6" }} connectNulls />
+            </ComposedChart>
+          </ResponsiveContainer>
+          <div className="flex items-center gap-4 mt-2 justify-center">
+            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />
+              Skinfold (mm)
+            </span>
+            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className="w-3 h-0.5 bg-blue-500 inline-block rounded" />
+              Weight (kg)
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* ── Measurements section ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-foreground uppercase tracking-wide text-muted-foreground">Measurements</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Measurements</p>
           {!viewAsUserId && (
             <button
               onClick={() => {
@@ -471,7 +543,7 @@ export default function BodyCompTab() {
           </div>
         ) : (
           <div className="space-y-3">
-            {(entries as any[]).map((entry: any, idx: number) => (
+            {visibleEntries.map((entry: any, idx: number) => (
               <HistoryCard
                 key={entry.id}
                 entry={entry}
@@ -480,6 +552,15 @@ export default function BodyCompTab() {
                 readOnly={!!viewAsUserId}
               />
             ))}
+            {!showAll && (entries as any[]).length > 3 && (
+              <button
+                onClick={() => setShowAll(true)}
+                className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-muted/30 transition-colors"
+              >
+                <ChevronDown size={14} />
+                Show all {(entries as any[]).length} entries
+              </button>
+            )}
           </div>
         )}
       </div>
