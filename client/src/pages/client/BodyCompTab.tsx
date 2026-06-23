@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useState, useMemo } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
 import { toast } from "sonner";
-import { Trash2, Plus, TrendingDown, TrendingUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, Plus, TrendingDown, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -296,7 +296,7 @@ function MeasurementCalendar({
           }
           const iso = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const hasMeasurement = measurementDates.has(iso);
-          const hasWeight = !hasMeasurement && iso in weightByDate;
+          const hasWeight = !hasMeasurement && iso in weightByDate; // only show blue if no green
           const isToday = iso === todayStr;
           const isSelected = iso === selectedDate;
 
@@ -317,14 +317,12 @@ function MeasurementCalendar({
               }`}>
                 {day}
               </span>
-              {hasMeasurement && (
+              {hasMeasurement ? (
                 <span className="w-1.5 h-1.5 rounded-full bg-primary block" />
-              )}
-              {hasWeight && (
-                <span className="w-1 h-1 rounded-full bg-blue-400/50 block" />
-              )}
-              {!hasMeasurement && !hasWeight && (
-                <span className="w-1.5 h-1.5 block" /> /* spacer to keep height consistent */
+              ) : hasWeight ? (
+                <span className="w-1 h-1 rounded-full bg-blue-400/60 block" />
+              ) : (
+                <span className="w-1.5 h-1.5 block" />
               )}
             </button>
           );
@@ -335,11 +333,11 @@ function MeasurementCalendar({
       <div className="flex items-center gap-4 mt-3 justify-center">
         <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
-          Measurement
+          Measurements
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <span className="w-1 h-1 rounded-full bg-blue-400/50 inline-block" />
-          Weight only
+          <span className="w-1 h-1 rounded-full bg-blue-400/60 inline-block" />
+          Weight
         </span>
       </div>
     </div>
@@ -390,7 +388,6 @@ export default function BodyCompTab() {
   const entries = viewAsUserId ? entriesAdmin : entriesOwn;
 
   const [showForm, setShowForm] = useState(false);
-  const [showAll, setShowAll] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [form, setForm] = useState(() => blankForm(today));
 
@@ -541,9 +538,6 @@ export default function BodyCompTab() {
   }, [entries, logs]);
 
   const hasSkinfold = skinfoldWeightData.length > 1;
-
-  // Visible entries for history list
-  const visibleEntries = showAll ? sortedEntries : sortedEntries.slice(0, 3);
 
   // Selected day detail
   const selectedEntry = selectedDate ? measurementByDate[selectedDate] ?? null : null;
@@ -763,33 +757,15 @@ export default function BodyCompTab() {
           </div>
         )}
 
-        {/* History list */}
-        {entries.length === 0 ? (
+        {/* Empty state when nothing selected */}
+        {!selectedDate && entries.length === 0 && (
           <div className="bg-card border border-border rounded-xl px-4 py-8 text-center">
             <p className="text-sm text-muted-foreground">No measurements logged yet</p>
           </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">History</p>
-            {visibleEntries.map((entry: any, idx: number) => (
-              <HistoryCard
-                key={entry.id}
-                entry={entry}
-                prevEntry={sortedEntries[idx + 1] ?? null}
-                weightOnDay={weightByDate[isoToDate(entry.measureDate)] ?? null}
-                onDelete={() => handleDelete(entry.id)}
-                readOnly={!!viewAsUserId}
-              />
-            ))}
-            {!showAll && sortedEntries.length > 3 && (
-              <button
-                onClick={() => setShowAll(true)}
-                className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-muted/30 transition-colors"
-              >
-                <ChevronDown size={14} />
-                Show all {sortedEntries.length} entries
-              </button>
-            )}
+        )}
+        {!selectedDate && entries.length > 0 && (
+          <div className="bg-card border border-border rounded-xl px-4 py-6 text-center">
+            <p className="text-sm text-muted-foreground">Tap a day to view details</p>
           </div>
         )}
       </div>
