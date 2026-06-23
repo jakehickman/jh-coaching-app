@@ -110,17 +110,18 @@ function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }>
 function ScaleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-sm mx-auto">
+      <DialogContent className="max-w-sm mx-auto flex flex-col max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Hunger and Fullness Scale</DialogTitle>
+          <DialogTitle>Hunger &amp; Fullness Scale</DialogTitle>
         </DialogHeader>
-        <div className="space-y-1 text-sm">
+        <p className="text-sm text-muted-foreground -mt-1">Aim to start eating at 3–4 and stop at 6–7.</p>
+        <div className="space-y-0.5 text-sm overflow-y-auto flex-1 mt-2">
           {SCALE.map((s, i) => {
             const n = i + 1;
             const isIdeal = (n >= 3 && n <= 4) || (n >= 6 && n <= 7);
             return (
-              <div key={n} className={cn("flex gap-3 py-1.5 px-2 rounded-md", isIdeal && "bg-green-500/10")}>
-                <span className={cn("font-bold w-5 shrink-0", isIdeal ? "text-green-400" : "text-muted-foreground")}>{n}</span>
+              <div key={n} className={cn("flex gap-3 py-2 px-2 rounded-md border-b border-border/40 last:border-0", isIdeal && "bg-green-500/10")}>
+                <span className={cn("font-bold w-6 shrink-0 text-center", isIdeal ? "text-green-400" : "text-muted-foreground")}>{n}</span>
                 <div>
                   <span className={cn("font-medium", isIdeal ? "text-green-400" : "text-foreground")}>{s.label}</span>
                   <span className="text-muted-foreground"> — {s.desc}</span>
@@ -128,58 +129,91 @@ function ScaleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               </div>
             );
           })}
-          <p className="text-xs text-muted-foreground pt-2 px-2">
-            Ideal zone: start eating at 3–4, stop at 6–7 (highlighted in green).
-          </p>
         </div>
+        <Button className="w-full mt-4" onClick={onClose}>Got it</Button>
       </DialogContent>
     </Dialog>
   );
 }
 
-// ─── Rating Picker ────────────────────────────────────────────────────────────
+// ─── Rating Stepper ───────────────────────────────────────────────────────────
 
 function RatingPicker({
   value,
   onChange,
   type,
+  onOpenScale,
 }: {
   value: number | null;
   onChange: (v: number) => void;
   type: "hunger" | "fullness";
+  onOpenScale?: () => void;
 }) {
   const idealFn = type === "hunger" ? isIdealHunger : isIdealFullness;
+  const current = value ?? 5;
+  const label = SCALE[current - 1];
+  const isIdeal = idealFn(current);
+
+  function decrement() { onChange(Math.max(1, current - 1)); }
+  function increment() { onChange(Math.min(10, current + 1)); }
+
   return (
     <div className="space-y-3">
-      <div className="flex gap-1.5 justify-between">
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-          const ideal = idealFn(n);
-          const selected = value === n;
-          return (
+      {/* Label row */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+          {type === "hunger" ? "Hunger before eating" : "How full are you now?"}
+        </p>
+        {onOpenScale && (
+          <button onClick={onOpenScale} className="text-muted-foreground hover:text-foreground transition-colors">
+            <HelpCircle size={16} />
+          </button>
+        )}
+      </div>
+      {/* Stepper */}
+      <div className="flex items-center justify-between gap-4">
+        <button
+          onClick={decrement}
+          disabled={current <= 1}
+          className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-2xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all"
+        >
+          −
+        </button>
+        <div className="flex-1 text-center">
+          <p className={cn("text-6xl font-bold leading-none", isIdeal ? "text-green-400" : "text-foreground")}>
+            {current}
+          </p>
+          <p className={cn("text-sm mt-2 font-medium", isIdeal ? "text-green-400" : "text-muted-foreground")}>
+            {label.label}
+          </p>
+        </div>
+        <button
+          onClick={increment}
+          disabled={current >= 10}
+          className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-2xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all"
+        >
+          +
+        </button>
+      </div>
+      {/* Dot progress bar */}
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-xs text-muted-foreground">1</span>
+        <div className="flex-1 flex gap-1 justify-between px-1">
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
             <button
               key={n}
               onClick={() => onChange(n)}
               className={cn(
-                "flex-1 h-10 rounded-lg text-sm font-bold transition-all border-2",
-                selected
-                  ? ideal
-                    ? "bg-green-500 border-green-500 text-white"
-                    : "bg-amber-500 border-amber-500 text-white"
-                  : ideal
-                  ? "border-green-500/40 text-green-400 hover:bg-green-500/10"
-                  : "border-border text-muted-foreground hover:bg-secondary"
+                "flex-1 h-1.5 rounded-full transition-all",
+                n <= current
+                  ? idealFn(n) ? "bg-green-400" : "bg-foreground/40"
+                  : "bg-secondary"
               )}
-            >
-              {n}
-            </button>
-          );
-        })}
+            />
+          ))}
+        </div>
+        <span className="text-xs text-muted-foreground">10</span>
       </div>
-      {value != null && (
-        <p className={cn("text-sm text-center", idealFn(value) ? "text-green-400" : "text-amber-400")}>
-          {SCALE[value - 1].label} — {SCALE[value - 1].desc}
-        </p>
-      )}
     </div>
   );
 }
@@ -202,6 +236,7 @@ function LogSheet({
   const [notes, setNotes] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoData, setPhotoData] = useState<{ base64: string; mimeType: string } | null>(null);
+  const [scaleOpen, setScaleOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -218,6 +253,7 @@ function LogSheet({
     setNotes("");
     setPhotoPreview(null);
     setPhotoData(null);
+    setScaleOpen(false);
   }
 
   function handleClose() { reset(); onClose(); }
@@ -248,7 +284,7 @@ function LogSheet({
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-border shrink-0">
-        <h2 className="text-lg font-semibold text-foreground">Log meal</h2>
+        <h2 className="text-lg font-semibold text-foreground">Log {mealType === "treat" ? "Treat" : "Meal"}</h2>
         <button onClick={handleClose} className="text-muted-foreground hover:text-foreground p-1">
           <X size={22} />
         </button>
@@ -274,16 +310,13 @@ function LogSheet({
 
         {/* Hunger scale — meals only */}
         {mealType === "meal" && (
-          <div>
-            <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wide">How hungry are you?</p>
-            <RatingPicker value={hunger} onChange={setHunger} type="hunger" />
-          </div>
+          <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
         )}
 
         {/* Portion — treats only */}
         {mealType === "treat" && (
-          <div>
-            <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Portion size</p>
             <div className="flex gap-2">
               {(["small", "medium", "large"] as const).map((p) => (
                 <button
@@ -297,6 +330,12 @@ function LogSheet({
                   {p}
                 </button>
               ))}
+            </div>
+            {/* Calorie range info card */}
+            <div className="bg-secondary/60 rounded-xl p-3 text-xs space-y-1">
+              <div className="flex gap-2"><span className="font-semibold w-14 shrink-0">Small</span><span className="text-muted-foreground">e.g. 1 square of chocolate (~50–150 cal)</span></div>
+              <div className="flex gap-2"><span className="font-semibold w-14 shrink-0">Medium</span><span className="text-muted-foreground">e.g. 1 cup of ice cream (~150–350 cal)</span></div>
+              <div className="flex gap-2"><span className="font-semibold w-14 shrink-0">Large</span><span className="text-muted-foreground">e.g. 1 large slice of cake (~350–600 cal)</span></div>
             </div>
           </div>
         )}
@@ -339,7 +378,7 @@ function LogSheet({
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Description"
+          placeholder="What are you eating?"
           className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
 
@@ -356,9 +395,11 @@ function LogSheet({
       {/* Sticky footer */}
       <div className="px-4 pb-8 pt-3 border-t border-border shrink-0">
         <Button onClick={handleSave} className="w-full h-12 text-base" disabled={logMutation.isPending}>
-          {logMutation.isPending ? "Saving..." : "Log meal"}
+          {logMutation.isPending ? "Saving..." : mealType === "treat" ? "Save Treat" : "Save Meal"}
         </Button>
       </div>
+
+      <ScaleModal open={scaleOpen} onClose={() => setScaleOpen(false)} />
     </div>
   );
 }
@@ -392,7 +433,7 @@ function FullnessSheet({
     <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
       <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-8" hideCloseButton>
         <SheetHeader className="flex flex-row items-center justify-between mb-6">
-          <SheetTitle>How full are you now?</SheetTitle>
+          <SheetTitle>How are you feeling?</SheetTitle>
           <button onClick={handleClose} className="text-muted-foreground hover:text-foreground p-1">
             <X size={20} />
           </button>
@@ -515,7 +556,7 @@ function EditSheet({
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Description"
+            placeholder="What are you eating?"
             className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
 
@@ -744,9 +785,10 @@ function TodayScreen() {
       {/* Meal list */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         {todayMeals.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-muted-foreground text-sm">No meals logged today</p>
-            <p className="text-xs text-muted-foreground mt-1">Tap + Log to record your first meal</p>
+          <div className="py-14 text-center flex flex-col items-center gap-2">
+            <UtensilsCrossed size={36} className="text-muted-foreground/30 mb-1" />
+            <p className="text-foreground font-medium text-sm">No meals logged today</p>
+            <p className="text-xs text-muted-foreground">Tap + Log to record your first meal</p>
           </div>
         ) : (
           <div className="px-4">

@@ -705,3 +705,10 @@
 ## Body Comp Calendar (Jun 2026)
 - [x] Rename "Hips" to "Hip" throughout the app (BodyCompTab.tsx + MeasurementsTab.tsx)
 - [x] Body Comp tab: add measurement calendar (month grid, green dot on measurement days, blue dot on weight-only days, tap day to show detail card with all metrics + deltas)
+
+## Nutrition Tab Redesign (Jun 2026)
+- [x] Hunger scale: replace 10-button row with large centred number + −/+ stepper + label + dot progress bar
+- [x] Treat size selector: add Small/Medium/Large pill buttons when Treat selected (replaces hunger scale), with collapsible calorie range info card
+- [x] Log sheet: change description placeholder from "Description" to "What are you eating?"
+- [x] Today screen: add centred empty state (fork/knife icon + "No meals logged today" + "Tap + Log to record your first meal")
+- [x] Hunger & Fullness reference modal: ⓘ icon next to hunger scale opens modal listing all 10 levels with descriptions
