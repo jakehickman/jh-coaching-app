@@ -133,7 +133,7 @@ function InviteLinksSection() {
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Label (optional, e.g. client name)"
+            placeholder="Client name"
             value={label}
             onChange={e => setLabel(e.target.value)}
             onKeyDown={e => e.key === "Enter" && handleCreate()}
@@ -141,7 +141,7 @@ function InviteLinksSection() {
           />
           <Button
             onClick={handleCreate}
-            disabled={createInvite.isPending}
+            disabled={createInvite.isPending || !label.trim()}
             size="sm"
             className="gap-1.5 flex-shrink-0"
           >
@@ -167,7 +167,7 @@ function InviteLinksSection() {
                 <Link2 size={14} className="text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">
-                    {invite.label ?? "Unnamed invite"}
+                    {invite.label || "—"}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {invite.usedByUserId ? (
