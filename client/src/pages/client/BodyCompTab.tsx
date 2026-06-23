@@ -78,9 +78,12 @@ function HistoryRow({
       : null;
   return (
     <div className="border-b border-border last:border-0">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/30 transition-colors"
+        onKeyDown={(e) => e.key === 'Enter' && setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/30 transition-colors cursor-pointer"
       >
         <div>
           <p className="text-sm font-semibold text-foreground">{fmtDate(entry.measureDate)}</p>
@@ -114,7 +117,7 @@ function HistoryRow({
             <ChevronDown className="w-4 h-4 text-muted-foreground" />
           )}
         </div>
-      </button>
+      </div>
       {expanded && (
         <div className="px-4 pb-4 bg-muted/20 border-t border-border">
           <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-3">
