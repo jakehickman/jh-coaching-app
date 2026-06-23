@@ -476,10 +476,10 @@ export default function DailyLogTab() {
         </div>
       </div>
 
-      {/* ── Morning ── */}
-      <div>
-        <SectionLabel>Morning</SectionLabel>
-        <Card className="space-y-3">
+      {/* ── Single form card ── */}
+      <Card className="p-0 overflow-hidden divide-y divide-border">
+        {/* Morning block */}
+        <div className="px-4 py-4 space-y-3">
           <div>
             <label className="text-sm text-muted-foreground block mb-1.5">Weight (kg)</label>
             <input type="number" step="0.1" value={form.weight} onChange={f("weight")}
@@ -491,31 +491,28 @@ export default function DailyLogTab() {
               className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.sleepHours === '' ? 'border-amber-500/50' : 'border-border'}`} />
           </div>
           <ScoreInput label="Sleep Quality (1–5)" value={form.sleepQuality} onChange={v => setForm(p => ({ ...p, sleepQuality: v }))} max={5} />
-        </Card>
-      </div>
+        </div>
 
-      {/* ── Habits ── */}
-      <HabitsCard date={date} weekDays={weekDays} />
-
-      {/* ── Evening ── */}
-      <div>
-        <SectionLabel>Evening</SectionLabel>
-        <Card className="space-y-4">
+        {/* Evening block */}
+        <div className="px-4 py-4 space-y-4">
           <div>
             <label className="text-sm text-muted-foreground block mb-1.5">Steps</label>
             <input type="number" value={form.stepsCount} onChange={f("stepsCount")}
               className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.stepsCount === '' ? 'border-amber-500/50' : 'border-border'}`} />
           </div>
           <ScoreInput label="Stress Level (1–5)" value={form.stressLevel} onChange={v => setForm(p => ({ ...p, stressLevel: v }))} max={5} />
-        </Card>
-      </div>
+        </div>
 
-      {/* ── Notes ── */}
-      <div>
-        <SectionLabel>Notes</SectionLabel>
-        <textarea value={form.notes} onChange={f("notes")} rows={3}
-          className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
-      </div>
+        {/* Notes block */}
+        <div className="px-4 py-4">
+          <label className="text-sm text-muted-foreground block mb-1.5">Notes</label>
+          <textarea value={form.notes} onChange={f("notes")} rows={3}
+            className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+        </div>
+      </Card>
+
+      {/* ── Habits ── */}
+      <HabitsCard date={date} weekDays={weekDays} />
 
       {!viewAsUserId && (
         <button onClick={handleSave} disabled={upsert.isPending}
