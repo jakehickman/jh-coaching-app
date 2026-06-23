@@ -147,7 +147,7 @@ function MeasurementCard({
           )}
           {entry.hips != null && (
             <div className="bg-secondary/50 rounded-lg px-3 py-2.5">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Hips</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Hip</p>
               <p className="text-base font-semibold text-foreground">{entry.hips} <span className="text-xs font-normal text-muted-foreground">cm</span></p>
               <Delta curr={entry.hips} prev={prev?.hips ?? null} unit=" cm" />
             </div>
@@ -340,7 +340,7 @@ export default function MeasurementsTab() {
                 />
               </div>
               <div>
-                <label className="text-sm text-muted-foreground block mb-1.5">Hips</label>
+                <label className="text-sm text-muted-foreground block mb-1.5">Hip</label>
                 <input
                   type="number"
                   step="0.1"

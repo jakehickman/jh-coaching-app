@@ -701,3 +701,7 @@
 ## Measurement Card & Date Format (Jun 2026)
 - [x] Change date format throughout app from DD/MM/YYYY to "13 May 2026" style
 - [x] Replace expand/collapse measurement rows with flat cards showing all data (waist, hips, 4 skinfold site avgs, total, all with deltas vs previous entry)
+
+## Body Comp Calendar (Jun 2026)
+- [x] Rename "Hips" to "Hip" throughout the app (BodyCompTab.tsx + MeasurementsTab.tsx)
+- [x] Body Comp tab: add measurement calendar (month grid, green dot on measurement days, blue dot on weight-only days, tap day to show detail card with all metrics + deltas)
