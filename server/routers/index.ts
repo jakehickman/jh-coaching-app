@@ -9,6 +9,5 @@ export { habitsRouter } from "./habits";
 export { timelineRouter, notesRouter, nutritionFoodsRouter, onboardingRouter, clientConfigRouter, changeLogRouter } from "./misc";
 export { progressRouter } from "./progress";
 export { progressPhotosRouter } from "./progressPhotos";
-export { phasesRouter } from "./phases";
 export { invitesRouter } from "./invites";
 export { mealLogsRouter } from "./mealLogs";

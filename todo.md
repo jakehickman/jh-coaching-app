@@ -673,3 +673,13 @@
 - [x] Measurements tab: MeasurementsTab client component with entry form + history
 - [x] Measurements tab: add to clientNav and ClientDashboard routing
 - [x] Remove off-plan meals counter from client Daily Log tab
+- [x] Remove phases feature: server router, routers.ts wiring, index.ts export, DB schema
+- [x] Remove phases from coach UI: PhasesTab, ClientHub badge, WeeklyReviewTab, WeeklyBodyCompCards, ProgressSection import
+- [x] Remove phases from client OverviewTab
+- [x] Remove phases from progress router (buildPeriodsWithPhases → simple 7-day blocks)
+- [x] Simplify training adherence on Overview to sessions in last 7 days
+- [x] Remove Off Plan Meals metric card from Overview
+- [x] Remove LISS Cardio metric card from Overview
+- [x] Fix habits section on Overview: single day-letter header row above all habits, not repeated per habit
+- [x] Remove Getting Started Guide link from Overview
+- [x] Redesign colour scheme: darker bg, higher contrast cards, better visual hierarchy

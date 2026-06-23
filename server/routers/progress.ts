@@ -2,8 +2,8 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import * as db from "../db";
 import { getDb } from "../db";
-import { clientPhases, mealLogs } from "../../drizzle/schema";
-import { eq, asc, and, gte, lte } from "drizzle-orm";
+import { mealLogs } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 /** Return the ISO date string (YYYY-MM-DD) for a given Date (UTC) */
 function toDateStr(d: Date): string {
@@ -42,23 +42,15 @@ type WeekPeriod = {
   weekEnd: string;
   label: string;
   isInProgress: boolean;
-  /** null = no phase assigned to this period; number = W-number within the phase */
-  weekNumber: number | null;
-  phaseLabel: string | null;
 };
 
 /**
- * Build week periods from anchorDate to today, splitting at phase boundaries.
- * - Pre-phase periods use 7-day blocks anchored to anchorDate; weekNumber = null.
- * - When a phase starts mid-block, the current block is closed early (ending the day
- *   before the phase start), and a new phase-anchored 7-day block begins.
- * - Phase periods are numbered W1, W2, … from the phase startDate.
- * - Returns newest-first.
+ * Build simple 7-day week periods from anchorDate to today.
+ * Returns newest-first.
  */
-function buildPeriodsWithPhases(
+function buildPeriods(
   anchorDate: string,
   today: Date,
-  phases: Array<{ startDate: string; endDate: string | null; label: string }>,
   maxWeeks = 104,
   tzOffsetMinutes = 0
 ): WeekPeriod[] {
@@ -73,80 +65,35 @@ function buildPeriodsWithPhases(
   const anchorMs = new Date(anchorDate + "T00:00:00Z").getTime();
   if (anchorMs > todayMs) return [];
 
-  // Collect all phase start dates that fall after anchorDate and on/before today
-  // These are the "split points" where we restart 7-day counting.
-  const splitPoints: Array<{ ms: number; label: string }> = phases
-    .map((p) => ({ ms: new Date(p.startDate + "T00:00:00Z").getTime(), label: p.label }))
-    .filter((sp) => sp.ms > anchorMs && sp.ms <= todayMs)
-    .sort((a, b) => a.ms - b.ms);
+  const weeksSince = Math.floor((todayMs - anchorMs) / msPerWeek);
+  const periods: WeekPeriod[] = [];
 
-  // Build segments: each segment has its own anchor and optional phase info
-  type Segment = { anchorMs: number; phaseLabel: string | null };
-  const segments: Segment[] = [{ anchorMs, phaseLabel: null }];
-  for (const sp of splitPoints) {
-    // Find the phase that starts at this split point
-    const phase = phases.find((p) => new Date(p.startDate + "T00:00:00Z").getTime() === sp.ms);
-    segments.push({ anchorMs: sp.ms, phaseLabel: phase?.label ?? null });
+  // Current in-progress week
+  const curWeekStartMs = anchorMs + weeksSince * msPerWeek;
+  const curWeekEndMs = curWeekStartMs + msPerWeek - msPerDay;
+  const curLabel = `${new Date(curWeekStartMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} \u2013 ${new Date(curWeekEndMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+  periods.push({
+    weekStart: toDateStr(new Date(curWeekStartMs)),
+    weekEnd: toDateStr(new Date(curWeekEndMs)),
+    label: curLabel,
+    isInProgress: true,
+  });
+
+  // Completed weeks (newest first)
+  for (let i = 1; i <= weeksSince && periods.length <= maxWeeks; i++) {
+    const weekIdx = weeksSince - i;
+    const weekStartMs = anchorMs + weekIdx * msPerWeek;
+    const weekEndMs = weekStartMs + msPerWeek - msPerDay;
+    const label = `${new Date(weekStartMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} \u2013 ${new Date(weekEndMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+    periods.push({
+      weekStart: toDateStr(new Date(weekStartMs)),
+      weekEnd: toDateStr(new Date(weekEndMs)),
+      label,
+      isInProgress: false,
+    });
   }
 
-  // For each segment, build periods forward from its anchor until the next segment's anchor (or today)
-  const allPeriods: WeekPeriod[] = [];
-
-  for (let si = 0; si < segments.length; si++) {
-    const seg = segments[si];
-    const segEndMs = si + 1 < segments.length ? segments[si + 1].anchorMs - msPerDay : null; // last day before next segment
-    const segAnchorMs = seg.anchorMs;
-
-    // How many complete 7-day blocks fit in this segment before today
-    const segCeilingMs = segEndMs ?? todayMs;
-    const weeksSince = Math.floor((segCeilingMs - segAnchorMs) / msPerWeek);
-
-    // Current in-progress week for this segment (only the last segment has one)
-    const isLastSegment = si === segments.length - 1;
-
-    if (isLastSegment) {
-      // In-progress week starts at segAnchorMs + weeksSince * msPerWeek
-      const curWeekStartMs = segAnchorMs + weeksSince * msPerWeek;
-      const curWeekEndMs = curWeekStartMs + msPerWeek - msPerDay;
-      const weekNumber = seg.phaseLabel != null ? weeksSince + 1 : null;
-      const curLabel = `${new Date(curWeekStartMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} \u2013 ${new Date(curWeekEndMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
-      allPeriods.push({
-        weekStart: toDateStr(new Date(curWeekStartMs)),
-        weekEnd: toDateStr(new Date(curWeekEndMs)),
-        label: curLabel,
-        isInProgress: true,
-        weekNumber,
-        phaseLabel: seg.phaseLabel,
-      });
-    }
-
-    // Complete weeks in this segment (newest first within segment)
-    const completedWeeks = isLastSegment ? weeksSince : weeksSince + 1;
-    for (let i = 1; i <= completedWeeks && allPeriods.length <= maxWeeks; i++) {
-      const weekIdx = isLastSegment ? weeksSince - i : completedWeeks - i;
-      const weekStartMs = segAnchorMs + weekIdx * msPerWeek;
-      // Week end: either the day before next segment starts, or normal 7-day end
-      const normalWeekEndMs = weekStartMs + msPerWeek - msPerDay;
-      const weekEndMs = (!isLastSegment && i === 1 && segEndMs != null)
-        ? segEndMs  // last week of this segment ends the day before the next phase starts
-        : normalWeekEndMs;
-      const weekNumber = seg.phaseLabel != null ? weekIdx + 1 : null;
-      const label = `${new Date(weekStartMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })} \u2013 ${new Date(weekEndMs).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" })}`;
-      allPeriods.push({
-        weekStart: toDateStr(new Date(weekStartMs)),
-        weekEnd: toDateStr(new Date(weekEndMs)),
-        label,
-        isInProgress: false,
-        weekNumber,
-        phaseLabel: seg.phaseLabel,
-      });
-    }
-  }
-
-  // Sort newest-first
-  allPeriods.sort((a, b) => b.weekStart.localeCompare(a.weekStart));
-
-  return allPeriods;
+  return periods;
 }
 
 export const progressRouter = router({
@@ -155,9 +102,9 @@ export const progressRouter = router({
     .query(async ({ input }) => {
       const { clientId, tzOffsetMinutes } = input;
 
-      const dbConn2 = await getDb();
-      const allMealLogs = dbConn2
-        ? await dbConn2.select().from(mealLogs).where(eq(mealLogs.userId, clientId))
+      const dbConn = await getDb();
+      const allMealLogs = dbConn
+        ? await dbConn.select().from(mealLogs).where(eq(mealLogs.userId, clientId))
         : [];
 
       const [profile, logs, meas, sessions] = await Promise.all([
@@ -169,22 +116,6 @@ export const progressRouter = router({
 
       if (!profile) {
         return { weeks: [] };
-      }
-
-      // Fetch phases for this client (oldest-first)
-      const dbConn = dbConn2;
-      let phases: Array<{ startDate: string; endDate: string | null; label: string }> = [];
-      if (dbConn) {
-        const rows = await dbConn
-          .select()
-          .from(clientPhases)
-          .where(eq(clientPhases.clientId, clientId))
-          .orderBy(asc(clientPhases.startDate));
-        phases = rows.map((r) => ({
-          label: r.label,
-          startDate: r.startDate instanceof Date ? r.startDate.toISOString().slice(0, 10) : String(r.startDate),
-          endDate: r.endDate == null ? null : r.endDate instanceof Date ? r.endDate.toISOString().slice(0, 10) : String(r.endDate),
-        }));
       }
 
       const today = new Date();
@@ -202,12 +133,9 @@ export const progressRouter = router({
       const anchorDate = startDateStr ?? earliestLog;
       if (!anchorDate) return { weeks: [] };
 
-      // Build periods, splitting at phase boundaries and assigning W-numbers within phases
-      const periods = buildPeriodsWithPhases(anchorDate, today, phases, 104, tzOffsetMinutes);
+      const periods = buildPeriods(anchorDate, today, 104, tzOffsetMinutes);
 
-      // Build weeks newest-first; we need the next item (older week) for deltas
       const rawWeeks = periods.map((period) => {
-        // Filter data to this period
         const periodLogs = logs.filter((l) => {
           const d = typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date);
           return d >= period.weekStart && d <= period.weekEnd;
@@ -228,11 +156,10 @@ export const progressRouter = router({
           ? avg(periodMeas.map((m) => skinfoldTotal(m)))
           : null;
 
-        // Training — sessions logged only (no adherence %)
+        // Training
         const sessionsCompleted = periodSessions.length;
 
         // Nutrition (daily log)
-        const totalOffPlan = sum(periodLogs.map((l) => l.offPlanMeals));
         const avgCaffeine = avg(periodLogs.map((l) => l.caffeineServings));
 
         // Nutrition (meal logs)
@@ -258,12 +185,6 @@ export const progressRouter = router({
         // Activity
         const avgSteps = avg(periodLogs.map((l) => l.stepsCount));
         const stepGoal = profile.stepGoal ?? null;
-        const totalLissMinutes = periodLogs.reduce((s, l) => s + ((l as any).lissMinutes ?? 0), 0);
-        const lissSessionsPerWeek = (profile as any).lissSessionsPerWeek ?? null;
-        const lissMinutesPerSession = (profile as any).lissMinutesPerSession ?? null;
-        const lissTarget = (lissSessionsPerWeek != null && lissMinutesPerSession != null)
-          ? lissSessionsPerWeek * lissMinutesPerSession
-          : null;
 
         // Raw weigh-ins for expanded view
         const weighIns = periodLogs
@@ -295,8 +216,6 @@ export const progressRouter = router({
           weekEnd: period.weekEnd,
           label: period.label,
           isInProgress: period.isInProgress,
-          weekNumber: period.weekNumber,
-          phaseLabel: period.phaseLabel,
           daysLogged: periodLogs.length,
           // Body composition
           avgWeight,
@@ -308,7 +227,6 @@ export const progressRouter = router({
           // Training
           sessionsCompleted,
           // Nutrition
-          totalOffPlan,
           avgCaffeine,
           mealLogCount,
           mealLogTreats,
@@ -323,10 +241,6 @@ export const progressRouter = router({
           // Activity
           avgSteps,
           stepGoal,
-          totalLissMinutes,
-          lissTarget,
-          lissSessionsPerWeek,
-          lissMinutesPerSession,
         };
       });
 

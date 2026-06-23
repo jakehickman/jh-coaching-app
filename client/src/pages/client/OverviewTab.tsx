@@ -1,12 +1,11 @@
 import { trpc } from "@/lib/trpc";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { SectionLabel, Card, MetricCard } from "./shared";
-import { CheckSquare, Square } from "lucide-react";
 
 // ─── HabitsSummary ─────────────────────────────────────────────────────────────
 function HabitsSummary() {
@@ -14,11 +13,13 @@ function HabitsSummary() {
   const { data: habitsOwn = [] } = trpc.habits.myHabits.useQuery(undefined, { enabled: !viewAsUserId });
   const { data: habitsAdmin = [] } = trpc.habits.clientHabits.useQuery({ clientId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const habits = viewAsUserId ? habitsAdmin : habitsOwn;
+
   const from30 = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 29);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }, []);
+
   const { data: completionsOwn = [] } = trpc.habits.myCompletions.useQuery({ fromDate: from30 }, { enabled: !viewAsUserId });
   const { data: completionsAdmin = [] } = trpc.habits.clientCompletions.useQuery({ clientId: viewAsUserId!, fromDate: from30 }, { enabled: !!viewAsUserId });
   const completions = viewAsUserId ? completionsAdmin : completionsOwn;
@@ -51,7 +52,6 @@ function HabitsSummary() {
     const assignedDateStr = normDate(h.assignedAt);
     const eligible7 = last7.filter(d => d >= assignedDateStr);
     const last7Done = eligible7.filter(d => completedSet.has(`${h.id}:${d}`)).length;
-    const pct7 = eligible7.length > 0 ? Math.round((last7Done / eligible7.length) * 100) : 0;
 
     let streak = 0;
     for (let i = 0; i < 30; i++) {
@@ -63,10 +63,11 @@ function HabitsSummary() {
       else break;
     }
 
-    return { ...h, last7Done, pct7, streak, eligible7: eligible7.length };
+    return { ...h, last7Done, streak, eligible7: eligible7.length };
   });
 
   const todayDone = habits.filter((h: any) => completedSet.has(`${h.id}:${today}`)).length;
+  // Day labels — shown once as a shared header
   const dayLabels = last7.map(d => {
     const dt = new Date(d + 'T12:00:00');
     return dt.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1);
@@ -82,30 +83,34 @@ function HabitsSummary() {
         </span>
       </div>
       <Card className="p-0 overflow-hidden">
+        {/* Shared day-letter header */}
+        <div className="px-4 pt-3 pb-1 grid" style={{ gridTemplateColumns: '1fr repeat(7, 1fr)' }}>
+          <div />
+          {dayLabels.map((lbl, i) => (
+            <div key={i} className="text-center text-[10px] text-muted-foreground/50 font-medium">{lbl}</div>
+          ))}
+        </div>
         {habitStats.map((h: any, idx: number) => {
           const todayComplete = completedSet.has(`${h.id}:${today}`);
           return (
             <div
               key={h.id}
-              className={`px-4 py-3 ${idx > 0 ? 'border-t border-border/50' : ''}`}
+              className={`px-4 py-2.5 ${idx > 0 ? 'border-t border-border/50' : ''}`}
             >
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="text-sm font-medium text-foreground leading-snug">{h.name}</p>
-                {h.streak > 1 && (
-                  <span className="shrink-0 text-[10px] font-semibold text-primary/80">{h.streak} day streak</span>
-                )}
-              </div>
-              <div className="grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
-                {dayLabels.map((lbl, i) => (
-                  <div key={i} className="text-center text-[10px] text-muted-foreground/50 font-medium mb-1">{lbl}</div>
-                ))}
+              <div className="grid items-center gap-1" style={{ gridTemplateColumns: '1fr repeat(7, 1fr)' }}>
+                <div className="flex items-center gap-2 min-w-0 pr-2">
+                  <p className="text-sm font-medium text-foreground leading-snug truncate">{h.name}</p>
+                  {h.streak > 1 && (
+                    <span className="shrink-0 text-[10px] font-semibold text-primary/80">{h.streak}d</span>
+                  )}
+                </div>
                 {last7.map(d => {
                   const assignedDateStr = normDate(h.assignedAt);
                   const beforeAssignment = d < assignedDateStr;
                   const done = !beforeAssignment && completedSet.has(`${h.id}:${d}`);
                   const isToday = d === today;
                   return (
-                    <div key={d} className="flex items-center justify-center py-0.5">
+                    <div key={d} className="flex items-center justify-center">
                       {beforeAssignment ? (
                         <div className="w-3 h-3" />
                       ) : (
@@ -133,40 +138,21 @@ function HabitsSummary() {
 
 
 // ─── OverviewTab ──────────────────────────────────────────────────────────────
-const PHASE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  "Fat Loss":     { bg: "bg-emerald-500/10",  text: "text-emerald-400",  border: "border-emerald-500/30" },
-  "Contest Prep": { bg: "bg-purple-500/10",   text: "text-purple-400",   border: "border-purple-500/30" },
-  "Gaining":      { bg: "bg-blue-500/10",     text: "text-blue-400",     border: "border-blue-500/30" },
-  "Maintenance":  { bg: "bg-slate-500/10",    text: "text-slate-400",    border: "border-slate-500/30" },
-};
 
 export default function OverviewTab() {
   const { viewAsUserId } = useViewAs();
   const { data: logsOwn } = trpc.dailyLog.list.useQuery({ limit: 30 }, { enabled: !viewAsUserId });
   const { data: logsAdmin } = trpc.dailyLog.listForClient.useQuery({ userId: viewAsUserId!, limit: 30 }, { enabled: !!viewAsUserId });
   const logs = viewAsUserId ? logsAdmin : logsOwn;
+
   const { data: profileOwn } = trpc.profile.get.useQuery(undefined, { enabled: !viewAsUserId });
   const { data: profileAdmin } = trpc.profile.getById.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const profile = viewAsUserId ? profileAdmin : profileOwn;
-  const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
-  const { data: programAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
-  const program = viewAsUserId ? programAdmin : programOwn;
 
-
-  // Active phase for the phase banner
-  const { data: phasesOwn } = trpc.phases.listMine.useQuery(undefined, { enabled: !viewAsUserId });
-  const { data: phasesAdmin } = trpc.phases.list.useQuery(
-    { clientId: viewAsUserId! },
-    { enabled: !!viewAsUserId }
-  );
-  const phases = ((viewAsUserId ? phasesAdmin : phasesOwn) as any[]) ?? [];
-  const today2 = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
-  const activePhase = phases.find((p: any) => p.startDate <= today2 && (!p.endDate || p.endDate >= today2)) ?? null;
-  const activePhaseWeek = activePhase ? Math.floor((new Date(today2 + 'T00:00:00').getTime() - new Date(activePhase.startDate + 'T00:00:00').getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1 : null;
-  const activePhaseTotalWeeks = activePhase?.endDate
-    ? Math.round((new Date(activePhase.endDate + 'T00:00:00').getTime() - new Date(activePhase.startDate + 'T00:00:00').getTime()) / (7 * 24 * 60 * 60 * 1000))
-    : null;
-  const activePhaseColor = activePhase ? (PHASE_COLORS[activePhase.label] ?? { bg: "bg-secondary", text: "text-muted-foreground", border: "border-border" }) : null;
+  // Sessions in the last 7 days (from workout sessions table)
+  const { data: sessionsOwn } = trpc.workoutSessions.list.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: sessionsAdmin } = trpc.workoutSessions.listForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const sessions = viewAsUserId ? sessionsAdmin : sessionsOwn;
 
   const weightData = (logs ?? [])
     .filter(l => l.weight)
@@ -205,95 +191,37 @@ export default function OverviewTab() {
     ? (((thisWeekWeights.reduce((a, b) => a + b, 0) / thisWeekWeights.length) - prevAvgWeight) / prevAvgWeight * 100).toFixed(1)
     : null;
 
-  const schedule: string[] = Array.isArray((program as any)?.schedule) ? (program as any).schedule : [];
-  const rotationLength = schedule.length > 0 ? schedule.length : 7;
-  const clientStartDate = profile?.startDate ? toLocalDateStr(profile.startDate) : null;
-  const rotationWindowStart = localDateStr(rotationLength - 1);
-  const effectiveWindowStart = clientStartDate && clientStartDate > rotationWindowStart
-    ? clientStartDate : rotationWindowStart;
-  const windowDays: string[] = [];
-  const cursor = new Date(effectiveWindowStart + 'T00:00:00');
-  const endDay = new Date(today + 'T00:00:00');
-  while (cursor <= endDay) {
-    windowDays.push(`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`);
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  const trainingDaysInSchedule = schedule.length > 0
-    ? schedule.filter(s => s && s.toLowerCase() !== 'off').length
-    : rotationLength;
-  const prescribedDays = Math.max(1, Math.round(windowDays.length * (trainingDaysInSchedule / rotationLength)));
-  const trainedInRotation = allLogs.filter(l => {
-    const d = toLocalDateStr(l.logDate);
-    return d >= effectiveWindowStart && d <= today && l.trainingCompleted;
+  // Sessions in last 7 days
+  const sessionsLast7 = (sessions ?? []).filter(s => {
+    const d = toLocalDateStr(s.sessionDate);
+    return d >= day6ago && d <= today;
   }).length;
-  const adherence = prescribedDays > 0 ? Math.min(100, Math.round((trainedInRotation / prescribedDays) * 100)) : 0;
-
-  const cur7Logs = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= day6ago && d <= today; });
-  const prev7Logs = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= day13ago && d <= day7ago; });
-  const curOnPlan = cur7Logs.filter(l => (l.offPlanMeals ?? 0) === 0).length;
-  const prevOnPlan = prev7Logs.filter(l => (l.offPlanMeals ?? 0) === 0).length;
-  const offPlanTotal7 = cur7Logs.filter(l => (l.offPlanMeals ?? 0) > 0).length;
-
-  const logByDate: Record<string, number> = {};
-  for (const l of allLogs) {
-    const iso = toLocalDateStr(l.logDate);
-    if (iso) logByDate[iso] = l.offPlanMeals ?? 0;
-  }
-  const onPlanStreak = (() => {
-    let streak = 0;
-    for (let i = 0; i <= 90; i++) {
-      const iso = localDateStr(i);
-      if (clientStartDate && iso < clientStartDate) break;
-      if (!(iso in logByDate)) break;
-      if (logByDate[iso] > 0) break;
-      streak++;
-    }
-    return streak;
-  })();
 
   const stepGoal = (profile as any)?.stepGoal as number | null | undefined;
-  const lissSessionsPerWeek = (profile as any)?.lissSessionsPerWeek as number | null | undefined;
-  const lissMinutesPerSession = (profile as any)?.lissMinutesPerSession as number | null | undefined;
-  const lissSet = lissSessionsPerWeek != null && lissMinutesPerSession != null;
-  const lissLoggedMins7 = cur7Logs.reduce((sum, l) => sum + ((l as any).lissMinutes ?? 0), 0);
-  const lissTargetMins = lissSet ? (lissSessionsPerWeek! * lissMinutesPerSession!) : null;
+  const cur7Logs = allLogs.filter(l => { const d = toLocalDateStr(l.logDate); return d >= day6ago && d <= today; });
   const cur7Steps = cur7Logs.filter(l => l.stepsCount != null).map(l => l.stepsCount as number);
   const avgSteps7 = cur7Steps.length > 0 ? Math.round(cur7Steps.reduce((a, b) => a + b, 0) / cur7Steps.length) : null;
 
-
-
   return (
     <div className="space-y-6">
-      {activePhase && activePhaseColor && (
-        <div className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${activePhaseColor.bg} ${activePhaseColor.border}`}>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm font-bold ${activePhaseColor.text}`}>{activePhase.label}</span>
-            {activePhaseWeek != null && activePhaseTotalWeeks != null && (
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${activePhaseColor.bg} ${activePhaseColor.text} ${activePhaseColor.border}`}>
-                Week {activePhaseWeek} / {activePhaseTotalWeeks}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
       <div>
         <SectionLabel>Weekly Summary (last 7 days)</SectionLabel>
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="Avg Weight" value={avgWeight !== "—" ? `${avgWeight} kg` : "—"} sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined} />
-          <MetricCard label="Training Adherence" value={`${adherence}%`} sub={schedule.length > 0 ? `${trainedInRotation}/${prescribedDays} sessions completed` : `${trainedInRotation} sessions completed`} />
-          <MetricCard label="Off Plan Meals" value={offPlanTotal7.toString()} />
+          <MetricCard
+            label="Avg Weight"
+            value={avgWeight !== "—" ? `${avgWeight} kg` : "—"}
+            sub={weightChangePct ? `${Number(weightChangePct) > 0 ? '+' : ''}${weightChangePct}% vs prev 7 days` : undefined}
+          />
+          <MetricCard
+            label="Training Sessions"
+            value={String(sessionsLast7)}
+            sub="sessions in last 7 days"
+          />
           {stepGoal && (
             <MetricCard
               label="Avg Daily Steps"
               value={avgSteps7 != null ? avgSteps7.toLocaleString() : "—"}
               sub={`Goal: ${stepGoal.toLocaleString()}`}
-            />
-          )}
-          {lissSet && (
-            <MetricCard
-              label="LISS Cardio"
-              value={`${lissLoggedMins7} min`}
-              sub={`target: ${lissTargetMins} min / week`}
             />
           )}
         </div>
@@ -320,34 +248,7 @@ export default function OverviewTab() {
         </div>
       )}
 
-
       <HabitsSummary />
-
-      <a
-        href="/getting-started"
-        className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3.5 hover:border-primary/40 hover:bg-primary/5 transition-colors group"
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-            style={{ backgroundColor: "#052E1A", color: "#59BE50" }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Getting Started Guide</p>
-          </div>
-        </div>
-        <svg className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-          <polyline points="15 3 21 3 21 9" />
-          <line x1="10" y1="14" x2="21" y2="3" />
-        </svg>
-      </a>
-
     </div>
   );
 }

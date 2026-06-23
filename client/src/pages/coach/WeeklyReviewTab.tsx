@@ -15,15 +15,12 @@ type Week = {
   weekEnd: string;
   label: string;
   isInProgress: boolean;
-  weekNumber: number | null;
-  phaseLabel?: string | null;
   daysLogged: number;
   avgWeight: number | null;
   avgWeightPct: number | null;
   avgWaist: number | null;
   avgSkinfold: number | null;
   sessionsCompleted: number;
-  totalOffPlan: number | null;
   avgCaffeine: number | null;
   avgHunger: number | null;
   avgSleepQuality: number | null;
@@ -31,15 +28,14 @@ type Week = {
   avgStress?: number | null;
   avgSteps: number | null;
   stepGoal: number | null;
-  totalLissMinutes: number | null;
-  lissTarget: number | null;
-  lissSessionsPerWeek: number | null;
-  lissMinutesPerSession: number | null;
+  mealLogCount?: number | null;
+  mealLogTreats?: number | null;
+  mealLogAvgHunger?: number | null;
+  mealLogAvgFullness?: number | null;
+  mealLogIdealZonePct?: number | null;
 };
 
 const DEFAULT_VISIBLE = 6;
-
-// ─── Label maps ───────────────────────────────────────────────────────────────
 
 const DIET_LABEL_MAP: Record<string, string> = {
   every_meal: "Every meal or nearly every meal",
@@ -59,7 +55,6 @@ const DIET_LABEL_MAP: Record<string, string> = {
   somewhat_close: "Somewhat close",
   not_very_close: "Not very close",
   very_different: "Very different",
-  no_off_plan_meals: "No off-plan meals",
 };
 const BARRIER_LABEL: Record<string, string> = {
   no_issues: "No issues", hunger: "Hunger", cravings: "Cravings",
@@ -74,8 +69,6 @@ const ASSESSMENT_LABEL: Record<string, string> = {
   didnt_follow: "Didn't follow the plan",
 };
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
-
 function fmt(val: number | null | undefined, decimals = 1): string {
   if (val == null) return "—";
   return val.toFixed(decimals);
@@ -84,8 +77,6 @@ function fmt(val: number | null | undefined, decimals = 1): string {
 function fmtK(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
 }
-
-// ─── Delta badge ─────────────────────────────────────────────────────────────
 
 function Delta({ delta, text, higherIsBetter = null }: {
   delta: number | null;
@@ -104,8 +95,6 @@ function Delta({ delta, text, higherIsBetter = null }: {
     </span>
   );
 }
-
-// ─── Metric tile ─────────────────────────────────────────────────────────────
 
 function Tile({ label, value, muted, delta, deltaText, higherIsBetter, subtext }: {
   label: string;
@@ -128,8 +117,6 @@ function Tile({ label, value, muted, delta, deltaText, higherIsBetter, subtext }
   );
 }
 
-// ─── Metric group ─────────────────────────────────────────────────────────────
-
 function MetricGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -139,35 +126,6 @@ function MetricGroup({ label, children }: { label: string; children: React.React
       </div>
     </div>
   );
-}
-
-// ─── Main component ──────────────────────────────────────────────────────────
-
-const PHASE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  "Fat Loss":          { bg: "bg-emerald-500/10",  text: "text-emerald-400",  border: "border-emerald-500/30" },
-  "General Fat Loss":  { bg: "bg-emerald-500/10",  text: "text-emerald-400",  border: "border-emerald-500/30" },
-  "Mini Cut":          { bg: "bg-orange-500/10",   text: "text-orange-400",   border: "border-orange-500/30" },
-  "Contest Prep":      { bg: "bg-purple-500/10",   text: "text-purple-400",   border: "border-purple-500/30" },
-  "Gaining":           { bg: "bg-blue-500/10",     text: "text-blue-400",     border: "border-blue-500/30" },
-  "Maintenance":       { bg: "bg-slate-500/10",    text: "text-slate-400",    border: "border-slate-500/30" },
-};
-
-function getPhaseForWeek(phases: any[], weekStart: string, weekEnd: string): string | null {
-  // Find the phase that overlaps with any part of this week:
-  // phase starts on or before week end AND (no end date OR phase ends on or after week start)
-  const phase = phases.find((p: any) => p.startDate <= weekEnd && (!p.endDate || p.endDate >= weekStart));
-  return phase?.label ?? null;
-}
-
-function getPhaseWeekNumber(phases: any[], weekStart: string): number | null {
-  // Use week start for phase week number lookup (overlap: phase starts <= weekStart+6, ends >= weekStart)
-  const weekEnd = new Date(new Date(weekStart + "T00:00:00").getTime() + 6 * 86400000).toISOString().slice(0, 10);
-  const phase = phases.find((p: any) => p.startDate <= weekEnd && (!p.endDate || p.endDate >= weekStart));
-  if (!phase) return null;
-  const phaseStart = new Date(phase.startDate + "T00:00:00").getTime();
-  const weekStartMs = new Date(weekStart + "T00:00:00").getTime();
-  const wk = Math.floor((weekStartMs - phaseStart) / (7 * 24 * 60 * 60 * 1000)) + 1;
-  return wk < 1 ? 1 : wk;
 }
 
 export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
@@ -183,7 +141,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
 
   const weeks = data?.weeks ?? [];
 
-  // Initialise: expand only the most recent week once data loads
   useEffect(() => {
     if (expandedInit || weeks.length === 0) return;
     const toExpand = new Set<string>();
@@ -194,7 +151,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
 
   function toggleCard(weekStart: string) {
     setExpanded(prev => {
-      // Single-expand: if already open, close it; otherwise open only this one
       if (prev.has(weekStart)) return new Set<string>();
       return new Set<string>([weekStart]);
     });
@@ -241,20 +197,15 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
       {visibleWeeks.map((week, idx) => {
         const hasData = week.daysLogged > 0;
         const isExpanded = expanded.has(week.weekStart);
-        const prev: Week | null = weeks[idx + 1] ?? null;
+        const prev: Week | null = (weeks[idx + 1] as Week) ?? null;
 
-        const stepsAvg = week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—";
-        const stepsValue = week.avgSteps != null ? stepsAvg : "—";
+        const stepsValue = week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—";
         const stepsSubtext = week.stepGoal != null ? `Goal: ${week.stepGoal.toLocaleString()}` : undefined;
 
-        // Weight delta vs previous week (% BW change)
         const weightDeltaKg = d(week.avgWeight, prev?.avgWeight ?? null);
         const weightDeltaPct = weightDeltaKg != null && prev?.avgWeight != null && prev.avgWeight > 0
           ? parseFloat(((weightDeltaKg / prev.avgWeight) * 100).toFixed(1))
           : null;
-
-        const phaseLabel = (week as any).phaseLabel ?? null;
-        const phaseColor = phaseLabel ? (PHASE_COLORS[phaseLabel] ?? { bg: "bg-secondary", text: "text-muted-foreground", border: "border-border" }) : null;
 
         return (
           <div
@@ -267,7 +218,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                 : "border-border bg-card"
             }`}
           >
-            {/* Card header — always visible */}
+            {/* Card header */}
             <button
               className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors rounded-xl ${
                 week.isInProgress ? "hover:bg-amber-500/10" : "hover:bg-muted/20"
@@ -275,22 +226,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
               onClick={() => toggleCard(week.weekStart)}
             >
               <div className="flex items-center gap-2 min-w-0">
-                {(() => {
-                  return (
-                    <>
-                      {week.weekNumber != null && (
-                        <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                          W{week.weekNumber}
-                        </span>
-                      )}
-                      {phaseLabel && phaseColor && (
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${phaseColor.bg} ${phaseColor.text} ${phaseColor.border}`}>
-                          {phaseLabel}
-                        </span>
-                      )}
-                    </>
-                  );
-                })()}
                 <span className="text-sm font-semibold text-foreground truncate">{week.label}</span>
                 {week.isInProgress && (
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-400 bg-amber-500/10 flex-shrink-0">
@@ -310,13 +245,11 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
             {isExpanded && (
               hasData ? (
                 <div className="border-t border-border/40">
-                  {/* Weekly stats */}
                   <div
                     className="px-4 pb-5 space-y-4 pt-4"
-                    onClick={onWeekClick ? (e) => { e.stopPropagation(); onWeekClick(week.weekNumber); } : undefined}
+                    onClick={onWeekClick ? (e) => { e.stopPropagation(); onWeekClick(null); } : undefined}
                     style={onWeekClick ? { cursor: "pointer" } : undefined}
                   >
-                    {/* Body Composition */}
                     <MetricGroup label="Body Composition">
                       <Tile
                         label="Weight"
@@ -342,49 +275,38 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                       />
                     </MetricGroup>
 
-                    {/* Training */}
                     <MetricGroup label="Training">
-                      <Tile
-                        label="Sessions"
-                        value={String(week.sessionsCompleted)}
-                      />
+                      <Tile label="Sessions" value={String(week.sessionsCompleted)} />
                     </MetricGroup>
 
-                    {/* Nutrition */}
                     <MetricGroup label="Nutrition">
                       <Tile
                         label="Meals logged"
-                        value={(week as any).mealLogCount > 0 ? String((week as any).mealLogCount) : "—"}
-                        muted={!(week as any).mealLogCount}
+                        value={week.mealLogCount != null && week.mealLogCount > 0 ? String(week.mealLogCount) : "—"}
+                        muted={!week.mealLogCount}
                       />
                       <Tile
                         label="Treats"
-                        value={(week as any).mealLogTreats > 0 ? String((week as any).mealLogTreats) : "—"}
-                        muted={!(week as any).mealLogTreats}
+                        value={week.mealLogTreats != null && week.mealLogTreats > 0 ? String(week.mealLogTreats) : "—"}
+                        muted={!week.mealLogTreats}
                       />
                       <Tile
                         label="Avg hunger"
-                        value={(week as any).mealLogAvgHunger != null ? String((week as any).mealLogAvgHunger) : "—"}
-                        muted={(week as any).mealLogAvgHunger == null}
+                        value={week.mealLogAvgHunger != null ? String(week.mealLogAvgHunger) : "—"}
+                        muted={week.mealLogAvgHunger == null}
                       />
                       <Tile
                         label="Avg fullness"
-                        value={(week as any).mealLogAvgFullness != null ? String((week as any).mealLogAvgFullness) : "—"}
-                        muted={(week as any).mealLogAvgFullness == null}
+                        value={week.mealLogAvgFullness != null ? String(week.mealLogAvgFullness) : "—"}
+                        muted={week.mealLogAvgFullness == null}
                       />
                       <Tile
                         label="Ideal zone"
-                        value={(week as any).mealLogIdealZonePct != null ? `${(week as any).mealLogIdealZonePct}%` : "—"}
-                        muted={(week as any).mealLogIdealZonePct == null}
-                      />
-                      <Tile
-                        label="Off-Plan Meals"
-                        value={week.totalOffPlan != null ? String(week.totalOffPlan) : "—"}
-                        muted={week.totalOffPlan == null}
+                        value={week.mealLogIdealZonePct != null ? `${week.mealLogIdealZonePct}%` : "—"}
+                        muted={week.mealLogIdealZonePct == null}
                       />
                     </MetricGroup>
 
-                    {/* Recovery */}
                     <MetricGroup label="Recovery">
                       <Tile
                         label="Sleep Quality"
@@ -419,26 +341,15 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
                       />
                     </MetricGroup>
 
-                    {/* Activity */}
-                    <MetricGroup label="Cardio &amp; Activity">
+                    <MetricGroup label="Activity">
                       <Tile
                         label="Steps"
                         value={stepsValue}
                         muted={week.avgSteps == null}
                         subtext={stepsSubtext}
                       />
-                      <Tile
-                        label="LISS Cardio"
-                        value={week.totalLissMinutes != null && week.totalLissMinutes > 0 ? `${week.totalLissMinutes} mins` : "—"}
-                        muted={!week.totalLissMinutes}
-                        subtext={week.lissSessionsPerWeek != null && week.lissMinutesPerSession != null
-                          ? `Target: ${week.lissSessionsPerWeek} × ${week.lissMinutesPerSession} min`
-                          : week.lissTarget != null ? `Target: ${week.lissTarget} mins/wk` : undefined}
-                      />
                     </MetricGroup>
                   </div>
-
-
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground italic px-4 pb-4 border-t border-border/40 pt-3">
@@ -450,7 +361,6 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         );
       })}
 
-      {/* Show all / show less */}
       {weeks.length > DEFAULT_VISIBLE && (
         <div className="flex justify-center mt-1">
           <Button

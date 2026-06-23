@@ -24,7 +24,6 @@ import ProgramChangeLogTab from "./ProgramChangeLogTab";
 import CardioChangeLogTab from "./CardioChangeLogTab";
 
 import { UnifiedChangeLog } from "./UnifiedChangeLog";
-import { PhasesTab } from "./PhasesTab";
 
 // --- Collapsible Change History Panel ---------------------------------------
 function ChangeHistoryPanel({ children, label = "Change History" }: { children: React.ReactNode; label?: string }) {

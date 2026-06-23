@@ -23,7 +23,6 @@ import {
   changeLogRouter,
   progressRouter,
   progressPhotosRouter,
-  phasesRouter,
   invitesRouter,
   mealLogsRouter,
 } from "./routers/index";
@@ -52,7 +51,6 @@ export const appRouter = router({
   changeLog: changeLogRouter,
   progress: progressRouter,
   progressPhotos: progressPhotosRouter,
-  phases: phasesRouter,
   invites: invitesRouter,
   mealLogs: mealLogsRouter,
 });
