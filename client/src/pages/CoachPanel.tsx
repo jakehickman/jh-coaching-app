@@ -232,12 +232,9 @@ function ClientsSection() {
     <div className="space-y-6">
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-xl px-5 py-4 flex items-center gap-3">
-          <Users size={18} className="text-muted-foreground flex-shrink-0" />
-          <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</p>
-            <p className="text-2xl font-bold text-foreground">{totalClients}</p>
-          </div>
+        <div className="bg-card border border-border rounded-xl px-5 py-4">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</p>
+          <p className="text-2xl font-bold text-foreground">{totalClients}</p>
         </div>
         <div className="bg-card border border-border rounded-xl px-5 py-4">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Approved</p>
