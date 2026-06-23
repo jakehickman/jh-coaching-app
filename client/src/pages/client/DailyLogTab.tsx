@@ -7,18 +7,22 @@ import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr, localToday, dayLabel } from "@/lib/dates";
 import { SectionLabel, Card, ScoreInput, DailyLogRow } from "./shared";
 
-// ─── RecentLogsPanel ──────────────────────────────────────────────────────────
-function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?: string | null }) {
-  const { viewAsUserId } = useViewAs();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [showAll, setShowAll] = useState(false);
-  const [, navigate] = useLocation();
-
-  const handleEditDay = (iso: string) => {
-    sessionStorage.setItem('editLogDate', iso);
-    window.dispatchEvent(new CustomEvent('editLogDate', { detail: { date: iso } }));
-    navigate('/dashboard/daily-log');
-  };
+// ─── WeekSummaryPanel ────────────────────────────────────────────────────────
+// Compact 7-row summary of the currently-viewed week, synced with the week strip.
+function WeekSummaryPanel({
+  weekDays,
+  logs,
+  selectedDate,
+  onSelectDate,
+  startDate,
+}: {
+  weekDays: string[];
+  logs: DailyLogRow[];
+  selectedDate: string;
+  onSelectDate: (iso: string) => void;
+  startDate?: string | null;
+}) {
+  const today = localToday();
 
   const logMap: Record<string, DailyLogRow> = {};
   for (const log of logs) {
@@ -26,118 +30,93 @@ function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?:
     if (key) logMap[key] = log;
   }
 
-  const allDays: string[] = [];
-  for (let i = 0; i < 90; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    if (startDate && iso < startDate) break;
-    allDays.push(iso);
-  }
-  const loggedDays = allDays.filter(iso => !!logMap[iso]);
-  // Show all days (including empty ones) so gaps are visible
-  const days = showAll ? allDays : allDays.slice(0, 14);
-
-  function fmtDay(iso: string) {
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
-  }
-  function dayLabel(iso: string) {
-    const d = new Date(iso + 'T00:00:00');
-    return d.toLocaleDateString('en-AU', { weekday: 'short' });
-  }
   const isTrained = (v: unknown) => v === true || v === 1 || v === '1';
+
+  function fmtShort(iso: string) {
+    const [, m, d] = iso.split('-');
+    return `${parseInt(d)} ${new Date(iso + 'T12:00:00Z').toLocaleDateString('en-AU', { month: 'short', timeZone: 'UTC' })}`;
+  }
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
-      {days.map((iso) => {
+      {weekDays.map((iso) => {
         const log = logMap[iso] ?? null;
-        const isExpanded = expandedId === iso;
         const hasData = !!log;
+        const isFuture = iso > today;
+        const isPast = startDate ? iso < startDate : false;
+        const isSelected = iso === selectedDate;
+        const isToday = iso === today;
         const trained = log ? isTrained(log.trainingCompleted) : false;
         const sessionLabel = trained && log?.trainingType && log.trainingType !== 'Off'
           ? log.trainingType
           : (trained ? 'Training' : 'Rest');
-        return (
-          <div key={iso} className="border-b border-border last:border-0">
-            <button
-              onClick={() => hasData && setExpandedId(isExpanded ? null : iso)}
-              className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
-                hasData ? 'hover:bg-muted/30 cursor-pointer' : 'cursor-default opacity-50'
-              }`}
-            >
-              <div className="w-20 flex-shrink-0">
-                <p className="text-sm font-semibold text-foreground">{fmtDay(iso)}</p>
-                <p className="text-[10px] text-muted-foreground">{dayLabel(iso)}</p>
-              </div>
-              <div className="flex-1 flex items-center gap-2 px-3 flex-wrap">
-                {hasData ? (
-                  <>
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
-                      trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                    }`}>{sessionLabel}</span>
-                    {((log as any).lissMinutes ?? 0) > 0 ? <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-medium bg-blue-500/20 text-blue-400" title="LISS Cardio"><Activity size={11} />{(log as any).lissMinutes}m</span> : null}
-                  </>
-                ) : (
-                  <span className="text-xs text-muted-foreground italic">No entry</span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {hasData && log.weight != null && (
-                  <span className="text-sm font-semibold text-foreground">{log.weight} kg</span>
-                )}
-                {hasData && (isExpanded
-                  ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                  : <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                )}
-              </div>
-            </button>
-            {isExpanded && log && (
-              <div className="px-4 pb-4 bg-muted/20 border-t border-border">
-                <div className="flex flex-wrap gap-x-4 gap-y-2 pt-3">
-                  {log.weight != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Weight</p><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>}
-                  <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p><p className="text-sm font-semibold text-foreground">{sessionLabel}</p></div>
+        const weekdayShort = dayLabel(iso).slice(0, 3);
 
-                  {log.stepsCount != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>}
-                  {(log as any).lissMinutes != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">LISS</p><p className="text-sm font-semibold text-foreground">{(log as any).lissMinutes} mins</p></div>}
-                  {log.sleepHours != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep</p><p className="text-sm font-semibold text-foreground">{log.sleepHours} hrs</p></div>}
-                  {log.sleepQuality != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>}
-                  {log.hungerLevel != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>}
-                  {(log as any).stressLevel != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Stress</p><p className="text-sm font-semibold text-foreground">{(log as any).stressLevel}/5</p></div>}
-                  {log.caffeineServings != null && <div className="min-w-[80px]"><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Caffeine</p><p className="text-sm font-semibold text-foreground">{log.caffeineServings} srv</p></div>}
-                </div>
-                {log.notes && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Notes</p>
-                    <p className="text-sm text-foreground italic">{log.notes}</p>
-                  </div>
-                )}
-                {!viewAsUserId && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <button
-                      onClick={() => handleEditDay(iso)}
-                      className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                    >
-                      <Pencil size={13} />
-                      Edit this day
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+        return (
+          <button
+            key={iso}
+            onClick={() => !isFuture && !isPast && onSelectDate(iso)}
+            disabled={isFuture || isPast}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-border last:border-0 touch-manipulation ${
+              isSelected
+                ? 'bg-primary/10'
+                : isFuture || isPast
+                ? 'opacity-30 cursor-not-allowed'
+                : 'hover:bg-muted/30 cursor-pointer'
+            }`}
+          >
+            {/* Status indicator */}
+            <div className="flex-shrink-0 w-5 flex justify-center">
+              {isFuture || isPast ? (
+                <span className="w-1.5 h-1.5 rounded-full bg-border" />
+              ) : hasData ? (
+                <span className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                </span>
+              ) : (
+                <span className="w-4 h-4 rounded-full border border-amber-500/60 flex items-center justify-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60" />
+                </span>
+              )}
+            </div>
+
+            {/* Day label */}
+            <div className="w-16 flex-shrink-0">
+              <p className={`text-sm font-semibold ${
+                isSelected ? 'text-primary' : isToday ? 'text-primary' : 'text-foreground'
+              }`}>{weekdayShort}</p>
+              <p className="text-[10px] text-muted-foreground">{fmtShort(iso)}</p>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 flex items-center gap-2 flex-wrap">
+              {hasData ? (
+                <>
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                    trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                  }`}>{sessionLabel}</span>
+                  {((log as any).lissMinutes ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-medium bg-blue-500/20 text-blue-400">
+                      <Activity size={11} />{(log as any).lissMinutes}m
+                    </span>
+                  )}
+                </>
+              ) : !isFuture && !isPast ? (
+                <span className="text-xs text-amber-500/80 font-medium">Missing</span>
+              ) : null}
+            </div>
+
+            {/* Weight */}
+            <div className="flex-shrink-0 text-right">
+              {hasData && log.weight != null ? (
+                <span className="text-sm font-semibold text-foreground">{log.weight} kg</span>
+              ) : (
+                <span className="text-sm text-muted-foreground/30">—</span>
+              )}
+            </div>
+          </button>
         );
       })}
-      {allDays.length > 14 && (
-        <button
-          onClick={() => setShowAll(v => !v)}
-          className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs text-muted-foreground hover:text-foreground border-t border-border hover:bg-muted/20 transition-colors"
-        >
-          {showAll
-            ? <><ChevronUp className="w-3.5 h-3.5" /> Show less</>
-            : <><ChevronDown className="w-3.5 h-3.5" /> View more ({allDays.length - 14} older days)</>}
-        </button>
-      )}
     </div>
   );
 }
@@ -571,8 +550,14 @@ export default function DailyLogTab() {
       )}
 
       <div>
-        <SectionLabel>Recent Logs</SectionLabel>
-        <RecentLogsPanel logs={logs ?? []} startDate={profile?.startDate ? toLocalDateStr(profile.startDate) : undefined} />
+        <SectionLabel>This week</SectionLabel>
+        <WeekSummaryPanel
+          weekDays={weekDays}
+          logs={logs ?? []}
+          selectedDate={date}
+          onSelectDate={(iso) => { setDate(iso); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          startDate={startDate}
+        />
       </div>
     </div>
   );
