@@ -247,7 +247,7 @@ function LogSheet({
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[92vh] overflow-y-auto pb-8" hideCloseButton>
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[92vh] overflow-y-auto px-4 pb-8" hideCloseButton>
         {/* Header */}
         <SheetHeader className="flex flex-row items-center justify-between mb-5">
           <SheetTitle>Log meal</SheetTitle>
@@ -390,7 +390,7 @@ function FullnessSheet({
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
-      <SheetContent side="bottom" className="rounded-t-2xl" hideCloseButton>
+      <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-8" hideCloseButton>
         <SheetHeader className="flex flex-row items-center justify-between mb-6">
           <SheetTitle>How full are you now?</SheetTitle>
           <button onClick={handleClose} className="text-muted-foreground hover:text-foreground p-1">
@@ -474,7 +474,7 @@ function EditSheet({
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto" hideCloseButton>
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto px-4 pb-8" hideCloseButton>
         <SheetHeader className="flex flex-row items-center justify-between mb-4">
           <SheetTitle>Edit {meal?.mealType === "treat" ? "Treat" : "Meal"}</SheetTitle>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
