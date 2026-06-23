@@ -692,3 +692,6 @@
 - [x] Move interactive habits grid into DailyLogTab (already present from earlier work)
 - [x] Update DashboardShell clientNav to 4 tabs: Daily Log, Body Comp, Nutrition, Training
 - [x] Set default route to daily-log (was overview)
+
+## Daily Log Week Strip Date Picker (Jun 2026)
+- [x] Replace full-width date input in DailyLogTab with horizontal week strip (7-day pills, prev/next week arrows, today highlighted)

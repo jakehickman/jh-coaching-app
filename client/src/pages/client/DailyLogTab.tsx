@@ -2,10 +2,10 @@ import { trpc } from "@/lib/trpc";
 import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, Pencil, CheckSquare, Square, Activity } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pencil, CheckSquare, Square, Activity } from "lucide-react";
 import { toast } from "sonner";
-import { toUTCDateStr as toLocalDateStr, localToday } from "@/lib/dates";
-import { SectionLabel, Card, DateInput, ScoreInput, DailyLogRow } from "./shared";
+import { toUTCDateStr as toLocalDateStr, localToday, dayLabel } from "@/lib/dates";
+import { SectionLabel, Card, ScoreInput, DailyLogRow } from "./shared";
 
 // ─── RecentLogsPanel ──────────────────────────────────────────────────────────
 function RecentLogsPanel({ logs, startDate }: { logs: DailyLogRow[]; startDate?: string | null }) {
@@ -403,17 +403,106 @@ export default function DailyLogTab() {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
   };
 
+  // ── Week strip helpers ──
+  const [weekBack, setWeekBack] = useState(() => {
+    // initialise to the week of the selected date
+    const todayD = new Date(today + 'T12:00:00');
+    const dow = todayD.getDay();
+    const mondayOffset = (dow === 0 ? 6 : dow - 1);
+    const mondayMs = todayD.getTime() - mondayOffset * 86400000;
+    const dateMs = new Date(date + 'T12:00:00').getTime();
+    return Math.max(0, Math.floor((mondayMs - dateMs) / (7 * 86400000)));
+  });
+
+  const weekDays = useMemo(() => {
+    const todayD = new Date(today + 'T12:00:00');
+    const dow = todayD.getDay();
+    const mondayOffset = (dow === 0 ? 6 : dow - 1);
+    const mondayMs = todayD.getTime() - mondayOffset * 86400000 - weekBack * 7 * 86400000;
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(mondayMs + i * 86400000);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    });
+  }, [today, weekBack]);
+
+  const startDate = profile?.startDate ? toLocalDateStr(profile.startDate) : undefined;
+
+  const canGoBack = useMemo(() => {
+    if (!startDate) return weekBack < 52;
+    return weekDays[0] > startDate;
+  }, [weekBack, weekDays, startDate]);
+
+  const canGoForward = weekBack > 0;
+
+  const loggedDates = useMemo(() => {
+    const s = new Set<string>();
+    for (const l of logs ?? []) {
+      const d = toLocalDateStr(l.logDate);
+      if (d) s.add(d);
+    }
+    return s;
+  }, [logs]);
+
   return (
     <div className="space-y-6">
+      {/* ── Week strip date picker ── */}
       <div>
-        <SectionLabel>Date</SectionLabel>
-        <DateInput
-          value={date}
-          onChange={setDate}
-          min={profile?.startDate ? toLocalDateStr(profile.startDate) : undefined}
-          max={today}
-          className="w-full"
-        />
+        <div className="flex items-center justify-between mb-2">
+          <button
+            onClick={() => setWeekBack(w => w + 1)}
+            disabled={!canGoBack}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {weekBack === 0 ? 'This week' : weekBack === 1 ? 'Last week' : `${weekBack} weeks ago`}
+          </span>
+          <button
+            onClick={() => setWeekBack(w => Math.max(0, w - 1))}
+            disabled={!canGoForward}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {weekDays.map(iso => {
+            const isSelected = iso === date;
+            const isToday = iso === today;
+            const isFuture = iso > today;
+            const isPast = startDate ? iso < startDate : false;
+            const hasLog = loggedDates.has(iso);
+            const disabled = isFuture || isPast;
+            const label = dayLabel(iso); // Mon, Tue…
+            const dayNum = parseInt(iso.slice(8), 10);
+            return (
+              <button
+                key={iso}
+                onClick={() => !disabled && setDate(iso)}
+                disabled={disabled}
+                className={`flex flex-col items-center gap-1 py-2.5 rounded-xl transition-colors touch-manipulation ${
+                  isSelected
+                    ? 'bg-primary text-primary-foreground'
+                    : disabled
+                    ? 'opacity-25 cursor-not-allowed'
+                    : 'hover:bg-muted/40 text-foreground'
+                }`}
+              >
+                <span className={`text-[10px] font-medium uppercase ${
+                  isSelected ? 'text-primary-foreground' : isToday ? 'text-primary' : 'text-muted-foreground'
+                }`}>{label.slice(0, 2)}</span>
+                <span className={`text-sm font-bold leading-none ${
+                  isSelected ? 'text-primary-foreground' : isToday ? 'text-primary' : 'text-foreground'
+                }`}>{dayNum}</span>
+                {/* dot indicator for logged days */}
+                <span className={`w-1 h-1 rounded-full ${
+                  isSelected ? 'bg-primary-foreground/70' : hasLog ? 'bg-primary' : 'bg-transparent'
+                }`} />
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div>
