@@ -34,7 +34,8 @@ function delta(curr: number | null, prev: number | null, unit: string, lowerIsBe
   return { label: `${diff > 0 ? "+" : ""}${diff} ${unit}`, good };
 }
 
-function fmtDate(iso: string) {
+function fmtDate(iso: string | Date) {
+  if (iso instanceof Date) iso = iso.toISOString().slice(0, 10);
   const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const [y, m, d] = iso.split("-");
   return `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
@@ -303,9 +304,10 @@ export default function BodyCompTab() {
   // Weight + Waist chart: daily weight from logs + waist from measurements
   const combinedTrendData = useMemo(() => {
     // Build a map of waist by date from measurements
+    const toStr2 = (d: any) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d));
     const waistByDate: Record<string, number> = {};
     (entries as any[]).forEach((m: any) => {
-      if (m.waist != null) waistByDate[m.measureDate] = m.waist;
+      if (m.waist != null) waistByDate[toStr2(m.measureDate)] = m.waist;
     });
     // Build weight data from daily logs (last 60 days)
     const weightPoints = (logs ?? [])
@@ -329,12 +331,13 @@ export default function BodyCompTab() {
 
   // Skinfold vs Weight chart: one point per measurement, avg weight from surrounding 7-day window
   const skinfoldWeightData = useMemo(() => {
-    const sorted = [...(entries as any[])].sort((a, b) => a.measureDate.localeCompare(b.measureDate));
+    const toStr = (d: any) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d));
+    const sorted = [...(entries as any[])].sort((a, b) => toStr(a.measureDate).localeCompare(toStr(b.measureDate)));
     return sorted
       .map(m => {
         const total = totalSkinfold(m);
         if (total == null) return null;
-        const iso = m.measureDate;
+        const iso = m.measureDate instanceof Date ? m.measureDate.toISOString().slice(0, 10) : String(m.measureDate);
         const [, mo, d] = iso.split("-");
         const dateLabel = `${parseInt(d)} ${months[parseInt(mo) - 1]}`;
         // avg weight from daily logs in ±3 days window
