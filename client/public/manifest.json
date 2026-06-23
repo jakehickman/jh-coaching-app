@@ -2,11 +2,11 @@
   "name": "JH Coaching",
   "short_name": "JH Coaching",
   "description": "JH Coaching Client Dashboard",
-  "start_url": "/dashboard",
+  "start_url": "/dashboard/nutrition",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#09090b",
-  "theme_color": "#09090b",
+  "background_color": "#0d1210",
+  "theme_color": "#0d1210",
   "orientation": "portrait",
   "icons": [
     {
