@@ -487,7 +487,14 @@ export default function BodyCompTab() {
     return idx >= 0 && idx + 1 < sortedEntries.length ? sortedEntries[idx + 1] : null;
   };
 
-  // Weight + Waist chart: daily weight from logs + waist from measurements
+  // Last 60 days cutoff
+  const cutoff60 = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 59);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
+
+  // Weight + Waist chart: daily weight from logs + waist from measurements (last 60 days)
   const combinedTrendData = useMemo(() => {
     const toStr2 = (d: any) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d));
     const waistByDate: Record<string, number> = {};
@@ -495,7 +502,7 @@ export default function BodyCompTab() {
       if (m.waist != null) waistByDate[toStr2(m.measureDate)] = m.waist;
     });
     const weightPoints = (logs ?? [])
-      .filter(l => l.weight != null)
+      .filter(l => l.weight != null && toLocalDateStr(l.logDate) >= cutoff60)
       .slice(0, 60)
       .reverse()
       .map(l => {
@@ -509,14 +516,16 @@ export default function BodyCompTab() {
         };
       });
     return weightPoints;
-  }, [logs, entries]);
+  }, [logs, entries, cutoff60]);
 
   const hasWeightWaist = combinedTrendData.filter(d => d.weight != null).length > 1;
 
-  // Skinfold vs Weight chart
+  // Skinfold vs Weight chart (last 60 days)
   const skinfoldWeightData = useMemo(() => {
     const toStr = (d: any) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d));
-    const sorted = [...(entries as any[])].sort((a, b) => toStr(a.measureDate).localeCompare(toStr(b.measureDate)));
+    const sorted = [...(entries as any[])]
+      .filter(m => toStr(m.measureDate) >= cutoff60)
+      .sort((a, b) => toStr(a.measureDate).localeCompare(toStr(b.measureDate)));
     return sorted
       .map(m => {
         const total = totalSkinfold(m);
@@ -535,7 +544,7 @@ export default function BodyCompTab() {
         return { isoDate: iso, date: dateLabel, skinfold: total, avgWeight: wAvg };
       })
       .filter((x): x is NonNullable<typeof x> => x != null);
-  }, [entries, logs]);
+  }, [entries, logs, cutoff60]);
 
   const hasSkinfold = skinfoldWeightData.length > 1;
 
