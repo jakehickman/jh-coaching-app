@@ -20,6 +20,7 @@ import MealPlansSection from "./MealPlansSection";
 import { CoachNutritionTab } from "./CoachNutritionTab";
 import { ProgressPhotosTab } from "./ProgressPhotosTab";
 import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
+import { BodyCompSummaryTable } from "./BodyCompSummaryTable";
 import ProgramChangeLogTab from "./ProgramChangeLogTab";
 import CardioChangeLogTab from "./CardioChangeLogTab";
 
@@ -2361,12 +2362,16 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </TabsList>
           </div>
 
-          {/* -- Overview: weekly review (full width), habits below -- */}
+          {/* -- Overview: behaviour table, body comp table, habits -- */}
           <TabsContent value="overview">
             <div className="space-y-8">
               <div>
-                <SectionLabel>Weekly Review</SectionLabel>
+                <SectionLabel>Behaviour</SectionLabel>
                 <WeeklyReviewTab clientId={selectedUserId!} />
+              </div>
+              <div>
+                <SectionLabel>Body Composition</SectionLabel>
+                <BodyCompSummaryTable clientId={selectedUserId!} />
               </div>
               <CoachHabitsPanel clientId={selectedUserId!} />
             </div>

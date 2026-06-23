@@ -730,3 +730,11 @@
 - [x] Body Comp Data: combine Waist value+delta under single "Waist" header; same for Skinfold; rename Hips to Hip; reorder Hip after Waist
 - [x] Body Comp Data: add Weight column (weight logged on that date)
 - [x] Body Comp Data: remove edit/delete actions from coach view
+
+## Weekly Review Table — Split & Refactor (Jun 24)
+- [x] Weekly review table: replace "show N more" paginate with single show all / show less toggle
+- [x] Weekly review table: remove Avg Weight column (weight belongs in body comp)
+- [x] Weekly review table: add Sleep Quality and Stress as main columns, remove Caffeine entirely
+- [x] Overview tab: add new Body Composition summary table (same 7-day periods, columns: Avg Weight + Δ%, Waist, Skinfold Total)
+- [x] Overview tab: section headers renamed to "Behaviour" and "Body Composition"
+- [x] Habits panel: redesigned from scratch — 4-week 10px dot grid, compact cards, no broken label row

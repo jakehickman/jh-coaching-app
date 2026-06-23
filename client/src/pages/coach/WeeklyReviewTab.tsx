@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
 
 interface Props {
   clientId: number;
@@ -15,13 +15,7 @@ type Week = {
   label: string;
   isInProgress: boolean;
   daysLogged: number;
-  avgWeight: number | null;
-  avgWeightPct: number | null;
-  avgWaist: number | null;
-  avgSkinfold: number | null;
   sessionsCompleted: number;
-  avgCaffeine: number | null;
-  avgHunger: number | null;
   avgSleepQuality: number | null;
   avgSleepHours: number | null;
   avgStress?: number | null;
@@ -33,7 +27,6 @@ type Week = {
 };
 
 const DEFAULT_VISIBLE = 4;
-const EXPAND_STEP = 4;
 
 function fmt(val: number | null | undefined, decimals = 1): string {
   if (val == null) return "—";
@@ -44,22 +37,17 @@ function fmtK(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
 }
 
-function WeekRow({ week, prev, isExpanded, onToggle }: {
+function WeekRow({ week, isExpanded, onToggle }: {
   week: Week;
-  prev: Week | null;
   isExpanded: boolean;
   onToggle: () => void;
 }) {
   const hasData = week.daysLogged > 0 || (week.weighIns?.length ?? 0) > 0 || week.sessionsCompleted > 0;
-
-  const weightDeltaPct = week.avgWeightPct;
-
   const stepsVal = week.avgSteps != null ? fmtK(Math.round(week.avgSteps)) : "—";
   const stepsGoal = week.stepGoal != null ? `/${fmtK(week.stepGoal)}` : "";
 
   return (
     <>
-      {/* Summary row */}
       <tr
         className={`border-b border-border/40 transition-colors ${
           week.isInProgress
@@ -98,22 +86,6 @@ function WeekRow({ week, prev, isExpanded, onToggle }: {
           </span>
         </td>
 
-        {/* Avg weight */}
-        <td className="px-3 py-2.5 text-right">
-          <div className="flex flex-col items-end gap-0.5">
-            <span className="text-xs font-semibold tabular-nums text-foreground">
-              {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
-            </span>
-            {weightDeltaPct != null && (
-              <span className={`text-[10px] font-semibold ${
-                weightDeltaPct < 0 ? "text-green-400" : weightDeltaPct > 0 ? "text-red-400" : "text-muted-foreground"
-              }`}>
-                {weightDeltaPct > 0 ? "+" : ""}{weightDeltaPct.toFixed(2)}%
-              </span>
-            )}
-          </div>
-        </td>
-
         {/* Avg steps */}
         <td className="px-3 py-2.5 text-right">
           <span className="text-xs tabular-nums text-foreground">
@@ -135,10 +107,30 @@ function WeekRow({ week, prev, isExpanded, onToggle }: {
           </span>
         </td>
 
-        {/* Sleep (hours) */}
+        {/* Sleep hours */}
         <td className="px-3 py-2.5 text-right">
           <span className="text-xs tabular-nums text-foreground">
             {week.avgSleepHours != null ? `${fmt(week.avgSleepHours)} h` : "—"}
+          </span>
+        </td>
+
+        {/* Sleep quality */}
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {week.avgSleepQuality != null ? `${fmt(week.avgSleepQuality)}/5` : "—"}
+          </span>
+        </td>
+
+        {/* Stress */}
+        <td className="px-3 py-2.5 text-right">
+          <span className={`text-xs tabular-nums ${
+            week.avgStress != null && week.avgStress >= 4
+              ? "text-red-400"
+              : week.avgStress != null && week.avgStress >= 3
+              ? "text-amber-400"
+              : "text-foreground"
+          }`}>
+            {week.avgStress != null ? `${fmt(week.avgStress)}/5` : "—"}
           </span>
         </td>
 
@@ -151,52 +143,22 @@ function WeekRow({ week, prev, isExpanded, onToggle }: {
       </tr>
 
       {/* Expanded daily weigh-ins */}
-      {isExpanded && hasData && (
+      {isExpanded && hasData && (week.weighIns ?? []).length > 0 && (
         <tr className="border-b border-border/40 bg-muted/10">
-          <td colSpan={8} className="px-6 py-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Daily weigh-ins */}
-              {(week.weighIns ?? []).length > 0 && (
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Daily Weigh-ins</p>
-                  <div className="space-y-0">
-                    {[...(week.weighIns ?? [])].sort((a, b) => a.logDate.localeCompare(b.logDate)).map((wi) => {
-                      const d = new Date(wi.logDate + "T00:00:00");
-                      const label = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
-                      return (
-                        <div key={wi.logDate} className="flex items-center py-1 border-b border-border/30 last:border-0">
-                          <span className="text-xs text-muted-foreground flex-1">{label}</span>
-                          <span className="text-xs font-medium tabular-nums">{wi.weight.toFixed(1)} kg</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Recovery detail */}
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recovery</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  {week.avgSleepQuality != null && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">Sleep quality</span>
-                      <span className="text-[11px] font-medium tabular-nums">{fmt(week.avgSleepQuality)}/5</span>
+          <td colSpan={9} className="px-6 py-3">
+            <div className="max-w-xs">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Daily Weigh-ins</p>
+              <div className="space-y-0">
+                {[...(week.weighIns ?? [])].sort((a, b) => a.logDate.localeCompare(b.logDate)).map((wi) => {
+                  const d = new Date(wi.logDate + "T00:00:00");
+                  const label = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+                  return (
+                    <div key={wi.logDate} className="flex items-center py-1 border-b border-border/30 last:border-0">
+                      <span className="text-xs text-muted-foreground flex-1">{label}</span>
+                      <span className="text-xs font-medium tabular-nums">{wi.weight.toFixed(1)} kg</span>
                     </div>
-                  )}
-                  {week.avgStress != null && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">Stress</span>
-                      <span className="text-[11px] font-medium tabular-nums">{fmt(week.avgStress)}/5</span>
-                    </div>
-                  )}
-                  {week.avgCaffeine != null && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">Caffeine</span>
-                      <span className="text-[11px] font-medium tabular-nums">{fmt(week.avgCaffeine)} srv</span>
-                    </div>
-                  )}
-                </div>
+                  );
+                })}
               </div>
             </div>
           </td>
@@ -207,7 +169,7 @@ function WeekRow({ week, prev, isExpanded, onToggle }: {
 }
 
 export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
-  const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE);
+  const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
@@ -218,13 +180,10 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
 
   const weeks = (data?.weeks ?? []) as Week[];
 
-  // Auto-expand the current in-progress week
   useEffect(() => {
     if (weeks.length === 0) return;
     const inProgress = weeks.find(w => w.isInProgress);
-    if (inProgress) {
-      setExpanded(new Set([inProgress.weekStart]));
-    }
+    if (inProgress) setExpanded(new Set([inProgress.weekStart]));
   }, [weeks.length]);
 
   function toggleRow(weekStart: string) {
@@ -267,9 +226,8 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
     );
   }
 
-  const visibleWeeks = weeks.slice(0, visibleCount);
-  const remaining = weeks.length - visibleCount;
-  const nextBatch = Math.min(EXPAND_STEP, remaining);
+  const visibleWeeks = showAll ? weeks : weeks.slice(0, DEFAULT_VISIBLE);
+  const hasMore = weeks.length > DEFAULT_VISIBLE;
 
   return (
     <div className="mt-2">
@@ -280,20 +238,20 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground min-w-[140px]">Week</th>
                 <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Days</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Weight</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Steps</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Meals</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Treats</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sleep</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sleep Quality</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Stress</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sessions</th>
               </tr>
             </thead>
             <tbody>
-              {visibleWeeks.map((week, idx) => (
+              {visibleWeeks.map((week) => (
                 <WeekRow
                   key={week.weekStart}
                   week={week}
-                  prev={(weeks[idx + 1] as Week) ?? null}
                   isExpanded={expanded.has(week.weekStart)}
                   onToggle={() => toggleRow(week.weekStart)}
                 />
@@ -303,15 +261,17 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
         </div>
       </div>
 
-      {remaining > 0 && (
+      {hasMore && (
         <div className="flex justify-center mt-2">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setVisibleCount(v => v + EXPAND_STEP)}
+            onClick={() => setShowAll(v => !v)}
             className="text-muted-foreground hover:text-foreground"
           >
-            Show {nextBatch} more {nextBatch === 1 ? "week" : "weeks"} ({remaining} remaining)
+            {showAll
+              ? `Show less`
+              : `Show all ${weeks.length} weeks`}
           </Button>
         </div>
       )}
