@@ -1,0 +1,14 @@
+{
+  "query": "SELECT u.name, p.startDate FROM users u LEFT JOIN client_profiles p ON p.userId = u.id WHERE u.name LIKE '%Jake%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT u.name, p.startDate FROM users u LEFT JOIN client_profiles p ON p.userId = u.id WHERE u.name LIKE '%Jake%' LIMIT 5;",
+  "rows": [
+    {
+      "name": "Jake Hickman",
+      "startDate": "2026-04-08"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\tstartDate\nJake Hickman\t2026-04-08\n",
+  "stderr": "",
+  "execution_time_ms": 1819
+}

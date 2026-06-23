@@ -472,13 +472,13 @@ export default function DailyLogTab() {
                 <span className={`text-sm font-bold leading-none ${
                   isSelected ? 'text-primary-foreground' : isToday ? 'text-primary' : 'text-foreground'
                 }`}>{dayNum}</span>
-                <span className={`w-1 h-1 rounded-full ${
+                <span className={`w-1.5 h-1.5 rounded-full ${
                   isSelected
-                    ? 'bg-primary-foreground/70'
+                    ? 'bg-primary-foreground'
                     : hasLog
                     ? 'bg-primary'
                     : !isFuture && !isPast
-                    ? 'bg-amber-500/70'
+                    ? 'bg-amber-400'
                     : 'bg-transparent'
                 }`} />
               </button>
