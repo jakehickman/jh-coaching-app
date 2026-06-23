@@ -1,8 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useEffect, useState, useMemo } from "react";
-import { useLocation } from "wouter";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pencil, CheckSquare, Square, Activity } from "lucide-react";
+import { ChevronLeft, ChevronRight, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr, localToday, dayLabel } from "@/lib/dates";
 import { SectionLabel, Card, ScoreInput, DailyLogRow } from "./shared";
@@ -33,7 +32,7 @@ function WeekSummaryPanel({
   const isTrained = (v: unknown) => v === true || v === 1 || v === '1';
 
   function fmtShort(iso: string) {
-    const [, m, d] = iso.split('-');
+    const [, , d] = iso.split('-');
     return `${parseInt(d)} ${new Date(iso + 'T12:00:00Z').toLocaleDateString('en-AU', { month: 'short', timeZone: 'UTC' })}`;
   }
 
@@ -122,21 +121,27 @@ function WeekSummaryPanel({
 }
 
 // ─── HabitsCard ────────────────────────────────────────────────────────────────────────────────
-function HabitsCard({ date }: { date: string }) {
+// Shows each habit as a row with name on the left and a 7-dot sparkline on the right.
+// The dot for the currently-selected date is interactive (tap to toggle).
+// Past dots are read-only indicators; future dots are faded.
+function HabitsCard({ date, weekDays }: { date: string; weekDays: string[] }) {
   const { viewAsUserId } = useViewAs();
-  const utils = trpc.useUtils();
   const { data: habitsOwn = [] } = trpc.habits.myHabits.useQuery(undefined, { enabled: !viewAsUserId });
   const { data: habitsAdmin = [] } = trpc.habits.clientHabits.useQuery({ clientId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const habits = viewAsUserId ? habitsAdmin : habitsOwn;
+
   const from90 = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 89);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }, []);
+
   const { data: completionsOwn = [], refetch: refetchOwn } = trpc.habits.myCompletions.useQuery({ fromDate: from90 }, { enabled: !viewAsUserId });
   const { data: completionsAdmin = [], refetch: refetchAdmin } = trpc.habits.clientCompletions.useQuery({ clientId: viewAsUserId!, fromDate: from90 }, { enabled: !!viewAsUserId });
   const completions = viewAsUserId ? completionsAdmin : completionsOwn;
   const refetch = viewAsUserId ? refetchAdmin : refetchOwn;
+
+  const today = localToday();
 
   const normDate = (val: any): string => {
     if (!val) return '';
@@ -160,35 +165,91 @@ function HabitsCard({ date }: { date: string }) {
 
   if (habits.length === 0) return null;
 
+  // Day letter headers — short single char (M T W T F S S)
+  const dayLetters = weekDays.map(iso => {
+    const d = new Date(iso + 'T12:00:00');
+    return d.toLocaleDateString('en-AU', { weekday: 'narrow' });
+  });
+
   return (
     <div>
       <SectionLabel>Habits</SectionLabel>
-      <Card className="space-y-1 p-0 overflow-hidden">
+      <Card className="p-0 overflow-hidden">
+        {/* Header row: day letters */}
+        <div className="flex items-center px-4 py-2 border-b border-border">
+          <div className="flex-1 min-w-0" /> {/* spacer for habit name column */}
+          <div className="flex gap-1.5">
+            {weekDays.map((iso, i) => {
+              const isSelected = iso === date;
+              const isToday = iso === today;
+              return (
+                <div
+                  key={iso}
+                  className={`w-7 text-center text-[10px] font-semibold ${
+                    isSelected ? 'text-primary' : isToday ? 'text-primary/70' : 'text-muted-foreground'
+                  }`}
+                >
+                  {dayLetters[i]}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Habit rows */}
         {habits.map((h: any, i: number) => {
-          const key = `${h.id}:${date}`;
-          const serverDone = completions.some(
-            (c: any) => c.habitId === h.id && normDate(c.completedDate) === date
-          );
-          const done = key in optimistic ? optimistic[key] : serverDone;
           return (
-            <button
+            <div
               key={h.id}
-              onClick={() => !viewAsUserId && toggleMutation.mutate({ habitId: h.id, date })}
-              disabled={toggleMutation.isPending || !!viewAsUserId}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
-                i > 0 ? "border-t border-border" : ""
-              } ${done ? "bg-primary/5" : "hover:bg-muted/30"} disabled:opacity-70`}
+              className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-border' : ''}`}
             >
-              {done
-                ? <CheckSquare size={20} className="text-primary shrink-0" />
-                : <Square size={20} className="text-muted-foreground shrink-0" />
-              }
+              {/* Habit name */}
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium ${done ? "text-primary" : "text-foreground"}`}>{h.name}</p>
-                {h.description && <p className="text-xs text-muted-foreground truncate">{h.description}</p>}
+                <p className="text-sm font-medium text-foreground truncate">{h.name}</p>
               </div>
-              {done && <Check size={14} className="text-primary shrink-0" />}
-            </button>
+
+              {/* 7-dot sparkline */}
+              <div className="flex gap-1.5 flex-shrink-0">
+                {weekDays.map((iso) => {
+                  const key = `${h.id}:${iso}`;
+                  const serverDone = completions.some(
+                    (c: any) => c.habitId === h.id && normDate(c.completedDate) === iso
+                  );
+                  const done = key in optimistic ? optimistic[key] : serverDone;
+                  const isFuture = iso > today;
+                  const isSelected = iso === date;
+                  const canToggle = !viewAsUserId && !isFuture;
+
+                  return (
+                    <button
+                      key={iso}
+                      onClick={() => canToggle && toggleMutation.mutate({ habitId: h.id, date: iso })}
+                      disabled={!canToggle || toggleMutation.isPending}
+                      title={canToggle ? (done ? 'Mark incomplete' : 'Mark complete') : undefined}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-all touch-manipulation ${
+                        isFuture
+                          ? 'opacity-20 cursor-not-allowed'
+                          : canToggle
+                          ? 'hover:scale-110 active:scale-95 cursor-pointer'
+                          : 'cursor-default'
+                      } ${
+                        done
+                          ? 'bg-primary'
+                          : isSelected
+                          ? 'bg-muted border-2 border-primary/40'
+                          : 'bg-muted/50 border border-border'
+                      }`}
+                    >
+                      {done && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none" className="text-primary-foreground">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </Card>
@@ -232,7 +293,6 @@ export default function DailyLogTab() {
   const draftKey = `draft:dailyLog:${date}`;
 
   const saveDraft = (data: DailyForm, key = draftKey) => {
-    // Never persist drafts in viewAs mode
     if (viewAsUserId) return;
     try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* ignore */ }
   };
@@ -241,7 +301,6 @@ export default function DailyLogTab() {
     try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
   };
   const loadDraft = (key: string): DailyForm | null => {
-    // Never load drafts in viewAs mode
     if (viewAsUserId) return null;
     try {
       const s = localStorage.getItem(key);
@@ -250,7 +309,6 @@ export default function DailyLogTab() {
     return null;
   };
 
-  // In viewAs mode, always start blank — server data will populate via useEffect
   const [form, setFormRaw] = useState<DailyForm>(() => viewAsUserId ? blank : (loadDraft(draftKey) ?? blank));
 
   const hasDraft = () => !viewAsUserId && localStorage.getItem(draftKey) !== null;
@@ -288,8 +346,6 @@ export default function DailyLogTab() {
     return v.toISOString().slice(0, 10);
   };
   const todaysSessions = workoutSessions.filter(s => toDateStr(s.sessionDate as Date | string) === date);
-  // Never auto-populate training from workout sessions when in clone/viewAs mode — prevents
-  // the client's sessions from leaking into the coach's own log when switching views.
   const autoTrained = !viewAsUserId && todaysSessions.length > 0;
   const autoTrainingType = !viewAsUserId ? (todaysSessions.map(s => s.dayLabel).filter(Boolean).join(", ") || undefined) : undefined;
 
@@ -299,83 +355,62 @@ export default function DailyLogTab() {
     const draft = loadDraft(newKey);
     if (draft) {
       setFormRaw(draft);
-    } else if (logs) {
-      const existing = logs.find(l => toLocalDateStr(l.logDate) === newDate);
-      if (existing) {
-        loadServerData({
-          weight: existing.weight?.toString() ?? "",
-          sleepHours: existing.sleepHours?.toString() ?? "",
-          caffeineServings: existing.caffeineServings?.toString() ?? "",
-          trainingCompleted: existing.trainingCompleted ?? false,
-          trainingType: existing.trainingType ?? "",
-          stepsCount: existing.stepsCount?.toString() ?? "",
-          lissMinutes: (existing as any).lissMinutes?.toString() ?? "",
-          sleepQuality: existing.sleepQuality ?? null,
-          hungerLevel: existing.hungerLevel ?? null,
-          stressLevel: (existing as any).stressLevel ?? null,
-          notes: existing.notes ?? "",
-        }, newKey);
-      } else {
-        loadServerData({ ...blank, trainingCompleted: autoTrained, trainingType: autoTrainingType ?? "" }, newKey);
-      }
     } else {
-      loadServerData(blank, newKey);
+      setFormRaw(blank);
     }
   };
 
+  // Load server data when date or logs change
   useEffect(() => {
     if (!logs) return;
-    if (hasDraft()) return;
-    const existing = logs.find(l => toLocalDateStr(l.logDate) === date);
-    if (existing) {
-      loadServerData({
-        weight: existing.weight?.toString() ?? "",
-        sleepHours: existing.sleepHours?.toString() ?? "",
-        caffeineServings: existing.caffeineServings?.toString() ?? "",
-        trainingCompleted: existing.trainingCompleted ?? false,
-        trainingType: existing.trainingType ?? "",
-        stepsCount: existing.stepsCount?.toString() ?? "",
-        lissMinutes: (existing as any).lissMinutes?.toString() ?? "",
-        sleepQuality: existing.sleepQuality ?? null,
-        hungerLevel: existing.hungerLevel ?? null,
-          stressLevel: (existing as any).stressLevel ?? null,
-          notes: existing.notes ?? "",
-        });
-    } else {
-      loadServerData({ ...blank, trainingCompleted: autoTrained, trainingType: autoTrainingType ?? "" });
+    const log = logs.find(l => toLocalDateStr(l.logDate) === date);
+    if (log) {
+      const serverData: DailyForm = {
+        weight: log.weight != null ? String(log.weight) : "",
+        sleepHours: log.sleepHours != null ? String(log.sleepHours) : "",
+        caffeineServings: log.caffeineServings != null ? String(log.caffeineServings) : "",
+        trainingCompleted: !!(log.trainingCompleted),
+        trainingType: log.trainingType ?? "",
+        stepsCount: log.stepsCount != null ? String(log.stepsCount) : "",
+        lissMinutes: (log as any).lissMinutes != null ? String((log as any).lissMinutes) : "",
+        sleepQuality: log.sleepQuality ?? null,
+        hungerLevel: log.hungerLevel ?? null,
+        stressLevel: (log as any).stressLevel ?? null,
+        notes: log.notes ?? "",
+      };
+      loadServerData(serverData);
+    } else if (!hasDraft()) {
+      setFormRaw(blank);
     }
-  }, [date, logs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [date, logs]);
 
+  // Auto-populate training from workout sessions (only when no draft/server data)
   useEffect(() => {
-    const handler = (e: Event) => {
-      const iso = (e as CustomEvent<{ date: string }>).detail?.date;
-      if (iso) {
-        sessionStorage.removeItem('editLogDate');
-        setDate(iso);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    };
-    window.addEventListener('editLogDate', handler);
-    return () => window.removeEventListener('editLogDate', handler);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (autoTrained && !form.trainingCompleted) {
+      setForm(prev => ({
+        ...prev,
+        trainingCompleted: true,
+        trainingType: autoTrainingType ?? prev.trainingType,
+      }));
+    }
+  }, [autoTrained, autoTrainingType]);
 
-  const handleSave = () => {
-    removeDraft();
-    upsert.mutate({
+  const handleSave = async () => {
+    await upsert.mutateAsync({
       logDate: date,
-      weight: form.weight ? parseFloat(form.weight) : undefined,
-      sleepHours: form.sleepHours ? parseFloat(form.sleepHours) : undefined,
-      caffeineServings: form.caffeineServings ? parseFloat(form.caffeineServings) : undefined,
-      // trainingCompleted and trainingType are server-controlled (set by workout session sync)
-      // Do not send from the form to avoid overriding the synced value
-      stepsCount: form.stepsCount ? parseInt(form.stepsCount) : undefined,
-      lissMinutes: form.lissMinutes ? parseInt(form.lissMinutes) : undefined,
+      weight: form.weight !== "" ? parseFloat(form.weight) : undefined,
+      sleepHours: form.sleepHours !== "" ? parseFloat(form.sleepHours) : undefined,
+      caffeineServings: form.caffeineServings !== "" ? parseFloat(form.caffeineServings) : undefined,
+      trainingCompleted: form.trainingCompleted,
+      trainingType: form.trainingType || undefined,
+      stepsCount: form.stepsCount !== "" ? parseInt(form.stepsCount) : undefined,
+      lissMinutes: form.lissMinutes !== "" ? parseInt(form.lissMinutes) : undefined,
       sleepQuality: form.sleepQuality ?? undefined,
       hungerLevel: form.hungerLevel ?? undefined,
       stressLevel: form.stressLevel ?? undefined,
       notes: form.notes || undefined,
     });
+    removeDraft();
   };
 
   const f = (field: keyof DailyForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -389,8 +424,9 @@ export default function DailyLogTab() {
     const dow = todayD.getDay();
     const mondayOffset = (dow === 0 ? 6 : dow - 1);
     const mondayMs = todayD.getTime() - mondayOffset * 86400000;
-    const dateMs = new Date(date + 'T12:00:00').getTime();
-    return Math.max(0, Math.floor((mondayMs - dateMs) / (7 * 86400000)));
+    const dateMondayMs = new Date(date + 'T12:00:00').getTime();
+    const weekDiff = Math.floor((mondayMs - dateMondayMs) / (7 * 86400000));
+    return Math.max(0, weekDiff);
   });
 
   const weekDays = useMemo(() => {
@@ -422,11 +458,18 @@ export default function DailyLogTab() {
     return s;
   }, [logs]);
 
+  // Week label
+  const weekLabel = useMemo(() => {
+    if (weekBack === 0) return 'This week';
+    if (weekBack === 1) return 'Last week';
+    return `${weekBack} weeks ago`;
+  }, [weekBack]);
+
   return (
-    <div className="space-y-6">
-      {/* ── Week strip date picker ── */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
+    <div className="space-y-5 pb-8">
+      {/* ── Week strip ── */}
+      <div className="bg-card border border-border rounded-xl p-3 space-y-2">
+        <div className="flex items-center justify-between px-1">
           <button
             onClick={() => setWeekBack(w => w + 1)}
             disabled={!canGoBack}
@@ -434,9 +477,7 @@ export default function DailyLogTab() {
           >
             <ChevronLeft size={18} />
           </button>
-          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            {weekBack === 0 ? 'This week' : weekBack === 1 ? 'Last week' : `${weekBack} weeks ago`}
-          </span>
+          <span className="text-xs font-medium text-muted-foreground">{weekLabel}</span>
           <button
             onClick={() => setWeekBack(w => Math.max(0, w - 1))}
             disabled={!canGoForward}
@@ -453,7 +494,7 @@ export default function DailyLogTab() {
             const isPast = startDate ? iso < startDate : false;
             const hasLog = loggedDates.has(iso);
             const disabled = isFuture || isPast;
-            const label = dayLabel(iso); // Mon, Tue…
+            const label = dayLabel(iso);
             const dayNum = parseInt(iso.slice(8), 10);
             return (
               <button
@@ -504,9 +545,6 @@ export default function DailyLogTab() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm text-muted-foreground">Steps</label>
-                {(profile as any)?.stepGoal && (
-                  <span className="text-xs text-primary font-medium">Goal: {((profile as any).stepGoal as number).toLocaleString()}</span>
-                )}
               </div>
               <input type="number" value={form.stepsCount} onChange={f("stepsCount")} className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.stepsCount === '' ? 'border-amber-500/50' : 'border-border'}`} />
             </div>
@@ -536,11 +574,33 @@ export default function DailyLogTab() {
       </div>
 
       <div>
+        <SectionLabel>Training</SectionLabel>
+        <Card className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-muted-foreground">Completed training today?</label>
+            <button
+              onClick={() => !viewAsUserId && setForm(p => ({ ...p, trainingCompleted: !p.trainingCompleted }))}
+              disabled={!!viewAsUserId}
+              className={`relative w-12 h-6 rounded-full transition-colors ${form.trainingCompleted ? 'bg-primary' : 'bg-muted'} disabled:opacity-60`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${form.trainingCompleted ? 'translate-x-6' : 'translate-x-0'}`} />
+            </button>
+          </div>
+          {form.trainingCompleted && (
+            <div>
+              <label className="text-sm text-muted-foreground block mb-1.5">Session type / label</label>
+              <input type="text" value={form.trainingType} onChange={f("trainingType")} placeholder="e.g. Upper A, Legs, Push…" className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <div>
         <SectionLabel>Notes</SectionLabel>
         <textarea value={form.notes} onChange={f("notes")} rows={3} className="w-full bg-secondary border border-border rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
       </div>
 
-      <HabitsCard date={date} />
+      <HabitsCard date={date} weekDays={weekDays} />
 
       {!viewAsUserId && (
         <button onClick={handleSave} disabled={upsert.isPending}

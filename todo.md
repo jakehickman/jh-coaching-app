@@ -696,3 +696,4 @@
 ## Daily Log Week Strip Date Picker (Jun 2026)
 - [x] Replace full-width date input in DailyLogTab with horizontal week strip (7-day pills, prev/next week arrows, today highlighted)
 - [x] Replace recent logs panel with compact 7-day week summary (synced to week strip, tappable rows, tick/missing indicator, weight + training status)
+- [x] Habits in Daily Log: replace checkbox list with 7-day interactive sparkline (habit name + 7 dots for current week, today's dot toggles completion, past dots read-only)
