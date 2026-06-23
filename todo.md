@@ -712,3 +712,9 @@
 - [x] Log sheet: change description placeholder from "Description" to "What are you eating?"
 - [x] Today screen: add centred empty state (fork/knife icon + "No meals logged today" + "Tap + Log to record your first meal")
 - [x] Hunger & Fullness reference modal: ⓘ icon next to hunger scale opens modal listing all 10 levels with descriptions
+
+## Coach Overview & Body Comp Data Redesign (Jun 23)
+- [x] Overview: habit adherence → 14 days with dot grid per habit + percentage
+- [x] Overview: daily log summary → expandable weekly table (avg weight, steps, meals, treats, sleep, compliance)
+- [x] Overview: remove Recent daily logs section
+- [x] Body Comp Data: replace 7-day summary with full measurement history table (date, weight, waist, hip, skinfolds, total, Δ weight, Δ total, notes, edit/delete)

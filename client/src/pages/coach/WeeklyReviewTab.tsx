@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ArrowUp, ArrowDown, Minus, ChevronDown } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Minus } from "lucide-react";
 
 interface Props {
   clientId: number;
@@ -33,41 +32,10 @@ type Week = {
   mealLogAvgHunger?: number | null;
   mealLogAvgFullness?: number | null;
   mealLogIdealZonePct?: number | null;
+  weighIns?: { logDate: string; weight: number }[];
 };
 
-const DEFAULT_VISIBLE = 6;
-
-const DIET_LABEL_MAP: Record<string, string> = {
-  every_meal: "Every meal or nearly every meal",
-  most_meals: "Most meals",
-  some_meals: "Some meals",
-  rarely: "Rarely",
-  never: "Never",
-  one_two_days: "On 1–2 days",
-  few_days: "On a few days",
-  most_days: "On most days",
-  every_day: "Every day",
-  light_spray: "Light spray (e.g. cooking spray)",
-  small_amount: "Small amount (less than 1 tsp)",
-  one_tsp_or_more: "1 tsp or more",
-  no_added_fats: "No added fats when cooking",
-  very_close: "Very close",
-  somewhat_close: "Somewhat close",
-  not_very_close: "Not very close",
-  very_different: "Very different",
-};
-const BARRIER_LABEL: Record<string, string> = {
-  no_issues: "No issues", hunger: "Hunger", cravings: "Cravings",
-  social_events: "Social events", busy_time: "Busy / time constraints",
-  poor_planning: "Poor planning", low_motivation: "Low motivation",
-  travel_disruption: "Travel / disruption", other: "Other",
-};
-const ASSESSMENT_LABEL: Record<string, string> = {
-  executed_exactly: "Executed exactly as planned",
-  mostly_followed: "Mostly followed",
-  inconsistent: "Inconsistent",
-  didnt_follow: "Didn't follow the plan",
-};
+const DEFAULT_VISIBLE = 8;
 
 function fmt(val: number | null | undefined, decimals = 1): string {
   if (val == null) return "—";
@@ -78,60 +46,210 @@ function fmtK(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
 }
 
-function Delta({ delta, text, higherIsBetter = null }: {
-  delta: number | null;
-  text?: string;
-  higherIsBetter?: boolean | null;
+function DeltaBadge({ curr, prev, unit = "", invert = false, decimals = 1 }: {
+  curr: number | null;
+  prev: number | null;
+  unit?: string;
+  invert?: boolean;
+  decimals?: number;
 }) {
-  if (delta == null) return null;
-  let color = "text-muted-foreground";
-  if (higherIsBetter === true) color = delta > 0 ? "text-green-400" : delta < 0 ? "text-red-400" : "text-muted-foreground";
-  if (higherIsBetter === false) color = delta < 0 ? "text-green-400" : delta > 0 ? "text-red-400" : "text-muted-foreground";
-  const Icon = delta > 0 ? ArrowUp : delta < 0 ? ArrowDown : Minus;
-  const label = text ?? `${delta > 0 ? "+" : ""}${delta.toFixed(1)}`;
+  if (curr == null || prev == null) return null;
+  const delta = curr - prev;
+  if (Math.abs(delta) < 0.005) return <span className="text-[10px] text-muted-foreground"><Minus size={9} className="inline" /></span>;
+  const isGood = invert ? delta < 0 : delta > 0;
+  const color = isGood ? "text-green-400" : "text-red-400";
+  const Icon = delta > 0 ? ArrowUp : ArrowDown;
   return (
     <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${color}`}>
-      <Icon size={9} />{label}
+      <Icon size={9} />
+      {Math.abs(delta).toFixed(decimals)}{unit}
     </span>
   );
 }
 
-function Tile({ label, value, muted, delta, deltaText, higherIsBetter, subtext }: {
-  label: string;
-  value: string;
-  muted?: boolean;
-  delta?: number | null;
-  deltaText?: string;
-  higherIsBetter?: boolean | null;
-  subtext?: string;
+function WeekRow({ week, prev, isExpanded, onToggle }: {
+  week: Week;
+  prev: Week | null;
+  isExpanded: boolean;
+  onToggle: () => void;
 }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">{label}</span>
-      <div className="flex items-baseline gap-1.5">
-        <span className={`text-sm font-bold tabular-nums ${muted ? "text-muted-foreground" : "text-foreground"}`}>{value}</span>
-        {delta != null && <Delta delta={delta} text={deltaText} higherIsBetter={higherIsBetter} />}
-      </div>
-      {subtext && <span className="text-[10px] text-muted-foreground/50 leading-none">{subtext}</span>}
-    </div>
-  );
-}
+  const hasData = week.daysLogged > 0 || (week.weighIns?.length ?? 0) > 0;
 
-function MetricGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  const weightDeltaPct = week.avgWeightPct;
+  const waistDelta = week.avgWaist != null && prev?.avgWaist != null
+    ? parseFloat((week.avgWaist - prev.avgWaist).toFixed(1)) : null;
+  const skinfoldDelta = week.avgSkinfold != null && prev?.avgSkinfold != null
+    ? parseFloat((week.avgSkinfold - prev.avgSkinfold).toFixed(1)) : null;
+
+  const stepsVal = week.avgSteps != null ? fmtK(Math.round(week.avgSteps)) : "—";
+  const stepsGoal = week.stepGoal != null ? `/${fmtK(week.stepGoal)}` : "";
+
   return (
-    <div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">{label}</p>
-      <div className="flex flex-wrap gap-x-6 gap-y-3">
-        {children}
-      </div>
-    </div>
+    <>
+      {/* Summary row */}
+      <tr
+        className={`border-b border-border/40 transition-colors ${
+          week.isInProgress ? "bg-amber-500/5" : hasData ? "hover:bg-muted/20 cursor-pointer" : "opacity-40"
+        }`}
+        onClick={() => hasData && onToggle()}
+      >
+        {/* Week label */}
+        <td className="px-3 py-2.5 min-w-[130px]">
+          <div className="flex items-center gap-1.5">
+            {hasData ? (
+              isExpanded
+                ? <ChevronDown size={12} className="text-muted-foreground flex-shrink-0" />
+                : <ChevronRight size={12} className="text-muted-foreground flex-shrink-0" />
+            ) : (
+              <span className="w-3" />
+            )}
+            <div>
+              <span className="text-xs font-semibold text-foreground">{week.label}</span>
+              {week.isInProgress && (
+                <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                  Current
+                </span>
+              )}
+            </div>
+          </div>
+        </td>
+
+        {/* Days logged */}
+        <td className="px-3 py-2.5 text-center">
+          <span className={`text-xs tabular-nums ${hasData ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+            {hasData ? week.daysLogged : "—"}
+          </span>
+        </td>
+
+        {/* Avg weight */}
+        <td className="px-3 py-2.5 text-right">
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-xs font-semibold tabular-nums text-foreground">
+              {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
+            </span>
+            {weightDeltaPct != null && (
+              <span className={`text-[10px] font-semibold ${
+                weightDeltaPct < 0 ? "text-green-400" : weightDeltaPct > 0 ? "text-red-400" : "text-muted-foreground"
+              }`}>
+                {weightDeltaPct > 0 ? "+" : ""}{weightDeltaPct.toFixed(2)}%
+              </span>
+            )}
+          </div>
+        </td>
+
+        {/* Avg steps */}
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {stepsVal}{stepsGoal && <span className="text-muted-foreground">{stepsGoal}</span>}
+          </span>
+        </td>
+
+        {/* Meals logged */}
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {week.mealLogCount != null && week.mealLogCount > 0 ? week.mealLogCount : "—"}
+          </span>
+        </td>
+
+        {/* Treats */}
+        <td className="px-3 py-2.5 text-right">
+          <span className={`text-xs tabular-nums ${(week.mealLogTreats ?? 0) > 0 ? "text-amber-400" : "text-muted-foreground"}`}>
+            {week.mealLogTreats != null && week.mealLogTreats > 0 ? week.mealLogTreats : "—"}
+          </span>
+        </td>
+
+        {/* Sleep (hours) */}
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {week.avgSleepHours != null ? `${fmt(week.avgSleepHours)} h` : "—"}
+          </span>
+        </td>
+
+        {/* Sessions */}
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {week.sessionsCompleted > 0 ? week.sessionsCompleted : "—"}
+          </span>
+        </td>
+      </tr>
+
+      {/* Expanded daily weigh-ins */}
+      {isExpanded && hasData && (
+        <tr className="border-b border-border/40 bg-muted/10">
+          <td colSpan={8} className="px-6 py-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Daily weigh-ins */}
+              {(week.weighIns ?? []).length > 0 && (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Daily Weigh-ins</p>
+                  <div className="space-y-0">
+                    {[...(week.weighIns ?? [])].sort((a, b) => a.logDate.localeCompare(b.logDate)).map((wi) => {
+                      const d = new Date(wi.logDate + "T00:00:00");
+                      const label = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+                      return (
+                        <div key={wi.logDate} className="flex items-center py-1 border-b border-border/30 last:border-0">
+                          <span className="text-xs text-muted-foreground flex-1">{label}</span>
+                          <span className="text-xs font-medium tabular-nums">{wi.weight.toFixed(1)} kg</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Recovery & Activity detail */}
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recovery</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  {week.avgSleepQuality != null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground">Sleep quality</span>
+                      <span className="text-[11px] font-medium tabular-nums">{fmt(week.avgSleepQuality)}/5</span>
+                    </div>
+                  )}
+                  {week.avgHunger != null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground">Hunger</span>
+                      <span className="text-[11px] font-medium tabular-nums">{fmt(week.avgHunger)}/5</span>
+                    </div>
+                  )}
+                  {week.avgCaffeine != null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground">Caffeine</span>
+                      <span className="text-[11px] font-medium tabular-nums">{fmt(week.avgCaffeine)} srv</span>
+                    </div>
+                  )}
+                  {week.mealLogAvgHunger != null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground">Pre-meal hunger</span>
+                      <span className="text-[11px] font-medium tabular-nums">{week.mealLogAvgHunger}</span>
+                    </div>
+                  )}
+                  {week.mealLogAvgFullness != null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground">Post-meal fullness</span>
+                      <span className="text-[11px] font-medium tabular-nums">{week.mealLogAvgFullness}</span>
+                    </div>
+                  )}
+                  {week.mealLogIdealZonePct != null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground">Ideal zone</span>
+                      <span className="text-[11px] font-medium tabular-nums">{week.mealLogIdealZonePct}%</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
 export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [expandedInit, setExpandedInit] = useState(false);
 
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
@@ -139,20 +257,23 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
     { enabled: !!clientId, staleTime: 0, retry: 1 }
   );
 
-  const weeks = data?.weeks ?? [];
+  const weeks = (data?.weeks ?? []) as Week[];
 
+  // Auto-expand the current in-progress week
   useEffect(() => {
-    if (expandedInit || weeks.length === 0) return;
-    const toExpand = new Set<string>();
-    if (weeks[0]) toExpand.add(weeks[0].weekStart);
-    setExpanded(toExpand);
-    setExpandedInit(true);
-  }, [weeks.length, expandedInit]);
+    if (weeks.length === 0) return;
+    const inProgress = weeks.find(w => w.isInProgress);
+    if (inProgress) {
+      setExpanded(new Set([inProgress.weekStart]));
+    }
+  }, [weeks.length]);
 
-  function toggleCard(weekStart: string) {
+  function toggleRow(weekStart: string) {
     setExpanded(prev => {
-      if (prev.has(weekStart)) return new Set<string>();
-      return new Set<string>([weekStart]);
+      const next = new Set(prev);
+      if (next.has(weekStart)) next.delete(weekStart);
+      else next.add(weekStart);
+      return next;
     });
   }
 
@@ -160,7 +281,7 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
     return (
       <div className="space-y-2 mt-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full bg-muted rounded-xl" />
+          <Skeleton key={i} className="h-10 w-full bg-muted rounded" />
         ))}
       </div>
     );
@@ -187,182 +308,42 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
     );
   }
 
-  const d = (curr: number | null, p: number | null) =>
-    curr != null && p != null ? +(curr - p).toFixed(2) : null;
-
   const visibleWeeks = showAll ? weeks : weeks.slice(0, DEFAULT_VISIBLE);
 
   return (
-    <div className="mt-2 space-y-2">
-      {visibleWeeks.map((week, idx) => {
-        const hasData = week.daysLogged > 0;
-        const isExpanded = expanded.has(week.weekStart);
-        const prev: Week | null = (weeks[idx + 1] as Week) ?? null;
-
-        const stepsValue = week.avgSteps != null ? Math.round(week.avgSteps).toLocaleString() : "—";
-        const stepsSubtext = week.stepGoal != null ? `Goal: ${week.stepGoal.toLocaleString()}` : undefined;
-
-        const weightDeltaKg = d(week.avgWeight, prev?.avgWeight ?? null);
-        const weightDeltaPct = weightDeltaKg != null && prev?.avgWeight != null && prev.avgWeight > 0
-          ? parseFloat(((weightDeltaKg / prev.avgWeight) * 100).toFixed(1))
-          : null;
-
-        return (
-          <div
-            key={week.weekStart}
-            className={`rounded-xl border transition-colors ${
-              week.isInProgress
-                ? "border-amber-500/40 bg-amber-500/5"
-                : !hasData
-                ? "border-border bg-card opacity-50"
-                : "border-border bg-card"
-            }`}
-          >
-            {/* Card header */}
-            <button
-              className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors rounded-xl ${
-                week.isInProgress ? "hover:bg-amber-500/10" : "hover:bg-muted/20"
-              }`}
-              onClick={() => toggleCard(week.weekStart)}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm font-semibold text-foreground truncate">{week.label}</span>
-                {week.isInProgress && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-400 bg-amber-500/10 flex-shrink-0">
-                    Current
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0 ml-2">
-                <span className="text-[11px] text-muted-foreground">
-                  {hasData ? `${week.daysLogged} day${week.daysLogged !== 1 ? "s" : ""}` : "No data"}
-                </span>
-                <ChevronDown size={14} className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-              </div>
-            </button>
-
-            {/* Expanded content */}
-            {isExpanded && (
-              hasData ? (
-                <div className="border-t border-border/40">
-                  <div
-                    className="px-4 pb-5 space-y-4 pt-4"
-                    onClick={onWeekClick ? (e) => { e.stopPropagation(); onWeekClick(null); } : undefined}
-                    style={onWeekClick ? { cursor: "pointer" } : undefined}
-                  >
-                    <MetricGroup label="Body Composition">
-                      <Tile
-                        label="Weight"
-                        value={week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
-                        muted={week.avgWeight == null}
-                        delta={week.avgWeightPct}
-                        deltaText={week.avgWeightPct != null ? `${week.avgWeightPct > 0 ? "+" : ""}${week.avgWeightPct.toFixed(2)}%` : undefined}
-                        higherIsBetter={null}
-                      />
-                      <Tile
-                        label="Waist"
-                        value={week.avgWaist != null ? `${fmt(week.avgWaist)} cm` : "—"}
-                        muted={week.avgWaist == null}
-                        delta={d(week.avgWaist, prev?.avgWaist ?? null)}
-                        higherIsBetter={false}
-                      />
-                      <Tile
-                        label="Skinfold"
-                        value={week.avgSkinfold != null ? `${fmt(week.avgSkinfold)} mm` : "—"}
-                        muted={week.avgSkinfold == null}
-                        delta={d(week.avgSkinfold, prev?.avgSkinfold ?? null)}
-                        higherIsBetter={false}
-                      />
-                    </MetricGroup>
-
-                    <MetricGroup label="Training">
-                      <Tile label="Sessions" value={String(week.sessionsCompleted)} />
-                    </MetricGroup>
-
-                    <MetricGroup label="Nutrition">
-                      <Tile
-                        label="Meals logged"
-                        value={week.mealLogCount != null && week.mealLogCount > 0 ? String(week.mealLogCount) : "—"}
-                        muted={!week.mealLogCount}
-                      />
-                      <Tile
-                        label="Treats"
-                        value={week.mealLogTreats != null && week.mealLogTreats > 0 ? String(week.mealLogTreats) : "—"}
-                        muted={!week.mealLogTreats}
-                      />
-                      <Tile
-                        label="Avg hunger"
-                        value={week.mealLogAvgHunger != null ? String(week.mealLogAvgHunger) : "—"}
-                        muted={week.mealLogAvgHunger == null}
-                      />
-                      <Tile
-                        label="Avg fullness"
-                        value={week.mealLogAvgFullness != null ? String(week.mealLogAvgFullness) : "—"}
-                        muted={week.mealLogAvgFullness == null}
-                      />
-                      <Tile
-                        label="Ideal zone"
-                        value={week.mealLogIdealZonePct != null ? `${week.mealLogIdealZonePct}%` : "—"}
-                        muted={week.mealLogIdealZonePct == null}
-                      />
-                    </MetricGroup>
-
-                    <MetricGroup label="Recovery">
-                      <Tile
-                        label="Sleep Quality"
-                        value={week.avgSleepQuality != null ? `${fmt(week.avgSleepQuality)}/5` : "—"}
-                        muted={week.avgSleepQuality == null}
-                        delta={d(week.avgSleepQuality, prev?.avgSleepQuality ?? null)}
-                        higherIsBetter={true}
-                      />
-                      <Tile
-                        label="Sleep Hours"
-                        value={week.avgSleepHours != null ? `${fmt(week.avgSleepHours)} h` : "—"}
-                        muted={week.avgSleepHours == null}
-                      />
-                      <Tile
-                        label="Hunger"
-                        value={week.avgHunger != null ? `${fmt(week.avgHunger)}/5` : "—"}
-                        muted={week.avgHunger == null}
-                        delta={d(week.avgHunger, prev?.avgHunger ?? null)}
-                        higherIsBetter={null}
-                      />
-                      <Tile
-                        label="Stress"
-                        value={week.avgStress != null ? `${fmt(week.avgStress)}/5` : "—"}
-                        muted={week.avgStress == null}
-                        delta={d(week.avgStress, prev?.avgStress ?? null)}
-                        higherIsBetter={false}
-                      />
-                      <Tile
-                        label="Caffeine"
-                        value={week.avgCaffeine != null ? `${fmt(week.avgCaffeine)} srv` : "—"}
-                        muted={week.avgCaffeine == null}
-                      />
-                    </MetricGroup>
-
-                    <MetricGroup label="Activity">
-                      <Tile
-                        label="Steps"
-                        value={stepsValue}
-                        muted={week.avgSteps == null}
-                        subtext={stepsSubtext}
-                      />
-                    </MetricGroup>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground italic px-4 pb-4 border-t border-border/40 pt-3">
-                  No daily logs recorded this week.
-                </p>
-              )
-            )}
-          </div>
-        );
-      })}
+    <div className="mt-2">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground min-w-[130px]">Week</th>
+                <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Days</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Weight</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Steps</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Meals</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Treats</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sleep</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sessions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleWeeks.map((week, idx) => (
+                <WeekRow
+                  key={week.weekStart}
+                  week={week}
+                  prev={(weeks[idx + 1] as Week) ?? null}
+                  isExpanded={expanded.has(week.weekStart)}
+                  onToggle={() => toggleRow(week.weekStart)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {weeks.length > DEFAULT_VISIBLE && (
-        <div className="flex justify-center mt-1">
+        <div className="flex justify-center mt-2">
           <Button
             variant="ghost"
             size="sm"

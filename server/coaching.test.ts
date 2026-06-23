@@ -287,3 +287,34 @@ describe("notes (coach)", () => {
     await expect(caller.notes.delete({ id: 1 })).resolves.not.toThrow();
   });
 });
+
+describe("measurements (coach-side)", () => {
+  it("updateForClient requires admin role", async () => {
+    const caller = appRouter.createCaller(createUserContext("user"));
+    await expect(
+      caller.measurements.updateForClient({ id: 1, userId: 7, measureDate: "2026-01-01" })
+    ).rejects.toThrow();
+  });
+
+  it("updateForClient succeeds for admin", async () => {
+    const caller = appRouter.createCaller(createUserContext("admin"));
+    // getDb returns null in tests, so the mutation silently returns undefined
+    await expect(
+      caller.measurements.updateForClient({ id: 1, userId: 7, measureDate: "2026-01-01" })
+    ).resolves.toBeUndefined();
+  });
+
+  it("deleteForClient requires admin role", async () => {
+    const caller = appRouter.createCaller(createUserContext("user"));
+    await expect(
+      caller.measurements.deleteForClient({ id: 1, userId: 7 })
+    ).rejects.toThrow();
+  });
+
+  it("deleteForClient succeeds for admin", async () => {
+    const caller = appRouter.createCaller(createUserContext("admin"));
+    await expect(
+      caller.measurements.deleteForClient({ id: 1, userId: 7 })
+    ).resolves.toBeUndefined();
+  });
+});

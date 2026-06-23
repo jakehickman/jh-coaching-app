@@ -2361,7 +2361,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </TabsList>
           </div>
 
-          {/* -- Overview: weekly review, habits, recent logs -- */}
+          {/* -- Overview: weekly review, habits -- */}
           <TabsContent value="overview">
             <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -2373,9 +2373,6 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                   <CoachHabitsPanel clientId={selectedUserId!} />
                 </div>
               </div>
-              {(logs ?? []).length > 0 && (
-                <RecentLogsWithViewMore logs={logs ?? []} startDate={clientStartDate} clientId={selectedUserId!} />
-              )}
             </div>
           </TabsContent>
 
@@ -2388,13 +2385,9 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <TabsTrigger value="photos">Photos</TabsTrigger>
               </TabsList>
               <TabsContent value="data">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                  <div>
-                    <WeeklyBodyCompCards clientId={selectedUserId!} />
-                  </div>
-                  <div className="flex flex-col gap-6">
-                    <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
-                  </div>
+                <div className="space-y-6">
+                  <WeeklyBodyCompCards clientId={selectedUserId!} />
+                  <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
                 </div>
               </TabsContent>
               <TabsContent value="photos">
