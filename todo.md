@@ -699,5 +699,5 @@
 - [x] Habits in Daily Log: replace checkbox list with 7-day interactive sparkline (habit name + 7 dots for current week, today's dot toggles completion, past dots read-only)
 
 ## Measurement Card & Date Format (Jun 2026)
-- [ ] Change date format throughout app from DD/MM/YYYY to "13 May 2026" style
-- [ ] Replace expand/collapse measurement rows with flat cards showing all data (waist, hips, 4 skinfold site avgs, total, all with deltas vs previous entry)
+- [x] Change date format throughout app from DD/MM/YYYY to "13 May 2026" style
+- [x] Replace expand/collapse measurement rows with flat cards showing all data (waist, hips, 4 skinfold site avgs, total, all with deltas vs previous entry)

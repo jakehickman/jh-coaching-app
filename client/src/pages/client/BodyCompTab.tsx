@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useState, useMemo } from "react";
 import { useViewAs } from "@/contexts/ViewAsContext";
 import { toast } from "sonner";
-import { ChevronDown, ChevronUp, Trash2, Plus, TrendingDown, TrendingUp } from "lucide-react";
+import { Trash2, Plus, TrendingDown, TrendingUp } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -65,8 +65,8 @@ function SkinfoldInput({
   );
 }
 
-// ─── HistoryRow ────────────────────────────────────────────────────────────────
-function HistoryRow({
+// ─── HistoryCard ────────────────────────────────────────────────────────────────
+function HistoryCard({
   entry,
   prevEntry,
   onDelete,
@@ -77,8 +77,6 @@ function HistoryRow({
   onDelete: () => void;
   readOnly: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
-
   const umbAvg = avg([entry.umbilical1, entry.umbilical2, entry.umbilical3, entry.umbilical4, entry.umbilical5]);
   const supAvg = avg([entry.suprailiac1, entry.suprailiac2, entry.suprailiac3, entry.suprailiac4, entry.suprailiac5]);
   const calfAvg = avg([entry.calf1, entry.calf2, entry.calf3, entry.calf4, entry.calf5]);
@@ -88,7 +86,6 @@ function HistoryRow({
       ? Math.round((umbAvg + supAvg + calfAvg + thighAvg) * 10) / 10
       : null;
 
-  // Deltas vs previous entry
   const prevUmbAvg = prevEntry ? avg([prevEntry.umbilical1, prevEntry.umbilical2, prevEntry.umbilical3, prevEntry.umbilical4, prevEntry.umbilical5]) : null;
   const prevSupAvg = prevEntry ? avg([prevEntry.suprailiac1, prevEntry.suprailiac2, prevEntry.suprailiac3, prevEntry.suprailiac4, prevEntry.suprailiac5]) : null;
   const prevCalfAvg = prevEntry ? avg([prevEntry.calf1, prevEntry.calf2, prevEntry.calf3, prevEntry.calf4, prevEntry.calf5]) : null;
@@ -97,124 +94,91 @@ function HistoryRow({
     ? Math.round((prevUmbAvg + prevSupAvg + prevCalfAvg + prevThighAvg) * 10) / 10
     : null;
 
-  const waistDelta = delta(entry.waist, prevEntry?.waist ?? null, "cm", true);
-  const hipsDelta = delta(entry.hips, prevEntry?.hips ?? null, "cm", true);
-  const totalDelta = delta(totalAvg, prevTotalAvg, "mm", true);
+  function DeltaBadge({ curr, prev, unit, lowerIsBetter = true }: { curr: number | null; prev: number | null; unit: string; lowerIsBetter?: boolean }) {
+    const d = delta(curr, prev, unit, lowerIsBetter);
+    if (!d) return null;
+    return (
+      <span className={`text-xs font-medium ml-1 ${d.good ? "text-primary" : "text-amber-400"}`}>
+        {d.label}
+      </span>
+    );
+  }
 
   return (
-    <div className="border-b border-border last:border-0">
-      {/* Collapsed row */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setExpanded((v) => !v)}
-        onKeyDown={(e) => e.key === "Enter" && setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/30 transition-colors cursor-pointer"
-      >
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground mb-1">{fmtDate(entry.measureDate)}</p>
-          <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-            {entry.waist != null && (
-              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                Waist {entry.waist} cm
-                {waistDelta && (
-                  <span className={`font-medium ${waistDelta.good ? "text-primary" : "text-amber-400"}`}>
-                    {waistDelta.label}
-                  </span>
-                )}
-              </span>
-            )}
-            {entry.hips != null && (
-              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                Hips {entry.hips} cm
-                {hipsDelta && (
-                  <span className={`font-medium ${hipsDelta.good ? "text-primary" : "text-amber-400"}`}>
-                    {hipsDelta.label}
-                  </span>
-                )}
-              </span>
-            )}
-            {totalAvg != null && (
-              <span className="text-[11px] text-primary font-medium flex items-center gap-1">
-                Skinfolds {totalAvg} mm
-                {totalDelta && (
-                  <span className={totalDelta.good ? "text-primary" : "text-amber-400"}>
-                    {totalDelta.label}
-                  </span>
-                )}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 ml-2">
-          {!readOnly && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
-          {expanded ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          )}
-        </div>
+    <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+      {/* Header: date + delete */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-foreground">{fmtDate(entry.measureDate)}</p>
+        {!readOnly && (
+          <button
+            onClick={onDelete}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
 
-      {/* Expanded detail */}
-      {expanded && (
-        <div className="px-4 pb-4 bg-muted/20 border-t border-border">
-          {/* Circumferences */}
-          {(entry.waist != null || entry.hips != null) && (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-3 pb-3 border-b border-border">
-              {entry.waist != null && (
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist</p>
-                  <p className="text-sm font-semibold text-foreground">{entry.waist} cm</p>
-                </div>
-              )}
-              {entry.hips != null && (
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Hips</p>
-                  <p className="text-sm font-semibold text-foreground">{entry.hips} cm</p>
-                </div>
-              )}
+      {/* Circumferences */}
+      {(entry.waist != null || entry.hips != null) && (
+        <div className="grid grid-cols-2 gap-3 pb-3 border-b border-border">
+          {entry.waist != null && (
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist</p>
+              <p className="text-sm font-semibold text-foreground">
+                {entry.waist} cm
+                <DeltaBadge curr={entry.waist} prev={prevEntry?.waist ?? null} unit="cm" lowerIsBetter />
+              </p>
             </div>
           )}
+          {entry.hips != null && (
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Hips</p>
+              <p className="text-sm font-semibold text-foreground">
+                {entry.hips} cm
+                <DeltaBadge curr={entry.hips} prev={prevEntry?.hips ?? null} unit="cm" lowerIsBetter />
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
-          {/* Skinfolds — site name + avg only */}
-          <div className="pt-3 space-y-2">
+      {/* Skinfolds grid */}
+      {(umbAvg != null || supAvg != null || calfAvg != null || thighAvg != null) && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "Umbilical", a: umbAvg },
-              { label: "Suprailiac", a: supAvg },
-              { label: "Calf", a: calfAvg },
-              { label: "Thigh", a: thighAvg },
-            ].map(({ label, a }) => {
+              { label: "Umbilical", a: umbAvg, prevA: prevUmbAvg },
+              { label: "Suprailiac", a: supAvg, prevA: prevSupAvg },
+              { label: "Calf", a: calfAvg, prevA: prevCalfAvg },
+              { label: "Thigh", a: thighAvg, prevA: prevThighAvg },
+            ].map(({ label, a, prevA }) => {
               if (a == null) return null;
               return (
-                <div key={label} className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{label}</span>
-                  <span className="text-xs font-semibold text-foreground">{a} mm</span>
+                <div key={label}>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {a} mm
+                    <DeltaBadge curr={a} prev={prevA} unit="mm" lowerIsBetter />
+                  </p>
                 </div>
               );
             })}
-            {totalAvg != null && (
-              <div className="flex items-center justify-between pt-2 border-t border-border mt-1">
-                <span className="text-xs font-medium text-foreground">Total</span>
-                <span className="text-sm font-bold text-primary">{totalAvg} mm</span>
-              </div>
-            )}
           </div>
-
-          {entry.notes && (
-            <p className="mt-3 text-xs text-muted-foreground italic">{entry.notes}</p>
+          {totalAvg != null && (
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Skinfolds</span>
+              <span className="text-sm font-bold text-primary">
+                {totalAvg} mm
+                <DeltaBadge curr={totalAvg} prev={prevTotalAvg} unit="mm" lowerIsBetter />
+              </span>
+            </div>
           )}
         </div>
+      )}
+
+      {entry.notes && (
+        <p className="text-xs text-muted-foreground italic border-t border-border pt-2">{entry.notes}</p>
       )}
     </div>
   );
@@ -506,9 +470,9 @@ export default function BodyCompTab() {
             <p className="text-sm text-muted-foreground">No measurements logged yet</p>
           </div>
         ) : (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="space-y-3">
             {(entries as any[]).map((entry: any, idx: number) => (
-              <HistoryRow
+              <HistoryCard
                 key={entry.id}
                 entry={entry}
                 prevEntry={(entries as any[])[idx + 1] ?? null}
