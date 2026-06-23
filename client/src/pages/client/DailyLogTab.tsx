@@ -178,6 +178,18 @@ function HabitsCard({ date, weekDays }: { date: string; weekDays: string[] }) {
     <div>
       <SectionLabel>Habits</SectionLabel>
       <Card className="p-0 overflow-hidden">
+        {/* Day letter header — shown once above all habits */}
+        <div className="px-4 pt-3 pb-1 flex gap-1.5">
+          {/* spacer to align with habit name column — empty, just pushes dots into position */}
+          {weekDays.map((iso, idx) => (
+            <div key={iso} className="flex-1 flex justify-center">
+              <span className={`text-[10px] font-semibold ${
+                iso === date ? 'text-primary' : iso === today ? 'text-primary/70' : 'text-muted-foreground'
+              }`}>{dayLetters[idx]}</span>
+            </div>
+          ))}
+        </div>
+
         {habits.map((h: any, habitIdx: number) => {
           return (
             <div
@@ -187,9 +199,9 @@ function HabitsCard({ date, weekDays }: { date: string; weekDays: string[] }) {
               {/* Habit name */}
               <p className="text-sm font-medium text-foreground">{h.name}</p>
 
-              {/* Dots row — day letters only on first habit */}
+              {/* Dots row */}
               <div className="flex gap-1.5">
-                {weekDays.map((iso, idx) => {
+                {weekDays.map((iso) => {
                   const key = `${h.id}:${iso}`;
                   const serverDone = completions.some(
                     (c: any) => c.habitId === h.id && normDate(c.completedDate) === iso
@@ -200,14 +212,7 @@ function HabitsCard({ date, weekDays }: { date: string; weekDays: string[] }) {
                   const canToggle = !viewAsUserId && !isFuture;
 
                   return (
-                    <div key={iso} className="flex flex-col items-center gap-1 flex-1">
-                      {/* Day letter — only on first habit row */}
-                      {habitIdx === 0 && (
-                        <span className={`text-[10px] font-semibold ${
-                          isSelected ? 'text-primary' : iso === today ? 'text-primary/70' : 'text-muted-foreground'
-                        }`}>{dayLetters[idx]}</span>
-                      )}
-                      {/* Dot */}
+                    <div key={iso} className="flex-1 flex justify-center">
                       <button
                         onClick={() => canToggle && toggleMutation.mutate({ habitId: h.id, date: iso })}
                         disabled={!canToggle || toggleMutation.isPending}
