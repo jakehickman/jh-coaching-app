@@ -106,15 +106,13 @@ function WeekSummaryPanel({
               <p className="text-[10px] text-muted-foreground">{fmtShort(iso)}</p>
             </div>
 
-            {/* Content — training badge only if logged */}
+            {/* Content — always show training/rest badge for valid days */}
             <div className="flex-1 flex items-center gap-2 flex-wrap">
-              {hasData ? (
+              {!isFuture && !isPast && (
                 <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
                   trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                 }`}>{sessionLabel}</span>
-              ) : !isFuture && !isPast ? (
-                <span className="text-xs text-amber-500/80 font-medium">Missing</span>
-              ) : null}
+              )}
             </div>
 
             {/* Weight */}
