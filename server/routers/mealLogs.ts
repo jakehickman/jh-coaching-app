@@ -277,6 +277,22 @@ export const mealLogsRouter = router({
       return computeInsights(logs, input.days);
     }),
 
+  // ── Client: list dates that have meals (for calendar dots) ─────────────
+  listDatesWithMeals: protectedProcedure
+    .input(z.object({ month: z.string() })) // "YYYY-MM"
+    .query(async ({ ctx, input }) => {
+      const [year, mon] = input.month.split("-").map(Number);
+      const from = new Date(year, mon - 1, 1);
+      const to = new Date(year, mon, 0, 23, 59, 59, 999);
+      const logs = await getMealLogsForUser(ctx.user.id, from, to);
+      const dates = new Set<string>();
+      for (const log of logs) {
+        const d = new Date(log.loggedAt);
+        dates.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+      }
+      return Array.from(dates);
+    }),
+
   // ── Coach: list all meals for a client ───────────────────────────────────
   listForClient: adminProcedure
     .input(z.object({ userId: z.number().int().positive() }))

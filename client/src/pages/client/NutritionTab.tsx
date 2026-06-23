@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -811,6 +811,112 @@ function TodayScreen() {
   );
 }
 
+// ─── Mini Calendar ───────────────────────────────────────────────────────────
+
+function MiniCalendar({
+  selectedDate,
+  onSelect,
+  datesWithMeals,
+  onMonthChange,
+}: {
+  selectedDate: Date;
+  onSelect: (d: Date) => void;
+  datesWithMeals: Set<string>;
+  onMonthChange: (month: string) => void;
+}) {
+  const [viewMonth, setViewMonth] = useState(() => {
+    const d = new Date(selectedDate);
+    d.setDate(1);
+    return d;
+  });
+
+  const today = new Date();
+  const todayStr = toLocalDateStr(today);
+
+  const year = viewMonth.getFullYear();
+  const month = viewMonth.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startOffset = (firstDay + 6) % 7; // Mon=0
+  const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+
+  function prevMonth() {
+    const next = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1);
+    setViewMonth(next);
+    onMonthChange(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`);
+  }
+  function nextMonth() {
+    const now = new Date();
+    const next = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1);
+    if (next <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+      setViewMonth(next);
+      onMonthChange(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`);
+    }
+  }
+
+  const canGoNext = (() => {
+    const next = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1);
+    const now = new Date();
+    return next <= new Date(now.getFullYear(), now.getMonth(), 1);
+  })();
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <button onClick={prevMonth} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary">
+          <ChevronLeft size={18} />
+        </button>
+        <p className="text-sm font-semibold text-foreground">
+          {viewMonth.toLocaleDateString("en-AU", { month: "long", year: "numeric" })}
+        </p>
+        <button
+          onClick={nextMonth}
+          disabled={!canGoNext}
+          className={cn("p-1.5 rounded-lg transition-colors", canGoNext ? "text-muted-foreground hover:text-foreground hover:bg-secondary" : "text-muted-foreground/20 cursor-not-allowed")}
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 mb-1">
+        {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => (
+          <div key={d} className="text-center text-xs text-muted-foreground/60 font-medium py-1">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-y-0.5">
+        {Array.from({ length: totalCells }, (_, i) => {
+          const dayNum = i - startOffset + 1;
+          if (dayNum < 1 || dayNum > daysInMonth) return <div key={i} />;
+          const cellDate = new Date(year, month, dayNum);
+          const cellStr = toLocalDateStr(cellDate);
+          const isSelected = cellStr === toLocalDateStr(selectedDate);
+          const isT = cellStr === todayStr;
+          const hasMeals = datesWithMeals.has(cellStr);
+          const isFuture = cellDate > today;
+          return (
+            <button
+              key={i}
+              disabled={isFuture}
+              onClick={() => onSelect(cellDate)}
+              className={cn(
+                "relative flex flex-col items-center justify-center h-9 rounded-lg text-sm transition-all",
+                isFuture ? "text-muted-foreground/20 cursor-not-allowed" :
+                isSelected ? "bg-primary text-primary-foreground font-bold" :
+                isT ? "border border-primary text-primary font-semibold" :
+                "text-foreground hover:bg-secondary"
+              )}
+            >
+              {dayNum}
+              {hasMeals && !isSelected && (
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary/70" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── History Screen ───────────────────────────────────────────────────────────
 
 function HistoryScreen() {
@@ -824,6 +930,13 @@ function HistoryScreen() {
   const dateStr = toLocalDateStr(selectedDate);
   const { data: meals = [], refetch } = trpc.mealLogs.listByDay.useQuery({ date: dateStr });
 
+  const [calMonth, setCalMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const { data: monthDates = [] } = trpc.mealLogs.listDatesWithMeals.useQuery({ month: calMonth });
+  const datesWithMeals = useMemo(() => new Set(monthDates as string[]), [monthDates]);
+
   const deleteMutation = trpc.mealLogs.delete.useMutation({
     onSuccess: () => { refetch(); setDeleteConfirm(null); },
     onError: (e) => toast.error(e.message),
@@ -832,37 +945,15 @@ function HistoryScreen() {
   const dayMeals = (meals as any[]).filter((m) => toLocalDateStr(new Date(m.loggedAt)) === dateStr)
     .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
 
-  const isToday = dateStr === toLocalDateStr(new Date());
-
-  function prevDay() {
-    setSelectedDate((d) => { const n = new Date(d); n.setDate(n.getDate() - 1); return n; });
-  }
-  function nextDay() {
-    if (isToday) return;
-    setSelectedDate((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; });
-  }
-
   return (
     <div className="space-y-4">
-      {/* Day navigation */}
-      <div className="flex items-center justify-between">
-        <button onClick={prevDay} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
-          <ChevronLeft size={20} />
-        </button>
-        <div className="text-center">
-          <p className="text-sm font-semibold text-foreground">
-            {selectedDate.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
-          </p>
-          {!isToday && (
-            <button onClick={() => setSelectedDate(new Date())} className="text-xs text-primary hover:underline mt-0.5">
-              Back to today
-            </button>
-          )}
-        </div>
-        <button onClick={nextDay} className={cn("p-2 transition-colors", isToday ? "text-muted-foreground/30 cursor-not-allowed" : "text-muted-foreground hover:text-foreground")}>
-          <ChevronRight size={20} />
-        </button>
-      </div>
+      {/* Calendar */}
+      <MiniCalendar
+        selectedDate={selectedDate}
+        onSelect={setSelectedDate}
+        datesWithMeals={datesWithMeals}
+        onMonthChange={setCalMonth}
+      />
 
       {/* Meal list */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -1065,15 +1156,15 @@ function DistributionChart({
   );
 }
 
-// ─── Combined Nutrition Tab ───────────────────────────────────────────────────
+/// ─── Combined Nutrition Tab ─────────────────────────────────────────────────
 
-type NutritionSub = "today" | "history" | "insights";
+type NutritionSub = "today" | "history";
 
 export function CombinedNutritionTab({ defaultSub = "today" }: { defaultSub?: NutritionSub }) {
   const [sub, setSub] = useState<NutritionSub>(() => {
     try {
       const stored = sessionStorage.getItem("nutritionTab:sub") as NutritionSub | null;
-      return stored ?? defaultSub;
+      return (stored === "today" || stored === "history") ? stored : defaultSub;
     } catch { return defaultSub; }
   });
 
@@ -1084,7 +1175,7 @@ export function CombinedNutritionTab({ defaultSub = "today" }: { defaultSub?: Nu
   return (
     <div>
       <div className="flex gap-1 mb-6 bg-secondary rounded-lg p-1">
-        {(["today", "history", "insights"] as const).map((s) => (
+        {(["today", "history"] as const).map((s) => (
           <button
             key={s}
             onClick={() => setSub(s)}
@@ -1093,13 +1184,12 @@ export function CombinedNutritionTab({ defaultSub = "today" }: { defaultSub?: Nu
               sub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            {s === "today" ? "Today" : s === "history" ? "History" : "Insights"}
+            {s === "today" ? "Today" : "History"}
           </button>
         ))}
       </div>
       {sub === "today" && <TodayScreen />}
       {sub === "history" && <HistoryScreen />}
-      {sub === "insights" && <InsightsScreen />}
     </div>
   );
 }
