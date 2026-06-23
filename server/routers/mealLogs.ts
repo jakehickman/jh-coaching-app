@@ -176,13 +176,19 @@ export const mealLogsRouter = router({
 
   // ── Client: rate fullness after eating ───────────────────────────────────
   rateFullness: protectedProcedure
-    .input(z.object({ id: z.number().int().positive(), fullnessRating: z.number().int().min(1).max(10) }))
+    .input(z.object({
+      id: z.number().int().positive(),
+      fullnessRating: z.number().int().min(1).max(10),
+      notes: z.string().nullable().optional(),
+    }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const updateData: Record<string, unknown> = { fullnessRating: input.fullnessRating };
+      if (input.notes !== undefined) updateData.notes = input.notes;
       await db
         .update(mealLogs)
-        .set({ fullnessRating: input.fullnessRating })
+        .set(updateData as any)
         .where(and(eq(mealLogs.id, input.id), eq(mealLogs.userId, ctx.user.id)));
       return { ok: true };
     }),

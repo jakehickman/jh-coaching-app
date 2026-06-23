@@ -14,6 +14,7 @@ import {
   Trash2,
   UtensilsCrossed,
   Cookie,
+  ZoomIn,
 } from "lucide-react";
 import {
   Sheet,
@@ -37,7 +38,7 @@ const SCALE: { label: string; desc: string }[] = [
   { label: "Hungry", desc: "empty, definitely hungry" },
   { label: "Mild hunger", desc: "starting to feel empty, could eat" },
   { label: "Neutral", desc: "neither hungry nor full" },
-  { label: "Satisfied", desc: "starting to feel full, could stop here" },
+  { label: "Satisfied", desc: "satisfied and feeling light" },
   { label: "Full", desc: "comfortably full, feeling good" },
   { label: "Overfull", desc: "ate a bit too much, slightly uncomfortable" },
   { label: "Stuffed", desc: "very full, bloated and uncomfortable" },
@@ -69,18 +70,16 @@ function formatDate(d: Date) {
   return d.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" });
 }
 
+function formatDateTimeDisplay(d: Date) {
+  const dateStr = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "long" });
+  return { date: dateStr, time: formatTime(d) };
+}
+
 function toLocalDateStr(d: Date) {
   const y = d.getFullYear();
   const m = (d.getMonth() + 1).toString().padStart(2, "0");
   const day = d.getDate().toString().padStart(2, "0");
   return `${y}-${m}-${day}`;
-}
-
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
 }
 
 function timeAgo(d: Date) {
@@ -136,6 +135,50 @@ function ScaleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   );
 }
 
+// ─── Photo Lightbox ───────────────────────────────────────────────────────────
+
+function PhotoLightbox({ photos, initialIndex, onClose }: { photos: string[]; initialIndex: number; onClose: () => void }) {
+  const [idx, setIdx] = useState(initialIndex);
+  return (
+    <div
+      className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 text-white/80 hover:text-white p-2"
+      >
+        <X size={24} />
+      </button>
+      <img
+        src={photos[idx]}
+        alt="Meal photo"
+        className="max-w-full max-h-[80vh] object-contain rounded-xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+      {photos.length > 1 && (
+        <div className="flex items-center gap-4 mt-4" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => setIdx((i) => Math.max(0, i - 1))}
+            disabled={idx === 0}
+            className="p-2 text-white/60 hover:text-white disabled:opacity-20"
+          >
+            <ChevronLeft size={28} />
+          </button>
+          <span className="text-white/60 text-sm">{idx + 1} / {photos.length}</span>
+          <button
+            onClick={() => setIdx((i) => Math.min(photos.length - 1, i + 1))}
+            disabled={idx === photos.length - 1}
+            className="p-2 text-white/60 hover:text-white disabled:opacity-20"
+          >
+            <ChevronRight size={28} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Rating Stepper ───────────────────────────────────────────────────────────
 
 function RatingPicker({
@@ -143,11 +186,13 @@ function RatingPicker({
   onChange,
   type,
   onOpenScale,
+  showLabel = true,
 }: {
   value: number | null;
   onChange: (v: number) => void;
   type: "hunger" | "fullness";
   onOpenScale?: () => void;
+  showLabel?: boolean;
 }) {
   const idealFn = type === "hunger" ? isIdealHunger : isIdealFullness;
   const current = value ?? 5;
@@ -159,28 +204,17 @@ function RatingPicker({
 
   return (
     <div className="space-y-3">
-      {/* Label row */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-          {type === "hunger" ? "Hunger before eating" : "How full are you now?"}
-        </p>
-        {onOpenScale && (
-          <button onClick={onOpenScale} className="text-muted-foreground hover:text-foreground transition-colors">
-            <HelpCircle size={16} />
-          </button>
-        )}
-      </div>
       {/* Stepper */}
       <div className="flex items-center justify-between gap-4">
         <button
           onClick={decrement}
           disabled={current <= 1}
-          className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-2xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all"
+          className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-3xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all"
         >
           −
         </button>
         <div className="flex-1 text-center">
-          <p className={cn("text-6xl font-bold leading-none", isIdeal ? "text-green-400" : "text-foreground")}>
+          <p className={cn("text-7xl font-bold leading-none", isIdeal ? "text-green-400" : "text-foreground")}>
             {current}
           </p>
           <p className={cn("text-sm mt-2 font-medium", isIdeal ? "text-green-400" : "text-muted-foreground")}>
@@ -190,7 +224,7 @@ function RatingPicker({
         <button
           onClick={increment}
           disabled={current >= 10}
-          className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-2xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all"
+          className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-3xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all"
         >
           +
         </button>
@@ -214,6 +248,82 @@ function RatingPicker({
         </div>
         <span className="text-xs text-muted-foreground">10</span>
       </div>
+      {/* Info icon row */}
+      {onOpenScale && (
+        <div className="flex justify-end">
+          <button onClick={onOpenScale} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <HelpCircle size={14} />
+            <span>Scale reference</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Date/Time Picker Modal ───────────────────────────────────────────────────
+
+function DateTimePicker({
+  value,
+  onChange,
+  onClose,
+}: {
+  value: Date;
+  onChange: (d: Date) => void;
+  onClose: () => void;
+}) {
+  const [date, setDate] = useState(toLocalDateStr(value));
+  const [time, setTime] = useState(() => {
+    const h = value.getHours().toString().padStart(2, "0");
+    const m = value.getMinutes().toString().padStart(2, "0");
+    return `${h}:${m}`;
+  });
+
+  function handleSave() {
+    const [h, m] = time.split(":").map(Number);
+    const d = new Date(date + "T00:00:00");
+    d.setHours(h, m, 0, 0);
+    onChange(d);
+    onClose();
+  }
+
+  const todayStr = toLocalDateStr(new Date());
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60" onClick={onClose}>
+      <div
+        className="w-full max-w-sm bg-card rounded-t-2xl px-4 pt-5 pb-8 space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold text-foreground">When did you eat?</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-1.5">Date</label>
+            <input
+              type="date"
+              value={date}
+              max={todayStr}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-1.5">Time</label>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+        </div>
+        <Button className="w-full" onClick={handleSave}>Done</Button>
+      </div>
     </div>
   );
 }
@@ -233,12 +343,18 @@ function LogSheet({
   const [hunger, setHunger] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [portion, setPortion] = useState<"small" | "medium" | "large" | null>(null);
-  const [notes, setNotes] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoData, setPhotoData] = useState<{ base64: string; mimeType: string } | null>(null);
   const [scaleOpen, setScaleOpen] = useState(false);
+  const [loggedAt, setLoggedAt] = useState<Date>(() => new Date());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset loggedAt to now each time sheet opens
+  useEffect(() => {
+    if (open) setLoggedAt(new Date());
+  }, [open]);
 
   const logMutation = trpc.mealLogs.log.useMutation({
     onSuccess: () => { onSaved(); onClose(); },
@@ -250,10 +366,10 @@ function LogSheet({
     setHunger(null);
     setName("");
     setPortion(null);
-    setNotes("");
     setPhotoPreview(null);
     setPhotoData(null);
     setScaleOpen(false);
+    setLoggedAt(new Date());
   }
 
   function handleClose() { reset(); onClose(); }
@@ -266,7 +382,7 @@ function LogSheet({
 
   function handleSave() {
     logMutation.mutate({
-      loggedAt: Date.now(),
+      loggedAt: loggedAt.getTime(),
       mealType,
       name: name || undefined,
       imageBase64: photoData?.base64,
@@ -274,9 +390,10 @@ function LogSheet({
       portionSize: portion ?? undefined,
       hungerRating: mealType === "meal" ? (hunger ?? undefined) : undefined,
       isOffPlan: false,
-      notes: notes || undefined,
     });
   }
+
+  const { date: dateDisplay, time: timeDisplay } = formatDateTimeDisplay(loggedAt);
 
   if (!open) return null;
 
@@ -292,6 +409,54 @@ function LogSheet({
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5">
+
+        {/* When did you eat? */}
+        <div
+          className="flex items-center justify-between bg-secondary rounded-xl px-4 py-3 cursor-pointer hover:bg-secondary/80 transition-colors"
+          onClick={() => setDatePickerOpen(true)}
+        >
+          <div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">When did you eat?</p>
+            <p className="text-sm font-medium text-foreground">{dateDisplay}</p>
+            <p className="text-xs text-muted-foreground">{timeDisplay}</p>
+          </div>
+          <span className="text-xs text-primary font-semibold">Edit</span>
+        </div>
+
+        {/* Photo */}
+        <div>
+          {photoPreview ? (
+            <div className="relative">
+              <img src={photoPreview} alt="Meal" className="w-full h-52 object-cover rounded-xl" />
+              <button
+                onClick={() => { setPhotoPreview(null); setPhotoData(null); }}
+                className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5"
+              >
+                <X size={14} className="text-white" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 py-5 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
+              >
+                <Camera size={18} /> Camera
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 py-5 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
+              >
+                <ImageIcon size={18} /> Gallery
+              </button>
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
+            </div>
+          )}
+        </div>
+
         {/* Meal / Treat toggle */}
         <div className="flex gap-2 p-1 bg-secondary rounded-xl">
           {(["meal", "treat"] as const).map((t) => (
@@ -310,7 +475,10 @@ function LogSheet({
 
         {/* Hunger scale — meals only */}
         {mealType === "meal" && (
-          <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Hunger before eating</p>
+            <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
+          </div>
         )}
 
         {/* Portion — treats only */}
@@ -340,56 +508,16 @@ function LogSheet({
           </div>
         )}
 
-        {/* Photo */}
-        <div>
-          {photoPreview ? (
-            <div className="relative">
-              <img src={photoPreview} alt="Meal" className="w-full h-52 object-cover rounded-xl" />
-              <button
-                onClick={() => { setPhotoPreview(null); setPhotoData(null); }}
-                className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5"
-              >
-                <X size={14} className="text-white" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={() => cameraInputRef.current?.click()}
-                className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
-              >
-                <Camera size={16} /> Camera
-              </button>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
-              >
-                <ImageIcon size={16} /> Gallery
-              </button>
-              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
-            </div>
-          )}
+        {/* Description */}
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Description</p>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="What are you eating?"
+            className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
         </div>
-
-        {/* Name */}
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="What are you eating?"
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-        />
-
-        {/* Notes */}
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes"
-          rows={3}
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-        />
       </div>
 
       {/* Sticky footer */}
@@ -400,6 +528,13 @@ function LogSheet({
       </div>
 
       <ScaleModal open={scaleOpen} onClose={() => setScaleOpen(false)} />
+      {datePickerOpen && (
+        <DateTimePicker
+          value={loggedAt}
+          onChange={setLoggedAt}
+          onClose={() => setDatePickerOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -418,6 +553,8 @@ function FullnessSheet({
   onSaved: () => void;
 }) {
   const [fullness, setFullness] = useState<number | null>(null);
+  const [notes, setNotes] = useState("");
+  const [scaleOpen, setScaleOpen] = useState(false);
 
   const rateMutation = trpc.mealLogs.rateFullness.useMutation({
     onSuccess: () => { onSaved(); onClose(); },
@@ -426,28 +563,41 @@ function FullnessSheet({
 
   function handleClose() {
     setFullness(null);
+    setNotes("");
     onClose();
   }
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
       <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-8" hideCloseButton>
-        <SheetHeader className="flex flex-row items-center justify-between mb-6">
+        <SheetHeader className="flex flex-row items-center justify-between mb-2">
           <SheetTitle>How are you feeling?</SheetTitle>
           <button onClick={handleClose} className="text-muted-foreground hover:text-foreground p-1">
             <X size={20} />
           </button>
         </SheetHeader>
-        <div className="space-y-6">
-          <RatingPicker value={fullness} onChange={setFullness} type="fullness" />
+        <p className="text-sm text-muted-foreground mb-5">Rate your fullness from 1–10.</p>
+        <div className="space-y-5">
+          <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Notes</p>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Anything to add?"
+              rows={2}
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            />
+          </div>
           <Button
             className="w-full"
             disabled={fullness == null || rateMutation.isPending || mealId == null}
-            onClick={() => mealId != null && fullness != null && rateMutation.mutate({ id: mealId, fullnessRating: fullness })}
+            onClick={() => mealId != null && fullness != null && rateMutation.mutate({ id: mealId, fullnessRating: fullness, notes: notes || null })}
           >
             {rateMutation.isPending ? "Saving..." : "Save"}
           </Button>
         </div>
+        <ScaleModal open={scaleOpen} onClose={() => setScaleOpen(false)} />
       </SheetContent>
     </Sheet>
   );
@@ -473,6 +623,7 @@ function EditSheet({
   const [notes, setNotes] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoData, setPhotoData] = useState<{ base64: string; mimeType: string } | null>(null);
+  const [scaleOpen, setScaleOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -553,12 +704,16 @@ function EditSheet({
             />
           </div>
 
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="What are you eating?"
-            className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
+          {/* Description */}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Description</p>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="What are you eating?"
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
 
           {meal?.mealType === "treat" && (
             <div>
@@ -582,29 +737,33 @@ function EditSheet({
 
           {meal?.mealType === "meal" && (
             <>
-              <div>
-                <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wide">Hunger before</p>
-                <RatingPicker value={hunger} onChange={setHunger} type="hunger" />
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Hunger before</p>
+                <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wide">Fullness after</p>
-                <RatingPicker value={fullness} onChange={setFullness} type="fullness" />
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Fullness after</p>
+                <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
               </div>
             </>
           )}
 
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Notes"
-            rows={2}
-            className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-          />
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Notes</p>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Anything to add?"
+              rows={2}
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            />
+          </div>
 
           <Button className="w-full" onClick={handleSave} disabled={editMutation.isPending}>
             {editMutation.isPending ? "Saving..." : "Save changes"}
           </Button>
         </div>
+        <ScaleModal open={scaleOpen} onClose={() => setScaleOpen(false)} />
       </SheetContent>
     </Sheet>
   );
@@ -623,68 +782,78 @@ function MealRow({
   onDelete: (m: any) => void;
   onRateFullness: (m: any) => void;
 }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const time = formatTime(new Date(meal.loggedAt));
   const isMeal = meal.mealType === "meal";
   const h = meal.hungerRating;
   const f = meal.fullnessRating;
-  const ideal = isIdealZone(h, f);
 
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-border last:border-0">
-      {/* Thumbnail */}
-      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-secondary flex items-center justify-center">
-        {meal.photoUrl ? (
-          <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
-        ) : isMeal ? (
-          <UtensilsCrossed size={22} className="text-muted-foreground/50" />
-        ) : (
-          <Cookie size={22} className="text-muted-foreground/50" />
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-xs text-muted-foreground">{time}</span>
-            {false && (
-              <span className="hidden">Off Plan</span>
+    <>
+      <div className="flex items-center gap-3 py-3 border-b border-border last:border-0">
+        {/* Thumbnail */}
+        <div
+          className={cn("w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-secondary flex items-center justify-center", meal.photoUrl && "cursor-pointer relative group")}
+          onClick={() => meal.photoUrl && setLightboxOpen(true)}
+        >
+          {meal.photoUrl ? (
+            <>
+              <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                <ZoomIn size={16} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </>
+          ) : isMeal ? (
+            <UtensilsCrossed size={22} className="text-muted-foreground/50" />
+          ) : (
+            <Cookie size={22} className="text-muted-foreground/50" />
           )}
         </div>
-        {meal.name && <p className="text-sm font-medium text-foreground truncate">{meal.name}</p>}
-        {meal.portionSize && <p className="text-xs text-muted-foreground capitalize">{meal.portionSize} portion</p>}
-        {isMeal ? (
-          <div className="flex items-center gap-2 mt-0.5">
-            {h != null ? (
-              <span className={cn("text-xs font-semibold", ratingColor(h, "hunger"))}>H{h}</span>
-            ) : null}
-            {h != null && <span className="text-muted-foreground text-xs">·</span>}
-            {f != null ? (
-              <span className={cn("text-xs font-semibold", ratingColor(f, "fullness"))}>F{f}</span>
-            ) : (
-              <button
-                onClick={() => onRateFullness(meal)}
-                className="text-xs text-primary underline underline-offset-2"
-              >
-                Rate fullness
-              </button>
-            )}
-            {ideal && <span className="text-[10px] text-green-400 font-medium">Ideal zone</span>}
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-xs text-muted-foreground">{time}</span>
           </div>
-        ) : (
-          <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">Treat</span>
-        )}
+          {meal.name && <p className="text-sm font-medium text-foreground truncate">{meal.name}</p>}
+          {meal.portionSize && <p className="text-xs text-muted-foreground capitalize">{meal.portionSize} portion</p>}
+          {isMeal ? (
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              {h != null ? (
+                <span className={cn("text-xs font-semibold", ratingColor(h, "hunger"))}>H{h}</span>
+              ) : null}
+              {h != null && <span className="text-muted-foreground text-xs">·</span>}
+              {f != null ? (
+                <span className={cn("text-xs font-semibold", ratingColor(f, "fullness"))}>F{f}</span>
+              ) : (
+                <button
+                  onClick={() => onRateFullness(meal)}
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-colors"
+                >
+                  Rate fullness
+                </button>
+              )}
+            </div>
+          ) : (
+            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">Treat</span>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button onClick={() => onEdit(meal)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+            <Pencil size={15} />
+          </button>
+          <button onClick={() => onDelete(meal)} className="p-2 text-muted-foreground hover:text-red-400 transition-colors">
+            <Trash2 size={15} />
+          </button>
+        </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 shrink-0">
-        <button onClick={() => onEdit(meal)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
-          <Pencil size={15} />
-        </button>
-        <button onClick={() => onDelete(meal)} className="p-2 text-muted-foreground hover:text-red-400 transition-colors">
-          <Trash2 size={15} />
-        </button>
-      </div>
-    </div>
+      {lightboxOpen && meal.photoUrl && (
+        <PhotoLightbox photos={[meal.photoUrl]} initialIndex={0} onClose={() => setLightboxOpen(false)} />
+      )}
+    </>
   );
 }
 
@@ -697,7 +866,6 @@ function TodayScreen() {
   const [editOpen, setEditOpen] = useState(false);
   const [editMeal, setEditMeal] = useState<any | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<any | null>(null);
-  const [scaleOpen, setScaleOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState<number | null>(null);
 
   const todayStr = toLocalDateStr(new Date());
@@ -711,7 +879,6 @@ function TodayScreen() {
     onError: (e) => toast.error(e.message),
   });
 
-  // Filter to today's meals only (server returns ±1 day window)
   const todayMeals = (meals as any[]).filter((m) => {
     const d = new Date(m.loggedAt);
     return toLocalDateStr(d) === todayStr;
@@ -740,7 +907,7 @@ function TodayScreen() {
       {bannerMeal && (
         <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-primary/10 border border-primary/30 rounded-xl text-sm">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-muted-foreground shrink-0">
+            <span className="text-muted-foreground shrink-0 truncate">
               {bannerMeal.name || "Meal"} · {formatTime(new Date(bannerMeal.loggedAt))}
             </span>
             <span className="text-xs text-muted-foreground shrink-0">{timeAgo(new Date(bannerMeal.loggedAt))}</span>
@@ -748,7 +915,7 @@ function TodayScreen() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => { setFullnessMealId(bannerMeal.id); setFullnessOpen(true); }}
-              className="text-primary text-xs font-semibold hover:underline"
+              className="text-xs font-semibold px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
             >
               Rate fullness
             </button>
@@ -758,17 +925,6 @@ function TodayScreen() {
           </div>
         </div>
       )}
-
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-muted-foreground text-sm">{greeting()}</p>
-          <p className="text-lg font-bold text-foreground">{formatDate(new Date())}</p>
-        </div>
-        <button onClick={() => setScaleOpen(true)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
-          <HelpCircle size={18} />
-        </button>
-      </div>
 
       {/* Stat chips */}
       <div className="flex gap-2">
@@ -827,7 +983,6 @@ function TodayScreen() {
         onClose={() => { setEditOpen(false); setEditMeal(null); }}
         onSaved={() => refetch()}
       />
-      <ScaleModal open={scaleOpen} onClose={() => setScaleOpen(false)} />
 
       {/* Delete confirm */}
       <Dialog open={!!deleteConfirm} onOpenChange={(v) => !v && setDeleteConfirm(null)}>
@@ -997,10 +1152,16 @@ function HistoryScreen() {
         onMonthChange={setCalMonth}
       />
 
+      {/* Selected day label */}
+      <p className="text-xs text-muted-foreground font-medium px-1">
+        {formatDate(selectedDate)}
+      </p>
+
       {/* Meal list */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         {dayMeals.length === 0 ? (
-          <div className="py-12 text-center">
+          <div className="py-12 text-center flex flex-col items-center gap-2">
+            <UtensilsCrossed size={32} className="text-muted-foreground/30 mb-1" />
             <p className="text-muted-foreground text-sm">No meals logged on this day</p>
           </div>
         ) : (

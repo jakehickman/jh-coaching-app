@@ -2,6 +2,8 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import {
   BookOpen,
   Salad,
@@ -16,8 +18,121 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link, useLocation, useSearch } from "wouter";
+
+// ─── Global fullness reminder ─────────────────────────────────────────────────
+
+function toLocalDateStr(d: Date) {
+  const y = d.getFullYear();
+  const m = (d.getMonth() + 1).toString().padStart(2, "0");
+  const day = d.getDate().toString().padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function useUnratedMeal() {
+  const todayStr = toLocalDateStr(new Date());
+  const { data: meals = [] } = trpc.mealLogs.listByDay.useQuery(
+    { date: todayStr },
+    { refetchInterval: 60_000 }
+  );
+  const now = Date.now();
+  const unrated = (meals as any[])
+    .filter((m) => {
+      if (m.mealType !== "meal" || m.fullnessRating != null) return false;
+      const age = now - new Date(m.loggedAt).getTime();
+      return age > 0 && age < 2 * 60 * 60 * 1000;
+    })
+    .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
+  return unrated[0] ?? null;
+}
+
+// ─── Inline FullnessSheet for global banner ────────────────────────────────────────────────────
+
+const SCALE_LABELS = [
+  "Ravenous", "Very hungry", "Hungry", "Mild hunger", "Neutral",
+  "Satisfied", "Full", "Overfull", "Stuffed", "Painfully full",
+];
+
+function GlobalFullnessSheet({
+  open, mealId, onClose, onSaved,
+}: {
+  open: boolean;
+  mealId: number | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [fullness, setFullness] = useState<number | null>(null);
+  const [notes, setNotes] = useState("");
+
+  const rateMutation = trpc.mealLogs.rateFullness.useMutation({
+    onSuccess: () => { onSaved(); onClose(); setFullness(null); setNotes(""); },
+    onError: (e: any) => console.error(e.message),
+  });
+
+  function handleClose() { setFullness(null); setNotes(""); onClose(); }
+
+  const current = fullness ?? 5;
+  const isIdeal = current >= 6 && current <= 7;
+
+  return (
+    <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
+      <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-8" hideCloseButton>
+        <SheetHeader className="flex flex-row items-center justify-between mb-2">
+          <SheetTitle>How are you feeling?</SheetTitle>
+          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground p-1">
+            <X size={20} />
+          </button>
+        </SheetHeader>
+        <p className="text-sm text-muted-foreground mb-5">Rate your fullness from 1–10.</p>
+        <div className="space-y-5">
+          {/* Stepper */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <button onClick={() => setFullness(Math.max(1, current - 1))} disabled={current <= 1}
+                className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-3xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all">
+                −
+              </button>
+              <div className="flex-1 text-center">
+                <p className={cn("text-7xl font-bold leading-none", isIdeal ? "text-green-400" : "text-foreground")}>{current}</p>
+                <p className={cn("text-sm mt-2 font-medium", isIdeal ? "text-green-400" : "text-muted-foreground")}>{SCALE_LABELS[current - 1]}</p>
+              </div>
+              <button onClick={() => setFullness(Math.min(10, current + 1))} disabled={current >= 10}
+                className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-3xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all">
+                +
+              </button>
+            </div>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-xs text-muted-foreground">1</span>
+              <div className="flex-1 flex gap-1 justify-between px-1">
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                  <button key={n} onClick={() => setFullness(n)}
+                    className={cn("flex-1 h-1.5 rounded-full transition-all",
+                      n <= current ? (n >= 6 && n <= 7 ? "bg-green-400" : "bg-foreground/40") : "bg-secondary"
+                    )}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">10</span>
+            </div>
+          </div>
+          {/* Notes */}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Notes</p>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
+              placeholder="Anything to add?" rows={2}
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            />
+          </div>
+          <Button className="w-full" disabled={fullness == null || rateMutation.isPending || mealId == null}
+            onClick={() => mealId != null && fullness != null && rateMutation.mutate({ id: mealId, fullnessRating: fullness, notes: notes || null })}>
+            {rateMutation.isPending ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 interface NavItem {
   href: string;
@@ -258,6 +373,34 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
   }
 
   // ─── Client layout: mobile-first with scrollable bottom navigation ────────────
+  return <ClientLayout mode={mode} user={user} logout={logout} location={location} viewAsParams={viewAsParams} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen}>{children}</ClientLayout>;
+}
+
+function ClientLayout({
+  children, user, logout, location, viewAsParams,
+}: {
+  children: React.ReactNode;
+  mode: string;
+  user: any;
+  logout: any;
+  location: string;
+  viewAsParams: string;
+  mobileOpen: boolean;
+  setMobileOpen: (v: boolean) => void;
+}) {
+  const unratedMeal = useUnratedMeal();
+  const [dismissedId, setDismissedId] = useState<number | null>(null);
+  const [fullnessOpen, setFullnessOpen] = useState(false);
+  const [fullnessMealId, setFullnessMealId] = useState<number | null>(null);
+  const utils = trpc.useUtils();
+
+  const showBanner = unratedMeal != null && dismissedId !== unratedMeal.id;
+
+  function handleRateFullness() {
+    setFullnessMealId(unratedMeal!.id);
+    setFullnessOpen(true);
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top header — minimal, just branding + user initial */}
@@ -283,10 +426,36 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
         </div>
       </header>
 
+      {/* Global fullness reminder banner */}
+      {showBanner && (
+        <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-primary/10 border-b border-primary/20 text-sm">
+          <span className="text-muted-foreground text-xs truncate">How full are you after your last meal?</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleRateFullness}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              Rate fullness
+            </button>
+            <button onClick={() => setDismissedId(unratedMeal!.id)} className="text-muted-foreground hover:text-foreground">
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main content — padded at bottom to clear bottom nav */}
       <main className="flex-1 px-4 pt-5 pb-24 max-w-2xl w-full mx-auto">
         {children}
       </main>
+
+      {/* Fullness rating sheet */}
+      <GlobalFullnessSheet
+        open={fullnessOpen}
+        mealId={fullnessMealId}
+        onClose={() => { setFullnessOpen(false); setFullnessMealId(null); }}
+        onSaved={() => { utils.mealLogs.listByDay.invalidate(); setDismissedId(null); }}
+      />
 
       {/* Bottom navigation bar — 4 evenly-spaced tabs */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 bg-sidebar border-t border-border">
