@@ -402,61 +402,63 @@ function InsightsView({ clientId }: { clientId: number }) {
         </div>
       )}
 
-      {/* Top row: ideal zone card + 3 stat cards */}
-      <div className="flex gap-3 items-stretch">
-        {/* Stat cards */}
-        <div className="bg-card border border-border rounded-xl p-4 min-w-[110px]">
-          <p className="text-2xl font-bold text-foreground">{insights.totalMeals}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Meals</p>
-          <p className="text-[10px] text-muted-foreground/60 mt-1">last {days}d</p>
+      {/* Top row: 3 stat cards + ideal zone card */}
+      <div className="grid grid-cols-4 gap-3">
+        <div className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between">
+          <p className="text-3xl font-bold text-foreground">{insights.totalMeals}</p>
+          <div>
+            <p className="text-xs text-muted-foreground mt-1">Meals</p>
+            <p className="text-[10px] text-muted-foreground/60 mt-0.5">last {days}d</p>
+          </div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4 min-w-[130px]">
-          <p className="text-2xl font-bold text-foreground">
+        <div className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between">
+          <p className="text-3xl font-bold text-foreground">
             {insights.avgHunger ?? "—"}
             {insights.avgHunger != null && (
               <DeltaArrow current={insights.avgHunger} previous={insights.prevAvgHunger} idealFn={isIdealHunger} />
             )}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">Avg Hunger</p>
-          {insights.prevAvgHunger != null && (
-            <p className="text-[10px] text-muted-foreground/60 mt-1">vs. {insights.prevAvgHunger} prev</p>
-          )}
+          <div>
+            <p className="text-xs text-muted-foreground mt-1">Avg Hunger</p>
+            {insights.prevAvgHunger != null && (
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5">vs. {insights.prevAvgHunger} prev</p>
+            )}
+          </div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4 min-w-[130px]">
-          <p className="text-2xl font-bold text-foreground">
+        <div className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between">
+          <p className="text-3xl font-bold text-foreground">
             {insights.avgFullness ?? "—"}
             {insights.avgFullness != null && (
               <DeltaArrow current={insights.avgFullness} previous={insights.prevAvgFullness} idealFn={isIdealFullness} />
             )}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">Avg Fullness</p>
-          {insights.prevAvgFullness != null && (
-            <p className="text-[10px] text-muted-foreground/60 mt-1">vs. {insights.prevAvgFullness} prev</p>
-          )}
+          <div>
+            <p className="text-xs text-muted-foreground mt-1">Avg Fullness</p>
+            {insights.prevAvgFullness != null && (
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5">vs. {insights.prevAvgFullness} prev</p>
+            )}
+          </div>
         </div>
-        {/* Ideal zone — right side */}
-        {insights.idealZonePct != null && (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 min-w-[200px] max-w-[280px]">
-            <p className="text-4xl font-bold text-green-400">{insights.idealZonePct}%</p>
-            <p className="text-sm text-muted-foreground mt-1">of rated meals in ideal zone</p>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground/70">
-              <span>Hunger 3–4 before eating</span>
-              <span>·</span>
-              <span>Fullness 6–7 after eating</span>
-              <span>·</span>
-              <span>last {days} days</span>
+        {insights.idealZonePct != null ? (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 flex flex-col justify-between">
+            <p className="text-3xl font-bold text-green-400">{insights.idealZonePct}%</p>
+            <div>
+              <p className="text-xs text-muted-foreground mt-1">Ideal zone</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5">Hunger 3–4 · Fullness 6–7</p>
             </div>
           </div>
+        ) : (
+          <div className="bg-card border border-border rounded-xl p-5" />
         )}
       </div>
 
       {/* Bottom 3-card row: scatter, treats, timing */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 items-stretch">
         {/* Scatter */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          <p className="text-sm font-semibold text-foreground">Hunger vs. Fullness</p>
+        <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+          <p className="text-sm font-semibold text-foreground shrink-0">Hunger vs. Fullness</p>
           {insights.scatter.length > 0 ? (
-            <div className="flex justify-center">
+            <div className="flex-1 flex items-center justify-center">
               <ScatterPlot scatter={insights.scatter} />
             </div>
           ) : (
