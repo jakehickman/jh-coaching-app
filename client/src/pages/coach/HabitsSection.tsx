@@ -258,24 +258,25 @@ export function ClientHabitsTab({ clientId }: { clientId: number }) {
     </div>
   );
 
+  const renderColumn = (title: string, list: any[]) => (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+      {list.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-10 text-muted-foreground border border-dashed border-border/50 rounded-xl">
+          <p className="text-xs">None in library yet</p>
+        </div>
+      ) : renderHabitList(list)}
+    </div>
+  );
+
   return (
-    <div className="mt-4 max-w-2xl mx-auto">
+    <div className="mt-4">
       {(allHabits as any[]).length === 0 ? (
         <p className="text-sm text-muted-foreground">No habits in the library yet. Add habits from the Habits page first.</p>
       ) : (
-        <div className="space-y-6">
-          {dailyHabits.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Daily Habits</p>
-              {renderHabitList(dailyHabits)}
-            </div>
-          )}
-          {mealHabits.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Per-Meal Habits</p>
-              {renderHabitList(mealHabits)}
-            </div>
-          )}
+        <div className="grid grid-cols-2 gap-8">
+          {renderColumn("Daily Habits", dailyHabits)}
+          {renderColumn("Per-Meal Habits", mealHabits)}
         </div>
       )}
     </div>

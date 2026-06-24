@@ -316,6 +316,150 @@ export const mealLogsRouter = router({
       return computeInsights(logs, input.days);
     }),
 
+  // ── Coach: calendar view — meals grouped by date for a given month ─────────
+  calendarForClient: adminProcedure
+    .input(z.object({
+      userId: z.number().int().positive(),
+      year: z.number().int(),
+      month: z.number().int().min(1).max(12),
+    }))
+    .query(async ({ input }) => {
+      const from = new Date(input.year, input.month - 1, 1);
+      const to = new Date(input.year, input.month, 0, 23, 59, 59, 999);
+      const logs = await getMealLogsForUser(input.userId, from, to);
+      const byDate: Record<string, { meals: any[]; hasOutOfRange: boolean; treatCount: number }> = {};
+      for (const log of logs) {
+        const d = log.loggedAt;
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (!byDate[key]) byDate[key] = { meals: [], hasOutOfRange: false, treatCount: 0 };
+        byDate[key].meals.push(log);
+        if (log.mealType === 'treat') byDate[key].treatCount++;
+        if (log.mealType === 'meal') {
+          const h = log.hungerRating; const f = log.fullnessRating;
+          if ((h != null && (h < 3 || h > 4)) || (f != null && (f < 6 || f > 7))) {
+            byDate[key].hasOutOfRange = true;
+          }
+        }
+      }
+      return byDate;
+    }),
+
+  // ── Coach: rich insights with scatter, treats-by-week, meal timing slots ──
+  richInsightsForClient: adminProcedure
+    .input(z.object({
+      userId: z.number().int().positive(),
+      days: z.number().int().min(7).max(90).default(30),
+    }))
+    .query(async ({ input }) => {
+      const now = new Date();
+      const curFrom = new Date(now.getTime() - input.days * 86400000);
+      const prevFrom = new Date(curFrom.getTime() - input.days * 86400000);
+      const curLogs = await getMealLogsForUser(input.userId, curFrom, now);
+      const prevLogs = await getMealLogsForUser(input.userId, prevFrom, curFrom);
+      const curMeals = curLogs.filter(l => l.mealType === 'meal');
+      const prevMeals = prevLogs.filter(l => l.mealType === 'meal');
+      // Top stats
+      const totalMeals = curMeals.length;
+      const avgHunger = avg(curMeals.map(m => m.hungerRating));
+      const avgFullness = avg(curMeals.map(m => m.fullnessRating));
+      const prevAvgHunger = avg(prevMeals.map(m => m.hungerRating));
+      const prevAvgFullness = avg(prevMeals.map(m => m.fullnessRating));
+      // Ideal zone
+      const mealsWithBoth = curMeals.filter(m => m.hungerRating != null && m.fullnessRating != null);
+      const idealCount = mealsWithBoth.filter(m =>
+        m.hungerRating! >= 3 && m.hungerRating! <= 4 &&
+        m.fullnessRating! >= 6 && m.fullnessRating! <= 7
+      ).length;
+      const idealZonePct = mealsWithBoth.length > 0
+        ? Math.round(idealCount / mealsWithBoth.length * 100) : null;
+      // Scatter data
+      const scatter = curMeals
+        .filter(m => m.hungerRating != null && m.fullnessRating != null)
+        .map(m => ({ h: m.hungerRating!, f: m.fullnessRating! }));
+      // Treats by week (last 5 complete weeks ending today)
+      const treatsByWeek: { weekStart: string; small: number; medium: number; large: number; total: number }[] = [];
+      for (let w = 4; w >= 0; w--) {
+        const wEnd = new Date(now);
+        wEnd.setDate(wEnd.getDate() - w * 7);
+        wEnd.setHours(23, 59, 59, 999);
+        const wStart = new Date(wEnd);
+        wStart.setDate(wStart.getDate() - 6);
+        wStart.setHours(0, 0, 0, 0);
+        const wTreats = curLogs.filter(l =>
+          l.mealType === 'treat' && l.loggedAt >= wStart && l.loggedAt <= wEnd
+        );
+        const ws = `${wStart.getFullYear()}-${String(wStart.getMonth()+1).padStart(2,'0')}-${String(wStart.getDate()).padStart(2,'0')}`;
+        treatsByWeek.push({
+          weekStart: ws,
+          small: wTreats.filter(t => t.portionSize === 'small').length,
+          medium: wTreats.filter(t => t.portionSize === 'medium').length,
+          large: wTreats.filter(t => t.portionSize === 'large').length,
+          total: wTreats.length,
+        });
+      }
+      // Meal timing slots
+      const mealOnly = curLogs.filter(l => l.mealType === 'meal');
+      const dayMap: Record<string, number[]> = {};
+      for (const m of mealOnly) {
+        const d = m.loggedAt;
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (!dayMap[key]) dayMap[key] = [];
+        dayMap[key].push(d.getHours() * 60 + d.getMinutes());
+      }
+      const dayCounts = Object.values(dayMap).map(t => t.length);
+      // Find mode
+      const countFreq: Record<number, number> = {};
+      dayCounts.forEach(c => { countFreq[c] = (countFreq[c] ?? 0) + 1; });
+      const modeCount = dayCounts.length > 0
+        ? parseInt(Object.entries(countFreq).sort((a,b) => b[1]-a[1])[0][0])
+        : 0;
+      // Slot anchors from days with exactly modeCount meals
+      const modeDays = Object.values(dayMap)
+        .filter(t => t.length === modeCount)
+        .map(t => t.slice().sort((a,b) => a-b));
+      const slots: { label: string; anchor: string; anchorMins: number; driftMin: number }[] = [];
+      if (modeDays.length >= 3 && modeCount > 0) {
+        for (let s = 0; s < modeCount; s++) {
+          const slotTimes = modeDays.map(d => d[s]);
+          const anchorMins = avg(slotTimes)!;
+          const drift = avg(slotTimes.map(t => Math.abs(t - anchorMins)))!;
+          const h = Math.floor(anchorMins / 60) % 24;
+          const m = Math.round(anchorMins % 60);
+          const ampm = h >= 12 ? 'pm' : 'am';
+          const h12 = h % 12 === 0 ? 12 : h % 12;
+          slots.push({ label: `Meal ${s+1}`, anchor: `${h12}:${String(m).padStart(2,'0')} ${ampm}`, anchorMins, driftMin: Math.round(drift) });
+        }
+      }
+      // Consistency score
+      let onTime = 0;
+      const totalForConsistency = mealOnly.length;
+      if (slots.length > 0) {
+        for (const m of mealOnly) {
+          const mins = m.loggedAt.getHours() * 60 + m.loggedAt.getMinutes();
+          const nearest = Math.min(...slots.map(s => Math.abs(mins - s.anchorMins)));
+          if (nearest <= 60) onTime++;
+        }
+      }
+      const consistencyScore = totalForConsistency > 0
+        ? Math.round(onTime / totalForConsistency * 100) : null;
+      return {
+        totalMeals,
+        avgHunger: avgHunger != null ? Math.round(avgHunger * 10) / 10 : null,
+        avgFullness: avgFullness != null ? Math.round(avgFullness * 10) / 10 : null,
+        prevAvgHunger: prevAvgHunger != null ? Math.round(prevAvgHunger * 10) / 10 : null,
+        prevAvgFullness: prevAvgFullness != null ? Math.round(prevAvgFullness * 10) / 10 : null,
+        idealZonePct,
+        idealCount,
+        mealsWithBothRatings: mealsWithBoth.length,
+        scatter,
+        treatsByWeek,
+        slots: slots.map(s => ({ label: s.label, anchor: s.anchor, driftMin: s.driftMin })),
+        consistencyScore,
+        totalForConsistency,
+        hasTimingData: slots.length > 0,
+      };
+    }),
+
   // ── Coach: weekly nutrition summary (for check-in cards) ─────────────────
   weeklySummaryForClient: adminProcedure
     .input(z.object({

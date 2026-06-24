@@ -785,3 +785,13 @@
 - [x] Add fast assignHabit/unassignHabit server procedures + optimistic updates to fix lag
 - [x] Global Habits library: two-column layout (Daily left, Per Meal right)
 - [x] Client Habits tab: constrained max-w-2xl centred column
+
+## Coach Nutrition Tab Rebuild (Jun 24)
+- [x] Server: nutrition insights procedures (stats, ideal zone %, scatter data, treats by week, meal timing)
+- [x] Coach Nutrition tab: monthly calendar meal log view with amber dot for out-of-range hunger/fullness
+- [x] Coach Nutrition tab: day detail panel showing meal list with hunger/fullness ratings
+- [x] Coach Nutrition Insights: 7d/30d toggle, top stats row (meals, avg hunger, avg fullness with delta arrows)
+- [x] Coach Nutrition Insights: ideal zone card (% meals with hunger 3-4 AND fullness 6-7)
+- [x] Coach Nutrition Insights: hunger vs fullness scatter plot (1-10 axes, ideal zone shaded, dot size by frequency)
+- [x] Coach Nutrition Insights: treats weekly stacked bar chart (4-5 week columns, small/medium/large colour segments)
+- [x] Coach Nutrition Insights: meal timing card (consistency score, slot anchors, drift per slot)
