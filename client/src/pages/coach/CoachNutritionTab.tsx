@@ -343,7 +343,9 @@ function TreatsChart({ treatsByWeek }: {
                 </>
               )}
             </div>
-            <span className="text-[9px] text-muted-foreground text-center leading-tight">{formatWeekStart(week.weekStart)}</span>
+            <span className="text-[9px] text-muted-foreground text-center leading-tight">
+              {new Date(week.weekStart + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+            </span>
           </div>
         );
       })}
@@ -400,20 +402,6 @@ function InsightsView({ clientId }: { clientId: number }) {
 
       {/* Top row: ideal zone card + 3 stat cards */}
       <div className="flex gap-3 items-stretch">
-        {/* Ideal zone */}
-        {insights.idealZonePct != null && (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 flex-1">
-            <p className="text-4xl font-bold text-green-400">{insights.idealZonePct}%</p>
-            <p className="text-sm text-muted-foreground mt-1">of rated meals in ideal zone</p>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground/70">
-              <span>Hunger 3–4 before eating</span>
-              <span>·</span>
-              <span>Fullness 6–7 after eating</span>
-              <span>·</span>
-              <span>last {days} days</span>
-            </div>
-          </div>
-        )}
         {/* Stat cards */}
         <div className="bg-card border border-border rounded-xl p-4 min-w-[110px]">
           <p className="text-2xl font-bold text-foreground">{insights.totalMeals}</p>
@@ -444,6 +432,20 @@ function InsightsView({ clientId }: { clientId: number }) {
             <p className="text-[10px] text-muted-foreground/60 mt-1">vs. {insights.prevAvgFullness} prev</p>
           )}
         </div>
+        {/* Ideal zone — right side */}
+        {insights.idealZonePct != null && (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 flex-1">
+            <p className="text-4xl font-bold text-green-400">{insights.idealZonePct}%</p>
+            <p className="text-sm text-muted-foreground mt-1">of rated meals in ideal zone</p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground/70">
+              <span>Hunger 3–4 before eating</span>
+              <span>·</span>
+              <span>Fullness 6–7 after eating</span>
+              <span>·</span>
+              <span>last {days} days</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom 3-card row: scatter, treats, timing */}

@@ -376,26 +376,49 @@ export const mealLogsRouter = router({
       const scatter = curMeals
         .filter(m => m.hungerRating != null && m.fullnessRating != null)
         .map(m => ({ h: m.hungerRating!, f: m.fullnessRating! }));
-      // Treats by week (last 5 complete weeks ending today)
+      // Treats: daily bars for 7d, weekly bars for 30d
       const treatsByWeek: { weekStart: string; small: number; medium: number; large: number; total: number }[] = [];
-      for (let w = 4; w >= 0; w--) {
-        const wEnd = new Date(now);
-        wEnd.setDate(wEnd.getDate() - w * 7);
-        wEnd.setHours(23, 59, 59, 999);
-        const wStart = new Date(wEnd);
-        wStart.setDate(wStart.getDate() - 6);
-        wStart.setHours(0, 0, 0, 0);
-        const wTreats = curLogs.filter(l =>
-          l.mealType === 'treat' && l.loggedAt >= wStart && l.loggedAt <= wEnd
-        );
-        const ws = `${wStart.getFullYear()}-${String(wStart.getMonth()+1).padStart(2,'0')}-${String(wStart.getDate()).padStart(2,'0')}`;
-        treatsByWeek.push({
-          weekStart: ws,
-          small: wTreats.filter(t => t.portionSize === 'small').length,
-          medium: wTreats.filter(t => t.portionSize === 'medium').length,
-          large: wTreats.filter(t => t.portionSize === 'large').length,
-          total: wTreats.length,
-        });
+      if (input.days === 7) {
+        // 7 daily bars, oldest first
+        for (let d = 6; d >= 0; d--) {
+          const dayStart = new Date(now);
+          dayStart.setDate(dayStart.getDate() - d);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setHours(23, 59, 59, 999);
+          const dTreats = curLogs.filter(l =>
+            l.mealType === 'treat' && l.loggedAt >= dayStart && l.loggedAt <= dayEnd
+          );
+          const ds = `${dayStart.getFullYear()}-${String(dayStart.getMonth()+1).padStart(2,'0')}-${String(dayStart.getDate()).padStart(2,'0')}`;
+          treatsByWeek.push({
+            weekStart: ds,
+            small: dTreats.filter(t => t.portionSize === 'small').length,
+            medium: dTreats.filter(t => t.portionSize === 'medium').length,
+            large: dTreats.filter(t => t.portionSize === 'large').length,
+            total: dTreats.length,
+          });
+        }
+      } else {
+        // 5 weekly bars ending today, oldest first
+        for (let w = 4; w >= 0; w--) {
+          const wEnd = new Date(now);
+          wEnd.setDate(wEnd.getDate() - w * 7);
+          wEnd.setHours(23, 59, 59, 999);
+          const wStart = new Date(wEnd);
+          wStart.setDate(wStart.getDate() - 6);
+          wStart.setHours(0, 0, 0, 0);
+          const wTreats = curLogs.filter(l =>
+            l.mealType === 'treat' && l.loggedAt >= wStart && l.loggedAt <= wEnd
+          );
+          const ws = `${wStart.getFullYear()}-${String(wStart.getMonth()+1).padStart(2,'0')}-${String(wStart.getDate()).padStart(2,'0')}`;
+          treatsByWeek.push({
+            weekStart: ws,
+            small: wTreats.filter(t => t.portionSize === 'small').length,
+            medium: wTreats.filter(t => t.portionSize === 'medium').length,
+            large: wTreats.filter(t => t.portionSize === 'large').length,
+            total: wTreats.length,
+          });
+        }
       }
       // Meal timing slots
       const mealOnly = curLogs.filter(l => l.mealType === 'meal');
