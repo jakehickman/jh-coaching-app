@@ -555,6 +555,26 @@ function FullnessSheet({
   const [fullness, setFullness] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [scaleOpen, setScaleOpen] = useState(false);
+  // Per-meal habits
+  const { data: mealHabits = [] } = trpc.habits.myMealHabits.useQuery();
+  const mealLogIds = useMemo(() => (mealId != null ? [mealId] : []), [mealId]);
+  const { data: existingCompletions = [], refetch: refetchCompletions } = trpc.habits.mealCompletions.useQuery(
+    { mealLogIds },
+    { enabled: mealId != null }
+  );
+  const [habitChecked, setHabitChecked] = useState<Record<number, boolean>>({});
+  const toggleHabitMut = trpc.habits.toggleMealCompletion.useMutation({
+    onSuccess: () => refetchCompletions(),
+  });
+
+  // Sync habit checked state from server when sheet opens
+  useEffect(() => {
+    if (open && mealId != null) {
+      const checked: Record<number, boolean> = {};
+      (existingCompletions as any[]).forEach((c: any) => { checked[c.habitId] = true; });
+      setHabitChecked(checked);
+    }
+  }, [open, mealId, existingCompletions]);
 
   const rateMutation = trpc.mealLogs.rateFullness.useMutation({
     onSuccess: () => { onSaved(); onClose(); },
@@ -564,7 +584,15 @@ function FullnessSheet({
   function handleClose() {
     setFullness(null);
     setNotes("");
+    setHabitChecked({});
     onClose();
+  }
+
+  function handleToggleHabit(habitId: number) {
+    if (mealId == null) return;
+    const newVal = !habitChecked[habitId];
+    setHabitChecked(prev => ({ ...prev, [habitId]: newVal }));
+    toggleHabitMut.mutate({ habitId, mealLogId: mealId });
   }
 
   return (
@@ -579,6 +607,33 @@ function FullnessSheet({
         <p className="text-sm text-muted-foreground mb-5">Rate your fullness from 1–10.</p>
         <div className="space-y-5">
           <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
+          {/* Per-meal habits */}
+          {(mealHabits as any[]).length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Meal Habits</p>
+              <div className="space-y-2">
+                {(mealHabits as any[]).map((h: any) => (
+                  <label key={h.id} className="flex items-center gap-3 cursor-pointer">
+                    <div
+                      onClick={() => handleToggleHabit(h.id)}
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        habitChecked[h.id]
+                          ? "bg-primary border-primary"
+                          : "border-border bg-secondary"
+                      }`}
+                    >
+                      {habitChecked[h.id] && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-sm text-foreground">{h.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Notes</p>
             <textarea

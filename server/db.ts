@@ -53,6 +53,16 @@ import {
   ClientQuestionOverride,
   inviteTokens,
   InviteToken,
+  habits,
+  habitAssignments,
+  habitCompletions,
+  mealHabitCompletions,
+  Habit,
+  InsertHabit,
+  HabitAssignment,
+  HabitCompletion,
+  MealHabitCompletion,
+  mealLogs,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1172,13 +1182,6 @@ export async function markOnboardingReviewed(id: number, reviewed: boolean) {
 }
 
 // ─── Habits ──────────────────────────────────────────────────────────────────
-import {
-  habits,
-  habitAssignments,
-  habitCompletions,
-  Habit,
-  InsertHabit,
-} from "../drizzle/schema";
 
 export async function listHabitsByCoach(coachId: number) {
   const db = await getDb();
@@ -1197,7 +1200,7 @@ export async function createHabit(data: Omit<InsertHabit, "id" | "createdAt" | "
   return result;
 }
 
-export async function updateHabit(id: number, coachId: number, data: Partial<Pick<Habit, "name" | "description" | "frequency" | "targetDays" | "startDate">>) {
+export async function updateHabit(id: number, coachId: number, data: Partial<Pick<Habit, "name" | "description" | "scope" | "frequency" | "targetDays" | "startDate">>) {
   const db = await getDb();
   if (!db) return;
   await db.update(habits).set(data).where(and(eq(habits.id, id), eq(habits.coachId, coachId)));
@@ -1247,6 +1250,22 @@ export async function listAssignedHabitsForClient(clientId: number) {
   return rows.map(r => ({ ...r.habit, assignedAt: r.assignment.assignedAt }));
 }
 
+export async function listAssignedPerMealHabitsForClient(clientId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({ habit: habits, assignment: habitAssignments })
+    .from(habitAssignments)
+    .innerJoin(habits, eq(habitAssignments.habitId, habits.id))
+    .where(and(
+      eq(habitAssignments.clientId, clientId),
+      eq(habitAssignments.active, true),
+      eq(habits.deleted, false),
+      eq(habits.scope, 'per_meal')
+    ));
+  return rows.map(r => ({ ...r.habit, assignedAt: r.assignment.assignedAt }));
+}
+
 export async function toggleHabitCompletion(habitId: number, clientId: number, completedDate: string): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
@@ -1269,6 +1288,93 @@ export async function getHabitCompletionsForClient(clientId: number, fromDate?: 
   const conditions = [eq(habitCompletions.clientId, clientId)];
   if (fromDate) conditions.push(gte(habitCompletions.completedDate, fromDate as any));
   return db.select().from(habitCompletions).where(and(...conditions));
+}
+
+// Per-meal habit completions
+export async function getMealHabitCompletions(clientId: number, mealLogIds: number[]) {
+  const db = await getDb();
+  if (!db) return [];
+  if (mealLogIds.length === 0) return [];
+  return db
+    .select()
+    .from(mealHabitCompletions)
+    .where(and(
+      eq(mealHabitCompletions.clientId, clientId),
+      sql`${mealHabitCompletions.mealLogId} IN (${sql.join(mealLogIds.map(id => sql`${id}`), sql`, `)})`
+    ));
+}
+
+export async function toggleMealHabitCompletion(habitId: number, clientId: number, mealLogId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const existing = await db
+    .select()
+    .from(mealHabitCompletions)
+    .where(and(
+      eq(mealHabitCompletions.habitId, habitId),
+      eq(mealHabitCompletions.clientId, clientId),
+      eq(mealHabitCompletions.mealLogId, mealLogId)
+    ));
+  if (existing.length > 0) {
+    await db.delete(mealHabitCompletions).where(and(
+      eq(mealHabitCompletions.habitId, habitId),
+      eq(mealHabitCompletions.clientId, clientId),
+      eq(mealHabitCompletions.mealLogId, mealLogId)
+    ));
+    return false;
+  } else {
+    await db.insert(mealHabitCompletions).values({ habitId, clientId, mealLogId });
+    return true;
+  }
+}
+
+export async function getMealHabitAdherence(clientId: number, fromDate?: string) {
+  // Returns: total meals (type='meal') in range, and per-habit completion counts
+  const db = await getDb();
+  if (!db) return { totalMeals: 0, habits: [] };
+  // Get all meal (not treat) entries for client in range
+  const mealConditions: any[] = [
+    eq(mealLogs.userId, clientId),
+    eq(mealLogs.mealType, 'meal'),
+  ];
+  if (fromDate) {
+    const fromTs = new Date(fromDate + 'T00:00:00Z');
+    mealConditions.push(gte(mealLogs.loggedAt, fromTs));
+  }
+  const meals = await db.select({ id: mealLogs.id }).from(mealLogs).where(and(...mealConditions));
+  const mealIds = meals.map(m => m.id);
+  const totalMeals = mealIds.length;
+  if (totalMeals === 0) return { totalMeals: 0, habits: [] };
+  // Get assigned per_meal habits for this client
+  const assignedHabits = await db
+    .select({ habit: habits, assignment: habitAssignments })
+    .from(habitAssignments)
+    .innerJoin(habits, eq(habitAssignments.habitId, habits.id))
+    .where(and(
+      eq(habitAssignments.clientId, clientId),
+      eq(habitAssignments.active, true),
+      eq(habits.deleted, false),
+      eq(habits.scope, 'per_meal')
+    ));
+  if (assignedHabits.length === 0) return { totalMeals, habits: [] };
+  // Count completions per habit within those meal IDs
+  const completionCounts = await db
+    .select({ habitId: mealHabitCompletions.habitId, count: sql<number>`count(*)` })
+    .from(mealHabitCompletions)
+    .where(and(
+      eq(mealHabitCompletions.clientId, clientId),
+      sql`${mealHabitCompletions.mealLogId} IN (${sql.join(mealIds.map(id => sql`${id}`), sql`, `)})`
+    ))
+    .groupBy(mealHabitCompletions.habitId);
+  const countMap = new Map(completionCounts.map(c => [c.habitId, Number(c.count)]));
+  return {
+    totalMeals,
+    habits: assignedHabits.map(({ habit, assignment }) => ({
+      ...habit,
+      assignedAt: assignment.assignedAt,
+      completedCount: countMap.get(habit.id) ?? 0,
+    })),
+  };
 }
 
 // ─── Check-in Submissions ────────────────────────────────────────────────────

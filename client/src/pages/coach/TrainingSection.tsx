@@ -1077,7 +1077,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
           )}
 
           {/* ── Two-column: sessions left, volume summary right ── */}
-          {viewMode === "list" && <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+          {viewMode === "list" && <div className="grid grid-cols-1 lg:grid-cols-[1fr_384px] gap-6 items-start">
             {/* Left: sessions + controls */}
             <div className="min-w-0 space-y-4">
               {/* Single flat DndContext handles both day reorder (day-N) and exercise drag (ex-D-E) */}

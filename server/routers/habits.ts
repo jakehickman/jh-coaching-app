@@ -9,6 +9,7 @@ export const habitsRouter = router({
     .input(z.object({
       name: z.string().min(1).max(128),
       description: z.string().optional(),
+      scope: z.enum(["daily", "per_meal"]).default("daily"),
       frequency: z.enum(["daily", "x_per_week"]),
       targetDays: z.number().int().min(1).max(7).optional(),
       startDate: z.string().optional(),
@@ -21,6 +22,7 @@ export const habitsRouter = router({
       id: z.number(),
       name: z.string().min(1).max(128).optional(),
       description: z.string().optional(),
+      scope: z.enum(["daily", "per_meal"]).optional(),
       frequency: z.enum(["daily", "x_per_week"]).optional(),
       targetDays: z.number().int().min(1).max(7).optional(),
       startDate: z.string().optional(),
@@ -59,4 +61,21 @@ export const habitsRouter = router({
   clientHabits: adminProcedure
     .input(z.object({ clientId: z.number() }))
     .query(({ input }) => db.listAssignedHabitsForClient(input.clientId)),
+  // Per-meal habit procedures
+  myMealHabits: protectedProcedure.query(({ ctx }) =>
+    db.listAssignedPerMealHabitsForClient(ctx.user.id)
+  ),
+  toggleMealCompletion: protectedProcedure
+    .input(z.object({ habitId: z.number(), mealLogId: z.number() }))
+    .mutation(({ ctx, input }) =>
+      db.toggleMealHabitCompletion(input.habitId, ctx.user.id, input.mealLogId)
+    ),
+  mealCompletions: protectedProcedure
+    .input(z.object({ mealLogIds: z.array(z.number()) }))
+    .query(({ ctx, input }) =>
+      db.getMealHabitCompletions(ctx.user.id, input.mealLogIds)
+    ),
+  clientMealAdherence: adminProcedure
+    .input(z.object({ clientId: z.number(), fromDate: z.string().optional() }))
+    .query(({ input }) => db.getMealHabitAdherence(input.clientId, input.fromDate)),
 });

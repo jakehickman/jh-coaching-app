@@ -766,3 +766,12 @@
 - [x] Training > Program: fix column headers to align with actual exercise row grid
 - [x] Training > Program: remove Program Change History panel
 - [x] Training > Cardio & Activity: remove Change History panel
+
+## Habit Assignment Fix + Per-Meal Habits (Jun 24)
+- [x] Schema: add `scope` enum (daily | per_meal) to habits table
+- [x] Schema: create meal_habit_completions table (id, habitId, clientId, mealLogId, createdAt)
+- [x] Server: procedures for per-meal habit completions (toggle, list by mealLogId)
+- [x] Coach UI: assign-to-clients multi-select on each habit in HabitsSection
+- [x] Coach UI: scope toggle (Daily / Per meal) on habit create/edit
+- [x] Client UI: per-meal habit checkboxes shown alongside fullness rating on meal entries
+- [x] Coach progress view: per-meal habit adherence panel (separate from daily habits)

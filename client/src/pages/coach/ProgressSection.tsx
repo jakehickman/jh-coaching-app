@@ -2449,7 +2449,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsList className="mb-4">
                 <TabsTrigger value="session-log">Session Log</TabsTrigger>
                 <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
-                <TabsTrigger value="program">Program</TabsTrigger>
+                <TabsTrigger value="program">Program Builder</TabsTrigger>
                 <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
               </TabsList>
               <TabsContent value="session-log">

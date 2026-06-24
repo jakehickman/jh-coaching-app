@@ -411,6 +411,7 @@ export const habits = mysqlTable("habits", {
   coachId: int("coachId").notNull(), // FK -> users.id (coach)
   name: varchar("name", { length: 128 }).notNull(),
   description: text("description"),
+  scope: mysqlEnum("scope", ["daily", "per_meal"]).notNull().default("daily"), // daily = once/day, per_meal = checked per meal entry
   frequency: mysqlEnum("frequency", ["daily", "x_per_week"]).notNull().default("daily"),
   targetDays: int("targetDays").default(7), // 1-7, used when frequency = x_per_week
   startDate: date("startDate"),
@@ -443,6 +444,18 @@ export const habitCompletions = mysqlTable("habit_completions", {
 });
 
 export type HabitCompletion = typeof habitCompletions.$inferSelect;
+
+// Meal habit completions — one row per meal entry per per_meal habit per client
+export const mealHabitCompletions = mysqlTable("meal_habit_completions", {
+  id: int("id").autoincrement().primaryKey(),
+  habitId: int("habitId").notNull(),    // FK -> habits.id (scope = per_meal)
+  clientId: int("clientId").notNull(),  // FK -> users.id (client)
+  mealLogId: int("mealLogId").notNull(), // FK -> meal_logs.id
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MealHabitCompletion = typeof mealHabitCompletions.$inferSelect;
+export type InsertMealHabitCompletion = typeof mealHabitCompletions.$inferInsert;
 
 // Frequency enum for execution accuracy questions
 export const FREQ_OPTIONS = ["never", "once_twice", "few_days", "most_days"] as const;
