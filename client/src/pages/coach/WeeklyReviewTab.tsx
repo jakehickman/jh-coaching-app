@@ -142,28 +142,7 @@ function WeekRow({ week, isExpanded, onToggle }: {
         </td>
       </tr>
 
-      {/* Expanded daily weigh-ins */}
-      {isExpanded && hasData && (week.weighIns ?? []).length > 0 && (
-        <tr className="border-b border-border/40 bg-muted/10">
-          <td colSpan={9} className="px-6 py-3">
-            <div className="max-w-xs">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Daily Weigh-ins</p>
-              <div className="space-y-0">
-                {[...(week.weighIns ?? [])].sort((a, b) => a.logDate.localeCompare(b.logDate)).map((wi) => {
-                  const d = new Date(wi.logDate + "T00:00:00");
-                  const label = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
-                  return (
-                    <div key={wi.logDate} className="flex items-center py-1 border-b border-border/30 last:border-0">
-                      <span className="text-xs text-muted-foreground flex-1">{label}</span>
-                      <span className="text-xs font-medium tabular-nums">{wi.weight.toFixed(1)} kg</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </td>
-        </tr>
-      )}
+
     </>
   );
 }

@@ -738,3 +738,9 @@
 - [x] Overview tab: add new Body Composition summary table (same 7-day periods, columns: Avg Weight + Δ%, Waist, Skinfold Total)
 - [x] Overview tab: section headers renamed to "Behaviour" and "Body Composition"
 - [x] Habits panel: redesigned from scratch — 4-week 10px dot grid, compact cards, no broken label row
+
+## Overview & Body Comp Tab Restructure (Jun 24)
+- [x] Move Body Comp summary table from Overview to Body Comp > Data tab (above measurement history)
+- [x] Rename "Behaviour" section label to "Weekly Summary" on Overview tab
+- [x] Remove weight from expanded detail rows in the weekly summary table
+- [x] Remove weight column from measurement history table (WeeklyBodyCompCards)

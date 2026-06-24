@@ -92,11 +92,9 @@ function MetricCell({
 function MeasurementRow({
   m,
   prev,
-  weightOnDay,
 }: {
   m: any;
   prev: any | null;
-  weightOnDay: number | null;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -133,13 +131,6 @@ function MeasurementRow({
           </div>
         </td>
 
-        {/* Weight on day */}
-        <td className="px-3 py-2.5 text-right">
-          <span className="text-xs tabular-nums text-foreground">
-            {weightOnDay != null ? `${weightOnDay.toFixed(1)} kg` : "—"}
-          </span>
-        </td>
-
         {/* Waist (value + delta) */}
         <td className="px-3 py-2.5 text-right">
           <MetricCell value={m.waist} unit=" cm" delta={waistDelta} invert decimals={1} />
@@ -166,7 +157,7 @@ function MeasurementRow({
       {/* Expanded skinfold detail */}
       {expanded && (
         <tr className="border-b border-border/40 bg-muted/10">
-          <td colSpan={6} className="px-6 py-3">
+          <td colSpan={5} className="px-6 py-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {hasSkinfolds && (
                 <>
@@ -241,25 +232,7 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
     { enabled: !!clientId, staleTime: 30_000 }
   );
 
-  // Fetch daily logs to get weight on measurement days
-  const { data: dailyLogs = [], isLoading: logsLoading } = trpc.dailyLog.listForClient.useQuery(
-    { userId: clientId, limit: 9999 },
-    { enabled: !!clientId, staleTime: 30_000 }
-  );
-
-  const isLoading = measLoading || logsLoading;
-
-  // Build weight-by-date map from daily logs
-  const weightByDate = (() => {
-    const map: Record<string, number> = {};
-    (dailyLogs as any[]).forEach((l: any) => {
-      if (l.weight != null) {
-        const d = toDateStr(l.logDate);
-        if (d) map[d] = l.weight as number;
-      }
-    });
-    return map;
-  })();
+  const isLoading = measLoading;
 
   if (isLoading) {
     return (
@@ -295,7 +268,6 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground min-w-[110px]">Date</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Weight</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Waist</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Hip</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Skinfold</th>
@@ -305,14 +277,11 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
             <tbody>
               {visible.map((m: any, idx: number) => {
                 const prev = sorted[idx + 1] ?? null;
-                const dateStr = toDateStr(m.measureDate);
-                const weightOnDay = weightByDate[dateStr] ?? null;
                 return (
                   <MeasurementRow
                     key={m.id}
                     m={m}
                     prev={prev}
-                    weightOnDay={weightOnDay}
                   />
                 );
               })}

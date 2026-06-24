@@ -2362,16 +2362,12 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </TabsList>
           </div>
 
-          {/* -- Overview: behaviour table, body comp table, habits -- */}
+          {/* -- Overview: weekly summary table + habits -- */}
           <TabsContent value="overview">
             <div className="space-y-8">
               <div>
-                <SectionLabel>Behaviour</SectionLabel>
+                <SectionLabel>Weekly Summary</SectionLabel>
                 <WeeklyReviewTab clientId={selectedUserId!} />
-              </div>
-              <div>
-                <SectionLabel>Body Composition</SectionLabel>
-                <BodyCompSummaryTable clientId={selectedUserId!} />
               </div>
               <CoachHabitsPanel clientId={selectedUserId!} />
             </div>
@@ -2387,6 +2383,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               </TabsList>
               <TabsContent value="data">
                 <div className="space-y-6">
+                  <BodyCompSummaryTable clientId={selectedUserId!} />
                   <WeeklyBodyCompCards clientId={selectedUserId!} />
                   <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
                 </div>
