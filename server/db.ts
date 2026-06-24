@@ -1238,6 +1238,24 @@ export async function setHabitAssignments(habitId: number, clientIds: number[]) 
   }
 }
 
+export async function addHabitAssignment(habitId: number, clientId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select().from(habitAssignments)
+    .where(and(eq(habitAssignments.habitId, habitId), eq(habitAssignments.clientId, clientId)));
+  if (existing.length > 0) {
+    await db.update(habitAssignments).set({ active: true })
+      .where(and(eq(habitAssignments.habitId, habitId), eq(habitAssignments.clientId, clientId)));
+  } else {
+    await db.insert(habitAssignments).values({ habitId, clientId, active: true });
+  }
+}
+export async function removeHabitAssignment(habitId: number, clientId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(habitAssignments).set({ active: false })
+    .where(and(eq(habitAssignments.habitId, habitId), eq(habitAssignments.clientId, clientId)));
+}
 export async function listAssignedHabitsForClient(clientId: number) {
   const db = await getDb();
   if (!db) return [];

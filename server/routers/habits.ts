@@ -78,4 +78,10 @@ export const habitsRouter = router({
   clientMealAdherence: adminProcedure
     .input(z.object({ clientId: z.number(), fromDate: z.string().optional() }))
     .query(({ input }) => db.getMealHabitAdherence(input.clientId, input.fromDate)),
+  assignHabit: adminProcedure
+    .input(z.object({ habitId: z.number(), clientId: z.number() }))
+    .mutation(({ input }) => db.addHabitAssignment(input.habitId, input.clientId)),
+  unassignHabit: adminProcedure
+    .input(z.object({ habitId: z.number(), clientId: z.number() }))
+    .mutation(({ input }) => db.removeHabitAssignment(input.habitId, input.clientId)),
 });

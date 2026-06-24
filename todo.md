@@ -779,3 +779,9 @@
 ## Client Profile Habits Tab (Jun 24)
 - [x] Add Habits tab to client profile (coach panel) showing all habits from library with assign/unassign toggles
 - [x] Remove assign-to-clients panel from habit library cards in HabitsSection
+
+## Habit UI Redesign (Jun 24)
+- [x] Remove adherence grids from client Habits tab (keep only in Overview)
+- [x] Add fast assignHabit/unassignHabit server procedures + optimistic updates to fix lag
+- [x] Global Habits library: two-column layout (Daily left, Per Meal right)
+- [x] Client Habits tab: constrained max-w-2xl centred column
