@@ -152,6 +152,7 @@ export const progressRouter = router({
         // Body composition
         const avgWeight = avg(periodLogs.map((l) => l.weight));
         const avgWaist = avg(periodMeas.map((m) => m.waist));
+        const avgHip = avg(periodMeas.map((m) => m.hips));
         const avgSkinfold = periodMeas.length > 0
           ? avg(periodMeas.map((m) => skinfoldTotal(m)))
           : null;
@@ -200,6 +201,7 @@ export const progressRouter = router({
           id: m.id,
           measureDate: typeof m.measureDate === "string" ? m.measureDate : toDateStr(m.measureDate as Date),
           waist: m.waist ?? null,
+          hips: m.hips ?? null,
           umbilical: avg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]),
           suprailiac: avg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]),
           calf: avg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]),
@@ -220,6 +222,7 @@ export const progressRouter = router({
           // Body composition
           avgWeight,
           avgWaist,
+          avgHip,
           avgSkinfold,
           // Expanded detail
           weighIns,

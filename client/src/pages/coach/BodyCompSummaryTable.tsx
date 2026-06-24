@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { SectionLabel } from "./shared";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface Props {
   clientId: number;
@@ -17,17 +18,23 @@ type Week = {
   avgWeight: number | null;
   avgWeightPct: number | null;
   avgWaist: number | null;
+  avgHip: number | null;
   avgSkinfold: number | null;
   weighIns?: { logDate: string; weight: number }[];
   measurementEntries?: {
     id: number;
     measureDate: string;
     waist: number | null;
+    hips: number | null;
     totalSkinfold: number | null;
     umbilical: number | null;
     suprailiac: number | null;
     calf: number | null;
     thigh: number | null;
+    umbilicalReadings: (number | null)[];
+    suprailiacReadings: (number | null)[];
+    calfReadings: (number | null)[];
+    thighReadings: (number | null)[];
   }[];
 };
 
@@ -46,9 +53,11 @@ function WeekRow({ week, isExpanded, onToggle }: {
   const hasData =
     week.avgWeight != null ||
     week.avgWaist != null ||
+    week.avgHip != null ||
     week.avgSkinfold != null ||
     (week.weighIns?.length ?? 0) > 0;
 
+  const weighInCount = week.weighIns?.length ?? 0;
   const weightDeltaPct = week.avgWeightPct;
 
   return (
@@ -64,7 +73,7 @@ function WeekRow({ week, isExpanded, onToggle }: {
         onClick={() => hasData && onToggle()}
       >
         {/* Week label */}
-        <td className="px-3 py-2.5 min-w-[140px]">
+        <td className="px-3 py-2.5 w-[20%]">
           <div className="flex items-center gap-1.5">
             {hasData ? (
               isExpanded
@@ -84,12 +93,19 @@ function WeekRow({ week, isExpanded, onToggle }: {
           </div>
         </td>
 
-        {/* Avg weight */}
-        <td className="px-3 py-2.5 text-right">
+        {/* Avg weight + delta + count */}
+        <td className="px-3 py-2.5 text-right w-[20%]">
           <div className="flex flex-col items-end gap-0.5">
-            <span className="text-xs font-semibold tabular-nums text-foreground">
-              {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
-            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xs font-semibold tabular-nums text-foreground">
+                {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
+              </span>
+              {weighInCount > 0 && (
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  ({weighInCount}d)
+                </span>
+              )}
+            </div>
             {weightDeltaPct != null && (
               <span className={`text-[10px] font-semibold ${
                 weightDeltaPct < 0 ? "text-green-400" : weightDeltaPct > 0 ? "text-red-400" : "text-muted-foreground"
@@ -101,14 +117,21 @@ function WeekRow({ week, isExpanded, onToggle }: {
         </td>
 
         {/* Avg waist */}
-        <td className="px-3 py-2.5 text-right">
+        <td className="px-3 py-2.5 text-right w-[20%]">
           <span className="text-xs tabular-nums text-foreground">
             {week.avgWaist != null ? `${fmt(week.avgWaist)} cm` : "—"}
           </span>
         </td>
 
+        {/* Avg hip */}
+        <td className="px-3 py-2.5 text-right w-[20%]">
+          <span className="text-xs tabular-nums text-foreground">
+            {week.avgHip != null ? `${fmt(week.avgHip)} cm` : "—"}
+          </span>
+        </td>
+
         {/* Avg skinfold total */}
-        <td className="px-3 py-2.5 text-right">
+        <td className="px-3 py-2.5 text-right w-[20%]">
           <span className="text-xs tabular-nums text-foreground">
             {week.avgSkinfold != null ? `${fmt(week.avgSkinfold)} mm` : "—"}
           </span>
@@ -118,7 +141,7 @@ function WeekRow({ week, isExpanded, onToggle }: {
       {/* Expanded detail */}
       {isExpanded && hasData && (
         <tr className="border-b border-border/40 bg-muted/10">
-          <td colSpan={4} className="px-6 py-3">
+          <td colSpan={5} className="px-6 py-3">
             <div className="flex flex-wrap gap-6">
               {/* Daily weigh-ins */}
               {(week.weighIns ?? []).length > 0 && (
@@ -141,19 +164,29 @@ function WeekRow({ week, isExpanded, onToggle }: {
 
               {/* Measurement entries */}
               {(week.measurementEntries ?? []).length > 0 && (
-                <div className="min-w-[220px]">
+                <div className="min-w-[260px]">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Measurements</p>
                   {(week.measurementEntries ?? []).map((m) => {
                     const d = new Date(m.measureDate + "T00:00:00");
                     const label = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+                    const umbReadings = m.umbilicalReadings?.filter((v: any) => v != null) ?? [];
+                    const supReadings = m.suprailiacReadings?.filter((v: any) => v != null) ?? [];
+                    const calfReadings = m.calfReadings?.filter((v: any) => v != null) ?? [];
+                    const thighReadings = m.thighReadings?.filter((v: any) => v != null) ?? [];
                     return (
-                      <div key={m.id} className="mb-2 last:mb-0">
-                        <p className="text-[10px] text-muted-foreground mb-1">{label}</p>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-0.5">
+                      <div key={m.id} className="mb-3 last:mb-0">
+                        <p className="text-[10px] font-semibold text-muted-foreground mb-1.5">{label}</p>
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-1">
                           {m.waist != null && (
                             <div className="flex justify-between">
                               <span className="text-[11px] text-muted-foreground">Waist</span>
                               <span className="text-[11px] font-medium tabular-nums">{m.waist.toFixed(1)} cm</span>
+                            </div>
+                          )}
+                          {m.hips != null && (
+                            <div className="flex justify-between">
+                              <span className="text-[11px] text-muted-foreground">Hip</span>
+                              <span className="text-[11px] font-medium tabular-nums">{m.hips.toFixed(1)} cm</span>
                             </div>
                           )}
                           {m.totalSkinfold != null && (
@@ -164,26 +197,62 @@ function WeekRow({ week, isExpanded, onToggle }: {
                           )}
                           {m.umbilical != null && (
                             <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">Umbilical</span>
-                              <span className="text-[11px] font-medium tabular-nums">{m.umbilical.toFixed(1)} mm</span>
+                              <span className="text-[11px] text-muted-foreground">
+                                Umbilical{umbReadings.length > 1 ? ` (avg)` : ""}
+                              </span>
+                              <span className="text-[11px] font-medium tabular-nums">
+                                {m.umbilical.toFixed(1)} mm
+                                {umbReadings.length > 1 && (
+                                  <span className="text-[10px] text-muted-foreground ml-1">
+                                    [{umbReadings.map((v: any) => v.toFixed(1)).join(", ")}]
+                                  </span>
+                                )}
+                              </span>
                             </div>
                           )}
                           {m.suprailiac != null && (
                             <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">Suprailiac</span>
-                              <span className="text-[11px] font-medium tabular-nums">{m.suprailiac.toFixed(1)} mm</span>
+                              <span className="text-[11px] text-muted-foreground">
+                                Suprailiac{supReadings.length > 1 ? ` (avg)` : ""}
+                              </span>
+                              <span className="text-[11px] font-medium tabular-nums">
+                                {m.suprailiac.toFixed(1)} mm
+                                {supReadings.length > 1 && (
+                                  <span className="text-[10px] text-muted-foreground ml-1">
+                                    [{supReadings.map((v: any) => v.toFixed(1)).join(", ")}]
+                                  </span>
+                                )}
+                              </span>
                             </div>
                           )}
                           {m.calf != null && (
                             <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">Calf</span>
-                              <span className="text-[11px] font-medium tabular-nums">{m.calf.toFixed(1)} mm</span>
+                              <span className="text-[11px] text-muted-foreground">
+                                Calf{calfReadings.length > 1 ? ` (avg)` : ""}
+                              </span>
+                              <span className="text-[11px] font-medium tabular-nums">
+                                {m.calf.toFixed(1)} mm
+                                {calfReadings.length > 1 && (
+                                  <span className="text-[10px] text-muted-foreground ml-1">
+                                    [{calfReadings.map((v: any) => v.toFixed(1)).join(", ")}]
+                                  </span>
+                                )}
+                              </span>
                             </div>
                           )}
                           {m.thigh != null && (
                             <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">Thigh</span>
-                              <span className="text-[11px] font-medium tabular-nums">{m.thigh.toFixed(1)} mm</span>
+                              <span className="text-[11px] text-muted-foreground">
+                                Thigh{thighReadings.length > 1 ? ` (avg)` : ""}
+                              </span>
+                              <span className="text-[11px] font-medium tabular-nums">
+                                {m.thigh.toFixed(1)} mm
+                                {thighReadings.length > 1 && (
+                                  <span className="text-[10px] text-muted-foreground ml-1">
+                                    [{thighReadings.map((v: any) => v.toFixed(1)).join(", ")}]
+                                  </span>
+                                )}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -243,16 +312,18 @@ export function BodyCompSummaryTable({ clientId }: Props) {
   const hasMore = weeks.length > DEFAULT_VISIBLE;
 
   return (
-    <div className="mt-2">
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div>
+      <SectionLabel>Weekly Body Composition</SectionLabel>
+      <div className="mt-2 bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground min-w-[140px]">Week</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Weight</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Waist</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Skinfold Total</th>
+                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">Week</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">Avg Weight</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">Waist</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">Hip</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">Skinfold</th>
               </tr>
             </thead>
             <tbody>

@@ -744,3 +744,13 @@
 - [x] Rename "Behaviour" section label to "Weekly Summary" on Overview tab
 - [x] Remove weight from expanded detail rows in the weekly summary table
 - [x] Remove weight column from measurement history table (WeeklyBodyCompCards)
+
+## Body Comp & Overview Refinements (Jun 24 round 2)
+- [x] Body Comp > Data: add section headers for the two tables ("Weekly Body Composition" and "Measurement History")
+- [x] Body Comp > Data summary table: add Hip column
+- [x] Body Comp > Data summary table: add weigh-in count indicator inline with avg weight (e.g. "72.4 kg (5d)")
+- [x] Body Comp > Data summary table: table-fixed with 20% per column for even spacing
+- [x] Body Comp > Data: graphs (MeasurementsTab chartOnly) already render above WeeklyBodyCompCards in ProgressSection
+- [x] Body Comp > Data measurement history: expanded row shows waist, hip, skinfold total, all 4 site avgs with individual readings in clean 2-col grid
+- [x] Overview tab: section header is "Weekly Summary" (inside WeeklyReviewTab component)
+- [x] Habit adherence: keeping current live design (user confirmed this is correct)
