@@ -113,16 +113,7 @@ function WeekRow({ week }: { week: Week }) {
           {stepsVal != null ? <>{stepsVal}{stepsGoal && <span className="text-muted-foreground">{stepsGoal}</span>}</> : "—"}
         </span>
       </td>
-      <td className="px-3 py-2.5 text-right">
-        <span className="text-xs tabular-nums text-foreground">
-          {week.mealLogCount != null && week.mealLogCount > 0 ? week.mealLogCount : "—"}
-        </span>
-      </td>
-      <td className="px-3 py-2.5 text-right">
-        <span className={`text-xs tabular-nums ${(week.mealLogTreats ?? 0) > 0 ? "text-amber-400" : "text-muted-foreground"}`}>
-          {week.mealLogTreats != null && week.mealLogTreats > 0 ? week.mealLogTreats : "—"}
-        </span>
-      </td>
+      {/* Sleep hours */}
       <td className="px-3 py-2.5 text-right">
         <span className="text-xs tabular-nums text-foreground">
           {week.avgSleepHours != null ? `${fmt(week.avgSleepHours)} h` : "—"}
@@ -328,8 +319,6 @@ export function WeeklyReviewTab({ clientId }: Props) {
                   <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[24%]">Week</th>
                   <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[9%]">Days</th>
                   <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Steps</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[9%]">Meals</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[9%]">Treats</th>
                   <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Sleep</th>
                   <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Quality</th>
                   <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Stress</th>

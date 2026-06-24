@@ -309,13 +309,14 @@ function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
   );
 }
 
-function TreatsChart({ treatsByWeek }: {
+function TreatsChart({ treatsByWeek, fillHeight }: {
   treatsByWeek: { weekStart: string; small: number; medium: number; large: number; total: number }[];
+  fillHeight?: boolean;
 }) {
   const maxTotal = Math.max(...treatsByWeek.map(w => w.total), 1);
 
   return (
-    <div className="flex items-end gap-2 h-32 w-full">
+    <div className={fillHeight ? "flex items-end gap-2 w-full h-full" : "flex items-end gap-2 h-32 w-full"}>
       {treatsByWeek.map((week) => {
         const totalH = (week.total / maxTotal) * 100;
         const smallH = week.total > 0 ? (week.small / week.total) * totalH : 0;
@@ -435,7 +436,7 @@ function InsightsView({ clientId }: { clientId: number }) {
         </div>
         {/* Ideal zone — right side */}
         {insights.idealZonePct != null && (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 flex-1">
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 min-w-[200px] max-w-[280px]">
             <p className="text-4xl font-bold text-green-400">{insights.idealZonePct}%</p>
             <p className="text-sm text-muted-foreground mt-1">of rated meals in ideal zone</p>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground/70">
@@ -464,20 +465,20 @@ function InsightsView({ clientId }: { clientId: number }) {
         </div>
 
         {/* Treats */}
-        <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
-          <div>
+        <div className="bg-card border border-border rounded-xl p-4 flex flex-col" style={{ minHeight: 0 }}>
+          <div className="mb-2 shrink-0">
             <p className="text-sm font-semibold text-foreground">Treats</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {insights.treatsByWeek.reduce((s, w) => s + w.total, 0)} total in last {days}d
             </p>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-3 shrink-0">
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-green-500/70 inline-block" />Small</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-amber-400/80 inline-block" />Medium</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-red-400/80 inline-block" />Large</span>
           </div>
-          <div className="flex-1 flex items-end">
-            <TreatsChart treatsByWeek={insights.treatsByWeek} />
+          <div className="h-36">
+            <TreatsChart treatsByWeek={insights.treatsByWeek} fillHeight />
           </div>
         </div>
 
@@ -496,7 +497,7 @@ function InsightsView({ clientId }: { clientId: number }) {
 
             {showTimingInfo && (
               <div className="bg-secondary/50 rounded-lg px-3 py-2 text-xs text-muted-foreground">
-                The consistency score is the percentage of all logged meals that fell within 1 hour of their nearest usual meal time. Slot anchors are the median time for each meal position across days with the most common number of meals. Treats are excluded.
+                The consistency score is the percentage of all logged meals that fell within 1 hour of their nearest usual meal time. Slot anchors are the median time for each naturally-occurring meal cluster across the period. Treats are excluded.
               </div>
             )}
 

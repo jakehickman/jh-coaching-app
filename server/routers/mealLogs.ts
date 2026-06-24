@@ -420,46 +420,62 @@ export const mealLogsRouter = router({
           });
         }
       }
-      // Meal timing slots
+      // Meal timing slots — largest-gap splitting
       const mealOnly = curLogs.filter(l => l.mealType === 'meal');
-      // Gap-based clustering: collect all meal times, sort, split on gaps > 90 min
-      // Each cluster with >= 3 meals becomes a slot anchor
       const allMealMins = mealOnly
         .map(m => m.loggedAt.getHours() * 60 + m.loggedAt.getMinutes())
         .filter(t => t >= 240) // exclude midnight-4am artefacts
         .sort((a, b) => a - b);
-      const GAP_THRESHOLD = 90; // minutes between clusters
-      const clusters: number[][] = [];
-      let cur: number[] = [];
-      for (const t of allMealMins) {
-        if (cur.length === 0 || t - cur[cur.length - 1] <= GAP_THRESHOLD) {
-          cur.push(t);
-        } else {
-          clusters.push(cur);
-          cur = [t];
-        }
+
+      // Determine how many slots to create: use mode of meals-per-day
+      const mealsByDay: Record<string, number> = {};
+      for (const m of mealOnly) {
+        const d = m.loggedAt;
+        const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        mealsByDay[k] = (mealsByDay[k] ?? 0) + 1;
       }
-      if (cur.length > 0) clusters.push(cur);
+      const dayCounts = Object.values(mealsByDay);
+      const countFreq: Record<number, number> = {};
+      for (const c of dayCounts) countFreq[c] = (countFreq[c] ?? 0) + 1;
+      const numSlots = dayCounts.length === 0 ? 0 :
+        Number(Object.entries(countFreq).sort((a, b) => b[1] - a[1] || Number(b[0]) - Number(a[0]))[0][0]);
+
+      // Split allMealMins into numSlots groups by finding the (numSlots-1) largest gaps
       const slots: { label: string; anchor: string; anchorMins: number; driftMin: number }[] = [];
-      const minDays = Math.max(3, Math.floor(Object.keys(
-        mealOnly.reduce((acc, m) => {
-          const d = m.loggedAt;
-          const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-          acc[k] = true; return acc;
-        }, {} as Record<string,boolean>)
-      ).length * 0.25));
-      clusters.forEach((cluster, i) => {
-        if (cluster.length < minDays) return; // skip sparse clusters
-        const sorted = cluster.slice().sort((a, b) => a - b);
-        const mid = Math.floor(sorted.length / 2);
-        const anchorMins = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-        const drift = avg(cluster.map(t => Math.abs(t - anchorMins)))!;
-        const h = Math.floor(anchorMins / 60) % 24;
-        const m = Math.round(anchorMins % 60);
-        const ampm = h >= 12 ? 'pm' : 'am';
-        const h12 = h % 12 === 0 ? 12 : h % 12;
-        slots.push({ label: `Meal ${i+1}`, anchor: `${h12}:${String(m).padStart(2,'0')} ${ampm}`, anchorMins, driftMin: Math.round(drift) });
-      });
+      if (numSlots > 0 && allMealMins.length >= numSlots) {
+        // Compute gaps between consecutive sorted times
+        const gaps: { idx: number; gap: number }[] = [];
+        for (let i = 1; i < allMealMins.length; i++) {
+          gaps.push({ idx: i, gap: allMealMins[i] - allMealMins[i - 1] });
+        }
+        // Pick the (numSlots-1) largest gaps as split points
+        const splitIdxs = gaps
+          .sort((a, b) => b.gap - a.gap)
+          .slice(0, numSlots - 1)
+          .map(g => g.idx)
+          .sort((a, b) => a - b);
+        // Build clusters from split points
+        const clusters: number[][] = [];
+        let start = 0;
+        for (const si of splitIdxs) {
+          clusters.push(allMealMins.slice(start, si));
+          start = si;
+        }
+        clusters.push(allMealMins.slice(start));
+        // Build slots from clusters
+        clusters.forEach((cluster, i) => {
+          if (cluster.length === 0) return;
+          const sorted = cluster.slice().sort((a, b) => a - b);
+          const mid = Math.floor(sorted.length / 2);
+          const anchorMins = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+          const drift = cluster.reduce((s, t) => s + Math.abs(t - anchorMins), 0) / cluster.length;
+          const h = Math.floor(anchorMins / 60) % 24;
+          const m = Math.round(anchorMins % 60);
+          const ampm = h >= 12 ? 'pm' : 'am';
+          const h12 = h % 12 === 0 ? 12 : h % 12;
+          slots.push({ label: `Meal ${i + 1}`, anchor: `${h12}:${String(m).padStart(2, '0')} ${ampm}`, anchorMins, driftMin: Math.round(drift) });
+        });
+      }
       // Consistency score
       let onTime = 0;
       const totalForConsistency = mealOnly.length;
