@@ -558,23 +558,27 @@ function FullnessSheet({
   // Per-meal habits
   const { data: mealHabits = [] } = trpc.habits.myMealHabits.useQuery();
   const mealLogIds = useMemo(() => (mealId != null ? [mealId] : []), [mealId]);
-  const { data: existingCompletions = [], refetch: refetchCompletions } = trpc.habits.mealCompletions.useQuery(
+  const { data: existingCompletionsData, refetch: refetchCompletions } = trpc.habits.mealCompletions.useQuery(
     { mealLogIds },
     { enabled: mealId != null }
   );
+  const existingCompletions = existingCompletionsData ?? [];
   const [habitChecked, setHabitChecked] = useState<Record<number, boolean>>({});
   const toggleHabitMut = trpc.habits.toggleMealCompletion.useMutation({
     onSuccess: () => refetchCompletions(),
   });
 
   // Sync habit checked state from server when sheet opens
+  // Use a stable string key derived from the data to avoid re-running on every render
+  const completionsKey = existingCompletions.map((c: any) => c.habitId).join(',');
   useEffect(() => {
     if (open && mealId != null) {
       const checked: Record<number, boolean> = {};
-      (existingCompletions as any[]).forEach((c: any) => { checked[c.habitId] = true; });
+      existingCompletions.forEach((c: any) => { checked[c.habitId] = true; });
       setHabitChecked(checked);
     }
-  }, [open, mealId, existingCompletions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, mealId, completionsKey]);
 
   const rateMutation = trpc.mealLogs.rateFullness.useMutation({
     onSuccess: () => { onSaved(); onClose(); },
