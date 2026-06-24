@@ -330,7 +330,7 @@ function IdealZoneCard({
 
       {/* Score + trend */}
       <div className="flex items-end gap-4 mb-1">
-        <span className="font-bold leading-none" style={{ fontSize: 40, color: accentColor }}>
+        <span className="font-bold leading-none" style={{ fontSize: 40, color: C.fg }}>
           {idealZonePct}%
         </span>
         {delta != null && (
@@ -364,7 +364,7 @@ function IdealZoneCard({
                 Hunger (3–4)
               </p>
               <div className="flex items-baseline gap-1.5 mb-1.5">
-                <span className="text-[22px] font-bold leading-none" style={{ color: scoreColor(hungerInZonePct) }}>
+                <span className="text-[22px] font-bold leading-none" style={{ color: C.fg }}>
                   {hungerInZonePct}%
                 </span>
                 <span className="text-[11px]" style={{ color: C.muted }}>in zone</span>
@@ -378,7 +378,7 @@ function IdealZoneCard({
                 Fullness (6–7)
               </p>
               <div className="flex items-baseline gap-1.5 mb-1.5">
-                <span className="text-[22px] font-bold leading-none" style={{ color: scoreColor(fullnessInZonePct) }}>
+                <span className="text-[22px] font-bold leading-none" style={{ color: C.fg }}>
                   {fullnessInZonePct}%
                 </span>
                 <span className="text-[11px]" style={{ color: C.muted }}>in zone</span>
@@ -478,19 +478,23 @@ function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
 
 function TreatsChart({
   treatsByWeek,
+  days,
 }: {
   treatsByWeek: { weekStart: string; small: number; medium: number; large: number; total: number }[];
+  days: 7 | 28;
 }) {
-  const maxTotal = Math.max(...treatsByWeek.map(w => w.total), 1);
+  // In 7d mode server returns 7 daily entries; in 28d mode returns 5 weekly entries, cap at 4
+  const bars = days === 7 ? treatsByWeek : treatsByWeek.slice(-4);
+  const maxTotal = Math.max(...bars.map(w => w.total), 1);
   const BAR_MAX_PX = 190;
 
   return (
     <div className="flex items-end gap-[12%] w-full" style={{ height: BAR_MAX_PX + 40 }}>
-      {treatsByWeek.map((week) => {
+      {bars.map((week) => {
         const barPx = week.total > 0 ? Math.max(6, Math.round((week.total / maxTotal) * BAR_MAX_PX)) : 4;
-        const dateLabel = new Date(week.weekStart + "T00:00:00").toLocaleDateString("en-AU", {
-          day: "numeric", month: "short",
-        });
+        const dateLabel = days === 7
+          ? new Date(week.weekStart + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short" })
+          : new Date(week.weekStart + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 
         return (
           <div key={week.weekStart} className="flex-1 flex flex-col items-center">
@@ -589,7 +593,7 @@ function MealTimingCard({
         <div>
           <div className="flex items-baseline justify-between mb-2">
             <span className="text-[13px]" style={{ color: C.muted }}>Consistency</span>
-            <span className="text-[22px] font-bold leading-none" style={{ color: consistencyColor }}>
+            <span className="text-[22px] font-bold leading-none" style={{ color: C.fg }}>
               {consistencyScore}%
             </span>
           </div>
@@ -867,11 +871,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               threshold={0.15}
             />
           }
-          valueColor={
-            insights.avgHunger == null ? C.muted :
-            isIdealHunger(Math.round(insights.avgHunger)) ? C.primary :
-            insights.avgHunger < 3 ? C.red : C.amber
-          }
+
         />
         <StatCard
           label="Avg Post-Meal Fullness"
@@ -885,11 +885,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               threshold={0.15}
             />
           }
-          valueColor={
-            insights.avgFullness == null ? C.muted :
-            isIdealFullness(Math.round(insights.avgFullness)) ? C.primary :
-            insights.avgFullness > 7 ? C.amber : C.red
-          }
+
         />
       </div>
 
@@ -924,7 +920,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               Large
             </span>
           </div>
-          <TreatsChart treatsByWeek={insights.treatsByWeek.slice(-4)} />
+          <TreatsChart treatsByWeek={insights.treatsByWeek.slice(-4)} days={days} />
         </Card>
       </div>
 
