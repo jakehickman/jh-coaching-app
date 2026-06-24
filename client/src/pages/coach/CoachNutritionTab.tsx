@@ -320,19 +320,7 @@ function IdealZoneCard({
   const accentColor = scoreColor(idealZonePct);
   const trendCol = trendColor(trend);
 
-  // Plain-language interpretation
-  let interpretation = "";
-  if (trend === "up") {
-    interpretation = `Up ${delta}% from last period — moving in the right direction.`;
-  } else if (trend === "down") {
-    interpretation = `Down ${Math.abs(delta!)}% from last period — worth discussing in the next check-in.`;
-  } else if (trend === "flat") {
-    interpretation = "Holding steady — consistent but not yet progressing.";
-  } else {
-    if (idealZonePct >= 70) interpretation = "Strong compliance this period.";
-    else if (idealZonePct >= 50) interpretation = "Moderate compliance — room to improve.";
-    else interpretation = "Below target — focus area for coaching.";
-  }
+
 
   return (
     <Card>
@@ -356,8 +344,6 @@ function IdealZoneCard({
           </span>
         )}
       </div>
-
-      <Interpretation>{interpretation}</Interpretation>
 
       {/* Sparkline */}
       {weeklyIdealZone && weeklyIdealZone.length > 0 && (
@@ -578,11 +564,6 @@ function MealTimingCard({
     consistencyScore >= 40 ? C.amber :
     C.red;
 
-  const consistencyInterpretation =
-    consistencyScore == null ? "" :
-    consistencyScore >= 70 ? "Meals are landing close to their usual times." :
-    consistencyScore >= 40 ? "Some variability in meal timing — could affect hunger patterns." :
-    "High variability in meal timing — worth exploring with the client.";
 
   return (
     <Card className="flex flex-col gap-4">
@@ -615,7 +596,6 @@ function MealTimingCard({
             </span>
           </div>
           <ProgressBar value={consistencyScore} color={consistencyColor} />
-          <Interpretation>{consistencyInterpretation}</Interpretation>
         </div>
       )}
 
@@ -853,28 +833,6 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
 
   if (!insights) return null;
 
-  // Hunger interpretation
-  const hungerInterpretation = (() => {
-    const v = insights.avgHunger;
-    const p = insights.prevAvgHunger;
-    if (v == null) return "";
-    if (v < 3) return "Arriving at meals very hungry — may be leaving too long between eating.";
-    if (v > 4) return "Arriving at meals with low hunger — consider spacing or portion review.";
-    if (p != null && v < p && v >= 3) return "Moving toward ideal pre-meal hunger — good progress.";
-    return "Pre-meal hunger is in the ideal range.";
-  })();
-
-  // Fullness interpretation
-  const fullnessInterpretation = (() => {
-    const v = insights.avgFullness;
-    const p = insights.prevAvgFullness;
-    if (v == null) return "";
-    if (v < 6) return "Finishing meals below comfortable fullness — may be under-eating.";
-    if (v > 7) return "Finishing meals above comfortable fullness — portion awareness opportunity.";
-    if (p != null && v > p && v <= 7) return "Post-meal fullness moving toward ideal range.";
-    return "Post-meal fullness is in the ideal range.";
-  })();
-
   const periodLabel = `Last ${days}d`;
 
   return (
@@ -911,7 +869,6 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               threshold={0.15}
             />
           }
-          interpretation={hungerInterpretation}
           valueColor={
             insights.avgHunger == null ? C.muted :
             isIdealHunger(Math.round(insights.avgHunger)) ? C.primary :
@@ -930,7 +887,6 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               threshold={0.15}
             />
           }
-          interpretation={fullnessInterpretation}
           valueColor={
             insights.avgFullness == null ? C.muted :
             isIdealFullness(Math.round(insights.avgFullness)) ? C.primary :
@@ -946,12 +902,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
       <div className="grid grid-cols-2 gap-4">
         {/* Scatter */}
         <Card className="flex flex-col gap-4">
-          <div>
-            <SectionLabel>Hunger vs. Fullness</SectionLabel>
-            <p className="text-[12px] mt-1" style={{ color: C.muted }}>
-              Each dot is a meal — size indicates frequency at that combination.
-            </p>
-          </div>
+          <SectionLabel>Hunger vs. Fullness</SectionLabel>
           {insights.scatter.length > 0 ? (
             <div className="flex justify-center">
               <ScatterPlot scatter={insights.scatter} />
@@ -963,12 +914,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
 
         {/* Treats */}
         <Card className="flex flex-col gap-4">
-          <div>
-            <SectionLabel>Treats</SectionLabel>
-            <p className="text-[12px] mt-1" style={{ color: C.muted }}>
-              {insights.treatsByWeek.reduce((s, w) => s + w.total, 0)} total · {periodLabel.toLowerCase()}
-            </p>
-          </div>
+          <SectionLabel>Treats</SectionLabel>
           <div className="flex items-center gap-4" style={{ fontSize: 11, color: C.muted }}>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: C.primary, opacity: 0.8 }} />

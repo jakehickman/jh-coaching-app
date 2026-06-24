@@ -275,6 +275,28 @@ const blank: DailyForm = {
   sleepQuality: null, stressLevel: null, notes: "",
 };
 
+// Convert decimal hours (e.g. 7.5) → "7:30" display string
+function hoursToHmm(h: number): string {
+  const hrs = Math.floor(h);
+  const mins = Math.round((h - hrs) * 60);
+  return `${hrs}:${String(mins).padStart(2, '0')}`;
+}
+
+// Parse "h:mm" or plain number string → decimal hours, or null if invalid
+function hmmToHours(s: string): number | null {
+  const trimmed = s.trim();
+  if (!trimmed) return null;
+  if (trimmed.includes(':')) {
+    const [hPart, mPart] = trimmed.split(':');
+    const h = parseInt(hPart, 10);
+    const m = parseInt(mPart, 10);
+    if (isNaN(h) || isNaN(m) || m < 0 || m > 59) return null;
+    return h + m / 60;
+  }
+  const n = parseFloat(trimmed);
+  return isNaN(n) ? null : n;
+}
+
 export default function DailyLogTab() {
   const today = localToday();
   const { viewAsUserId } = useViewAs();
@@ -353,7 +375,7 @@ export default function DailyLogTab() {
     if (log) {
       const serverData: DailyForm = {
         weight: log.weight != null ? String(log.weight) : "",
-        sleepHours: log.sleepHours != null ? String(log.sleepHours) : "",
+        sleepHours: log.sleepHours != null ? hoursToHmm(log.sleepHours) : "",
         stepsCount: log.stepsCount != null ? String(log.stepsCount) : "",
         sleepQuality: log.sleepQuality ?? null,
         stressLevel: (log as any).stressLevel ?? null,
@@ -369,7 +391,7 @@ export default function DailyLogTab() {
     await upsert.mutateAsync({
       logDate: date,
       weight: form.weight !== "" ? parseFloat(form.weight) : undefined,
-      sleepHours: form.sleepHours !== "" ? parseFloat(form.sleepHours) : undefined,
+      sleepHours: form.sleepHours !== "" ? (hmmToHours(form.sleepHours) ?? undefined) : undefined,
       stepsCount: form.stepsCount !== "" ? parseInt(form.stepsCount) : undefined,
       sleepQuality: form.sleepQuality ?? undefined,
       stressLevel: form.stressLevel ?? undefined,
@@ -513,9 +535,21 @@ export default function DailyLogTab() {
               className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.weight === '' ? 'border-amber-500/50' : 'border-border'}`} />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground block mb-1.5">Sleep (hours)</label>
-            <input type="number" step="0.5" value={form.sleepHours} onChange={f("sleepHours")}
-              className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.sleepHours === '' ? 'border-amber-500/50' : 'border-border'}`} />
+            <label className="text-sm text-muted-foreground block mb-1.5">Sleep (h:mm)</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="e.g. 7:30"
+              value={form.sleepHours}
+              onChange={f("sleepHours")}
+              onBlur={e => {
+                const parsed = hmmToHours(e.target.value);
+                if (parsed !== null) {
+                  setForm(prev => ({ ...prev, sleepHours: hoursToHmm(parsed) }));
+                }
+              }}
+              className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.sleepHours === '' ? 'border-amber-500/50' : 'border-border'}`}
+            />
           </div>
           <ScoreInput label="Sleep Quality (1–5)" value={form.sleepQuality} onChange={v => setForm(p => ({ ...p, sleepQuality: v }))} max={5} />
         </div>

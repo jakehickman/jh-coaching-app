@@ -359,7 +359,6 @@ export function WeeklyReviewTab({ clientId }: Props) {
               value={fmt(cur.avgWeight)}
               unit="kg"
               delta={weightDelta}
-              interpretation={weightInterpretation(weightDelta)}
             />
           )}
 
@@ -369,7 +368,6 @@ export function WeeklyReviewTab({ clientId }: Props) {
               label="Days Logged"
               value={`${cur.daysLogged}`}
               unit="/ 7"
-              interpretation={daysInterpretation(cur.daysLogged)}
               valueColour={daysColour}
             />
           )}
@@ -380,7 +378,6 @@ export function WeeklyReviewTab({ clientId }: Props) {
               label="Avg Steps"
               value={fmtK(Math.round(cur.avgSteps))}
               delta={stepsDelta}
-              interpretation={stepsInterpretation(cur.avgSteps, cur.stepGoal, stepsDelta)}
             />
           )}
 
@@ -391,18 +388,16 @@ export function WeeklyReviewTab({ clientId }: Props) {
               value={fmt(cur.avgSleepHours)}
               unit="h"
               delta={sleepDelta}
-              interpretation={sleepInterpretation(cur.avgSleepHours)}
             />
           )}
 
           {/* Sleep Quality */}
           {cur?.avgSleepQuality != null && (
-            <SummaryCard
-              label="Sleep Quality"
+          <SummaryCard
+            label="Sleep Quality"
               value={fmt(cur.avgSleepQuality)}
               unit="/ 5"
               delta={qualDelta}
-              interpretation={qualityInterpretation(cur.avgSleepQuality)}
             />
           )}
 
@@ -413,7 +408,6 @@ export function WeeklyReviewTab({ clientId }: Props) {
               value={fmt(cur.avgStress)}
               unit="/ 5"
               delta={stressDelta}
-              interpretation={stressInterpretation(cur.avgStress)}
               valueColour={stressColour}
             />
           )}
@@ -424,7 +418,6 @@ export function WeeklyReviewTab({ clientId }: Props) {
               label="Sessions"
               value={cur.sessionsCompleted > 0 ? String(cur.sessionsCompleted) : "0"}
               delta={sessDelta}
-              interpretation={sessionsInterpretation(cur.sessionsCompleted, sessDelta)}
             />
           )}
 
