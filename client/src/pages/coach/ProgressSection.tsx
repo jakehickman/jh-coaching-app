@@ -1200,7 +1200,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
   });
 
   return (
-    <div className="w-full lg:w-80 flex-shrink-0 border border-border rounded-xl bg-card overflow-hidden lg:sticky lg:top-4">
+    <div className="w-full lg:w-96 flex-shrink-0 border border-border rounded-xl bg-card overflow-hidden lg:sticky lg:top-4">
       {/* Header */}
       <div className="flex items-start justify-between px-4 py-3 border-b border-border bg-muted/30">
         <div>
@@ -1229,30 +1229,40 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
             const setStr = firstSet
               ? `${firstSet.weight != null ? firstSet.weight + ' kg' : '—'} × ${firstSet.reps != null ? firstSet.reps : '—'}`
               : null;
-            // Find previous session where this exercise was performed
-            const prevSession = [...allSessions]
-              .sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime())
-              .find(s => {
+            // Find previous session where this exercise was performed with the same machine preset
+            // (matches Exercise Progress tab logic: compare within same preset, or no-preset vs no-preset)
+            const currPreset = ex.machinePreset ?? ex.equipmentDetails ?? null;
+            const sortedPrev = [...allSessions]
+              .filter(s => {
                 if (s.id === session.id) return false;
-                if (new Date(s.sessionDate).getTime() >= new Date(session.sessionDate).getTime()) return false;
-                const exs: any[] = s.exercises ?? [];
-                return exs.some((e: any) => e.name === ex.name);
+                return new Date(s.sessionDate).getTime() < new Date(session.sessionDate).getTime();
+              })
+              .sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime());
+            // Find most recent prior session that has this exercise with a matching preset
+            let prevExercise: any = null;
+            for (const s of sortedPrev) {
+              const exs: any[] = s.exercises ?? [];
+              const match = exs.find((e: any) => {
+                if (e.name !== ex.name) return false;
+                const ePreset = e.machinePreset ?? e.equipmentDetails ?? null;
+                if (currPreset && ePreset) return ePreset.toLowerCase() === currPreset.toLowerCase();
+                if (!currPreset && !ePreset) return true;
+                return false;
               });
+              if (match) { prevExercise = match; break; }
+            }
             let progressArrow: 'up' | 'down' | 'same' | null = null;
-            if (prevSession && firstSet) {
-              const prevExercise = (prevSession.exercises as any[]).find((e: any) => e.name === ex.name);
-              if (prevExercise) {
-                const prevCompleted = (prevExercise.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null);
-                const prevFirst = prevCompleted[0];
-                if (prevFirst) {
-                  const wCurr = firstSet.weight ?? 0;
-                  const wPrev = prevFirst.weight ?? 0;
-                  const rCurr = firstSet.reps ?? 0;
-                  const rPrev = prevFirst.reps ?? 0;
-                  if (wCurr > wPrev || (wCurr === wPrev && rCurr > rPrev)) progressArrow = 'up';
-                  else if (wCurr < wPrev || (wCurr === wPrev && rCurr < rPrev)) progressArrow = 'down';
-                  else progressArrow = 'same';
-                }
+            if (prevExercise && firstSet) {
+              const prevCompleted = (prevExercise.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null);
+              const prevFirst = prevCompleted[0];
+              if (prevFirst) {
+                const wCurr = firstSet.weight ?? 0;
+                const wPrev = prevFirst.weight ?? 0;
+                const rCurr = firstSet.reps ?? 0;
+                const rPrev = prevFirst.reps ?? 0;
+                if (wCurr > wPrev || (wCurr === wPrev && rCurr > rPrev)) progressArrow = 'up';
+                else if (wCurr < wPrev || (wCurr === wPrev && rCurr < rPrev)) progressArrow = 'down';
+                else progressArrow = 'same';
               }
             }
             const miniSetsCount = isMiniSets && allSets[0]?.miniSets && String(allSets[0].miniSets) !== '' ? allSets[0].miniSets : null;
@@ -1553,7 +1563,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
       </span>
     </div>
 
-    <div className="flex flex-col lg:grid lg:grid-cols-[1fr_288px] gap-4 items-start">
+    <div className="flex flex-col lg:grid lg:grid-cols-[1fr_384px] gap-4 items-start">
       {/* Calendar grid */}
       <div className="min-w-0">
         <div className="border border-border rounded-xl overflow-hidden">
@@ -1639,7 +1649,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
     </div>
 
     {/* Monthly volume summary — constrained to calendar column width */}
-    <div className="lg:max-w-[calc(100%-288px-1rem)]">
+    <div className="lg:max-w-[calc(100%-384px-1rem)]">
       <MonthlyVolumeCoachPanel
         workoutSessions={workoutSessions}
         exerciseLib={exerciseLib}

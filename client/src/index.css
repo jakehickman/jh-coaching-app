@@ -73,40 +73,47 @@
 }
 
 :root {
-  /* JH Coaching — dark green-tinted theme matching reference app */
-  --primary: oklch(0.65 0.12 152);          /* sage green accent (softer, muted) */
-  --primary-foreground: oklch(0.97 0 0);
-  --sidebar-primary: oklch(0.65 0.12 152);
-  --sidebar-primary-foreground: oklch(0.97 0 0);
-  --chart-1: oklch(0.65 0.12 152);
-  --chart-2: oklch(0.54 0.10 152);
-  --chart-3: oklch(0.44 0.08 152);
-  --chart-4: oklch(0.35 0.06 152);
-  --chart-5: oklch(0.27 0.04 152);
-  --radius: 0.75rem;                         /* rounder corners */
-  --background: oklch(0.16 0.012 152);       /* dark green-tinted background */
-  --foreground: oklch(0.97 0 0);             /* white text */
-  --card: oklch(0.20 0.014 152);             /* green-tinted card surface */
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.22 0.014 152);
-  --popover-foreground: oklch(0.97 0 0);
-  --secondary: oklch(0.25 0.012 152);        /* subtle green-tinted secondary */
-  --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.22 0.010 152);
-  --muted-foreground: oklch(0.65 0.02 152);  /* muted green-grey text */
-  --accent: oklch(0.65 0.12 152);
-  --accent-foreground: oklch(0.97 0 0);
+  /* JH Coaching — dark theme (default) */
+  --radius: 0.75rem;
+  /* Primary: mint green #52B788 */
+  --primary: oklch(0.71 0.118 160.9);
+  --primary-foreground: oklch(0.13 0.010 160.9);
+  --sidebar-primary: oklch(0.71 0.118 160.9);
+  --sidebar-primary-foreground: oklch(0.13 0.010 160.9);
+  /* Charts: shades of the primary green */
+  --chart-1: oklch(0.71 0.118 160.9);
+  --chart-2: oklch(0.60 0.100 160.9);
+  --chart-3: oklch(0.50 0.082 160.9);
+  --chart-4: oklch(0.40 0.064 160.9);
+  --chart-5: oklch(0.30 0.046 160.9);
+  /* Background: near-black #0F1511 */
+  --background: oklch(0.19 0.012 155.9);
+  --foreground: oklch(0.95 0.002 248.5);     /* off-white #ECEDEE */
+  /* Cards: dark green-grey #1A2020 */
+  --card: oklch(0.24 0.009 196.7);
+  --card-foreground: oklch(0.95 0.002 248.5);
+  --popover: oklch(0.26 0.009 196.7);
+  --popover-foreground: oklch(0.95 0.002 248.5);
+  /* Secondary / input surfaces: slightly lighter than card */
+  --secondary: oklch(0.29 0.009 180.0);
+  --secondary-foreground: oklch(0.95 0.002 248.5);
+  --muted: oklch(0.27 0.008 180.0);
+  --muted-foreground: oklch(0.71 0.010 243.0); /* light grey #9BA1A6 */
+  --accent: oklch(0.71 0.118 160.9);
+  --accent-foreground: oklch(0.13 0.010 160.9);
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: oklch(0.97 0 0);
-  --border: oklch(0.28 0.014 152);           /* subtle green-tinted border */
-  --input: oklch(0.23 0.012 152);            /* green-tinted input bg */
-  --ring: oklch(0.65 0.12 152);
-  --sidebar: oklch(0.17 0.012 152);
-  --sidebar-foreground: oklch(0.97 0 0);
-  --sidebar-accent: oklch(0.23 0.012 152);
-  --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: oklch(0.26 0.012 152);
-  --sidebar-ring: oklch(0.65 0.12 152);
+  /* Border: dark green #2D3B35 */
+  --border: oklch(0.34 0.021 167.2);
+  --input: oklch(0.27 0.009 180.0);
+  --ring: oklch(0.71 0.118 160.9);
+  /* Sidebar: slightly darker than background */
+  --sidebar: oklch(0.17 0.012 155.9);
+  --sidebar-foreground: oklch(0.95 0.002 248.5);
+  --sidebar-accent: oklch(0.27 0.009 180.0);
+  --sidebar-accent-foreground: oklch(0.95 0.002 248.5);
+  --sidebar-border: oklch(0.34 0.021 167.2);
+  --sidebar-ring: oklch(0.71 0.118 160.9);
 }
 
 /* Dark mode same as root since we use dark theme by default */
@@ -124,7 +131,7 @@
   select {
     background-color: var(--input);
     border-color: var(--border);
-    color: oklch(0.97 0 0);
+    color: oklch(0.95 0.002 248.5);
   }
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
   textarea:focus,
@@ -135,13 +142,13 @@
   }
   /* Placeholder text — clearly visible but distinct from filled values */
   ::placeholder {
-    color: oklch(0.50 0 0);
+    color: oklch(0.55 0.008 243.0);
     opacity: 1;
   }
   ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: oklch(0.18 0 0); }
-  ::-webkit-scrollbar-thumb { background: oklch(0.32 0 0); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: oklch(0.42 0 0); }
+  ::-webkit-scrollbar-track { background: oklch(0.21 0.009 180.0); }
+  ::-webkit-scrollbar-thumb { background: oklch(0.34 0.021 167.2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: oklch(0.44 0.021 167.2); }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
