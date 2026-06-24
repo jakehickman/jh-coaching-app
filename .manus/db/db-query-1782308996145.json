@@ -1,0 +1,40 @@
+{
+  "query": "SELECT ha.*, h.name, h.scope FROM habit_assignments ha JOIN habits h ON ha.habitId = h.id WHERE ha.clientId = 1;\nSELECT COUNT(*) as total_habits FROM habits;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT ha.*, h.name, h.scope FROM habit_assignments ha JOIN habits h ON ha.habitId = h.id WHERE ha.clientId = 1;\nSELECT COUNT(*) as total_habits FROM habits;",
+  "rows": [
+    {
+      "id": "2",
+      "habitId": "2",
+      "clientId": "1",
+      "active": "0",
+      "assignedAt": "2026-04-08 00:00:00",
+      "name": "Eat 3 meals without snacking",
+      "scope": "daily"
+    },
+    {
+      "id": "90001",
+      "habitId": "30001",
+      "clientId": "1",
+      "active": "0",
+      "assignedAt": "2026-04-15 05:51:42",
+      "name": "Minimise/eliminate caffeine",
+      "scope": "daily"
+    },
+    {
+      "id": "120001",
+      "habitId": "60001",
+      "clientId": "1",
+      "active": "0",
+      "assignedAt": "2026-04-28 03:24:30",
+      "name": "Take supplements",
+      "scope": "daily"
+    }
+  ],
+  "messages": [
+    "total_habits",
+    "3"
+  ],
+  "stdout": "id\thabitId\tclientId\tactive\tassignedAt\tname\tscope\n2\t2\t1\t0\t2026-04-08 00:00:00\tEat 3 meals without snacking\tdaily\n90001\t30001\t1\t0\t2026-04-15 05:51:42\tMinimise/eliminate caffeine\tdaily\n120001\t60001\t1\t0\t2026-04-28 03:24:30\tTake supplements\tdaily\ntotal_habits\n3\n",
+  "stderr": "",
+  "execution_time_ms": 2032
+}

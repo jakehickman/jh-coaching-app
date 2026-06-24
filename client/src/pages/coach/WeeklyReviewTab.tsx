@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { CoachHabitsPanel } from "./HabitsSection";
 
 interface Props {
   clientId: number;
@@ -43,6 +44,13 @@ const C = {
 function fmt(val: number | null | undefined, decimals = 1): string {
   if (val == null) return "—";
   return val.toFixed(decimals);
+}
+
+function hoursToHmm(h: number | null | undefined): string {
+  if (h == null) return "—";
+  const hrs = Math.floor(h);
+  const mins = Math.round((h - hrs) * 60);
+  return `${hrs}:${String(mins).padStart(2, '0')}`;
 }
 
 function fmtK(n: number): string {
@@ -187,7 +195,7 @@ function WeekRow({ week }: { week: Week }) {
       </td>
       <td className="px-3 py-2.5 text-right">
         <span className="text-xs tabular-nums text-foreground">
-          {week.avgSleepHours != null ? `${fmt(week.avgSleepHours)} h` : "—"}
+          {hoursToHmm(week.avgSleepHours)}
         </span>
       </td>
       <td className="px-3 py-2.5 text-right">
@@ -385,8 +393,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
           {cur?.avgSleepHours != null && (
             <SummaryCard
               label="Avg Sleep"
-              value={fmt(cur.avgSleepHours)}
-              unit="h"
+              value={hoursToHmm(cur.avgSleepHours)}
               delta={sleepDelta}
             />
           )}
@@ -423,6 +430,9 @@ export function WeeklyReviewTab({ clientId }: Props) {
 
         </div>
       </div>
+
+      {/* ── Habit adherence ── */}
+      <CoachHabitsPanel clientId={clientId} />
 
       {/* ── Weekly history table ── */}
       <div>

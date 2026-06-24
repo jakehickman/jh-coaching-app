@@ -1070,7 +1070,7 @@ function RecentLogsPanel({ logs, visibleDays, clientId }: { logs: DailyLogRow[];
                     <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>
                   )}
                   {log.sleepHours != null && (
-                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Hours</p><p className="text-sm font-semibold text-foreground">{log.sleepHours} hrs</p></div>
+                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep</p><p className="text-sm font-semibold text-foreground">{(() => { const h = Math.floor(log.sleepHours!); const m = Math.round((log.sleepHours! - h) * 60); return `${h}:${String(m).padStart(2,'0')}`; })()}</p></div>
                   )}
                   {log.sleepQuality != null && (
                     <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>
@@ -2414,10 +2414,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
 
           {/* -- Overview: weekly summary table + habits -- */}
           <TabsContent value="overview">
-            <div className="space-y-8">
-              <WeeklyReviewTab clientId={selectedUserId!} />
-              <CoachHabitsPanel clientId={selectedUserId!} />
-            </div>
+            <WeeklyReviewTab clientId={selectedUserId!} />
           </TabsContent>
 
 

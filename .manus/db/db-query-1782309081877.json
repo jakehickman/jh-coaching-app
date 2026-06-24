@@ -1,0 +1,9 @@
+{
+  "query": "-- 1. Create the per-meal habit (coachId = 1)\nINSERT INTO habits (id, coachId, name, description, scope, frequency, targetDays)\nVALUES (200001, 1, 'Eat slowly and mindfully', 'Take at least 15 minutes per meal, no screens', 'per_meal', 'daily', 7);\n\n-- 2. Assign it to Jake (clientId = 1), active\nINSERT INTO habit_assignments (id, habitId, clientId, active, assignedAt)\nVALUES (200001, 200001, 1, 1, '2026-05-27 00:00:00');\n\n-- 3. Insert completions for ~70% of Jake's meals (skip every 3rd meal to simulate imperfect adherence)\nINSERT INTO meal_habit_completions (habitId, clientId, mealLogId)\nSELECT 200001, 1, id FROM meal_logs\nWHERE userId = 1 AND mealType = 'meal'\n  AND loggedAt >= '2026-05-27 00:00:00'\n  AND (id % 3) != 0\nLIMIT 50;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute -- 1. Create the per-meal habit (coachId = 1)\nINSERT INTO habits (id, coachId, name, description, scope, frequency, targetDays)\nVALUES (200001, 1, 'Eat slowly and mindfully', 'Take at least 15 minutes per meal, no screens', 'per_meal', 'daily', 7);\n\n-- 2. Assign it to Jake (clientId = 1), active\nINSERT INTO habit_assignments (id, habitId, clientId, active, assignedAt)\nVALUES (200001, 200001, 1, 1, '2026-05-27 00:00:00');\n\n-- 3. Insert completions for ~70% of Jake's meals (skip every 3rd meal to simulate imperfect adherence)\nINSERT INTO meal_habit_completions (habitId, clientId, mealLogId)\nSELECT 200001, 1, id FROM meal_logs\nWHERE userId = 1 AND mealType = 'meal'\n  AND loggedAt >= '2026-05-27 00:00:00'\n  AND (id % 3) != 0\nLIMIT 50;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2234
+}

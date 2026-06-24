@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { ChevronDown, ChevronUp, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionLabel } from "./shared";
 
@@ -26,18 +25,6 @@ function avg(vals: (number | null | undefined)[]): number | null {
   return valid.reduce((a, b) => a + b, 0) / valid.length;
 }
 
-function skinfoldTotal(m: any): number | null {
-  const sites = [
-    avg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]),
-    avg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]),
-    avg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]),
-    avg([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]),
-  ];
-  const valid = sites.filter((v): v is number => v != null);
-  if (valid.length === 0) return null;
-  return parseFloat(valid.reduce((a, b) => a + b, 0).toFixed(1));
-}
-
 function toDateStr(val: any): string {
   if (!val) return "";
   if (typeof val === "string") return val.slice(0, 10);
@@ -45,180 +32,22 @@ function toDateStr(val: any): string {
   return String(val).slice(0, 10);
 }
 
-/** Renders value + optional delta in a single cell */
-function MetricCell({
-  value,
-  unit = "",
-  delta,
-  invert = false,
-  decimals = 1,
-}: {
-  value: number | null;
-  unit?: string;
-  delta: number | null;
-  invert?: boolean;
-  decimals?: number;
-}) {
-  if (value == null) return <span className="text-muted-foreground text-xs">—</span>;
+// Site definitions — order determines column order
+const SITES = [
+  { key: "umbilical", label: "Umbilical", fields: ["umbilical1","umbilical2","umbilical3","umbilical4","umbilical5"] as const },
+  { key: "suprailiac", label: "Suprailiac", fields: ["suprailiac1","suprailiac2","suprailiac3","suprailiac4","suprailiac5"] as const },
+  { key: "calf",       label: "Calf",       fields: ["calf1","calf2","calf3","calf4","calf5"] as const },
+  { key: "thigh",      label: "Thigh",      fields: ["thigh1","thigh2","thigh3","thigh4","thigh5"] as const },
+] as const;
 
-  let deltaEl: React.ReactNode = null;
-  if (delta != null) {
-    if (Math.abs(delta) < 0.05) {
-      deltaEl = <span className="text-muted-foreground text-[10px]"><Minus size={9} className="inline" /></span>;
-    } else {
-      const isGood = invert ? delta < 0 : delta > 0;
-      const color = isGood ? "text-green-400" : "text-red-400";
-      const Icon = delta > 0 ? ArrowUp : ArrowDown;
-      deltaEl = (
-        <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${color}`}>
-          <Icon size={9} />
-          {Math.abs(delta).toFixed(decimals)}{unit}
-        </span>
-      );
-    }
-  }
-
-  return (
-    <div className="flex flex-col items-end gap-0.5">
-      <span className="text-xs font-semibold tabular-nums text-foreground">
-        {value.toFixed(decimals)}{unit}
-      </span>
-      {deltaEl}
-    </div>
-  );
+function siteAvg(m: any, fields: readonly string[]): number | null {
+  return avg(fields.map(f => m[f] as number | null));
 }
 
-// ─── Row component ───────────────────────────────────────────────────────────
-
-function MeasurementRow({
-  m,
-  prev,
-}: {
-  m: any;
-  prev: any | null;
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  const dateStr = toDateStr(m.measureDate);
-  const sf = skinfoldTotal(m);
-  const prevSf = prev ? skinfoldTotal(prev) : null;
-  const sfDelta = sf != null && prevSf != null ? parseFloat((sf - prevSf).toFixed(1)) : null;
-  const waistDelta = m.waist != null && prev?.waist != null
-    ? parseFloat((m.waist - prev.waist).toFixed(1)) : null;
-  const hipDelta = m.hips != null && prev?.hips != null
-    ? parseFloat((m.hips - prev.hips).toFixed(1)) : null;
-
-  const umbAvg = avg([m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]);
-  const supAvg = avg([m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]);
-  const calfAvg = avg([m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]);
-  const thighAvg = avg([m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]);
-  const hasSkinfolds = umbAvg != null || supAvg != null || calfAvg != null || thighAvg != null;
-
-  return (
-    <>
-      {/* Main summary row */}
-      <tr
-        className="border-b border-border/40 hover:bg-muted/20 transition-colors cursor-pointer"
-        onClick={() => setExpanded(e => !e)}
-      >
-        {/* Date */}
-        <td className="px-3 py-2.5">
-          <div className="flex items-center gap-1.5">
-            {expanded
-              ? <ChevronUp size={12} className="text-muted-foreground flex-shrink-0" />
-              : <ChevronDown size={12} className="text-muted-foreground flex-shrink-0" />
-            }
-            <span className="text-xs font-semibold text-foreground">{fmtDate(dateStr)}</span>
-          </div>
-        </td>
-
-        {/* Waist (value + delta) */}
-        <td className="px-3 py-2.5 text-right">
-          <MetricCell value={m.waist} unit=" cm" delta={waistDelta} invert decimals={1} />
-        </td>
-
-        {/* Hip (value + delta) */}
-        <td className="px-3 py-2.5 text-right">
-          <MetricCell value={m.hips} unit=" cm" delta={hipDelta} invert decimals={1} />
-        </td>
-
-        {/* Skinfold total (value + delta) */}
-        <td className="px-3 py-2.5 text-right">
-          <MetricCell value={sf} unit=" mm" delta={sfDelta} invert decimals={1} />
-        </td>
-
-        {/* Notes */}
-        <td className="px-3 py-2.5 max-w-[160px]">
-          {m.notes && (
-            <p className="text-xs text-muted-foreground truncate">{m.notes}</p>
-          )}
-        </td>
-      </tr>
-
-      {/* Expanded skinfold detail */}
-      {expanded && (
-        <tr className="border-b border-border/40 bg-muted/10">
-          <td colSpan={5} className="px-6 py-3">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {hasSkinfolds && (
-                <>
-                  {umbAvg != null && (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Umbilical</p>
-                      <p className="text-sm font-semibold">{fmt(umbAvg)} mm</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {[m.umbilical1, m.umbilical2, m.umbilical3, m.umbilical4, m.umbilical5]
-                          .filter((v: any) => v != null).map((v: any) => v.toFixed(1)).join(", ")}
-                      </p>
-                    </div>
-                  )}
-                  {supAvg != null && (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Suprailiac</p>
-                      <p className="text-sm font-semibold">{fmt(supAvg)} mm</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {[m.suprailiac1, m.suprailiac2, m.suprailiac3, m.suprailiac4, m.suprailiac5]
-                          .filter((v: any) => v != null).map((v: any) => v.toFixed(1)).join(", ")}
-                      </p>
-                    </div>
-                  )}
-                  {calfAvg != null && (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Calf</p>
-                      <p className="text-sm font-semibold">{fmt(calfAvg)} mm</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {[m.calf1, m.calf2, m.calf3, m.calf4, m.calf5]
-                          .filter((v: any) => v != null).map((v: any) => v.toFixed(1)).join(", ")}
-                      </p>
-                    </div>
-                  )}
-                  {thighAvg != null && (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Thigh</p>
-                      <p className="text-sm font-semibold">{fmt(thighAvg)} mm</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {[m.thigh1, m.thigh2, m.thigh3, m.thigh4, m.thigh5]
-                          .filter((v: any) => v != null).map((v: any) => v.toFixed(1)).join(", ")}
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-              {!hasSkinfolds && (
-                <p className="text-xs text-muted-foreground col-span-4">No skinfold readings recorded.</p>
-              )}
-              {m.notes && (
-                <div className="col-span-2 sm:col-span-4">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Notes</p>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{m.notes}</p>
-                </div>
-              )}
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
-  );
+function skinfoldTotal(m: any): number | null {
+  const vals = SITES.map(s => siteAvg(m, s.fields)).filter((v): v is number => v != null);
+  if (vals.length === 0) return null;
+  return parseFloat(vals.reduce((a, b) => a + b, 0).toFixed(1));
 }
 
 // ─── Main export ─────────────────────────────────────────────────────────────
@@ -228,12 +57,10 @@ const DEFAULT_VISIBLE = 8;
 export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
   const [showAll, setShowAll] = useState(false);
 
-  const { data: measurements = [], isLoading: measLoading } = trpc.measurements.listForClient.useQuery(
+  const { data: measurements = [], isLoading } = trpc.measurements.listForClient.useQuery(
     { userId: clientId },
     { enabled: !!clientId, staleTime: 30_000 }
   );
-
-  const isLoading = measLoading;
 
   if (isLoading) {
     return (
@@ -259,6 +86,16 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
     );
   }
 
+  // Determine which skinfold sites have any data across all measurements
+  const activeSites = SITES.filter(s =>
+    sorted.some(m => siteAvg(m, s.fields) != null)
+  );
+
+  const hasWaist = sorted.some(m => m.waist != null);
+  const hasHip   = sorted.some(m => m.hips != null);
+  const hasSf    = activeSites.length > 0;
+  const hasNotes = sorted.some(m => m.notes);
+
   const visible = showAll ? sorted : sorted.slice(0, DEFAULT_VISIBLE);
 
   return (
@@ -266,25 +103,56 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
       <SectionLabel>Measurement History</SectionLabel>
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm table-fixed">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[22%]">Date</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[19%]">Waist</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[19%]">Hip</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[19%]">Skinfold</th>
-                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[21%]">Notes</th>
+                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Date</th>
+                {hasWaist && <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Waist</th>}
+                {hasHip   && <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Hip</th>}
+                {activeSites.map(s => (
+                  <th key={s.key} className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">{s.label}</th>
+                ))}
+                {hasSf && <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Total</th>}
+                {hasNotes && <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</th>}
               </tr>
             </thead>
             <tbody>
-              {visible.map((m: any, idx: number) => {
-                const prev = sorted[idx + 1] ?? null;
+              {visible.map((m: any) => {
+                const sf = skinfoldTotal(m);
                 return (
-                  <MeasurementRow
-                    key={m.id}
-                    m={m}
-                    prev={prev}
-                  />
+                  <tr key={m.id} className="border-b border-border/40 last:border-0">
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <span className="text-xs font-semibold text-foreground">{fmtDate(toDateStr(m.measureDate))}</span>
+                    </td>
+                    {hasWaist && (
+                      <td className="px-3 py-2.5 text-right">
+                        <span className="text-xs tabular-nums text-foreground">{m.waist != null ? `${fmt(m.waist)} cm` : "—"}</span>
+                      </td>
+                    )}
+                    {hasHip && (
+                      <td className="px-3 py-2.5 text-right">
+                        <span className="text-xs tabular-nums text-foreground">{m.hips != null ? `${fmt(m.hips)} cm` : "—"}</span>
+                      </td>
+                    )}
+                    {activeSites.map(s => {
+                      const val = siteAvg(m, s.fields);
+                      return (
+                        <td key={s.key} className="px-3 py-2.5 text-right">
+                          <span className="text-xs tabular-nums text-foreground">{val != null ? `${fmt(val)} mm` : "—"}</span>
+                        </td>
+                      );
+                    })}
+                    {hasSf && (
+                      <td className="px-3 py-2.5 text-right">
+                        <span className="text-xs font-semibold tabular-nums text-foreground">{sf != null ? `${fmt(sf)} mm` : "—"}</span>
+                      </td>
+                    )}
+                    {hasNotes && (
+                      <td className="px-3 py-2.5 max-w-[180px]">
+                        {m.notes && <p className="text-xs text-muted-foreground truncate">{m.notes}</p>}
+                      </td>
+                    )}
+                  </tr>
                 );
               })}
             </tbody>
