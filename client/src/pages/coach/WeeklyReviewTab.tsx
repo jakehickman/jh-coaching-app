@@ -31,6 +31,15 @@ type Week = {
 
 const DEFAULT_VISIBLE = 4;
 
+// ── Colour tokens (match Insights design system) ──────────────────────────────
+const C = {
+  green: "#52B788",
+  amber: "#FBBF24",
+  red: "#F87171",
+  muted: "#9BA1A6",
+  fg: "#ECEDEE",
+};
+
 function fmt(val: number | null | undefined, decimals = 1): string {
   if (val == null) return "—";
   return val.toFixed(decimals);
@@ -40,43 +49,101 @@ function fmtK(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
 }
 
-// ── Delta arrow ──────────────────────────────────────────────────────────────
-function DeltaArrow({
-  current,
-  previous,
+// ── Delta helpers ─────────────────────────────────────────────────────────────
+type DeltaResult = { arrow: "up" | "down" | "flat"; good: boolean; pct?: number; abs?: number };
+
+function calcDelta(
+  current: number | null | undefined,
+  previous: number | null | undefined,
   lowerIsBetter = false,
-}: {
-  current: number | null | undefined;
-  previous: number | null | undefined;
-  lowerIsBetter?: boolean;
-}) {
-  if (current == null || previous == null) return null;
+  asPct = false,
+): DeltaResult | null {
+  if (current == null || previous == null || previous === 0) return null;
   const diff = current - previous;
-  if (Math.abs(diff) < 0.05) return <Minus className="inline w-3 h-3 text-muted-foreground ml-1" />;
+  if (Math.abs(diff) < 0.05) return { arrow: "flat", good: true };
   const positive = diff > 0;
   const good = lowerIsBetter ? !positive : positive;
-  return positive
-    ? <ArrowUp className={`inline w-3 h-3 ml-1 ${good ? "text-green-400" : "text-red-400"}`} />
-    : <ArrowDown className={`inline w-3 h-3 ml-1 ${good ? "text-green-400" : "text-red-400"}`} />;
+  const pct = asPct ? Math.abs((diff / previous) * 100) : undefined;
+  const abs = !asPct ? Math.abs(diff) : undefined;
+  return { arrow: positive ? "up" : "down", good, pct, abs };
 }
 
-// ── Stat card ─────────────────────────────────────────────────────────────────
-function StatCard({
+function DeltaBadge({ delta, unit = "" }: { delta: DeltaResult | null; unit?: string }) {
+  if (!delta) return null;
+  const colour = delta.arrow === "flat" ? C.muted : delta.good ? C.green : C.red;
+  const Icon = delta.arrow === "up" ? ArrowUp : delta.arrow === "down" ? ArrowDown : Minus;
+  const label = delta.arrow === "flat"
+    ? "flat"
+    : delta.pct != null
+      ? `${delta.pct.toFixed(1)}%`
+      : delta.abs != null
+        ? `${delta.abs.toFixed(1)}${unit}`
+        : "";
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[11px] font-medium" style={{ color: colour }}>
+      <Icon className="w-3 h-3" />
+      {label && <span>{label}</span>}
+    </span>
+  );
+}
+
+// ── Summary stat card (Insights design system) ────────────────────────────────
+function SummaryCard({
   label,
   value,
-  sub,
-  highlight,
+  unit,
+  delta,
+  interpretation,
+  valueColour,
 }: {
   label: string;
-  value: React.ReactNode;
-  sub?: React.ReactNode;
-  highlight?: boolean;
+  value: string;
+  unit?: string;
+  delta?: DeltaResult | null;
+  interpretation?: string;
+  valueColour?: string;
 }) {
   return (
-    <div className={`rounded-xl p-4 border ${highlight ? "bg-green-500/10 border-green-500/20" : "bg-card border-border"}`}>
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{label}</p>
-      <p className="text-2xl font-bold text-foreground leading-tight">{value}</p>
-      {sub && <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>}
+    <div
+      className="rounded-xl p-5 flex flex-col gap-1"
+      style={{
+        background: "#1A2020",
+        border: "1px solid #2D3B35",
+      }}
+    >
+      <p
+        className="text-[11px] font-medium uppercase tracking-[0.8px]"
+        style={{ color: C.muted }}
+      >
+        {label}
+      </p>
+      <div className="flex items-baseline gap-1.5 mt-1">
+        <span
+          className="text-[32px] font-bold leading-none tabular-nums"
+          style={{ color: valueColour ?? C.fg, fontFamily: "Inter, sans-serif" }}
+        >
+          {value}
+        </span>
+        {unit && (
+          <span className="text-sm font-medium" style={{ color: C.muted }}>
+            {unit}
+          </span>
+        )}
+      </div>
+      {delta !== undefined && (
+        <div className="flex items-center gap-1 mt-0.5">
+          <DeltaBadge delta={delta ?? null} />
+          {delta && delta.arrow !== "flat" && (
+            <span className="text-[11px]" style={{ color: C.muted }}>vs prev 7d</span>
+          )}
+          {delta && delta.arrow === "flat" && (
+            <span className="text-[11px]" style={{ color: C.muted }}>vs prev 7d</span>
+          )}
+        </div>
+      )}
+      {interpretation && (
+        <p className="text-[12px] mt-1" style={{ color: C.muted }}>{interpretation}</p>
+      )}
     </div>
   );
 }
@@ -110,10 +177,14 @@ function WeekRow({ week }: { week: Week }) {
       </td>
       <td className="px-3 py-2.5 text-right">
         <span className="text-xs tabular-nums text-foreground">
+          {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
+        </span>
+      </td>
+      <td className="px-3 py-2.5 text-right">
+        <span className="text-xs tabular-nums text-foreground">
           {stepsVal != null ? <>{stepsVal}{stepsGoal && <span className="text-muted-foreground">{stepsGoal}</span>}</> : "—"}
         </span>
       </td>
-      {/* Sleep hours */}
       <td className="px-3 py-2.5 text-right">
         <span className="text-xs tabular-nums text-foreground">
           {week.avgSleepHours != null ? `${fmt(week.avgSleepHours)} h` : "—"}
@@ -142,10 +213,67 @@ function WeekRow({ week }: { week: Week }) {
   );
 }
 
+// ── Interpretation helpers ────────────────────────────────────────────────────
+function weightInterpretation(delta: DeltaResult | null): string {
+  if (!delta) return "No previous data to compare";
+  if (delta.arrow === "flat") return "Stable — no meaningful change";
+  const dir = delta.arrow === "up" ? "up" : "down";
+  const pct = delta.pct?.toFixed(1) ?? "";
+  return `${pct}% ${dir} vs previous 7 days`;
+}
+
+function daysInterpretation(days: number): string {
+  if (days === 7) return "Full week of data";
+  if (days >= 5) return "Most days logged — minor gaps";
+  if (days >= 3) return "Partial data — interpret with caution";
+  return "Sparse data this week";
+}
+
+function stepsInterpretation(avg: number | null, goal: number | null, delta: DeltaResult | null): string {
+  if (avg == null) return "No step data this week";
+  if (goal != null) {
+    const pct = Math.round((avg / goal) * 100);
+    if (pct >= 100) return `Above goal — averaging ${fmtK(Math.round(avg))} steps`;
+    if (pct >= 80) return `Close to goal — ${fmtK(Math.round(avg))} of ${fmtK(goal)} target`;
+    return `Below goal — ${fmtK(Math.round(avg))} of ${fmtK(goal)} target`;
+  }
+  if (!delta) return `Averaging ${fmtK(Math.round(avg))} steps per day`;
+  return delta.arrow === "flat" ? "Consistent with last week" : `Moving ${delta.arrow === "up" ? "toward" : "away from"} higher activity`;
+}
+
+function sleepInterpretation(hours: number | null): string {
+  if (hours == null) return "No sleep data this week";
+  if (hours >= 8) return "Good sleep duration";
+  if (hours >= 7) return "Slightly below ideal — aim for 7–9 h";
+  if (hours >= 6) return "Below ideal — may affect recovery";
+  return "Low sleep — worth discussing";
+}
+
+function qualityInterpretation(q: number | null): string {
+  if (q == null) return "No quality data this week";
+  if (q >= 4) return "Reporting good sleep quality";
+  if (q >= 3) return "Moderate quality — room to improve";
+  return "Low quality reported — worth exploring";
+}
+
+function stressInterpretation(s: number | null): string {
+  if (s == null) return "No stress data this week";
+  if (s <= 2) return "Low stress — good recovery environment";
+  if (s <= 3) return "Moderate stress — monitor trend";
+  if (s <= 4) return "Elevated stress — may affect adherence";
+  return "High stress — consider discussing load";
+}
+
+function sessionsInterpretation(n: number | null, delta: DeltaResult | null): string {
+  if (n == null || n === 0) return "No sessions logged this week";
+  if (!delta) return `${n} session${n !== 1 ? "s" : ""} logged`;
+  if (delta.arrow === "flat") return `${n} session${n !== 1 ? "s" : ""} — consistent with last week`;
+  return `${n} session${n !== 1 ? "s" : ""} — ${delta.arrow === "up" ? "more" : "fewer"} than last week`;
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export function WeeklyReviewTab({ clientId }: Props) {
   const [showAll, setShowAll] = useState(false);
-  const [days, setDays] = useState<7 | 28>(7);
 
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
@@ -155,50 +283,9 @@ export function WeeklyReviewTab({ clientId }: Props) {
 
   const weeks = (data?.weeks ?? []) as Week[];
 
-  // ── Aggregate current and previous periods from weekly data ──────────────
-  const { cur, prev } = useMemo(() => {
-    // weeks[0] = most recent (current) week, weeks[1] = previous, etc.
-    // For 7d: use weeks[0] vs weeks[1]
-    // For 30d: aggregate weeks[0..3] vs weeks[4..7]
-    const weeksNeeded = days === 7 ? 1 : Math.ceil(days / 7); // 28d = 4 weeks
-    const curWeeks = weeks.slice(0, weeksNeeded);
-    const prevWeeks = weeks.slice(weeksNeeded, weeksNeeded * 2);
-
-    function aggAvg(arr: Week[], key: keyof Week): number | null {
-      const vals = arr.map(w => w[key] as number | null | undefined).filter((v): v is number => v != null);
-      return vals.length ? parseFloat((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)) : null;
-    }
-    function aggSum(arr: Week[], key: keyof Week): number | null {
-      const vals = arr.map(w => w[key] as number | null | undefined).filter((v): v is number => v != null);
-      return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
-    }
-
-    return {
-      cur: {
-        avgWeight: aggAvg(curWeeks, "avgWeight"),
-        avgSleepHours: aggAvg(curWeeks, "avgSleepHours"),
-        avgSleepQuality: aggAvg(curWeeks, "avgSleepQuality"),
-        avgStress: aggAvg(curWeeks, "avgStress"),
-        avgSteps: aggAvg(curWeeks, "avgSteps"),
-        sessionsCompleted: aggSum(curWeeks, "sessionsCompleted"),
-        mealLogCount: aggSum(curWeeks, "mealLogCount"),
-        mealLogTreats: aggSum(curWeeks, "mealLogTreats"),
-        mealLogIdealZonePct: aggAvg(curWeeks, "mealLogIdealZonePct"),
-        stepGoal: curWeeks[0]?.stepGoal ?? null,
-      },
-      prev: {
-        avgWeight: aggAvg(prevWeeks, "avgWeight"),
-        avgSleepHours: aggAvg(prevWeeks, "avgSleepHours"),
-        avgSleepQuality: aggAvg(prevWeeks, "avgSleepQuality"),
-        avgStress: aggAvg(prevWeeks, "avgStress"),
-        avgSteps: aggAvg(prevWeeks, "avgSteps"),
-        sessionsCompleted: aggSum(prevWeeks, "sessionsCompleted"),
-        mealLogCount: aggSum(prevWeeks, "mealLogCount"),
-        mealLogTreats: aggSum(prevWeeks, "mealLogTreats"),
-        mealLogIdealZonePct: aggAvg(prevWeeks, "mealLogIdealZonePct"),
-      },
-    };
-  }, [weeks, days]);
+  // ── Current week (weeks[0]) and previous week (weeks[1]) for summary cards ──
+  const cur = weeks[0] ?? null;
+  const prev = weeks[1] ?? null;
 
   if (isLoading) {
     return (
@@ -233,45 +320,138 @@ export function WeeklyReviewTab({ clientId }: Props) {
 
   const visibleWeeks = showAll ? weeks : weeks.slice(0, DEFAULT_VISIBLE);
   const hasMore = weeks.length > DEFAULT_VISIBLE;
-  const periodLabel = `vs prev ${days}d`; // 7d or 28d
+
+  // ── Deltas for summary cards ──────────────────────────────────────────────
+  const weightDelta = calcDelta(cur?.avgWeight, prev?.avgWeight, false, true); // % delta
+  const stepsDelta  = calcDelta(cur?.avgSteps, prev?.avgSteps, false, false);
+  const sleepDelta  = calcDelta(cur?.avgSleepHours, prev?.avgSleepHours, false, false);
+  const qualDelta   = calcDelta(cur?.avgSleepQuality, prev?.avgSleepQuality, false, false);
+  const stressDelta = calcDelta(cur?.avgStress, prev?.avgStress, true, false);
+  const sessDelta   = calcDelta(cur?.sessionsCompleted, prev?.sessionsCompleted, false, false);
+
+  // Colour for stress value
+  const stressColour = cur?.avgStress != null
+    ? cur.avgStress >= 4 ? C.red : cur.avgStress >= 3 ? C.amber : C.green
+    : C.fg;
+
+  // Colour for days logged
+  const daysColour = cur != null
+    ? cur.daysLogged >= 6 ? C.green : cur.daysLogged >= 4 ? C.amber : C.red
+    : C.fg;
 
   return (
-    <div className="space-y-6">
-      {/* ── Toggle ── */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">Overview</h3>
-        <div className="flex gap-1 bg-secondary rounded-lg p-0.5">
-          {([7, 28] as const).map(d => (
-            <button
-              key={d}
-              onClick={() => setDays(d)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                days === d ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {d}d
-            </button>
-          ))}
+    <div className="space-y-8">
+
+      {/* ── Last 7 Days summary ── */}
+      <div>
+        <p
+          className="text-[11px] font-medium uppercase tracking-[0.8px] mb-4"
+          style={{ color: C.muted }}
+        >
+          Last 7 Days
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+
+          {/* Avg Weight */}
+          {cur?.avgWeight != null && (
+            <SummaryCard
+              label="Avg Weight"
+              value={fmt(cur.avgWeight)}
+              unit="kg"
+              delta={weightDelta}
+              interpretation={weightInterpretation(weightDelta)}
+            />
+          )}
+
+          {/* Days Logged */}
+          {cur != null && (
+            <SummaryCard
+              label="Days Logged"
+              value={`${cur.daysLogged}`}
+              unit="/ 7"
+              interpretation={daysInterpretation(cur.daysLogged)}
+              valueColour={daysColour}
+            />
+          )}
+
+          {/* Avg Steps */}
+          {cur?.avgSteps != null && (
+            <SummaryCard
+              label="Avg Steps"
+              value={fmtK(Math.round(cur.avgSteps))}
+              delta={stepsDelta}
+              interpretation={stepsInterpretation(cur.avgSteps, cur.stepGoal, stepsDelta)}
+            />
+          )}
+
+          {/* Sleep Duration */}
+          {cur?.avgSleepHours != null && (
+            <SummaryCard
+              label="Avg Sleep"
+              value={fmt(cur.avgSleepHours)}
+              unit="h"
+              delta={sleepDelta}
+              interpretation={sleepInterpretation(cur.avgSleepHours)}
+            />
+          )}
+
+          {/* Sleep Quality */}
+          {cur?.avgSleepQuality != null && (
+            <SummaryCard
+              label="Sleep Quality"
+              value={fmt(cur.avgSleepQuality)}
+              unit="/ 5"
+              delta={qualDelta}
+              interpretation={qualityInterpretation(cur.avgSleepQuality)}
+            />
+          )}
+
+          {/* Stress */}
+          {cur?.avgStress != null && (
+            <SummaryCard
+              label="Avg Stress"
+              value={fmt(cur.avgStress)}
+              unit="/ 5"
+              delta={stressDelta}
+              interpretation={stressInterpretation(cur.avgStress)}
+              valueColour={stressColour}
+            />
+          )}
+
+          {/* Training Sessions */}
+          {cur != null && (
+            <SummaryCard
+              label="Sessions"
+              value={cur.sessionsCompleted > 0 ? String(cur.sessionsCompleted) : "0"}
+              delta={sessDelta}
+              interpretation={sessionsInterpretation(cur.sessionsCompleted, sessDelta)}
+            />
+          )}
+
         </div>
       </div>
 
-
-
-      {/* ── Weekly table ── */}
+      {/* ── Weekly history table ── */}
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Weekly History</h3>
+        <p
+          className="text-[11px] font-medium uppercase tracking-[0.8px] mb-4"
+          style={{ color: C.muted }}
+        >
+          Weekly History
+        </p>
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm table-fixed">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[24%]">Week</th>
-                  <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[9%]">Days</th>
+                  <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[22%]">Week</th>
+                  <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[8%]">Days</th>
+                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Weight</th>
                   <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Steps</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Sleep</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Quality</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Stress</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Sessions</th>
+                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Sleep</th>
+                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Quality</th>
+                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Stress</th>
+                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Sessions</th>
                 </tr>
               </thead>
               <tbody>
@@ -295,6 +475,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
           </div>
         )}
       </div>
+
     </div>
   );
 }
