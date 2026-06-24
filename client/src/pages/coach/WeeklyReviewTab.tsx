@@ -314,31 +314,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
             sub={prev.avgStress != null ? `${periodLabel}: ${fmt(prev.avgStress)}/5` : undefined}
           />
         )}
-        {/* Meals */}
-        {cur.mealLogCount != null && cur.mealLogCount > 0 && (
-          <StatCard
-            label="Meals Logged"
-            value={<>{cur.mealLogCount}<DeltaArrow current={cur.mealLogCount} previous={prev.mealLogCount} /></>}
-            sub={prev.mealLogCount != null ? `${periodLabel}: ${prev.mealLogCount}` : undefined}
-          />
-        )}
-        {/* Treats */}
-        {cur.mealLogTreats != null && (
-          <StatCard
-            label="Treats"
-            value={<>{cur.mealLogTreats}<DeltaArrow current={cur.mealLogTreats} previous={prev.mealLogTreats} lowerIsBetter /></>}
-            sub={prev.mealLogTreats != null ? `${periodLabel}: ${prev.mealLogTreats}` : undefined}
-          />
-        )}
-        {/* Ideal zone */}
-        {cur.mealLogIdealZonePct != null && (
-          <StatCard
-            label="Ideal Zone"
-            value={<>{cur.mealLogIdealZonePct}%<DeltaArrow current={cur.mealLogIdealZonePct} previous={prev.mealLogIdealZonePct} /></>}
-            sub={prev.mealLogIdealZonePct != null ? `${periodLabel}: ${prev.mealLogIdealZonePct}%` : undefined}
-            highlight
-          />
-        )}
+
       </div>
 
       {/* ── Weekly table ── */}
