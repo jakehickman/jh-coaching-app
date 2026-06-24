@@ -795,3 +795,13 @@
 - [x] Coach Nutrition Insights: hunger vs fullness scatter plot (1-10 axes, ideal zone shaded, dot size by frequency)
 - [x] Coach Nutrition Insights: treats weekly stacked bar chart (4-5 week columns, small/medium/large colour segments)
 - [x] Coach Nutrition Insights: meal timing card (consistency score, slot anchors, drift per slot)
+
+## 28d Period + Ideal Zone Card Rebuild (Jun 24)
+- [x] Change 30d period to 28d throughout app (InsightsView toggle, WeeklyReviewTab toggle)
+- [x] Server: richInsightsForClient accepts 28 as default days value
+- [x] Server: add prevIdealZonePct (previous period ideal zone %) for delta calculation
+- [x] Server: add hungerInZonePct (% meals hunger 3-4, regardless of fullness)
+- [x] Server: add fullnessInZonePct (% meals fullness 6-7, regardless of hunger)
+- [x] Server: add weeklyIdealZone (per-week breakdown for sparkline, 4 weeks for 28d)
+- [x] Server: add allTimeIdealZonePct (personal baseline, only if >28 days of history)
+- [x] IdealZoneCard: rebuilt with sparkline (SVG polyline, week-by-week), hunger/fullness split stats, trend-based card border colour (green/amber/red), dashed baseline reference line

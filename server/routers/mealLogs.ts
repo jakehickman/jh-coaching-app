@@ -348,7 +348,7 @@ export const mealLogsRouter = router({
   richInsightsForClient: adminProcedure
     .input(z.object({
       userId: z.number().int().positive(),
-      days: z.number().int().min(7).max(90).default(30),
+      days: z.number().int().min(7).max(90).default(28),
     }))
     .query(async ({ input }) => {
       const now = new Date();
@@ -356,15 +356,18 @@ export const mealLogsRouter = router({
       const prevFrom = new Date(curFrom.getTime() - input.days * 86400000);
       const curLogs = await getMealLogsForUser(input.userId, curFrom, now);
       const prevLogs = await getMealLogsForUser(input.userId, prevFrom, curFrom);
+      // All-time logs for personal baseline
+      const allTimeLogs = await getMealLogsForUser(input.userId);
       const curMeals = curLogs.filter(l => l.mealType === 'meal');
       const prevMeals = prevLogs.filter(l => l.mealType === 'meal');
+      const allTimeMeals = allTimeLogs.filter(l => l.mealType === 'meal');
       // Top stats
       const totalMeals = curMeals.length;
       const avgHunger = avg(curMeals.map(m => m.hungerRating));
       const avgFullness = avg(curMeals.map(m => m.fullnessRating));
       const prevAvgHunger = avg(prevMeals.map(m => m.hungerRating));
       const prevAvgFullness = avg(prevMeals.map(m => m.fullnessRating));
-      // Ideal zone
+      // Ideal zone — current period
       const mealsWithBoth = curMeals.filter(m => m.hungerRating != null && m.fullnessRating != null);
       const idealCount = mealsWithBoth.filter(m =>
         m.hungerRating! >= 3 && m.hungerRating! <= 4 &&
@@ -372,6 +375,58 @@ export const mealLogsRouter = router({
       ).length;
       const idealZonePct = mealsWithBoth.length > 0
         ? Math.round(idealCount / mealsWithBoth.length * 100) : null;
+      // Ideal zone — previous period
+      const prevMealsWithBoth = prevMeals.filter(m => m.hungerRating != null && m.fullnessRating != null);
+      const prevIdealCount = prevMealsWithBoth.filter(m =>
+        m.hungerRating! >= 3 && m.hungerRating! <= 4 &&
+        m.fullnessRating! >= 6 && m.fullnessRating! <= 7
+      ).length;
+      const prevIdealZonePct = prevMealsWithBoth.length > 0
+        ? Math.round(prevIdealCount / prevMealsWithBoth.length * 100) : null;
+      // Hunger in-zone % (hunger 3-4, regardless of fullness)
+      const mealsWithHunger = curMeals.filter(m => m.hungerRating != null);
+      const hungerInZonePct = mealsWithHunger.length > 0
+        ? Math.round(mealsWithHunger.filter(m => m.hungerRating! >= 3 && m.hungerRating! <= 4).length / mealsWithHunger.length * 100)
+        : null;
+      // Fullness in-zone % (fullness 6-7, regardless of hunger)
+      const mealsWithFullness = curMeals.filter(m => m.fullnessRating != null);
+      const fullnessInZonePct = mealsWithFullness.length > 0
+        ? Math.round(mealsWithFullness.filter(m => m.fullnessRating! >= 6 && m.fullnessRating! <= 7).length / mealsWithFullness.length * 100)
+        : null;
+      // All-time ideal zone % (personal baseline) — only meaningful if >28 days of history
+      const allTimeMealsWithBoth = allTimeMeals.filter(m => m.hungerRating != null && m.fullnessRating != null);
+      const allTimeIdealCount = allTimeMealsWithBoth.filter(m =>
+        m.hungerRating! >= 3 && m.hungerRating! <= 4 &&
+        m.fullnessRating! >= 6 && m.fullnessRating! <= 7
+      ).length;
+      // Only expose baseline if client has data spanning more than 28 days
+      const allTimeSpanDays = allTimeMeals.length >= 2
+        ? (allTimeMeals[allTimeMeals.length - 1].loggedAt.getTime() - allTimeMeals[0].loggedAt.getTime()) / 86400000
+        : 0;
+      const allTimeIdealZonePct = allTimeMealsWithBoth.length > 0 && allTimeSpanDays > 28
+        ? Math.round(allTimeIdealCount / allTimeMealsWithBoth.length * 100)
+        : null;
+      // Per-week ideal zone breakdown for sparkline
+      // Build 4 complete weeks + partial current week (oldest first)
+      const weeklyIdealZone: { weekStart: string; pct: number | null; meals: number }[] = [];
+      const numWeeks = input.days === 7 ? 1 : 4;
+      for (let w = numWeeks - 1; w >= 0; w--) {
+        const wEnd = new Date(now.getTime() - w * 7 * 86400000);
+        wEnd.setHours(23, 59, 59, 999);
+        const wStart = new Date(wEnd.getTime() - 6 * 86400000);
+        wStart.setHours(0, 0, 0, 0);
+        // Only include weeks within the current period
+        if (wStart < curFrom) wStart.setTime(curFrom.getTime());
+        const wMeals = curMeals.filter(m => m.loggedAt >= wStart && m.loggedAt <= wEnd);
+        const wWithBoth = wMeals.filter(m => m.hungerRating != null && m.fullnessRating != null);
+        const wIdeal = wWithBoth.filter(m =>
+          m.hungerRating! >= 3 && m.hungerRating! <= 4 &&
+          m.fullnessRating! >= 6 && m.fullnessRating! <= 7
+        ).length;
+        const pct = wWithBoth.length > 0 ? Math.round(wIdeal / wWithBoth.length * 100) : null;
+        const ws = `${wStart.getFullYear()}-${String(wStart.getMonth()+1).padStart(2,'0')}-${String(wStart.getDate()).padStart(2,'0')}`;
+        weeklyIdealZone.push({ weekStart: ws, pct, meals: wWithBoth.length });
+      }
       // Scatter data
       const scatter = curMeals
         .filter(m => m.hungerRating != null && m.fullnessRating != null)
@@ -495,6 +550,11 @@ export const mealLogsRouter = router({
         prevAvgHunger: prevAvgHunger != null ? Math.round(prevAvgHunger * 10) / 10 : null,
         prevAvgFullness: prevAvgFullness != null ? Math.round(prevAvgFullness * 10) / 10 : null,
         idealZonePct,
+        prevIdealZonePct,
+        hungerInZonePct,
+        fullnessInZonePct,
+        allTimeIdealZonePct,
+        weeklyIdealZone,
         idealCount,
         mealsWithBothRatings: mealsWithBoth.length,
         scatter,

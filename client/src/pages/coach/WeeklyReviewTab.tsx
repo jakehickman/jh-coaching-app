@@ -145,7 +145,7 @@ function WeekRow({ week }: { week: Week }) {
 // ── Main component ────────────────────────────────────────────────────────────
 export function WeeklyReviewTab({ clientId }: Props) {
   const [showAll, setShowAll] = useState(false);
-  const [days, setDays] = useState<7 | 30>(7);
+  const [days, setDays] = useState<7 | 28>(7);
 
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
@@ -160,7 +160,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
     // weeks[0] = most recent (current) week, weeks[1] = previous, etc.
     // For 7d: use weeks[0] vs weeks[1]
     // For 30d: aggregate weeks[0..3] vs weeks[4..7]
-    const weeksNeeded = days === 7 ? 1 : Math.ceil(days / 7);
+    const weeksNeeded = days === 7 ? 1 : Math.ceil(days / 7); // 28d = 4 weeks
     const curWeeks = weeks.slice(0, weeksNeeded);
     const prevWeeks = weeks.slice(weeksNeeded, weeksNeeded * 2);
 
@@ -233,7 +233,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
 
   const visibleWeeks = showAll ? weeks : weeks.slice(0, DEFAULT_VISIBLE);
   const hasMore = weeks.length > DEFAULT_VISIBLE;
-  const periodLabel = `vs prev ${days}d`;
+  const periodLabel = `vs prev ${days}d`; // 7d or 28d
 
   return (
     <div className="space-y-6">
@@ -241,7 +241,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground">Overview</h3>
         <div className="flex gap-1 bg-secondary rounded-lg p-0.5">
-          {([7, 30] as const).map(d => (
+          {([7, 28] as const).map(d => (
             <button
               key={d}
               onClick={() => setDays(d)}

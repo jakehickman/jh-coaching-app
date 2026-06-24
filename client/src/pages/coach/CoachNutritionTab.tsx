@@ -315,37 +315,42 @@ function TreatsChart({ treatsByWeek, fillHeight }: {
 }) {
   const maxTotal = Math.max(...treatsByWeek.map(w => w.total), 1);
 
+  const BAR_MAX_PX = fillHeight ? 160 : 96;
+
   return (
-    <div className={fillHeight ? "flex items-end gap-2 w-full h-full pb-5" : "flex items-end gap-2 h-32 w-full"}>
+    <div className={fillHeight ? "flex items-end gap-2 w-full" : "flex items-end gap-2 h-32 w-full"}>
       {treatsByWeek.map((week) => {
-        const totalH = (week.total / maxTotal) * 100;
-        const smallH = week.total > 0 ? (week.small / week.total) * totalH : 0;
-        const medH = week.total > 0 ? (week.medium / week.total) * totalH : 0;
-        const largeH = week.total > 0 ? (week.large / week.total) * totalH : 0;
+        const barPx = week.total > 0 ? Math.max(8, Math.round((week.total / maxTotal) * BAR_MAX_PX)) : 4;
 
         return (
-          <div key={week.weekStart} className="flex-1 flex flex-col items-center gap-1">
-            {week.total > 0 && (
-              <span className="text-[9px] font-medium text-foreground/70 mb-0.5">{week.total}</span>
-            )}
-            <div className="w-full flex flex-col-reverse rounded overflow-hidden" style={{ height: week.total > 0 ? "84px" : "96px" }}>
+          <div key={week.weekStart} className="flex-1 flex flex-col items-center">
+            {/* Count label — reserve space even when empty */}
+            <span className="text-[9px] font-medium text-foreground/70 mb-0.5" style={{ visibility: week.total > 0 ? 'visible' : 'hidden' }}>
+              {week.total || 0}
+            </span>
+            {/* Bar */}
+            <div
+              className="w-full flex flex-col-reverse rounded overflow-hidden"
+              style={{ height: `${barPx}px` }}
+            >
               {week.total === 0 ? (
-                <div className="w-full bg-secondary/30 rounded" style={{ height: "4px" }} />
+                <div className="w-full h-full bg-secondary/30" />
               ) : (
                 <>
                   {week.small > 0 && (
-                    <div className="w-full bg-green-500/70" style={{ height: `${smallH}%` }} />
+                    <div className="w-full bg-green-500/70" style={{ flex: week.small }} />
                   )}
                   {week.medium > 0 && (
-                    <div className="w-full bg-amber-400/80" style={{ height: `${medH}%` }} />
+                    <div className="w-full bg-amber-400/80" style={{ flex: week.medium }} />
                   )}
                   {week.large > 0 && (
-                    <div className="w-full bg-red-400/80" style={{ height: `${largeH}%` }} />
+                    <div className="w-full bg-red-400/80" style={{ flex: week.large }} />
                   )}
                 </>
               )}
             </div>
-            <span className="text-[9px] text-muted-foreground text-center leading-tight">
+            {/* Date label */}
+            <span className="text-[9px] text-muted-foreground text-center leading-tight mt-1">
               {new Date(week.weekStart + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
             </span>
           </div>
@@ -355,8 +360,191 @@ function TreatsChart({ treatsByWeek, fillHeight }: {
   );
 }
 
+// ─── Ideal Zone Card ─────────────────────────────────────────────────────────
+
+function IdealZoneSparkline({
+  weeklyIdealZone,
+  allTimeIdealZonePct,
+}: {
+  weeklyIdealZone: { weekStart: string; pct: number | null; meals: number }[];
+  allTimeIdealZonePct: number | null;
+}) {
+  const W = 180;
+  const H = 52;
+  const PAD_X = 6;
+  const PAD_Y = 6;
+  const innerW = W - PAD_X * 2;
+  const innerH = H - PAD_Y * 2;
+
+  // Only plot weeks that have data
+  const plotPoints = weeklyIdealZone
+    .map((w, i) => ({ idx: i, pct: w.pct }))
+    .filter((p): p is { idx: number; pct: number } => p.pct != null);
+
+  if (plotPoints.length < 2) {
+    return (
+      <div className="flex items-center justify-center h-full text-[10px] text-muted-foreground/50">
+        Not enough data
+      </div>
+    );
+  }
+
+  const n = weeklyIdealZone.length;
+  const allPcts = plotPoints.map(p => p.pct);
+  const minPct = Math.max(0, Math.min(...allPcts) - 10);
+  const maxPct = Math.min(100, Math.max(...allPcts) + 10);
+  const range = maxPct - minPct || 20;
+
+  function toX(idx: number) { return PAD_X + (idx / Math.max(n - 1, 1)) * innerW; }
+  function toY(pct: number) { return PAD_Y + (1 - (pct - minPct) / range) * innerH; }
+
+  const polyline = plotPoints.map(p => `${toX(p.idx).toFixed(1)},${toY(p.pct).toFixed(1)}`).join(' ');
+
+  // Baseline reference line Y
+  const baselineY = allTimeIdealZonePct != null ? toY(allTimeIdealZonePct) : null;
+
+  return (
+    <svg width={W} height={H} className="overflow-visible">
+      {/* Baseline dashed reference line */}
+      {baselineY != null && (
+        <>
+          <line
+            x1={PAD_X} y1={baselineY}
+            x2={W - PAD_X} y2={baselineY}
+            stroke="#9BA1A6" strokeWidth={1} strokeDasharray="3 3" opacity={0.5}
+          />
+          <text x={W - PAD_X + 2} y={baselineY + 3} fontSize={8} fill="#9BA1A6" opacity={0.7}>
+            avg {allTimeIdealZonePct}%
+          </text>
+        </>
+      )}
+      {/* Sparkline */}
+      <polyline
+        points={polyline}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        opacity={0.8}
+      />
+      {/* Dots */}
+      {plotPoints.map(p => (
+        <circle key={p.idx} cx={toX(p.idx)} cy={toY(p.pct)} r={2.5} fill="currentColor" opacity={0.9} />
+      ))}
+    </svg>
+  );
+}
+
+function IdealZoneCard({
+  insights,
+  days,
+}: {
+  insights: {
+    idealZonePct: number | null;
+    prevIdealZonePct?: number | null;
+    hungerInZonePct?: number | null;
+    fullnessInZonePct?: number | null;
+    allTimeIdealZonePct?: number | null;
+    weeklyIdealZone?: { weekStart: string; pct: number | null; meals: number }[];
+  };
+  days: number;
+}) {
+  const { idealZonePct, prevIdealZonePct, hungerInZonePct, fullnessInZonePct, allTimeIdealZonePct, weeklyIdealZone } = insights;
+
+  if (idealZonePct == null) {
+    return <div className="bg-card border border-border rounded-xl p-5" />;
+  }
+
+  // Trend direction: current vs previous period, ±5% threshold
+  const delta = prevIdealZonePct != null ? idealZonePct - prevIdealZonePct : null;
+  const trend: 'up' | 'flat' | 'down' | null =
+    delta == null ? null :
+    delta > 5 ? 'up' :
+    delta < -5 ? 'down' :
+    'flat';
+
+  const borderClass =
+    trend === 'up' ? 'border-green-500/50' :
+    trend === 'down' ? 'border-red-500/50' :
+    trend === 'flat' ? 'border-amber-500/40' :
+    'border-border';
+
+  const headlineClass =
+    trend === 'up' ? 'text-green-400' :
+    trend === 'down' ? 'text-red-400' :
+    trend === 'flat' ? 'text-amber-400' :
+    'text-foreground';
+
+  const bgClass =
+    trend === 'up' ? 'bg-green-500/5' :
+    trend === 'down' ? 'bg-red-500/5' :
+    trend === 'flat' ? 'bg-amber-500/5' :
+    'bg-card';
+
+  return (
+    <div className={cn('border rounded-xl p-4 flex flex-col gap-3', bgClass, borderClass)}>
+      {/* Headline row */}
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className={cn('text-3xl font-bold leading-none', headlineClass)}>{idealZonePct}%</p>
+          <p className="text-xs text-muted-foreground mt-1">Ideal zone · last {days}d</p>
+        </div>
+        {/* Trend delta */}
+        {delta != null && (
+          <div className={cn(
+            'flex items-center gap-0.5 text-xs font-medium mt-0.5',
+            trend === 'up' ? 'text-green-400' : trend === 'down' ? 'text-red-400' : 'text-amber-400'
+          )}>
+            {trend === 'up' ? <ArrowUp className="w-3 h-3" /> : trend === 'down' ? <ArrowDown className="w-3 h-3" /> : null}
+            <span>
+              {trend === 'flat'
+                ? `flat vs ${prevIdealZonePct}%`
+                : `${trend === 'up' ? '+' : ''}${delta}% vs ${prevIdealZonePct}%`}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Sparkline */}
+      {weeklyIdealZone && weeklyIdealZone.length > 0 && (
+        <div className={cn(headlineClass)}>
+          <IdealZoneSparkline
+            weeklyIdealZone={weeklyIdealZone}
+            allTimeIdealZonePct={allTimeIdealZonePct ?? null}
+          />
+        </div>
+      )}
+
+      {/* Hunger / Fullness split */}
+      {(hungerInZonePct != null || fullnessInZonePct != null) && (
+        <div className="flex flex-col gap-1 pt-1 border-t border-border/50">
+          {hungerInZonePct != null && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Hunger in zone</span>
+              <span className={cn('font-semibold', hungerInZonePct >= 60 ? 'text-green-400' : hungerInZonePct >= 40 ? 'text-amber-400' : 'text-red-400')}>
+                {hungerInZonePct}%
+              </span>
+            </div>
+          )}
+          {fullnessInZonePct != null && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Fullness in zone</span>
+              <span className={cn('font-semibold', fullnessInZonePct >= 60 ? 'text-green-400' : fullnessInZonePct >= 40 ? 'text-amber-400' : 'text-red-400')}>
+                {fullnessInZonePct}%
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Insights View ────────────────────────────────────────────────────────────
+
 function InsightsView({ clientId }: { clientId: number }) {
-  const [days, setDays] = useState<7 | 30>(30);
+  const [days, setDays] = useState<7 | 28>(28);
   const [showTimingInfo, setShowTimingInfo] = useState(false);
 
   const { data: insights, isLoading } = trpc.mealLogs.richInsightsForClient.useQuery(
@@ -379,7 +567,7 @@ function InsightsView({ clientId }: { clientId: number }) {
       {/* Period toggle */}
       <div className="flex justify-end">
         <div className="flex gap-1 bg-secondary rounded-lg p-1">
-          {([7, 30] as const).map((d) => (
+          {([7, 28] as const).map((d) => (
             <button
               key={d}
               onClick={() => setDays(d)}
@@ -439,17 +627,7 @@ function InsightsView({ clientId }: { clientId: number }) {
             )}
           </div>
         </div>
-        {insights.idealZonePct != null ? (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 flex flex-col justify-between">
-            <p className="text-3xl font-bold text-green-400">{insights.idealZonePct}%</p>
-            <div>
-              <p className="text-xs text-muted-foreground mt-1">Ideal zone</p>
-              <p className="text-[10px] text-muted-foreground/60 mt-0.5">Hunger 3–4 · Fullness 6–7</p>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-card border border-border rounded-xl p-5" />
-        )}
+        <IdealZoneCard insights={insights} days={days} />
       </div>
 
       {/* Bottom 3-card row: scatter, treats, timing */}
