@@ -255,58 +255,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
         </div>
       </div>
 
-      {/* ── Stat cards grid ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {/* Weight */}
-        {cur.avgWeight != null && (
-          <StatCard
-            label="Avg Weight"
-            value={<>{cur.avgWeight} kg<DeltaArrow current={cur.avgWeight} previous={prev.avgWeight} lowerIsBetter /></>}
-            sub={prev.avgWeight != null ? `${periodLabel}: ${prev.avgWeight} kg` : undefined}
-          />
-        )}
-        {/* Training sessions */}
-        {cur.sessionsCompleted != null && (
-          <StatCard
-            label="Sessions"
-            value={<>{cur.sessionsCompleted}<DeltaArrow current={cur.sessionsCompleted} previous={prev.sessionsCompleted} /></>}
-            sub={prev.sessionsCompleted != null ? `${periodLabel}: ${prev.sessionsCompleted}` : undefined}
-          />
-        )}
-        {/* Steps */}
-        {cur.avgSteps != null && (
-          <StatCard
-            label="Avg Steps"
-            value={<>{fmtK(Math.round(cur.avgSteps))}<DeltaArrow current={cur.avgSteps} previous={prev.avgSteps} /></>}
-            sub={cur.stepGoal != null ? `Goal: ${fmtK(cur.stepGoal)}` : prev.avgSteps != null ? `${periodLabel}: ${fmtK(Math.round(prev.avgSteps))}` : undefined}
-          />
-        )}
-        {/* Sleep hours */}
-        {cur.avgSleepHours != null && (
-          <StatCard
-            label="Avg Sleep"
-            value={<>{fmt(cur.avgSleepHours)} h<DeltaArrow current={cur.avgSleepHours} previous={prev.avgSleepHours} /></>}
-            sub={prev.avgSleepHours != null ? `${periodLabel}: ${fmt(prev.avgSleepHours)} h` : undefined}
-          />
-        )}
-        {/* Sleep quality */}
-        {cur.avgSleepQuality != null && (
-          <StatCard
-            label="Sleep Quality"
-            value={<>{fmt(cur.avgSleepQuality)}/5<DeltaArrow current={cur.avgSleepQuality} previous={prev.avgSleepQuality} /></>}
-            sub={prev.avgSleepQuality != null ? `${periodLabel}: ${fmt(prev.avgSleepQuality)}/5` : undefined}
-          />
-        )}
-        {/* Stress */}
-        {cur.avgStress != null && (
-          <StatCard
-            label="Avg Stress"
-            value={<>{fmt(cur.avgStress)}/5<DeltaArrow current={cur.avgStress} previous={prev.avgStress} lowerIsBetter /></>}
-            sub={prev.avgStress != null ? `${periodLabel}: ${fmt(prev.avgStress)}/5` : undefined}
-          />
-        )}
 
-      </div>
 
       {/* ── Weekly table ── */}
       <div>

@@ -805,3 +805,7 @@
 - [x] Server: add weeklyIdealZone (per-week breakdown for sparkline, 4 weeks for 28d)
 - [x] Server: add allTimeIdealZonePct (personal baseline, only if >28 days of history)
 - [x] IdealZoneCard: rebuilt with sparkline (SVG polyline, week-by-week), hunger/fullness split stats, trend-based card border colour (green/amber/red), dashed baseline reference line
+
+## Behaviour Tab Redesign (Jun 24)
+- [ ] Rename "Overview" tab to "Behaviour" in ClientHub tab bar
+- [ ] Apply premium dark analytics design system to the Behaviour (Overview) tab: dark cards, Inter, data-driven colour, trend indicators, plain-language interpretations
