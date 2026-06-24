@@ -60,7 +60,7 @@ function WeekRow({ week, isExpanded, onToggle }: {
         onClick={() => hasData && onToggle()}
       >
         {/* Week label */}
-        <td className="px-3 py-2.5 min-w-[140px]">
+        <td className="px-3 py-2.5 whitespace-nowrap">
           <div className="flex items-center gap-1.5">
             {hasData ? (
               isExpanded
@@ -211,13 +211,12 @@ export function WeeklyReviewTab({ clientId, onWeekClick }: Props) {
 
   return (
     <div>
-      <SectionLabel>Weekly Summary</SectionLabel>
-      <div className="mt-2 bg-card border border-border rounded-xl overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[18%]">Week</th>
+                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[24%]">Week</th>
                 <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[9%]">Days</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Steps</th>
                 <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[9%]">Meals</th>

@@ -73,7 +73,7 @@ function WeekRow({ week, isExpanded, onToggle }: {
         onClick={() => hasData && onToggle()}
       >
         {/* Week label */}
-        <td className="px-3 py-2.5 w-[20%]">
+        <td className="px-3 py-2.5 whitespace-nowrap">
           <div className="flex items-center gap-1.5">
             {hasData ? (
               isExpanded
@@ -313,17 +313,17 @@ export function BodyCompSummaryTable({ clientId }: Props) {
 
   return (
     <div>
-      <SectionLabel>Weekly Body Composition</SectionLabel>
+      <SectionLabel>Weekly Summary</SectionLabel>
       <div className="mt-2 bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">Week</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">Avg Weight</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">Waist</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">Hip</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">Skinfold</th>
+                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[30%]">Week</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[17.5%]">Avg Weight</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[17.5%]">Waist</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[17.5%]">Hip</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[17.5%]">Skinfold</th>
               </tr>
             </thead>
             <tbody>
