@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, UtensilsCrossed } from "lucide-react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -131,10 +131,7 @@ function MealLogView({ clientId }: { clientId: number }) {
                     <div className="flex items-center gap-0.5 mt-0.5">
                       {/* Green dot = meals logged */}
                       <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      {/* Amber dot = out-of-range rating */}
-                      {dayData.hasOutOfRange && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                      )}
+    
                     </div>
                   )}
                 </button>
@@ -146,7 +143,7 @@ function MealLogView({ clientId }: { clientId: number }) {
         {/* Legend */}
         <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block" /> Meals logged</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> Out-of-range rating</span>
+
         </div>
       </div>
 
@@ -173,13 +170,13 @@ function MealLogView({ clientId }: { clientId: number }) {
                   return (
                     <div key={meal.id} className="px-4 py-3">
                       <div className="flex items-start gap-3">
-                        {/* Thumbnail */}
-                        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-secondary flex items-center justify-center">
-                          {meal.photoUrl ? (
-                            <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-[9px] text-muted-foreground">No photo</span>
-                          )}
+                {/* Thumbnail */}
+                    <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-secondary flex items-center justify-center">
+                      {meal.photoUrl ? (
+                        <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
+                      ) : (
+                        <UtensilsCrossed size={20} className="text-muted-foreground/50" />
+                      )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
@@ -292,8 +289,8 @@ function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
       {/* Ideal zone */}
       <rect x={zoneX1} y={zoneY1} width={zoneX2 - zoneX1} height={zoneY2 - zoneY1}
         fill="#4ade80" fillOpacity={0.12} rx={3} />
-      <text x={zoneX1 + (zoneX2 - zoneX1) / 2} y={zoneY1 - 4}
-        textAnchor="middle" fontSize={9} fill="#4ade80" opacity={0.8}>Ideal Zone</text>
+      <text x={zoneX1 + (zoneX2 - zoneX1) / 2} y={zoneY1 - 6}
+        textAnchor="middle" fontSize={8} fill="#4ade80" opacity={0.7}>Ideal</text>
       {/* Axis labels */}
       {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
         <g key={n}>
@@ -401,13 +398,14 @@ function InsightsView({ clientId }: { clientId: number }) {
         </div>
       )}
 
-      {/* Top stats row */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card border border-border rounded-xl p-4">
+      {/* Top stats row — narrow cards, left-aligned */}
+      <div className="flex gap-3">
+        <div className="bg-card border border-border rounded-xl p-4 min-w-[120px]">
           <p className="text-2xl font-bold text-foreground">{insights.totalMeals}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Meals</p>
+          <p className="text-[10px] text-muted-foreground/60 mt-1">last {days}d</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4 min-w-[140px]">
           <p className="text-2xl font-bold text-foreground">
             {insights.avgHunger ?? "—"}
             {insights.avgHunger != null && (
@@ -415,8 +413,11 @@ function InsightsView({ clientId }: { clientId: number }) {
             )}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">Avg Hunger</p>
+          {insights.prevAvgHunger != null && (
+            <p className="text-[10px] text-muted-foreground/60 mt-1">vs. {insights.prevAvgHunger} prev period</p>
+          )}
         </div>
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4 min-w-[140px]">
           <p className="text-2xl font-bold text-foreground">
             {insights.avgFullness ?? "—"}
             {insights.avgFullness != null && (
@@ -424,26 +425,29 @@ function InsightsView({ clientId }: { clientId: number }) {
             )}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">Avg Fullness</p>
+          {insights.prevAvgFullness != null && (
+            <p className="text-[10px] text-muted-foreground/60 mt-1">vs. {insights.prevAvgFullness} prev period</p>
+          )}
         </div>
       </div>
 
       {/* Ideal zone card */}
       {insights.idealZonePct != null && (
-        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 flex items-center justify-between">
-          <div>
-            <p className="text-4xl font-bold text-green-400">{insights.idealZonePct}%</p>
-            <p className="text-xs text-muted-foreground mt-1">of rated meals in ideal zone</p>
-          </div>
-          <div className="text-right text-xs text-muted-foreground space-y-1">
-            <p>Hunger 3–4 before eating</p>
-            <p>Fullness 6–7 after eating</p>
-            <p className="text-[10px] mt-1">last {days} days</p>
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5">
+          <p className="text-4xl font-bold text-green-400">{insights.idealZonePct}%</p>
+          <p className="text-sm text-muted-foreground mt-1">of rated meals in ideal zone</p>
+          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground/70">
+            <span>Hunger 3–4 before eating</span>
+            <span>·</span>
+            <span>Fullness 6–7 after eating</span>
+            <span>·</span>
+            <span>last {days} days</span>
           </div>
         </div>
       )}
 
-      {/* Scatter plot + treats side by side */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Bottom 3-card row: scatter, treats, timing */}
+      <div className="grid grid-cols-3 gap-4">
         {/* Scatter */}
         <div className="bg-card border border-border rounded-xl p-4 space-y-3">
           <p className="text-sm font-semibold text-foreground">Hunger vs. Fullness</p>
@@ -458,73 +462,79 @@ function InsightsView({ clientId }: { clientId: number }) {
 
         {/* Treats */}
         <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
+          <div>
             <p className="text-sm font-semibold text-foreground">Treats</p>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500/70 inline-block" />Small</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-400/80 inline-block" />Medium</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-red-400/80 inline-block" />Large</span>
-            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {insights.treatsByWeek.reduce((s, w) => s + w.total, 0)} total in last {days}d
+            </p>
+          </div>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-green-500/70 inline-block" />Small</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-amber-400/80 inline-block" />Medium</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-red-400/80 inline-block" />Large</span>
           </div>
           <TreatsChart treatsByWeek={insights.treatsByWeek} />
-          <p className="text-xs text-muted-foreground">
-            {insights.treatsByWeek.reduce((s, w) => s + w.total, 0)} total treats in last {days}d
-          </p>
         </div>
+
+        {/* Meal timing — moved into 3-col row */}
+        {insights.hasTimingData ? (
+          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-foreground">Meal Timing</p>
+              <button
+                onClick={() => setShowTimingInfo(v => !v)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Info className="w-4 h-4" />
+              </button>
+            </div>
+
+            {showTimingInfo && (
+              <div className="bg-secondary/50 rounded-lg px-3 py-2 text-xs text-muted-foreground">
+                The consistency score is the percentage of all logged meals that fell within 1 hour of their nearest usual meal time. Slot anchors are the median time for each meal position across days with the most common number of meals. Treats are excluded.
+              </div>
+            )}
+
+            {insights.consistencyScore != null && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Consistency</span>
+                  <span className={cn("font-bold", insights.consistencyScore >= 70 ? "text-green-400" : insights.consistencyScore >= 40 ? "text-orange-400" : "text-red-400")}>
+                    {insights.consistencyScore}%
+                  </span>
+                </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all", insights.consistencyScore >= 70 ? "bg-green-500" : insights.consistencyScore >= 40 ? "bg-orange-500" : "bg-red-500")}
+                    style={{ width: `${insights.consistencyScore}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2 pt-1">
+              {insights.slots.map((slot: { label: string; anchor: string; driftMin: number }) => (
+                <div key={slot.label} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground w-16 shrink-0">{slot.label}</span>
+                  <span className="font-medium text-foreground">{slot.anchor}</span>
+                  <span className={cn(
+                    "text-xs font-medium",
+                    slot.driftMin <= 30 ? "text-green-400" : slot.driftMin <= 60 ? "text-teal-400" : "text-red-400"
+                  )}>
+                    ±{slot.driftMin} min
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-center">
+            <p className="text-xs text-muted-foreground text-center">Not enough data for meal timing</p>
+          </div>
+        )}
       </div>
 
-      {/* Meal timing */}
-      {insights.hasTimingData && (
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">Meal Timing</p>
-            <button
-              onClick={() => setShowTimingInfo(v => !v)}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Info className="w-4 h-4" />
-            </button>
-          </div>
 
-          {showTimingInfo && (
-            <div className="bg-secondary/50 rounded-lg px-3 py-2 text-xs text-muted-foreground">
-              The consistency score is the percentage of all logged meals that fell within 1 hour of their nearest usual meal time. Slot anchors are the median time for each meal position across days with the most common number of meals. Treats are excluded.
-            </div>
-          )}
-
-          {insights.consistencyScore != null && (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Consistency</span>
-                <span className={cn("font-bold", insights.consistencyScore >= 70 ? "text-green-400" : insights.consistencyScore >= 40 ? "text-amber-400" : "text-red-400")}>
-                  {insights.consistencyScore}%
-                </span>
-              </div>
-              <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                <div
-                  className={cn("h-full rounded-full transition-all", insights.consistencyScore >= 70 ? "bg-green-500" : insights.consistencyScore >= 40 ? "bg-amber-500" : "bg-red-500")}
-                  style={{ width: `${insights.consistencyScore}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2 pt-1">
-            {insights.slots.map((slot: { label: string; anchor: string; driftMin: number }) => (
-              <div key={slot.label} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground w-16 shrink-0">{slot.label}</span>
-                <span className="font-medium text-foreground">{slot.anchor}</span>
-                <span className={cn(
-                  "text-xs font-medium",
-                  slot.driftMin <= 30 ? "text-green-400" : slot.driftMin <= 60 ? "text-teal-400" : "text-red-400"
-                )}>
-                  ±{slot.driftMin} min
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

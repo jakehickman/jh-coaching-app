@@ -420,8 +420,13 @@ export const mealLogsRouter = router({
       const slots: { label: string; anchor: string; anchorMins: number; driftMin: number }[] = [];
       if (modeDays.length >= 3 && modeCount > 0) {
         for (let s = 0; s < modeCount; s++) {
-          const slotTimes = modeDays.map(d => d[s]);
-          const anchorMins = avg(slotTimes)!;
+          // Filter out midnight-5am artefacts (meals logged 0:00-4:59am)
+          const slotTimes = modeDays.map(d => d[s]).filter(t => t >= 300);
+          if (slotTimes.length < 3) continue;
+          // Use median for robustness against outliers
+          const sorted = slotTimes.slice().sort((a, b) => a - b);
+          const mid = Math.floor(sorted.length / 2);
+          const anchorMins = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
           const drift = avg(slotTimes.map(t => Math.abs(t - anchorMins)))!;
           const h = Math.floor(anchorMins / 60) % 24;
           const m = Math.round(anchorMins % 60);
