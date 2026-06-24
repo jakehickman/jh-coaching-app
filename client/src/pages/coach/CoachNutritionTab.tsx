@@ -316,7 +316,7 @@ function TreatsChart({ treatsByWeek, fillHeight }: {
   const maxTotal = Math.max(...treatsByWeek.map(w => w.total), 1);
 
   return (
-    <div className={fillHeight ? "flex items-end gap-2 w-full h-full" : "flex items-end gap-2 h-32 w-full"}>
+    <div className={fillHeight ? "flex items-end gap-2 w-full h-full pb-5" : "flex items-end gap-2 h-32 w-full"}>
       {treatsByWeek.map((week) => {
         const totalH = (week.total / maxTotal) * 100;
         const smallH = week.total > 0 ? (week.small / week.total) * totalH : 0;
@@ -467,7 +467,7 @@ function InsightsView({ clientId }: { clientId: number }) {
         </div>
 
         {/* Treats */}
-        <div className="bg-card border border-border rounded-xl p-4 flex flex-col" style={{ minHeight: 0 }}>
+        <div className="bg-card border border-border rounded-xl p-4 flex flex-col">
           <div className="mb-2 shrink-0">
             <p className="text-sm font-semibold text-foreground">Treats</p>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -479,8 +479,10 @@ function InsightsView({ clientId }: { clientId: number }) {
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-amber-400/80 inline-block" />Medium</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-red-400/80 inline-block" />Large</span>
           </div>
-          <div className="h-36">
-            <TreatsChart treatsByWeek={insights.treatsByWeek} fillHeight />
+          <div className="flex-1 relative" style={{ minHeight: 0 }}>
+            <div className="absolute inset-0">
+              <TreatsChart treatsByWeek={insights.treatsByWeek} fillHeight />
+            </div>
           </div>
         </div>
 
