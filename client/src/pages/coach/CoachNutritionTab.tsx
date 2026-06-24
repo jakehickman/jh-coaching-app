@@ -163,7 +163,6 @@ function StatCard({
           {unit && <span className="text-[15px] font-medium" style={{ color: C.muted }}>{unit}</span>}
         </div>
         <div className="flex items-center gap-3 mt-2">
-          <span className="text-[12px]" style={{ color: C.muted }}>{period}</span>
           {trend}
         </div>
       </div>
@@ -483,11 +482,10 @@ function TreatsChart({
   treatsByWeek: { weekStart: string; small: number; medium: number; large: number; total: number }[];
 }) {
   const maxTotal = Math.max(...treatsByWeek.map(w => w.total), 1);
-  const BAR_MAX_PX = 120;
-  const BAR_GAP_RATIO = 0.2; // 20% of bar width as gap
+  const BAR_MAX_PX = 190;
 
   return (
-    <div className="flex items-end gap-[12%] w-full" style={{ height: BAR_MAX_PX + 36 }}>
+    <div className="flex items-end gap-[12%] w-full" style={{ height: BAR_MAX_PX + 40 }}>
       {treatsByWeek.map((week) => {
         const barPx = week.total > 0 ? Math.max(6, Math.round((week.total / maxTotal) * BAR_MAX_PX)) : 4;
         const dateLabel = new Date(week.weekStart + "T00:00:00").toLocaleDateString("en-AU", {
@@ -533,7 +531,7 @@ function TreatsChart({
             </div>
             {/* Label */}
             <span
-              className="text-center leading-tight mt-1.5"
+              className="whitespace-nowrap mt-1.5"
               style={{ fontSize: 10, color: C.muted, opacity: 0.65 }}
             >
               {dateLabel}
@@ -895,10 +893,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         />
       </div>
 
-      {/* ── Row 2: Ideal Zone (full width) ── */}
-      <IdealZoneCard insights={insights} days={days} />
-
-      {/* ── Row 3: Scatter + Treats ── */}
+      {/* ── Row 2: Scatter + Treats ── */}
       <div className="grid grid-cols-2 gap-4">
         {/* Scatter */}
         <Card className="flex flex-col gap-4">
@@ -912,7 +907,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           )}
         </Card>
 
-        {/* Treats */}
+        {/* Treats — cap at 4 weeks for 28d view */}
         <Card className="flex flex-col gap-4">
           <SectionLabel>Treats</SectionLabel>
           <div className="flex items-center gap-4" style={{ fontSize: 11, color: C.muted }}>
@@ -929,24 +924,27 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               Large
             </span>
           </div>
-          <TreatsChart treatsByWeek={insights.treatsByWeek} />
+          <TreatsChart treatsByWeek={insights.treatsByWeek.slice(-4)} />
         </Card>
       </div>
 
-      {/* ── Row 4: Meal Timing ── */}
-      {insights.hasTimingData ? (
-        <MealTimingCard
-          slots={insights.slots}
-          consistencyScore={insights.consistencyScore ?? null}
-          showInfo={showTimingInfo}
-          onToggleInfo={() => setShowTimingInfo(v => !v)}
-        />
-      ) : (
-        <Card>
-          <SectionLabel>Meal Timing</SectionLabel>
-          <p className="text-[13px] mt-3" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
-        </Card>
-      )}
+      {/* ── Row 3: Ideal Zone + Meal Timing side by side ── */}
+      <div className="grid grid-cols-2 gap-4">
+        <IdealZoneCard insights={insights} days={days} />
+        {insights.hasTimingData ? (
+          <MealTimingCard
+            slots={insights.slots}
+            consistencyScore={insights.consistencyScore ?? null}
+            showInfo={showTimingInfo}
+            onToggleInfo={() => setShowTimingInfo(v => !v)}
+          />
+        ) : (
+          <Card>
+            <SectionLabel>Meal Timing</SectionLabel>
+            <p className="text-[13px] mt-3" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

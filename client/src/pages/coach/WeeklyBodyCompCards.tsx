@@ -110,7 +110,7 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
                 {hasWaist && <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Waist</th>}
                 {hasHip   && <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Hip</th>}
                 {activeSites.map(s => (
-                  <th key={s.key} className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">{s.label}</th>
+                  <th key={s.key} className="text-right px-3 py-2.5 text-[10px] font-medium uppercase tracking-wider whitespace-nowrap" style={{ color: "rgba(236,237,238,0.35)" }}>{s.label}</th>
                 ))}
                 {hasSf && <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Total</th>}
                 {hasNotes && <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</th>}
@@ -138,7 +138,7 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
                       const val = siteAvg(m, s.fields);
                       return (
                         <td key={s.key} className="px-3 py-2.5 text-right">
-                          <span className="text-xs tabular-nums text-foreground">{val != null ? `${fmt(val)} mm` : "—"}</span>
+                          <span className="text-xs tabular-nums" style={{ color: "rgba(236,237,238,0.45)" }}>{val != null ? `${fmt(val)} mm` : "—"}</span>
                         </td>
                       );
                     })}
