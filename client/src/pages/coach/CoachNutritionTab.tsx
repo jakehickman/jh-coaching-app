@@ -1,10 +1,22 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Info, UtensilsCrossed } from "lucide-react";
-import { ArrowUp, ArrowDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, UtensilsCrossed, ArrowUp, ArrowDown, Minus } from "lucide-react";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Design tokens (mirroring index.css CSS vars) ─────────────────────────────
+const C = {
+  bg: "#0F1511",
+  surface: "#1A2020",
+  surfaceVariant: "#222B28",
+  primary: "#52B788",
+  border: "#2D3B35",
+  fg: "#ECEDEE",
+  muted: "#9BA1A6",
+  amber: "#FBBF24",
+  red: "#F87171",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const SCALE_LABELS: Record<number, string> = {
   1: "Ravenous", 2: "Very hungry", 3: "Hungry", 4: "Mild hunger",
@@ -29,9 +41,600 @@ function formatMonthYear(year: number, month: number) {
   return new Date(year, month - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" });
 }
 
-function formatWeekStart(dateStr: string) {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+// Colour helpers
+function scoreColor(pct: number): string {
+  if (pct >= 70) return C.primary;
+  if (pct >= 50) return C.amber;
+  return C.red;
+}
+
+function trendColor(trend: "up" | "flat" | "down" | null): string {
+  if (trend === "up") return C.primary;
+  if (trend === "down") return C.red;
+  if (trend === "flat") return C.amber;
+  return C.muted;
+}
+
+function getTrend(current: number | null, previous: number | null, threshold = 5): "up" | "flat" | "down" | null {
+  if (current == null || previous == null) return null;
+  const delta = current - previous;
+  if (delta > threshold) return "up";
+  if (delta < -threshold) return "down";
+  return "flat";
+}
+
+// ─── Shared card shell ────────────────────────────────────────────────────────
+
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn("rounded-xl p-6", className)}
+      style={{
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] font-medium uppercase tracking-[0.8px]" style={{ color: C.muted }}>
+      {children}
+    </p>
+  );
+}
+
+function Interpretation({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[12px] leading-relaxed" style={{ color: C.muted }}>
+      {children}
+    </p>
+  );
+}
+
+// ─── Trend indicator ──────────────────────────────────────────────────────────
+
+function TrendBadge({
+  current,
+  previous,
+  higherIsBetter = true,
+  threshold = 0.1,
+}: {
+  current: number | null;
+  previous: number | null;
+  higherIsBetter?: boolean;
+  threshold?: number;
+}) {
+  if (current == null || previous == null) return null;
+  const delta = current - previous;
+  if (Math.abs(delta) < threshold) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[12px] font-medium" style={{ color: C.muted }}>
+        <Minus className="w-3 h-3" />
+        flat
+      </span>
+    );
+  }
+  const isUp = delta > 0;
+  const isGood = higherIsBetter ? isUp : !isUp;
+  const color = isGood ? C.primary : C.red;
+  const sign = isUp ? "+" : "";
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[12px] font-medium" style={{ color }}>
+      {isUp ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+      {sign}{typeof delta === "number" && !Number.isInteger(delta) ? delta.toFixed(1) : delta} vs prev
+    </span>
+  );
+}
+
+// ─── Stat card ────────────────────────────────────────────────────────────────
+
+function StatCard({
+  label,
+  value,
+  unit = "",
+  period,
+  trend,
+  interpretation,
+  valueColor,
+}: {
+  label: string;
+  value: string | number | null;
+  unit?: string;
+  period: string;
+  trend?: React.ReactNode;
+  interpretation?: string;
+  valueColor?: string;
+}) {
+  return (
+    <Card className="flex flex-col gap-3">
+      <SectionLabel>{label}</SectionLabel>
+      <div>
+        <div className="flex items-baseline gap-1.5">
+          <span
+            className="font-bold leading-none"
+            style={{ fontSize: 36, color: valueColor ?? C.fg }}
+          >
+            {value ?? "—"}
+          </span>
+          {unit && <span className="text-[15px] font-medium" style={{ color: C.muted }}>{unit}</span>}
+        </div>
+        <div className="flex items-center gap-3 mt-2">
+          <span className="text-[12px]" style={{ color: C.muted }}>{period}</span>
+          {trend}
+        </div>
+      </div>
+      {interpretation && <Interpretation>{interpretation}</Interpretation>}
+    </Card>
+  );
+}
+
+// ─── Progress bar ─────────────────────────────────────────────────────────────
+
+function ProgressBar({ value, color }: { value: number; color: string }) {
+  return (
+    <div
+      className="w-full rounded-full overflow-hidden"
+      style={{ height: 6, background: `${color}26` }}
+    >
+      <div
+        className="h-full rounded-full transition-all duration-500"
+        style={{ width: `${Math.min(100, value)}%`, background: color }}
+      />
+    </div>
+  );
+}
+
+// ─── Ideal Zone Card ──────────────────────────────────────────────────────────
+
+function IdealZoneSparkline({
+  weeklyIdealZone,
+  allTimeIdealZonePct,
+  accentColor,
+}: {
+  weeklyIdealZone: { weekStart: string; pct: number | null; meals: number }[];
+  allTimeIdealZonePct: number | null;
+  accentColor: string;
+}) {
+  const W = 200;
+  const H = 56;
+  const PAD_X = 8;
+  const PAD_Y = 8;
+  const innerW = W - PAD_X * 2;
+  const innerH = H - PAD_Y * 2;
+
+  const plotPoints = weeklyIdealZone
+    .map((w, i) => ({ idx: i, pct: w.pct }))
+    .filter((p): p is { idx: number; pct: number } => p.pct != null);
+
+  if (plotPoints.length < 2) {
+    return (
+      <p className="text-[11px]" style={{ color: C.muted }}>
+        Not enough weekly data for trend line
+      </p>
+    );
+  }
+
+  const n = weeklyIdealZone.length;
+  const allPcts = plotPoints.map(p => p.pct);
+  const minPct = Math.max(0, Math.min(...allPcts) - 12);
+  const maxPct = Math.min(100, Math.max(...allPcts) + 12);
+  const range = maxPct - minPct || 20;
+
+  function toX(idx: number) { return PAD_X + (idx / Math.max(n - 1, 1)) * innerW; }
+  function toY(pct: number) { return PAD_Y + (1 - (pct - minPct) / range) * innerH; }
+
+  const polyline = plotPoints.map(p => `${toX(p.idx).toFixed(1)},${toY(p.pct).toFixed(1)}`).join(" ");
+  const baselineY = allTimeIdealZonePct != null ? toY(allTimeIdealZonePct) : null;
+
+  // Week labels
+  const weekLabels = weeklyIdealZone.map((w, i) => {
+    const d = new Date(w.weekStart + "T00:00:00");
+    return { idx: i, label: d.toLocaleDateString("en-AU", { day: "numeric", month: "short" }) };
+  });
+
+  return (
+    <div>
+      <svg width={W} height={H} style={{ overflow: 'visible' }}>
+      {/* Baseline */}
+      {baselineY != null && (
+        <>
+          <line
+            x1={PAD_X} y1={baselineY}
+            x2={W - PAD_X} y2={baselineY}
+            stroke={C.muted} strokeWidth={1} strokeDasharray="3 3" opacity={0.45}
+          />
+          <text x={W - PAD_X + 3} y={baselineY + 3.5} fontSize={9} fill={C.muted} opacity={0.6}>
+            avg {allTimeIdealZonePct}%
+          </text>
+        </>
+      )}
+        {/* Line */}
+        <polyline
+          points={polyline}
+          fill="none"
+          stroke={accentColor}
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          opacity={0.85}
+        />
+        {/* Dots */}
+        {plotPoints.map(p => (
+          <circle key={p.idx} cx={toX(p.idx)} cy={toY(p.pct)} r={3} fill={accentColor} opacity={0.9} />
+        ))}
+      </svg>
+      {/* Week labels */}
+      <div className="flex" style={{ width: W }}>
+        {weekLabels.map(w => (
+          <div
+            key={w.idx}
+            className="flex-1 text-center"
+            style={{ fontSize: 9, color: C.muted, opacity: 0.6, marginTop: 2 }}
+          >
+            {w.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IdealZoneCard({
+  insights,
+  days,
+}: {
+  insights: {
+    idealZonePct: number | null;
+    prevIdealZonePct?: number | null;
+    hungerInZonePct?: number | null;
+    fullnessInZonePct?: number | null;
+    allTimeIdealZonePct?: number | null;
+    weeklyIdealZone?: { weekStart: string; pct: number | null; meals: number }[];
+  };
+  days: number;
+}) {
+  const {
+    idealZonePct,
+    prevIdealZonePct,
+    hungerInZonePct,
+    fullnessInZonePct,
+    allTimeIdealZonePct,
+    weeklyIdealZone,
+  } = insights;
+
+  if (idealZonePct == null) {
+    return (
+      <Card>
+        <SectionLabel>Ideal Zone</SectionLabel>
+        <p className="text-[13px] mt-3" style={{ color: C.muted }}>No rated meals in this period.</p>
+      </Card>
+    );
+  }
+
+  const delta = prevIdealZonePct != null ? idealZonePct - prevIdealZonePct : null;
+  const trend = getTrend(idealZonePct, prevIdealZonePct, 5);
+  const accentColor = scoreColor(idealZonePct);
+  const trendCol = trendColor(trend);
+
+  // Plain-language interpretation
+  let interpretation = "";
+  if (trend === "up") {
+    interpretation = `Up ${delta}% from last period — moving in the right direction.`;
+  } else if (trend === "down") {
+    interpretation = `Down ${Math.abs(delta!)}% from last period — worth discussing in the next check-in.`;
+  } else if (trend === "flat") {
+    interpretation = "Holding steady — consistent but not yet progressing.";
+  } else {
+    if (idealZonePct >= 70) interpretation = "Strong compliance this period.";
+    else if (idealZonePct >= 50) interpretation = "Moderate compliance — room to improve.";
+    else interpretation = "Below target — focus area for coaching.";
+  }
+
+  return (
+    <Card>
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <SectionLabel>Ideal Zone</SectionLabel>
+        <span className="text-[11px]" style={{ color: C.muted }}>Last {days}d</span>
+      </div>
+
+      {/* Score + trend */}
+      <div className="flex items-end gap-4 mb-1">
+        <span className="font-bold leading-none" style={{ fontSize: 40, color: accentColor }}>
+          {idealZonePct}%
+        </span>
+        {delta != null && (
+          <span
+            className="inline-flex items-center gap-0.5 text-[12px] font-medium mb-1"
+            style={{ color: trendCol }}
+          >
+            {trend === "up" ? <ArrowUp className="w-3.5 h-3.5" /> : trend === "down" ? <ArrowDown className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
+            {trend === "flat" ? "flat" : `${delta! > 0 ? "+" : ""}${delta}%`} vs prev
+          </span>
+        )}
+      </div>
+
+      <Interpretation>{interpretation}</Interpretation>
+
+      {/* Sparkline */}
+      {weeklyIdealZone && weeklyIdealZone.length > 0 && (
+        <div className="mt-4">
+          <IdealZoneSparkline
+            weeklyIdealZone={weeklyIdealZone}
+            allTimeIdealZonePct={allTimeIdealZonePct ?? null}
+            accentColor={accentColor}
+          />
+        </div>
+      )}
+
+      {/* Hunger / Fullness split */}
+      {(hungerInZonePct != null || fullnessInZonePct != null) && (
+        <div className="mt-4 pt-4 grid grid-cols-2 gap-4" style={{ borderTop: `1px solid ${C.border}` }}>
+          {hungerInZonePct != null && (
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.7px] mb-2" style={{ color: C.muted }}>
+                Hunger (3–4)
+              </p>
+              <div className="flex items-baseline gap-1.5 mb-1.5">
+                <span className="text-[22px] font-bold leading-none" style={{ color: scoreColor(hungerInZonePct) }}>
+                  {hungerInZonePct}%
+                </span>
+                <span className="text-[11px]" style={{ color: C.muted }}>in zone</span>
+              </div>
+              <ProgressBar value={hungerInZonePct} color={scoreColor(hungerInZonePct)} />
+            </div>
+          )}
+          {fullnessInZonePct != null && (
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.7px] mb-2" style={{ color: C.muted }}>
+                Fullness (6–7)
+              </p>
+              <div className="flex items-baseline gap-1.5 mb-1.5">
+                <span className="text-[22px] font-bold leading-none" style={{ color: scoreColor(fullnessInZonePct) }}>
+                  {fullnessInZonePct}%
+                </span>
+                <span className="text-[11px]" style={{ color: C.muted }}>in zone</span>
+              </div>
+              <ProgressBar value={fullnessInZonePct} color={scoreColor(fullnessInZonePct)} />
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ─── Scatter plot ─────────────────────────────────────────────────────────────
+
+function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
+  const SIZE = 260;
+  const PAD = 28;
+  const INNER = SIZE - PAD * 2;
+  const STEP = INNER / 9;
+
+  const counts: Record<string, number> = {};
+  for (const p of scatter) {
+    const k = `${p.h},${p.f}`;
+    counts[k] = (counts[k] ?? 0) + 1;
+  }
+
+  function toX(h: number) { return PAD + (h - 1) * STEP; }
+  function toY(f: number) { return SIZE - PAD - (f - 1) * STEP; }
+
+  const zoneX1 = toX(3);
+  const zoneX2 = toX(4) + STEP;
+  const zoneY1 = toY(7);
+  const zoneY2 = toY(6) + STEP;
+
+  const plotted = new Set<string>();
+  const dots: { x: number; y: number; r: number; ideal: boolean }[] = [];
+  for (const p of scatter) {
+    const k = `${p.h},${p.f}`;
+    if (plotted.has(k)) continue;
+    plotted.add(k);
+    const cnt = counts[k];
+    const r = Math.min(10, 5 + (cnt - 1) * 1.2);
+    const ideal = isIdealHunger(p.h) && isIdealFullness(p.f);
+    dots.push({ x: toX(p.h), y: toY(p.f), r, ideal });
+  }
+
+  return (
+    <svg width={SIZE} height={SIZE} className="overflow-visible">
+      {/* Grid lines — 8% opacity, no axis borders */}
+      {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+        <g key={n}>
+          <line x1={toX(n)} y1={PAD} x2={toX(n)} y2={SIZE - PAD} stroke={C.fg} strokeOpacity={0.08} strokeWidth={1} />
+          <line x1={PAD} y1={toY(n)} x2={SIZE - PAD} y2={toY(n)} stroke={C.fg} strokeOpacity={0.08} strokeWidth={1} />
+        </g>
+      ))}
+      {/* Ideal zone rectangle */}
+      <rect
+        x={zoneX1} y={zoneY1}
+        width={zoneX2 - zoneX1} height={zoneY2 - zoneY1}
+        fill={C.primary} fillOpacity={0.1}
+        stroke={C.primary} strokeOpacity={0.25} strokeWidth={1}
+        rx={3}
+      />
+      {/* Ideal zone label — above the rectangle */}
+      <text
+        x={(zoneX1 + zoneX2) / 2} y={zoneY1 - 5}
+        textAnchor="middle" fontSize={9}
+        fill={C.primary} opacity={0.7}
+      >
+        Ideal zone
+      </text>
+      {/* Axis labels */}
+      {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+        <g key={n}>
+          <text x={toX(n)} y={SIZE - PAD + 13} textAnchor="middle" fontSize={9} fill={C.muted} opacity={0.5}>{n}</text>
+          <text x={PAD - 9} y={toY(n) + 3.5} textAnchor="middle" fontSize={9} fill={C.muted} opacity={0.5}>{n}</text>
+        </g>
+      ))}
+      {/* Axis titles */}
+      <text x={SIZE / 2} y={SIZE - 2} textAnchor="middle" fontSize={10} fill={C.muted} opacity={0.55}>Hunger</text>
+      <text x={9} y={SIZE / 2} textAnchor="middle" fontSize={10} fill={C.muted} opacity={0.55}
+        transform={`rotate(-90, 9, ${SIZE / 2})`}>Fullness</text>
+      {/* Dots */}
+      {dots.map((d, i) => (
+        <circle
+          key={i} cx={d.x} cy={d.y} r={d.r}
+          fill={d.ideal ? C.primary : C.muted}
+          fillOpacity={d.ideal ? 0.75 : 0.35}
+        />
+      ))}
+    </svg>
+  );
+}
+
+// ─── Treats chart ─────────────────────────────────────────────────────────────
+
+function TreatsChart({
+  treatsByWeek,
+}: {
+  treatsByWeek: { weekStart: string; small: number; medium: number; large: number; total: number }[];
+}) {
+  const maxTotal = Math.max(...treatsByWeek.map(w => w.total), 1);
+  const BAR_MAX_PX = 120;
+  const BAR_GAP_RATIO = 0.2; // 20% of bar width as gap
+
+  return (
+    <div className="flex items-end gap-[12%] w-full" style={{ height: BAR_MAX_PX + 36 }}>
+      {treatsByWeek.map((week) => {
+        const barPx = week.total > 0 ? Math.max(6, Math.round((week.total / maxTotal) * BAR_MAX_PX)) : 4;
+        const dateLabel = new Date(week.weekStart + "T00:00:00").toLocaleDateString("en-AU", {
+          day: "numeric", month: "short",
+        });
+
+        return (
+          <div key={week.weekStart} className="flex-1 flex flex-col items-center">
+            {/* Count */}
+            <span
+              className="font-medium mb-1"
+              style={{
+                fontSize: 11,
+                color: week.total > 0 ? C.fg : "transparent",
+                opacity: 0.7,
+              }}
+            >
+              {week.total}
+            </span>
+            {/* Bar */}
+            <div
+              className="w-full flex flex-col-reverse overflow-hidden"
+              style={{
+                height: barPx,
+                borderRadius: 4,
+              }}
+            >
+              {week.total === 0 ? (
+                <div className="w-full h-full" style={{ background: `${C.border}` }} />
+              ) : (
+                <>
+                  {week.small > 0 && (
+                    <div className="w-full" style={{ flex: week.small, background: C.primary, opacity: 0.8 }} />
+                  )}
+                  {week.medium > 0 && (
+                    <div className="w-full" style={{ flex: week.medium, background: C.amber, opacity: 0.85 }} />
+                  )}
+                  {week.large > 0 && (
+                    <div className="w-full" style={{ flex: week.large, background: C.red, opacity: 0.8 }} />
+                  )}
+                </>
+              )}
+            </div>
+            {/* Label */}
+            <span
+              className="text-center leading-tight mt-1.5"
+              style={{ fontSize: 10, color: C.muted, opacity: 0.65 }}
+            >
+              {dateLabel}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Meal timing card ─────────────────────────────────────────────────────────
+
+function MealTimingCard({
+  slots,
+  consistencyScore,
+  showInfo,
+  onToggleInfo,
+}: {
+  slots: { label: string; anchor: string; driftMin: number }[];
+  consistencyScore: number | null;
+  showInfo: boolean;
+  onToggleInfo: () => void;
+}) {
+  const consistencyColor =
+    consistencyScore == null ? C.muted :
+    consistencyScore >= 70 ? C.primary :
+    consistencyScore >= 40 ? C.amber :
+    C.red;
+
+  const consistencyInterpretation =
+    consistencyScore == null ? "" :
+    consistencyScore >= 70 ? "Meals are landing close to their usual times." :
+    consistencyScore >= 40 ? "Some variability in meal timing — could affect hunger patterns." :
+    "High variability in meal timing — worth exploring with the client.";
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <SectionLabel>Meal Timing</SectionLabel>
+        <button
+          onClick={onToggleInfo}
+          className="transition-opacity hover:opacity-100"
+          style={{ color: C.muted, opacity: 0.6 }}
+        >
+          <Info className="w-4 h-4" />
+        </button>
+      </div>
+
+      {showInfo && (
+        <div
+          className="rounded-lg px-3 py-2.5 text-[12px] leading-relaxed"
+          style={{ background: C.surfaceVariant, color: C.muted }}
+        >
+          Consistency is the percentage of meals that fell within 1 hour of their usual time. Slot anchors are the median time for each meal cluster. Treats are excluded.
+        </div>
+      )}
+
+      {consistencyScore != null && (
+        <div>
+          <div className="flex items-baseline justify-between mb-2">
+            <span className="text-[13px]" style={{ color: C.muted }}>Consistency</span>
+            <span className="text-[22px] font-bold leading-none" style={{ color: consistencyColor }}>
+              {consistencyScore}%
+            </span>
+          </div>
+          <ProgressBar value={consistencyScore} color={consistencyColor} />
+          <Interpretation>{consistencyInterpretation}</Interpretation>
+        </div>
+      )}
+
+      <div className="space-y-3 pt-1">
+        {slots.map((slot) => {
+          const driftColor = slot.driftMin <= 30 ? C.primary : slot.driftMin <= 60 ? C.amber : C.red;
+          return (
+            <div key={slot.label} className="flex items-center justify-between">
+              <span className="text-[13px] w-16 shrink-0" style={{ color: C.muted }}>{slot.label}</span>
+              <span className="text-[13px] font-medium" style={{ color: C.fg }}>{slot.anchor}</span>
+              <span className="text-[12px] font-medium" style={{ color: driftColor }}>
+                ±{slot.driftMin} min
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
 }
 
 // ─── Calendar Meal Log View ───────────────────────────────────────────────────
@@ -51,17 +654,14 @@ function MealLogView({ clientId }: { clientId: number }) {
 
   const byDate = calData as Record<string, DayData>;
 
-  // Build calendar grid (Mon-Sun)
   const firstDay = new Date(year, month - 1, 1);
   const daysInMonth = new Date(year, month, 0).getDate();
-  // Monday=0 offset
   const startOffset = (firstDay.getDay() + 6) % 7;
 
   const cells: (number | null)[] = [
     ...Array(startOffset).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
-  // Pad to complete weeks
   while (cells.length % 7 !== 0) cells.push(null);
 
   function prevMonth() {
@@ -79,36 +679,46 @@ function MealLogView({ clientId }: { clientId: number }) {
 
   return (
     <div className="flex gap-6">
-      {/* Calendar */}
       <div className="flex-1 min-w-0">
-        {/* Month nav */}
         <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
-            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+          <button
+            onClick={prevMonth}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: C.muted }}
+            onMouseEnter={e => (e.currentTarget.style.background = C.surfaceVariant)}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          >
+            <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm font-semibold text-foreground">{formatMonthYear(year, month)}</span>
-          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          <span className="text-[14px] font-medium" style={{ color: C.fg }}>{formatMonthYear(year, month)}</span>
+          <button
+            onClick={nextMonth}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: C.muted }}
+            onMouseEnter={e => (e.currentTarget.style.background = C.surfaceVariant)}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          >
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Day headers */}
         <div className="grid grid-cols-7 mb-1">
           {DAY_HEADERS.map(d => (
-            <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground py-1">{d}</div>
+            <div key={d} className="text-center py-1" style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.7px", color: C.muted, opacity: 0.7 }}>
+              {d.toUpperCase()}
+            </div>
           ))}
         </div>
 
-        {/* Calendar cells */}
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: C.primary, borderTopColor: "transparent" }} />
           </div>
         ) : (
           <div className="grid grid-cols-7 gap-1">
             {cells.map((day, idx) => {
               if (!day) return <div key={idx} />;
-              const key = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+              const key = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               const dayData = byDate[key];
               const isSelected = selectedDate === key;
               const isToday = today.getFullYear() === year && today.getMonth() + 1 === month && today.getDate() === day;
@@ -118,21 +728,17 @@ function MealLogView({ clientId }: { clientId: number }) {
                 <button
                   key={idx}
                   onClick={() => setSelectedDate(isSelected ? null : key)}
-                  className={cn(
-                    "relative aspect-square flex flex-col items-center justify-center rounded-lg text-sm font-medium transition-colors",
-                    hasMeals ? "cursor-pointer hover:bg-secondary/80" : "cursor-default",
-                    isSelected ? "bg-primary/20 ring-1 ring-primary" : hasMeals ? "bg-secondary/40" : "",
-                    isToday && !isSelected ? "ring-1 ring-primary/40" : "",
-                    !hasMeals ? "text-muted-foreground/40" : "text-foreground"
-                  )}
+                  className="relative aspect-square flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors"
+                  style={{
+                    cursor: hasMeals ? "pointer" : "default",
+                    background: isSelected ? `${C.primary}22` : hasMeals ? `${C.fg}08` : "transparent",
+                    outline: isSelected ? `1px solid ${C.primary}` : isToday && !isSelected ? `1px solid ${C.primary}44` : "none",
+                    color: hasMeals ? C.fg : `${C.muted}55`,
+                  }}
                 >
-                  <span className="text-xs">{day}</span>
+                  <span>{day}</span>
                   {dayData && (
-                    <div className="flex items-center gap-0.5 mt-0.5">
-                      {/* Green dot = meals logged */}
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-    
-                    </div>
+                    <span className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: C.primary }} />
                   )}
                 </button>
               );
@@ -140,27 +746,27 @@ function MealLogView({ clientId }: { clientId: number }) {
           </div>
         )}
 
-        {/* Legend */}
-        <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block" /> Meals logged</span>
-
+        <div className="flex items-center gap-4 mt-3" style={{ fontSize: 10, color: C.muted, opacity: 0.65 }}>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full inline-block" style={{ background: C.primary }} />
+            Meals logged
+          </span>
         </div>
       </div>
 
-      {/* Day detail panel */}
       <div className="w-96 shrink-0">
         {selectedDate && selectedDayData ? (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-border">
-              <p className="text-sm font-semibold text-foreground">
+          <div className="rounded-xl overflow-hidden" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+            <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <p className="text-[14px] font-medium" style={{ color: C.fg }}>
                 {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-[12px] mt-0.5" style={{ color: C.muted }}>
                 {selectedDayData.meals.filter(m => m.mealType === "meal").length} meal{selectedDayData.meals.filter(m => m.mealType === "meal").length !== 1 ? "s" : ""}
                 {selectedDayData.treatCount > 0 ? ` · ${selectedDayData.treatCount} treat${selectedDayData.treatCount !== 1 ? "s" : ""}` : ""}
               </p>
             </div>
-            <div className="divide-y divide-border">
+            <div>
               {selectedDayData.meals
                 .slice()
                 .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime())
@@ -168,46 +774,45 @@ function MealLogView({ clientId }: { clientId: number }) {
                   const h = meal.hungerRating;
                   const f = meal.fullnessRating;
                   return (
-                    <div key={meal.id} className="px-4 py-3">
+                    <div key={meal.id} className="px-5 py-3.5" style={{ borderBottom: `1px solid ${C.border}` }}>
                       <div className="flex items-start gap-3">
-                {/* Thumbnail */}
-                    <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-secondary flex items-center justify-center">
-                      {meal.photoUrl ? (
-                        <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
-                      ) : (
-                        <UtensilsCrossed size={20} className="text-muted-foreground/50" />
-                      )}
+                        <div className="w-11 h-11 rounded-lg overflow-hidden shrink-0 flex items-center justify-center" style={{ background: C.surfaceVariant }}>
+                          {meal.photoUrl ? (
+                            <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
+                          ) : (
+                            <UtensilsCrossed size={18} style={{ color: `${C.muted}55` }} />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-xs text-muted-foreground">{formatTime(new Date(meal.loggedAt))}</span>
+                            <span className="text-[12px]" style={{ color: C.muted }}>{formatTime(new Date(meal.loggedAt))}</span>
                             {meal.mealType === "treat" && (
-                              <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">Treat</span>
+                              <span className="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}18`, color: C.amber }}>Treat</span>
                             )}
                             {meal.isOffPlan && (
-                              <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">Off Plan</span>
+                              <span className="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.red}18`, color: C.red }}>Off Plan</span>
                             )}
                           </div>
-                          {meal.name && <p className="text-sm font-medium text-foreground truncate">{meal.name}</p>}
-                          {meal.portionSize && <p className="text-xs text-muted-foreground capitalize">{meal.portionSize} portion</p>}
+                          {meal.name && <p className="text-[13px] font-medium truncate" style={{ color: C.fg }}>{meal.name}</p>}
+                          {meal.portionSize && <p className="text-[12px] capitalize" style={{ color: C.muted }}>{meal.portionSize} portion</p>}
                           {meal.mealType === "meal" && (h != null || f != null) && (
-                            <div className="flex items-center gap-3 mt-1.5">
+                            <div className="flex items-center gap-4 mt-1.5">
                               {h != null && (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[10px] text-muted-foreground">Hunger</span>
-                                  <span className={cn("text-xs font-bold", isIdealHunger(h) ? "text-green-400" : "text-amber-400")}>{h}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[11px]" style={{ color: C.muted }}>Hunger</span>
+                                  <span className="text-[12px] font-bold" style={{ color: isIdealHunger(h) ? C.primary : C.amber }}>{h}</span>
                                 </div>
                               )}
                               {f != null && (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[10px] text-muted-foreground">Fullness</span>
-                                  <span className={cn("text-xs font-bold", isIdealFullness(f) ? "text-green-400" : "text-amber-400")}>{f}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[11px]" style={{ color: C.muted }}>Fullness</span>
+                                  <span className="text-[12px] font-bold" style={{ color: isIdealFullness(f) ? C.primary : C.amber }}>{f}</span>
                                 </div>
                               )}
                             </div>
                           )}
                           {meal.notes && (
-                            <p className="text-xs text-muted-foreground mt-1 italic">"{meal.notes}"</p>
+                            <p className="text-[12px] mt-1 italic" style={{ color: C.muted }}>"{meal.notes}"</p>
                           )}
                         </div>
                       </div>
@@ -217,7 +822,7 @@ function MealLogView({ clientId }: { clientId: number }) {
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full min-h-[200px] text-sm text-muted-foreground">
+          <div className="flex items-center justify-center h-full min-h-[200px] text-[13px]" style={{ color: C.muted }}>
             {Object.keys(byDate).length === 0 && !isLoading
               ? "No meals logged this month"
               : "Select a day to view meals"}
@@ -230,321 +835,7 @@ function MealLogView({ clientId }: { clientId: number }) {
 
 // ─── Insights View ────────────────────────────────────────────────────────────
 
-function DeltaArrow({ current, previous, idealFn }: {
-  current: number | null;
-  previous: number | null;
-  idealFn: (n: number) => boolean;
-}) {
-  if (current == null || previous == null) return null;
-  const diff = current - previous;
-  if (Math.abs(diff) < 0.05) return null;
-  const movingTowardIdeal = idealFn(Math.round(current)) && !idealFn(Math.round(previous));
-  const isGood = movingTowardIdeal || (idealFn(Math.round(previous)) && idealFn(Math.round(current)));
-  return diff > 0
-    ? <ArrowUp className={cn("w-3 h-3 inline ml-1", isGood ? "text-green-400" : "text-muted-foreground")} />
-    : <ArrowDown className={cn("w-3 h-3 inline ml-1", isGood ? "text-green-400" : "text-muted-foreground")} />;
-}
-
-function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
-  const SIZE = 280;
-  const PAD = 28;
-  const INNER = SIZE - PAD * 2;
-  const STEP = INNER / 9; // 10 values: 1..10
-
-  // Count duplicates
-  const counts: Record<string, number> = {};
-  for (const p of scatter) {
-    const k = `${p.h},${p.f}`;
-    counts[k] = (counts[k] ?? 0) + 1;
-  }
-
-  function toX(h: number) { return PAD + (h - 1) * STEP; }
-  function toY(f: number) { return SIZE - PAD - (f - 1) * STEP; }
-
-  // Ideal zone: hunger 3-4, fullness 6-7
-  const zoneX1 = toX(3); const zoneX2 = toX(4) + STEP;
-  const zoneY1 = toY(7); const zoneY2 = toY(6) + STEP;
-
-  const plotted = new Set<string>();
-  const dots: { x: number; y: number; r: number; ideal: boolean }[] = [];
-  for (const p of scatter) {
-    const k = `${p.h},${p.f}`;
-    if (plotted.has(k)) continue;
-    plotted.add(k);
-    const cnt = counts[k];
-    const r = Math.min(9, 4 + (cnt - 1) * 1.5);
-    const ideal = isIdealHunger(p.h) && isIdealFullness(p.f);
-    dots.push({ x: toX(p.h), y: toY(p.f), r, ideal });
-  }
-
-  return (
-    <svg width={SIZE} height={SIZE} className="overflow-visible">
-      {/* Grid lines */}
-      {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-        <g key={n}>
-          <line x1={toX(n)} y1={PAD} x2={toX(n)} y2={SIZE - PAD} stroke="currentColor" strokeOpacity={0.07} strokeWidth={1} />
-          <line x1={PAD} y1={toY(n)} x2={SIZE - PAD} y2={toY(n)} stroke="currentColor" strokeOpacity={0.07} strokeWidth={1} />
-        </g>
-      ))}
-      {/* Ideal zone */}
-      <rect x={zoneX1} y={zoneY1} width={zoneX2 - zoneX1} height={zoneY2 - zoneY1}
-        fill="#4ade80" fillOpacity={0.12} rx={3} />
-      {/* Axis labels */}
-      {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-        <g key={n}>
-          <text x={toX(n)} y={SIZE - PAD + 12} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.4}>{n}</text>
-          <text x={PAD - 8} y={toY(n) + 3} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.4}>{n}</text>
-        </g>
-      ))}
-      {/* Axis titles */}
-      <text x={SIZE / 2} y={SIZE - 2} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.5}>Hunger</text>
-      <text x={8} y={SIZE / 2} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.5}
-        transform={`rotate(-90, 8, ${SIZE / 2})`}>Fullness</text>
-      {/* Dots */}
-      {dots.map((d, i) => (
-        <circle key={i} cx={d.x} cy={d.y} r={d.r}
-          fill={d.ideal ? "#4ade80" : "#6b7280"} fillOpacity={d.ideal ? 0.8 : 0.5} />
-      ))}
-    </svg>
-  );
-}
-
-function TreatsChart({ treatsByWeek, fillHeight }: {
-  treatsByWeek: { weekStart: string; small: number; medium: number; large: number; total: number }[];
-  fillHeight?: boolean;
-}) {
-  const maxTotal = Math.max(...treatsByWeek.map(w => w.total), 1);
-
-  const BAR_MAX_PX = fillHeight ? 160 : 96;
-
-  return (
-    <div className={fillHeight ? "flex items-end gap-2 w-full" : "flex items-end gap-2 h-32 w-full"}>
-      {treatsByWeek.map((week) => {
-        const barPx = week.total > 0 ? Math.max(8, Math.round((week.total / maxTotal) * BAR_MAX_PX)) : 4;
-
-        return (
-          <div key={week.weekStart} className="flex-1 flex flex-col items-center">
-            {/* Count label — reserve space even when empty */}
-            <span className="text-[9px] font-medium text-foreground/70 mb-0.5" style={{ visibility: week.total > 0 ? 'visible' : 'hidden' }}>
-              {week.total || 0}
-            </span>
-            {/* Bar */}
-            <div
-              className="w-full flex flex-col-reverse rounded overflow-hidden"
-              style={{ height: `${barPx}px` }}
-            >
-              {week.total === 0 ? (
-                <div className="w-full h-full bg-secondary/30" />
-              ) : (
-                <>
-                  {week.small > 0 && (
-                    <div className="w-full bg-green-500/70" style={{ flex: week.small }} />
-                  )}
-                  {week.medium > 0 && (
-                    <div className="w-full bg-amber-400/80" style={{ flex: week.medium }} />
-                  )}
-                  {week.large > 0 && (
-                    <div className="w-full bg-red-400/80" style={{ flex: week.large }} />
-                  )}
-                </>
-              )}
-            </div>
-            {/* Date label */}
-            <span className="text-[9px] text-muted-foreground text-center leading-tight mt-1">
-              {new Date(week.weekStart + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Ideal Zone Card ─────────────────────────────────────────────────────────
-
-function IdealZoneSparkline({
-  weeklyIdealZone,
-  allTimeIdealZonePct,
-}: {
-  weeklyIdealZone: { weekStart: string; pct: number | null; meals: number }[];
-  allTimeIdealZonePct: number | null;
-}) {
-  const W = 180;
-  const H = 52;
-  const PAD_X = 6;
-  const PAD_Y = 6;
-  const innerW = W - PAD_X * 2;
-  const innerH = H - PAD_Y * 2;
-
-  // Only plot weeks that have data
-  const plotPoints = weeklyIdealZone
-    .map((w, i) => ({ idx: i, pct: w.pct }))
-    .filter((p): p is { idx: number; pct: number } => p.pct != null);
-
-  if (plotPoints.length < 2) {
-    return (
-      <div className="flex items-center justify-center h-full text-[10px] text-muted-foreground/50">
-        Not enough data
-      </div>
-    );
-  }
-
-  const n = weeklyIdealZone.length;
-  const allPcts = plotPoints.map(p => p.pct);
-  const minPct = Math.max(0, Math.min(...allPcts) - 10);
-  const maxPct = Math.min(100, Math.max(...allPcts) + 10);
-  const range = maxPct - minPct || 20;
-
-  function toX(idx: number) { return PAD_X + (idx / Math.max(n - 1, 1)) * innerW; }
-  function toY(pct: number) { return PAD_Y + (1 - (pct - minPct) / range) * innerH; }
-
-  const polyline = plotPoints.map(p => `${toX(p.idx).toFixed(1)},${toY(p.pct).toFixed(1)}`).join(' ');
-
-  // Baseline reference line Y
-  const baselineY = allTimeIdealZonePct != null ? toY(allTimeIdealZonePct) : null;
-
-  return (
-    <svg width={W} height={H} className="overflow-visible">
-      {/* Baseline dashed reference line */}
-      {baselineY != null && (
-        <>
-          <line
-            x1={PAD_X} y1={baselineY}
-            x2={W - PAD_X} y2={baselineY}
-            stroke="#9BA1A6" strokeWidth={1} strokeDasharray="3 3" opacity={0.5}
-          />
-          <text x={W - PAD_X + 2} y={baselineY + 3} fontSize={8} fill="#9BA1A6" opacity={0.7}>
-            avg {allTimeIdealZonePct}%
-          </text>
-        </>
-      )}
-      {/* Sparkline */}
-      <polyline
-        points={polyline}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        opacity={0.8}
-      />
-      {/* Dots */}
-      {plotPoints.map(p => (
-        <circle key={p.idx} cx={toX(p.idx)} cy={toY(p.pct)} r={2.5} fill="currentColor" opacity={0.9} />
-      ))}
-    </svg>
-  );
-}
-
-function IdealZoneCard({
-  insights,
-  days,
-}: {
-  insights: {
-    idealZonePct: number | null;
-    prevIdealZonePct?: number | null;
-    hungerInZonePct?: number | null;
-    fullnessInZonePct?: number | null;
-    allTimeIdealZonePct?: number | null;
-    weeklyIdealZone?: { weekStart: string; pct: number | null; meals: number }[];
-  };
-  days: number;
-}) {
-  const { idealZonePct, prevIdealZonePct, hungerInZonePct, fullnessInZonePct, allTimeIdealZonePct, weeklyIdealZone } = insights;
-
-  if (idealZonePct == null) {
-    return <div className="bg-card border border-border rounded-xl p-5" />;
-  }
-
-  // Trend direction: current vs previous period, ±5% threshold
-  const delta = prevIdealZonePct != null ? idealZonePct - prevIdealZonePct : null;
-  const trend: 'up' | 'flat' | 'down' | null =
-    delta == null ? null :
-    delta > 5 ? 'up' :
-    delta < -5 ? 'down' :
-    'flat';
-
-  const borderClass =
-    trend === 'up' ? 'border-green-500/50' :
-    trend === 'down' ? 'border-red-500/50' :
-    trend === 'flat' ? 'border-amber-500/40' :
-    'border-border';
-
-  const headlineClass =
-    trend === 'up' ? 'text-green-400' :
-    trend === 'down' ? 'text-red-400' :
-    trend === 'flat' ? 'text-amber-400' :
-    'text-foreground';
-
-  const bgClass =
-    trend === 'up' ? 'bg-green-500/5' :
-    trend === 'down' ? 'bg-red-500/5' :
-    trend === 'flat' ? 'bg-amber-500/5' :
-    'bg-card';
-
-  return (
-    <div className={cn('border rounded-xl p-4 flex flex-col gap-3', bgClass, borderClass)}>
-      {/* Headline row */}
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className={cn('text-3xl font-bold leading-none', headlineClass)}>{idealZonePct}%</p>
-          <p className="text-xs text-muted-foreground mt-1">Ideal zone · last {days}d</p>
-        </div>
-        {/* Trend delta */}
-        {delta != null && (
-          <div className={cn(
-            'flex items-center gap-0.5 text-xs font-medium mt-0.5',
-            trend === 'up' ? 'text-green-400' : trend === 'down' ? 'text-red-400' : 'text-amber-400'
-          )}>
-            {trend === 'up' ? <ArrowUp className="w-3 h-3" /> : trend === 'down' ? <ArrowDown className="w-3 h-3" /> : null}
-            <span>
-              {trend === 'flat'
-                ? `flat vs ${prevIdealZonePct}%`
-                : `${trend === 'up' ? '+' : ''}${delta}% vs ${prevIdealZonePct}%`}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Sparkline */}
-      {weeklyIdealZone && weeklyIdealZone.length > 0 && (
-        <div className={cn(headlineClass)}>
-          <IdealZoneSparkline
-            weeklyIdealZone={weeklyIdealZone}
-            allTimeIdealZonePct={allTimeIdealZonePct ?? null}
-          />
-        </div>
-      )}
-
-      {/* Hunger / Fullness split */}
-      {(hungerInZonePct != null || fullnessInZonePct != null) && (
-        <div className="flex flex-col gap-1 pt-1 border-t border-border/50">
-          {hungerInZonePct != null && (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Hunger in zone</span>
-              <span className={cn('font-semibold', hungerInZonePct >= 60 ? 'text-green-400' : hungerInZonePct >= 40 ? 'text-amber-400' : 'text-red-400')}>
-                {hungerInZonePct}%
-              </span>
-            </div>
-          )}
-          {fullnessInZonePct != null && (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Fullness in zone</span>
-              <span className={cn('font-semibold', fullnessInZonePct >= 60 ? 'text-green-400' : fullnessInZonePct >= 40 ? 'text-amber-400' : 'text-red-400')}>
-                {fullnessInZonePct}%
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Insights View ────────────────────────────────────────────────────────────
-
-function InsightsView({ clientId }: { clientId: number }) {
-  const [days, setDays] = useState<7 | 28>(28);
+function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
   const [showTimingInfo, setShowTimingInfo] = useState(false);
 
   const { data: insights, isLoading } = trpc.mealLogs.richInsightsForClient.useQuery(
@@ -554,175 +845,162 @@ function InsightsView({ clientId }: { clientId: number }) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center py-16">
+        <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: C.primary, borderTopColor: "transparent" }} />
       </div>
     );
   }
 
   if (!insights) return null;
 
-  return (
-    <div className="space-y-5">
-      {/* Period toggle */}
-      <div className="flex justify-end">
-        <div className="flex gap-1 bg-secondary rounded-lg p-1">
-          {([7, 28] as const).map((d) => (
-            <button
-              key={d}
-              onClick={() => setDays(d)}
-              className={cn(
-                "px-4 py-1.5 rounded-md text-sm font-medium transition-colors",
-                days === d ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {d}d
-            </button>
-          ))}
-        </div>
-      </div>
+  // Hunger interpretation
+  const hungerInterpretation = (() => {
+    const v = insights.avgHunger;
+    const p = insights.prevAvgHunger;
+    if (v == null) return "";
+    if (v < 3) return "Arriving at meals very hungry — may be leaving too long between eating.";
+    if (v > 4) return "Arriving at meals with low hunger — consider spacing or portion review.";
+    if (p != null && v < p && v >= 3) return "Moving toward ideal pre-meal hunger — good progress.";
+    return "Pre-meal hunger is in the ideal range.";
+  })();
 
+  // Fullness interpretation
+  const fullnessInterpretation = (() => {
+    const v = insights.avgFullness;
+    const p = insights.prevAvgFullness;
+    if (v == null) return "";
+    if (v < 6) return "Finishing meals below comfortable fullness — may be under-eating.";
+    if (v > 7) return "Finishing meals above comfortable fullness — portion awareness opportunity.";
+    if (p != null && v > p && v <= 7) return "Post-meal fullness moving toward ideal range.";
+    return "Post-meal fullness is in the ideal range.";
+  })();
+
+  const periodLabel = `Last ${days}d`;
+
+  return (
+    <div className="max-w-[900px] mx-auto space-y-4">
+
+      {/* Low data warning */}
       {insights.totalMeals < 5 && (
-        <div className="bg-secondary rounded-xl px-4 py-3 text-sm text-muted-foreground">
+        <div
+          className="rounded-xl px-5 py-3.5 text-[13px]"
+          style={{ background: C.surfaceVariant, color: C.muted, border: `1px solid ${C.border}` }}
+        >
           {insights.totalMeals === 0
             ? "No meals logged in this period."
             : `Only ${insights.totalMeals} meals logged — insights will improve with more data.`}
         </div>
       )}
 
-      {/* Top row: 3 stat cards + ideal zone card */}
-      <div className="grid grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between">
-          <p className="text-3xl font-bold text-foreground">{insights.totalMeals}</p>
-          <div>
-            <p className="text-xs text-muted-foreground mt-1">Meals</p>
-            <p className="text-[10px] text-muted-foreground/60 mt-0.5">last {days}d</p>
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between">
-          <p className="text-3xl font-bold text-foreground">
-            {insights.avgHunger ?? "—"}
-            {insights.avgHunger != null && (
-              <DeltaArrow current={insights.avgHunger} previous={insights.prevAvgHunger} idealFn={isIdealHunger} />
-            )}
-          </p>
-          <div>
-            <p className="text-xs text-muted-foreground mt-1">Avg Hunger</p>
-            {insights.prevAvgHunger != null && (
-              <p className="text-[10px] text-muted-foreground/60 mt-0.5">vs. {insights.prevAvgHunger} prev</p>
-            )}
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between">
-          <p className="text-3xl font-bold text-foreground">
-            {insights.avgFullness ?? "—"}
-            {insights.avgFullness != null && (
-              <DeltaArrow current={insights.avgFullness} previous={insights.prevAvgFullness} idealFn={isIdealFullness} />
-            )}
-          </p>
-          <div>
-            <p className="text-xs text-muted-foreground mt-1">Avg Fullness</p>
-            {insights.prevAvgFullness != null && (
-              <p className="text-[10px] text-muted-foreground/60 mt-0.5">vs. {insights.prevAvgFullness} prev</p>
-            )}
-          </div>
-        </div>
-        <IdealZoneCard insights={insights} days={days} />
+      {/* ── Row 1: Meals logged + Avg Hunger + Avg Fullness ── */}
+      <div className="grid grid-cols-3 gap-4">
+        <StatCard
+          label="Meals Logged"
+          value={insights.totalMeals}
+          period={periodLabel}
+        />
+        <StatCard
+          label="Avg Pre-Meal Hunger"
+          value={insights.avgHunger ?? "—"}
+          period={`${periodLabel} · ideal 3–4`}
+          trend={
+            <TrendBadge
+              current={insights.avgHunger}
+              previous={insights.prevAvgHunger}
+              higherIsBetter={false}
+              threshold={0.15}
+            />
+          }
+          interpretation={hungerInterpretation}
+          valueColor={
+            insights.avgHunger == null ? C.muted :
+            isIdealHunger(Math.round(insights.avgHunger)) ? C.primary :
+            insights.avgHunger < 3 ? C.red : C.amber
+          }
+        />
+        <StatCard
+          label="Avg Post-Meal Fullness"
+          value={insights.avgFullness ?? "—"}
+          period={`${periodLabel} · ideal 6–7`}
+          trend={
+            <TrendBadge
+              current={insights.avgFullness}
+              previous={insights.prevAvgFullness}
+              higherIsBetter={true}
+              threshold={0.15}
+            />
+          }
+          interpretation={fullnessInterpretation}
+          valueColor={
+            insights.avgFullness == null ? C.muted :
+            isIdealFullness(Math.round(insights.avgFullness)) ? C.primary :
+            insights.avgFullness > 7 ? C.amber : C.red
+          }
+        />
       </div>
 
-      {/* Bottom 3-card row: scatter, treats, timing */}
-      <div className="grid grid-cols-3 gap-4 items-stretch">
+      {/* ── Row 2: Ideal Zone (full width) ── */}
+      <IdealZoneCard insights={insights} days={days} />
+
+      {/* ── Row 3: Scatter + Treats ── */}
+      <div className="grid grid-cols-2 gap-4">
         {/* Scatter */}
-        <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
-          <p className="text-sm font-semibold text-foreground shrink-0">Hunger vs. Fullness</p>
+        <Card className="flex flex-col gap-4">
+          <div>
+            <SectionLabel>Hunger vs. Fullness</SectionLabel>
+            <p className="text-[12px] mt-1" style={{ color: C.muted }}>
+              Each dot is a meal — size indicates frequency at that combination.
+            </p>
+          </div>
           {insights.scatter.length > 0 ? (
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex justify-center">
               <ScatterPlot scatter={insights.scatter} />
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground py-8 text-center">No rated meals yet</p>
+            <p className="text-[13px] py-8 text-center" style={{ color: C.muted }}>No rated meals yet</p>
           )}
-        </div>
+        </Card>
 
         {/* Treats */}
-        <div className="bg-card border border-border rounded-xl p-4 flex flex-col">
-          <div className="mb-2 shrink-0">
-            <p className="text-sm font-semibold text-foreground">Treats</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {insights.treatsByWeek.reduce((s, w) => s + w.total, 0)} total in last {days}d
+        <Card className="flex flex-col gap-4">
+          <div>
+            <SectionLabel>Treats</SectionLabel>
+            <p className="text-[12px] mt-1" style={{ color: C.muted }}>
+              {insights.treatsByWeek.reduce((s, w) => s + w.total, 0)} total · {periodLabel.toLowerCase()}
             </p>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-3 shrink-0">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-green-500/70 inline-block" />Small</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-amber-400/80 inline-block" />Medium</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-red-400/80 inline-block" />Large</span>
+          <div className="flex items-center gap-4" style={{ fontSize: 11, color: C.muted }}>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: C.primary, opacity: 0.8 }} />
+              Small
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: C.amber, opacity: 0.85 }} />
+              Medium
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: C.red, opacity: 0.8 }} />
+              Large
+            </span>
           </div>
-          <div className="flex-1 relative" style={{ minHeight: 0 }}>
-            <div className="absolute inset-0">
-              <TreatsChart treatsByWeek={insights.treatsByWeek} fillHeight />
-            </div>
-          </div>
-        </div>
-
-        {/* Meal timing — moved into 3-col row */}
-        {insights.hasTimingData ? (
-          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-foreground">Meal Timing</p>
-              <button
-                onClick={() => setShowTimingInfo(v => !v)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Info className="w-4 h-4" />
-              </button>
-            </div>
-
-            {showTimingInfo && (
-              <div className="bg-secondary/50 rounded-lg px-3 py-2 text-xs text-muted-foreground">
-                The consistency score is the percentage of all logged meals that fell within 1 hour of their nearest usual meal time. Slot anchors are the median time for each naturally-occurring meal cluster across the period. Treats are excluded.
-              </div>
-            )}
-
-            {insights.consistencyScore != null && (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Consistency</span>
-                  <span className={cn("font-bold", insights.consistencyScore >= 70 ? "text-green-400" : insights.consistencyScore >= 40 ? "text-orange-400" : "text-red-400")}>
-                    {insights.consistencyScore}%
-                  </span>
-                </div>
-                <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className={cn("h-full rounded-full transition-all", insights.consistencyScore >= 70 ? "bg-green-500" : insights.consistencyScore >= 40 ? "bg-orange-500" : "bg-red-500")}
-                    style={{ width: `${insights.consistencyScore}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2 pt-1">
-              {insights.slots.map((slot: { label: string; anchor: string; driftMin: number }) => (
-                <div key={slot.label} className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground w-16 shrink-0">{slot.label}</span>
-                  <span className="font-medium text-foreground">{slot.anchor}</span>
-                  <span className={cn(
-                    "text-xs font-medium",
-                    slot.driftMin <= 30 ? "text-green-400" : slot.driftMin <= 60 ? "text-teal-400" : "text-red-400"
-                  )}>
-                    ±{slot.driftMin} min
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-center">
-            <p className="text-xs text-muted-foreground text-center">Not enough data for meal timing</p>
-          </div>
-        )}
+          <TreatsChart treatsByWeek={insights.treatsByWeek} />
+        </Card>
       </div>
 
-
+      {/* ── Row 4: Meal Timing ── */}
+      {insights.hasTimingData ? (
+        <MealTimingCard
+          slots={insights.slots}
+          consistencyScore={insights.consistencyScore ?? null}
+          showInfo={showTimingInfo}
+          onToggleInfo={() => setShowTimingInfo(v => !v)}
+        />
+      ) : (
+        <Card>
+          <SectionLabel>Meal Timing</SectionLabel>
+          <p className="text-[13px] mt-3" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
+        </Card>
+      )}
     </div>
   );
 }
@@ -730,25 +1008,55 @@ function InsightsView({ clientId }: { clientId: number }) {
 // ─── Coach Nutrition Tab ──────────────────────────────────────────────────────
 
 export function CoachNutritionTab({ clientId }: { clientId: number }) {
-  const [sub, setSub] = useState<"log" | "insights">("insights");
+  const [sub, setSub] = useState<"insights" | "log">("insights");
+  const [days, setDays] = useState<7 | 28>(28);
 
   return (
     <div>
-      <div className="flex gap-1 mb-6 bg-secondary rounded-lg p-1 w-fit">
-        {(["insights", "log"] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setSub(s)}
-            className={cn(
-              "px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize",
-              sub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            )}
+      {/* Header row: sub-tabs left, period toggle right */}
+      <div className="flex items-center justify-between mb-6">
+        <div
+          className="flex gap-0.5 p-1 rounded-lg"
+          style={{ background: C.surfaceVariant }}
+        >
+          {(["insights", "log"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSub(s)}
+              className="px-4 py-1.5 rounded-md text-[13px] font-medium transition-colors"
+              style={{
+                background: sub === s ? C.surface : "transparent",
+                color: sub === s ? C.fg : C.muted,
+              }}
+            >
+              {s === "insights" ? "Insights" : "Meal Log"}
+            </button>
+          ))}
+        </div>
+
+        {sub === "insights" && (
+          <div
+            className="flex gap-0.5 p-1 rounded-lg"
+            style={{ background: C.surfaceVariant }}
           >
-            {s === "insights" ? "Insights" : "Meal Log"}
-          </button>
-        ))}
+            {([7, 28] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => setDays(d)}
+                className="px-4 py-1.5 rounded-md text-[13px] font-medium transition-colors"
+                style={{
+                  background: days === d ? C.surface : "transparent",
+                  color: days === d ? C.fg : C.muted,
+                }}
+              >
+                {d}d
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      {sub === "insights" && <InsightsView clientId={clientId} />}
+
+      {sub === "insights" && <InsightsView clientId={clientId} days={days} />}
       {sub === "log" && <MealLogView clientId={clientId} />}
     </div>
   );
