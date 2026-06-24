@@ -754,3 +754,6 @@
 - [x] Body Comp > Data measurement history: expanded row shows waist, hip, skinfold total, all 4 site avgs with individual readings in clean 2-col grid
 - [x] Overview tab: section header is "Weekly Summary" (inside WeeklyReviewTab component)
 - [x] Habit adherence: keeping current live design (user confirmed this is correct)
+
+## Session Log Progression Arrows (Jun 24)
+- [x] SessionDetailPanel: show ↑/↓ progression arrows next to weight×reps for each exercise (compare vs previous session where that exercise appeared)

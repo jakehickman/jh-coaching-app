@@ -93,19 +93,19 @@ function WeekRow({ week, isExpanded, onToggle }: {
           </div>
         </td>
 
-        {/* Avg weight + delta + count */}
-        <td className="px-3 py-2.5 text-right w-[20%]">
+        {/* Weigh-in count */}
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {weighInCount > 0 ? weighInCount : "—"}
+          </span>
+        </td>
+
+        {/* Avg weight + delta */}
+        <td className="px-3 py-2.5 text-right">
           <div className="flex flex-col items-end gap-0.5">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xs font-semibold tabular-nums text-foreground">
-                {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
-              </span>
-              {weighInCount > 0 && (
-                <span className="text-[10px] text-muted-foreground tabular-nums">
-                  ({weighInCount}d)
-                </span>
-              )}
-            </div>
+            <span className="text-xs font-semibold tabular-nums text-foreground">
+              {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
+            </span>
             {weightDeltaPct != null && (
               <span className={`text-[10px] font-semibold ${
                 weightDeltaPct < 0 ? "text-green-400" : weightDeltaPct > 0 ? "text-red-400" : "text-muted-foreground"
@@ -117,21 +117,21 @@ function WeekRow({ week, isExpanded, onToggle }: {
         </td>
 
         {/* Avg waist */}
-        <td className="px-3 py-2.5 text-right w-[20%]">
+        <td className="px-3 py-2.5 text-right">
           <span className="text-xs tabular-nums text-foreground">
             {week.avgWaist != null ? `${fmt(week.avgWaist)} cm` : "—"}
           </span>
         </td>
 
         {/* Avg hip */}
-        <td className="px-3 py-2.5 text-right w-[20%]">
+        <td className="px-3 py-2.5 text-right">
           <span className="text-xs tabular-nums text-foreground">
             {week.avgHip != null ? `${fmt(week.avgHip)} cm` : "—"}
           </span>
         </td>
 
         {/* Avg skinfold total */}
-        <td className="px-3 py-2.5 text-right w-[20%]">
+        <td className="px-3 py-2.5 text-right">
           <span className="text-xs tabular-nums text-foreground">
             {week.avgSkinfold != null ? `${fmt(week.avgSkinfold)} mm` : "—"}
           </span>
@@ -141,8 +141,8 @@ function WeekRow({ week, isExpanded, onToggle }: {
       {/* Expanded detail */}
       {isExpanded && hasData && (
         <tr className="border-b border-border/40 bg-muted/10">
-          <td colSpan={5} className="px-6 py-3">
-            <div className="flex flex-wrap gap-6">
+          <td colSpan={6} className="px-6 py-3">
+            <div className="flex flex-wrap gap-8">
               {/* Daily weigh-ins */}
               {(week.weighIns ?? []).length > 0 && (
                 <div className="min-w-[160px]">
@@ -164,98 +164,50 @@ function WeekRow({ week, isExpanded, onToggle }: {
 
               {/* Measurement entries */}
               {(week.measurementEntries ?? []).length > 0 && (
-                <div className="min-w-[260px]">
+                <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Measurements</p>
                   {(week.measurementEntries ?? []).map((m) => {
                     const d = new Date(m.measureDate + "T00:00:00");
                     const label = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
-                    const umbReadings = m.umbilicalReadings?.filter((v: any) => v != null) ?? [];
-                    const supReadings = m.suprailiacReadings?.filter((v: any) => v != null) ?? [];
-                    const calfReadings = m.calfReadings?.filter((v: any) => v != null) ?? [];
-                    const thighReadings = m.thighReadings?.filter((v: any) => v != null) ?? [];
+                    const sites = [
+                      m.umbilical != null ? { name: "Umbilical", val: m.umbilical } : null,
+                      m.suprailiac != null ? { name: "Suprailiac", val: m.suprailiac } : null,
+                      m.calf != null ? { name: "Calf", val: m.calf } : null,
+                      m.thigh != null ? { name: "Thigh", val: m.thigh } : null,
+                    ].filter(Boolean) as { name: string; val: number }[];
                     return (
                       <div key={m.id} className="mb-3 last:mb-0">
-                        <p className="text-[10px] font-semibold text-muted-foreground mb-1.5">{label}</p>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+                        <p className="text-[10px] font-semibold text-muted-foreground mb-2">{label}</p>
+                        {/* Circumferences */}
+                        <div className="flex gap-6 mb-2">
                           {m.waist != null && (
-                            <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">Waist</span>
-                              <span className="text-[11px] font-medium tabular-nums">{m.waist.toFixed(1)} cm</span>
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-0.5">Waist</p>
+                              <p className="text-xs font-medium tabular-nums">{m.waist.toFixed(1)} cm</p>
                             </div>
                           )}
                           {m.hips != null && (
-                            <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">Hip</span>
-                              <span className="text-[11px] font-medium tabular-nums">{m.hips.toFixed(1)} cm</span>
-                            </div>
-                          )}
-                          {m.totalSkinfold != null && (
-                            <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">Skinfold total</span>
-                              <span className="text-[11px] font-medium tabular-nums">{m.totalSkinfold.toFixed(1)} mm</span>
-                            </div>
-                          )}
-                          {m.umbilical != null && (
-                            <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">
-                                Umbilical{umbReadings.length > 1 ? ` (avg)` : ""}
-                              </span>
-                              <span className="text-[11px] font-medium tabular-nums">
-                                {m.umbilical.toFixed(1)} mm
-                                {umbReadings.length > 1 && (
-                                  <span className="text-[10px] text-muted-foreground ml-1">
-                                    [{umbReadings.map((v: any) => v.toFixed(1)).join(", ")}]
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          )}
-                          {m.suprailiac != null && (
-                            <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">
-                                Suprailiac{supReadings.length > 1 ? ` (avg)` : ""}
-                              </span>
-                              <span className="text-[11px] font-medium tabular-nums">
-                                {m.suprailiac.toFixed(1)} mm
-                                {supReadings.length > 1 && (
-                                  <span className="text-[10px] text-muted-foreground ml-1">
-                                    [{supReadings.map((v: any) => v.toFixed(1)).join(", ")}]
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          )}
-                          {m.calf != null && (
-                            <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">
-                                Calf{calfReadings.length > 1 ? ` (avg)` : ""}
-                              </span>
-                              <span className="text-[11px] font-medium tabular-nums">
-                                {m.calf.toFixed(1)} mm
-                                {calfReadings.length > 1 && (
-                                  <span className="text-[10px] text-muted-foreground ml-1">
-                                    [{calfReadings.map((v: any) => v.toFixed(1)).join(", ")}]
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          )}
-                          {m.thigh != null && (
-                            <div className="flex justify-between">
-                              <span className="text-[11px] text-muted-foreground">
-                                Thigh{thighReadings.length > 1 ? ` (avg)` : ""}
-                              </span>
-                              <span className="text-[11px] font-medium tabular-nums">
-                                {m.thigh.toFixed(1)} mm
-                                {thighReadings.length > 1 && (
-                                  <span className="text-[10px] text-muted-foreground ml-1">
-                                    [{thighReadings.map((v: any) => v.toFixed(1)).join(", ")}]
-                                  </span>
-                                )}
-                              </span>
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-0.5">Hip</p>
+                              <p className="text-xs font-medium tabular-nums">{m.hips.toFixed(1)} cm</p>
                             </div>
                           )}
                         </div>
+                        {/* Skinfold sites */}
+                        {sites.length > 0 && (
+                          <div>
+                            {m.totalSkinfold != null && (
+                              <p className="text-[10px] text-muted-foreground mb-1">Skinfolds — total: <span className="font-medium text-foreground">{m.totalSkinfold.toFixed(1)} mm</span></p>
+                            )}
+                            <div className="flex flex-wrap gap-x-5 gap-y-1">
+                              {sites.map(site => (
+                                <span key={site.name} className="text-[11px] text-muted-foreground">
+                                  {site.name}: <span className="font-medium text-foreground tabular-nums">{site.val.toFixed(1)} mm</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -319,11 +271,12 @@ export function BodyCompSummaryTable({ clientId }: Props) {
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[30%]">Week</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[17.5%]">Avg Weight</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[17.5%]">Waist</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[17.5%]">Hip</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[17.5%]">Skinfold</th>
+                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[26%]">Week</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">Weigh-ins</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Avg Weight</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Waist</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Hip</th>
+                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Skinfold</th>
               </tr>
             </thead>
             <tbody>

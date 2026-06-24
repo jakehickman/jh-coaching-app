@@ -6,9 +6,86 @@ import { SectionLabel } from "./shared";
 import { useConfirm } from "@/components/ConfirmDialog";
 
 // ─── CoachHabitsPanel ────────────────────────────────────────────────────────
-// Shows a compact 4-week dot grid per habit assigned to a client.
-// Each row = one week (Mon → Sun). Dots are ~10px squares with 3px gaps.
-// Green = completed, dark = missed, transparent = before assignment or future.
+
+const DOW = ["M", "T", "W", "T", "F", "S", "S"];
+const CELL = 16; // px — each dot cell
+const GAP = 4;   // px — gap between cells
+
+function HabitCard({ habit, days, completedSet, today }: {
+  habit: any;
+  days: string[];      // exactly 28 ISO date strings, oldest first
+  completedSet: Set<string>;
+  today: string;
+}) {
+  const assignedAt = normDate(habit.assignedAt);
+  const eligible = days.filter(d => d >= assignedAt && d <= today);
+  const done = eligible.filter(d => completedSet.has(`${habit.id}:${d}`));
+  const pct = eligible.length > 0 ? Math.round((done.length / eligible.length) * 100) : null;
+
+  const pctColor =
+    pct === null ? "text-muted-foreground"
+    : pct >= 80 ? "text-green-500"
+    : pct >= 50 ? "text-amber-500"
+    : "text-red-500";
+
+  // Split 28 days into 4 rows of 7
+  const rows: string[][] = [];
+  for (let r = 0; r < 4; r++) {
+    rows.push(days.slice(r * 7, r * 7 + 7));
+  }
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 overflow-hidden" style={{ height: "2.5em" }}>{habit.name}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {habit.frequency === "daily" ? "Daily" : `${habit.targetDays}×/wk`}
+            {eligible.length > 0 && ` · ${done.length}/${eligible.length}`}
+          </p>
+        </div>
+        <span className={`text-sm font-bold shrink-0 ${pctColor}`}>
+          {pct !== null ? `${pct}%` : "—"}
+        </span>
+      </div>
+
+      {/* Day-of-week labels */}
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {DOW.map((l, i) => (
+          <div key={i} className="text-center text-[9px] font-medium text-muted-foreground/50">{l}</div>
+        ))}
+      </div>
+
+      {/* 4 rows × 7 dots — fills full card width */}
+      <div className="grid grid-cols-7 gap-1">
+        {rows.flat().map((iso, idx) => {
+          const before = iso < assignedAt;
+          const future = iso > today;
+          const hit = completedSet.has(`${habit.id}:${iso}`);
+
+          let bg = "transparent";
+          if (!before && !future) bg = hit ? "var(--color-primary, #22c55e)" : "rgba(255,255,255,0.08)";
+
+          return (
+            <div
+              key={idx}
+              title={iso}
+              className="aspect-square w-full rounded-[3px]"
+              style={{ backgroundColor: bg }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function normDate(val: any): string {
+  if (!val) return "";
+  const d = val instanceof Date ? val : new Date(String(val));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 export function CoachHabitsPanel({ clientId }: { clientId: number }) {
   const today = useMemo(() => {
@@ -16,19 +93,16 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }, []);
 
-  // Build 28 days ending today, aligned to Mon start
-  const { days, startOffset } = useMemo(() => {
+  // Build exactly 28 days ending today (oldest → newest)
+  const days = useMemo(() => {
     const result: string[] = [];
-    const d = new Date(today + "T00:00:00");
+    const base = new Date(today + "T00:00:00");
     for (let i = 27; i >= 0; i--) {
-      const dd = new Date(d);
-      dd.setDate(dd.getDate() - i);
-      result.push(`${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, "0")}-${String(dd.getDate()).padStart(2, "0")}`);
+      const d = new Date(base);
+      d.setDate(d.getDate() - i);
+      result.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
     }
-    // Mon-based offset of the first day so week rows align correctly
-    const firstDay = new Date(result[0] + "T00:00:00");
-    const offset = (firstDay.getDay() + 6) % 7; // 0=Mon
-    return { days: result, startOffset: offset };
+    return result;
   }, [today]);
 
   const fromDate = days[0];
@@ -45,94 +119,25 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
 
   if (!clientId || (habits as any[]).length === 0) return null;
 
-  const normDate = (val: any): string => {
-    if (!val) return "";
-    const d = val instanceof Date ? val : new Date(String(val));
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  };
-
   const completedSet = new Set(
     (completions as any[]).map((c) => `${c.habitId}:${normDate(c.completedDate)}`)
   );
-
-  // Build a padded 4×7 grid (28 cells + leading blanks to align Mon)
-  // We always show exactly 4 rows of 7 regardless of offset
-  const gridDays: (string | null)[] = [
-    ...Array(startOffset).fill(null),
-    ...days,
-  ];
-  // Pad to next multiple of 7
-  while (gridDays.length % 7 !== 0) gridDays.push(null);
-  // Take last 4 rows (28 cells)
-  const grid = gridDays.slice(-28);
-
-  const DOW = ["M", "T", "W", "T", "F", "S", "S"];
 
   return (
     <div>
       <div className="mb-3">
         <SectionLabel>Habit Adherence — Last 4 Weeks</SectionLabel>
       </div>
-
-      <div className="flex flex-wrap gap-3">
-        {(habits as any[]).map((h) => {
-          const assignedAt = normDate(h.assignedAt);
-          const eligible = days.filter((d) => d >= assignedAt && d <= today);
-          const done = eligible.filter((d) => completedSet.has(`${h.id}:${d}`));
-          const pct = eligible.length > 0 ? Math.round((done.length / eligible.length) * 100) : null;
-          const pctColor =
-            pct === null ? "text-muted-foreground"
-            : pct >= 80 ? "text-green-500"
-            : pct >= 50 ? "text-amber-500"
-            : "text-red-500";
-
-          return (
-            <div key={h.id} className="bg-card border border-border rounded-lg p-3 min-w-[160px]">
-              {/* Name + % */}
-              <div className="flex items-start justify-between gap-2 mb-2.5">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground leading-tight truncate max-w-[110px]">{h.name}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {h.frequency === "daily" ? "Daily" : `${h.targetDays}×/wk`}
-                    {eligible.length > 0 && ` · ${done.length}/${eligible.length}`}
-                  </p>
-                </div>
-                <span className={`text-sm font-bold flex-shrink-0 ${pctColor}`}>
-                  {pct !== null ? `${pct}%` : "—"}
-                </span>
-              </div>
-
-              {/* Day-of-week header */}
-              <div className="grid grid-cols-7 gap-[3px] mb-[3px]">
-                {DOW.map((l, i) => (
-                  <div key={i} className="text-center text-[8px] text-muted-foreground/60 font-medium">{l}</div>
-                ))}
-              </div>
-
-              {/* 4 × 7 dot grid */}
-              <div className="grid grid-cols-7 gap-[3px]">
-                {grid.map((iso, idx) => {
-                  if (!iso) return <div key={idx} className="w-[10px] h-[10px]" />;
-                  const before = iso < assignedAt;
-                  const future = iso > today;
-                  const hit = completedSet.has(`${h.id}:${iso}`);
-                  const isToday = iso === today;
-
-                  let cls = "bg-transparent";
-                  if (!before && !future) cls = hit ? "bg-primary" : "bg-muted/40";
-
-                  return (
-                    <div
-                      key={idx}
-                      title={iso}
-                      className={`w-[10px] h-[10px] rounded-[2px] ${cls} ${isToday ? "ring-1 ring-primary/60" : ""}`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-5 gap-3">
+        {(habits as any[]).map((h) => (
+          <HabitCard
+            key={h.id}
+            habit={h}
+            days={days}
+            completedSet={completedSet}
+            today={today}
+          />
+        ))}
       </div>
     </div>
   );

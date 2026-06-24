@@ -1183,7 +1183,7 @@ const MUSCLE_KEYS = Object.keys(MUSCLE_LABELS);
 // --- Section: Workout Sessions Tab ------------------------------------------
 const CAL_MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: any; onClose: () => void; onExerciseClick?: (name: string) => void }) {
+function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [] }: { session: any; onClose: () => void; onExerciseClick?: (name: string) => void; allSessions?: any[] }) {
   const exercises = (session.exercises as any[]) ?? [];
   const sessionNotes = session.notes as string | null;
   const dateStr = toLocalDateStr(session.sessionDate);
@@ -1229,6 +1229,32 @@ function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: an
             const setStr = firstSet
               ? `${firstSet.weight != null ? firstSet.weight + ' kg' : '—'} × ${firstSet.reps != null ? firstSet.reps : '—'}`
               : null;
+            // Find previous session where this exercise was performed
+            const prevSession = [...allSessions]
+              .sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime())
+              .find(s => {
+                if (s.id === session.id) return false;
+                if (new Date(s.sessionDate).getTime() >= new Date(session.sessionDate).getTime()) return false;
+                const exs: any[] = s.exercises ?? [];
+                return exs.some((e: any) => e.name === ex.name);
+              });
+            let progressArrow: 'up' | 'down' | 'same' | null = null;
+            if (prevSession && firstSet) {
+              const prevExercise = (prevSession.exercises as any[]).find((e: any) => e.name === ex.name);
+              if (prevExercise) {
+                const prevCompleted = (prevExercise.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null);
+                const prevFirst = prevCompleted[0];
+                if (prevFirst) {
+                  const wCurr = firstSet.weight ?? 0;
+                  const wPrev = prevFirst.weight ?? 0;
+                  const rCurr = firstSet.reps ?? 0;
+                  const rPrev = prevFirst.reps ?? 0;
+                  if (wCurr > wPrev || (wCurr === wPrev && rCurr > rPrev)) progressArrow = 'up';
+                  else if (wCurr < wPrev || (wCurr === wPrev && rCurr < rPrev)) progressArrow = 'down';
+                  else progressArrow = 'same';
+                }
+              }
+            }
             const miniSetsCount = isMiniSets && allSets[0]?.miniSets && String(allSets[0].miniSets) !== '' ? allSets[0].miniSets : null;
             const setsLabel = isSkipped
               ? 'skipped'
@@ -1252,7 +1278,11 @@ function SessionDetailPanel({ session, onClose, onExerciseClick }: { session: an
                   <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded shrink-0">SUB</span>
                 )}
                 {setStr && (
-                  <span className="text-[11px] text-muted-foreground shrink-0">{setStr}</span>
+                  <span className="text-[11px] text-muted-foreground shrink-0 flex items-center gap-0.5">
+                    {setStr}
+                    {progressArrow === 'up' && <span className="text-green-400 text-[10px] leading-none">↑</span>}
+                    {progressArrow === 'down' && <span className="text-red-400 text-[10px] leading-none">↓</span>}
+                  </span>
                 )}
                 <span className={`text-[11px] shrink-0 ${isSkipped ? 'text-amber-400/80' : isMiniSets ? 'text-amber-400/70' : 'text-muted-foreground/60'}`}>
                   {setsLabel}
@@ -1590,7 +1620,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
 
       {/* Detail panel */}
       {selectedSession ? (
-        <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} />
+        <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} allSessions={workoutSessions} />
       ) : (
         <div className="border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 200 }}>
           <p className="text-xs text-muted-foreground">Click a session to view details</p>
@@ -2381,8 +2411,8 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsContent value="data">
                 <div className="space-y-6">
                   <BodyCompSummaryTable clientId={selectedUserId!} />
-                  <WeeklyBodyCompCards clientId={selectedUserId!} />
                   <MeasurementsTab measurements={measurements ?? []} logs={logs ?? []} chartOnly clientId={selectedUserId!} />
+                  <WeeklyBodyCompCards clientId={selectedUserId!} />
                 </div>
               </TabsContent>
               <TabsContent value="photos">
