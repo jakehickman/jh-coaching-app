@@ -1,17 +1,36 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { Plus, Pencil, Trash2, CheckSquare, Search, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckSquare, Search, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionLabel } from "./shared";
 import { useConfirm } from "@/components/ConfirmDialog";
 
-// ─── CoachHabitsPanel ────────────────────────────────────────────────────────
+// ─── Shared helpers ───────────────────────────────────────────────────────────
 
 const DOW = ["M", "T", "W", "T", "F", "S", "S"];
 
+function normDate(val: any): string {
+  if (!val) return "";
+  const d = val instanceof Date ? val : new Date(String(val));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function buildLast28Days(today: string): string[] {
+  const result: string[] = [];
+  const base = new Date(today + "T00:00:00");
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(base);
+    d.setDate(d.getDate() - i);
+    result.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+  }
+  return result;
+}
+
+// ─── HabitCard (adherence dot grid) ──────────────────────────────────────────
+
 function HabitCard({ habit, days, completedSet, today }: {
   habit: any;
-  days: string[];      // exactly 28 ISO date strings, oldest first
+  days: string[];
   completedSet: Set<string>;
   today: string;
 }) {
@@ -26,15 +45,11 @@ function HabitCard({ habit, days, completedSet, today }: {
     : pct >= 50 ? "text-amber-500"
     : "text-red-500";
 
-  // Split 28 days into 4 rows of 7
   const rows: string[][] = [];
-  for (let r = 0; r < 4; r++) {
-    rows.push(days.slice(r * 7, r * 7 + 7));
-  }
+  for (let r = 0; r < 4; r++) rows.push(days.slice(r * 7, r * 7 + 7));
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
-      {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 overflow-hidden" style={{ height: "2.5em" }}>{habit.name}</p>
@@ -47,37 +62,28 @@ function HabitCard({ habit, days, completedSet, today }: {
           {pct !== null ? `${pct}%` : "—"}
         </span>
       </div>
-
-      {/* Day-of-week labels */}
       <div className="grid grid-cols-7 gap-1 mb-1">
         {DOW.map((l, i) => (
           <div key={i} className="text-center text-[9px] font-medium text-muted-foreground/50">{l}</div>
         ))}
       </div>
-
-      {/* 4 rows × 7 dots — fills full card width */}
       <div className="grid grid-cols-7 gap-1">
         {rows.flat().map((iso, idx) => {
           const before = iso < assignedAt;
           const future = iso > today;
           const hit = completedSet.has(`${habit.id}:${iso}`);
-
           let bg = "transparent";
           if (!before && !future) bg = hit ? "var(--color-primary, #22c55e)" : "rgba(255,255,255,0.08)";
-
           return (
-            <div
-              key={idx}
-              title={iso}
-              className="aspect-square w-full rounded-[3px]"
-              style={{ backgroundColor: bg }}
-            />
+            <div key={idx} title={iso} className="aspect-square w-full rounded-[3px]" style={{ backgroundColor: bg }} />
           );
         })}
       </div>
     </div>
   );
 }
+
+// ─── MealHabitAdherencePanel ──────────────────────────────────────────────────
 
 function MealHabitAdherencePanel({ clientId, fromDate }: { clientId: number; fromDate: string }) {
   const { data } = trpc.habits.clientMealAdherence.useQuery(
@@ -120,11 +126,7 @@ function MealHabitAdherencePanel({ clientId, fromDate }: { clientId: number; fro
   );
 }
 
-function normDate(val: any): string {
-  if (!val) return "";
-  const d = val instanceof Date ? val : new Date(String(val));
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
+// ─── CoachHabitsPanel (adherence only — used in Overview tab) ─────────────────
 
 export function CoachHabitsPanel({ clientId }: { clientId: number }) {
   const today = useMemo(() => {
@@ -132,33 +134,16 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }, []);
 
-  // Build exactly 28 days ending today (oldest → newest)
-  const days = useMemo(() => {
-    const result: string[] = [];
-    const base = new Date(today + "T00:00:00");
-    for (let i = 27; i >= 0; i--) {
-      const d = new Date(base);
-      d.setDate(d.getDate() - i);
-      result.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
-    }
-    return result;
-  }, [today]);
-
+  const days = useMemo(() => buildLast28Days(today), [today]);
   const fromDate = days[0];
 
-  const { data: habits = [] } = trpc.habits.clientHabits.useQuery(
-    { clientId },
-    { enabled: !!clientId }
-  );
-
-  const { data: completions = [] } = trpc.habits.clientCompletions.useQuery(
-    { clientId, fromDate },
-    { enabled: !!clientId }
-  );
+  const { data: habits = [] } = trpc.habits.clientHabits.useQuery({ clientId }, { enabled: !!clientId });
+  const { data: completions = [] } = trpc.habits.clientCompletions.useQuery({ clientId, fromDate }, { enabled: !!clientId });
 
   const dailyHabits = (habits as any[]).filter(h => h.scope !== "per_meal");
+  const hasMealHabits = (habits as any[]).some(h => h.scope === "per_meal");
 
-  if (!clientId || dailyHabits.length === 0 && (habits as any[]).filter(h => h.scope === "per_meal").length === 0) return null;
+  if (!clientId || (dailyHabits.length === 0 && !hasMealHabits)) return null;
 
   const completedSet = new Set(
     (completions as any[]).map((c) => `${c.habitId}:${normDate(c.completedDate)}`)
@@ -173,13 +158,7 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
           </div>
           <div className="grid grid-cols-5 gap-3">
             {dailyHabits.map((h) => (
-              <HabitCard
-                key={h.id}
-                habit={h}
-                days={days}
-                completedSet={completedSet}
-                today={today}
-              />
+              <HabitCard key={h.id} habit={h} days={days} completedSet={completedSet} today={today} />
             ))}
           </div>
         </>
@@ -189,7 +168,164 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
   );
 }
 
-// ─── HabitsSection (coach habit library management) ──────────────────────────
+// ─── ClientHabitsTab (assignment + adherence — used in Habits tab) ────────────
+
+export function ClientHabitsTab({ clientId }: { clientId: number }) {
+  const utils = trpc.useUtils();
+  const today = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
+  const days = useMemo(() => buildLast28Days(today), [today]);
+  const fromDate = days[0];
+
+  // All habits in the library
+  const { data: allHabits = [], isLoading: habitsLoading } = trpc.habits.list.useQuery();
+  // Currently assigned habits for this client
+  const { data: assignedHabits = [], isLoading: assignedLoading } = trpc.habits.clientHabits.useQuery(
+    { clientId }, { enabled: !!clientId }
+  );
+  // Completions for adherence display
+  const { data: completions = [] } = trpc.habits.clientCompletions.useQuery(
+    { clientId, fromDate }, { enabled: !!clientId }
+  );
+
+  const setAssignmentsMut = trpc.habits.setAssignments.useMutation({
+    onSuccess: () => {
+      utils.habits.clientHabits.invalidate({ clientId });
+      utils.habits.list.invalidate();
+    },
+  });
+
+  const assignedIds = useMemo(
+    () => new Set((assignedHabits as any[]).map((h: any) => h.id)),
+    [assignedHabits]
+  );
+
+  const completedSet = useMemo(
+    () => new Set((completions as any[]).map((c: any) => `${c.habitId}:${normDate(c.completedDate)}`)),
+    [completions]
+  );
+
+  function toggleAssign(habitId: number) {
+    const next = new Set(assignedIds);
+    if (next.has(habitId)) next.delete(habitId); else next.add(habitId);
+    setAssignmentsMut.mutate({ habitId, clientIds: next.has(habitId) ? [...Array.from(assignedIds), habitId] : Array.from(assignedIds).filter(id => id !== habitId) });
+  }
+
+  const isLoading = habitsLoading || assignedLoading;
+  const dailyHabits = (allHabits as any[]).filter(h => h.scope !== "per_meal");
+  const mealHabits = (allHabits as any[]).filter(h => h.scope === "per_meal");
+
+  const assignedDailyHabits = (assignedHabits as any[]).filter(h => h.scope !== "per_meal");
+  const hasMealHabits = (assignedHabits as any[]).some(h => h.scope === "per_meal");
+
+  if (isLoading) {
+    return <div className="space-y-2 mt-4">{[1,2,3].map(i => <div key={i} className="h-12 bg-muted rounded-xl animate-pulse" />)}</div>;
+  }
+
+  return (
+    <div className="space-y-8 mt-4">
+      {/* ── Assignment section ── */}
+      <div>
+        <div className="mb-3">
+          <SectionLabel>Assign Habits</SectionLabel>
+        </div>
+        {(allHabits as any[]).length === 0 ? (
+          <p className="text-sm text-muted-foreground">No habits in the library yet. Add habits from the Habits page first.</p>
+        ) : (
+          <div className="space-y-4">
+            {dailyHabits.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Daily Habits</p>
+                <div className="space-y-1.5">
+                  {dailyHabits.map((h: any) => {
+                    const assigned = assignedIds.has(h.id);
+                    return (
+                      <button
+                        key={h.id}
+                        onClick={() => toggleAssign(h.id)}
+                        disabled={setAssignmentsMut.isPending}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-colors ${
+                          assigned
+                            ? "bg-primary/10 border-primary/40 text-foreground"
+                            : "bg-card border-border text-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{h.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {h.frequency === "daily" ? "Daily" : `${h.targetDays}x/week`}
+                          </p>
+                        </div>
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          assigned ? "bg-primary border-primary" : "border-border"
+                        }`}>
+                          {assigned && <Check size={12} className="text-primary-foreground" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {mealHabits.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Per-Meal Habits</p>
+                <div className="space-y-1.5">
+                  {mealHabits.map((h: any) => {
+                    const assigned = assignedIds.has(h.id);
+                    return (
+                      <button
+                        key={h.id}
+                        onClick={() => toggleAssign(h.id)}
+                        disabled={setAssignmentsMut.isPending}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-colors ${
+                          assigned
+                            ? "bg-primary/10 border-primary/40 text-foreground"
+                            : "bg-card border-border text-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{h.name}</p>
+                          <p className="text-xs text-muted-foreground">Per meal</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          assigned ? "bg-primary border-primary" : "border-border"
+                        }`}>
+                          {assigned && <Check size={12} className="text-primary-foreground" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Adherence section (only if habits are assigned) ── */}
+      {assignedDailyHabits.length > 0 && (
+        <div>
+          <div className="mb-3">
+            <SectionLabel>Daily Habit Adherence — Last 4 Weeks</SectionLabel>
+          </div>
+          <div className="grid grid-cols-5 gap-3">
+            {assignedDailyHabits.map((h: any) => (
+              <HabitCard key={h.id} habit={h} days={days} completedSet={completedSet} today={today} />
+            ))}
+          </div>
+        </div>
+      )}
+      {hasMealHabits && (
+        <MealHabitAdherencePanel clientId={clientId} fromDate={fromDate} />
+      )}
+    </div>
+  );
+}
+
+// ─── HabitsSection (coach habit library — global management only) ─────────────
 
 type HabitScope = "daily" | "per_meal";
 
@@ -206,12 +342,9 @@ export default function HabitsSection() {
   const [newScope, setNewScope] = useState<HabitScope>("daily");
   const [newFrequency, setNewFrequency] = useState<"daily" | "x_per_week">("daily");
   const [newTargetDays, setNewTargetDays] = useState(5);
-  // Assignment panel state: habitId -> open/closed
-  const [assignOpen, setAssignOpen] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
   const { data: habits = [], isLoading } = trpc.habits.list.useQuery();
-  const { data: allClients = [] } = trpc.users.clients.useQuery();
 
   const createMut = trpc.habits.create.useMutation({
     onSuccess: () => { utils.habits.list.invalidate(); setShowAdd(false); setNewName(""); setNewScope("daily"); },
@@ -221,9 +354,6 @@ export default function HabitsSection() {
   });
   const deleteMut = trpc.habits.delete.useMutation({
     onSuccess: () => utils.habits.list.invalidate(),
-  });
-  const setAssignmentsMut = trpc.habits.setAssignments.useMutation({
-    onSuccess: () => { utils.habits.list.invalidate(); },
   });
 
   const filtered = (habits as any[]).filter((h) =>
@@ -254,20 +384,13 @@ export default function HabitsSection() {
           <p className="text-sm font-semibold">New Habit</p>
           <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Habit name"
             className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-          {/* Scope toggle */}
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setNewScope("daily")}
-              className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${newScope === "daily" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:text-foreground"}`}
-            >
+            <button type="button" onClick={() => setNewScope("daily")}
+              className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${newScope === "daily" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:text-foreground"}`}>
               Daily
             </button>
-            <button
-              type="button"
-              onClick={() => setNewScope("per_meal")}
-              className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${newScope === "per_meal" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:text-foreground"}`}
-            >
+            <button type="button" onClick={() => setNewScope("per_meal")}
+              className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${newScope === "per_meal" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:text-foreground"}`}>
               Per Meal
             </button>
           </div>
@@ -287,8 +410,7 @@ export default function HabitsSection() {
           <div className="flex gap-2">
             <Button size="sm" disabled={!newName.trim() || createMut.isPending}
               onClick={() => createMut.mutate({
-                name: newName.trim(),
-                scope: newScope,
+                name: newName.trim(), scope: newScope,
                 frequency: newScope === "per_meal" ? "daily" : newFrequency,
                 targetDays: newScope === "daily" && newFrequency === "x_per_week" ? newTargetDays : undefined,
               })}>
@@ -315,20 +437,13 @@ export default function HabitsSection() {
                 <div className="p-4 space-y-3">
                   <input value={editName} onChange={(e) => setEditName(e.target.value)}
                     className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-                  {/* Scope toggle */}
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditScope("daily")}
-                      className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${editScope === "daily" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:text-foreground"}`}
-                    >
+                    <button type="button" onClick={() => setEditScope("daily")}
+                      className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${editScope === "daily" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:text-foreground"}`}>
                       Daily
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditScope("per_meal")}
-                      className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${editScope === "per_meal" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:text-foreground"}`}
-                    >
+                    <button type="button" onClick={() => setEditScope("per_meal")}
+                      className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${editScope === "per_meal" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:text-foreground"}`}>
                       Per Meal
                     </button>
                   </div>
@@ -348,9 +463,7 @@ export default function HabitsSection() {
                   <div className="flex gap-2">
                     <Button size="sm" disabled={!editName.trim() || updateMut.isPending}
                       onClick={() => updateMut.mutate({
-                        id: h.id,
-                        name: editName.trim(),
-                        scope: editScope,
+                        id: h.id, name: editName.trim(), scope: editScope,
                         frequency: editScope === "per_meal" ? "daily" : editFrequency,
                         targetDays: editScope === "daily" && editFrequency === "x_per_week" ? editTargetDays : undefined,
                       })}>
@@ -360,117 +473,35 @@ export default function HabitsSection() {
                   </div>
                 </div>
               ) : (
-                <>
-                  <div className="flex items-center justify-between p-4">
-                    <div>
-                      <p className="text-sm font-semibold">{h.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {h.scope === "per_meal" ? "Per meal" : (h.frequency === "daily" ? "Daily" : `${h.targetDays}x/week`)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {/* Assign clients button */}
-                      <button
-                        onClick={() => setAssignOpen(assignOpen === h.id ? null : h.id)}
-                        className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded flex items-center gap-1"
-                        title="Assign to clients"
-                      >
-                        <Users size={14} />
-                        {assignOpen === h.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                      </button>
-                      <button onClick={() => {
-                        setEditingId(h.id);
-                        setEditName(h.name);
-                        setEditScope((h.scope ?? "daily") as HabitScope);
-                        setEditFrequency((h.frequency ?? "daily") as any);
-                        setEditTargetDays(h.targetDays ?? 5);
-                      }}
-                        className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded">
-                        <Pencil size={14} />
-                      </button>
-                      <button onClick={async () => {
-                        const ok = await confirm({ title: "Delete habit?", description: `Remove "${h.name}" from the habit library?`, variant: "destructive" });
-                        if (ok) deleteMut.mutate({ id: h.id });
-                      }} className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors rounded">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                <div className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="text-sm font-semibold">{h.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {h.scope === "per_meal" ? "Per meal" : (h.frequency === "daily" ? "Daily" : `${h.targetDays}x/week`)}
+                    </p>
                   </div>
-                  {/* Assignment panel */}
-                  {assignOpen === h.id && (
-                    <AssignPanel
-                      habitId={h.id}
-                      allClients={allClients as any[]}
-                      onSave={(clientIds) => {
-                        setAssignmentsMut.mutate({ habitId: h.id, clientIds });
-                        setAssignOpen(null);
-                      }}
-                      isPending={setAssignmentsMut.isPending}
-                    />
-                  )}
-                </>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => {
+                      setEditingId(h.id); setEditName(h.name);
+                      setEditScope((h.scope ?? "daily") as HabitScope);
+                      setEditFrequency((h.frequency ?? "daily") as any);
+                      setEditTargetDays(h.targetDays ?? 5);
+                    }} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded">
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={async () => {
+                      const ok = await confirm({ title: "Delete habit?", description: `Remove "${h.name}" from the habit library?`, variant: "destructive" });
+                      if (ok) deleteMut.mutate({ id: h.id });
+                    }} className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors rounded">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── AssignPanel ─────────────────────────────────────────────────────────────
-
-function AssignPanel({ habitId, allClients, onSave, isPending }: {
-  habitId: number;
-  allClients: any[];
-  onSave: (clientIds: number[]) => void;
-  isPending: boolean;
-}) {
-  const { data: assignments = [], isLoading } = trpc.habits.getAssignments.useQuery({ habitId });
-  const [selected, setSelected] = useState<Set<number> | null>(null);
-
-  // Initialise selection from server data once loaded
-  const activeIds = useMemo(
-    () => new Set((assignments as any[]).filter(a => a.active).map((a: any) => a.clientId)),
-    [assignments]
-  );
-  const effectiveSelected = selected ?? activeIds;
-
-  const toggle = (id: number) => {
-    const next = new Set(effectiveSelected);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    setSelected(next);
-  };
-
-  if (isLoading) return <div className="px-4 pb-4 text-xs text-muted-foreground">Loading...</div>;
-
-  return (
-    <div className="border-t border-border px-4 pb-4 pt-3 bg-secondary/30">
-      <p className="text-xs font-medium text-muted-foreground mb-2">Assign to clients</p>
-      {allClients.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No clients yet.</p>
-      ) : (
-        <div className="space-y-1.5 mb-3">
-          {allClients.map((c: any) => (
-            <label key={c.id} className="flex items-center gap-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={effectiveSelected.has(c.id)}
-                onChange={() => toggle(c.id)}
-                className="accent-primary"
-              />
-              <span className="text-sm text-foreground group-hover:text-primary transition-colors">
-                {c.name || c.email}
-              </span>
-            </label>
-          ))}
-        </div>
-      )}
-      <div className="flex gap-2">
-        <Button size="sm" disabled={isPending} onClick={() => onSave(Array.from(effectiveSelected))}>
-          {isPending ? "Saving..." : "Save"}
-        </Button>
-      </div>
     </div>
   );
 }

@@ -775,3 +775,7 @@
 - [x] Coach UI: scope toggle (Daily / Per meal) on habit create/edit
 - [x] Client UI: per-meal habit checkboxes shown alongside fullness rating on meal entries
 - [x] Coach progress view: per-meal habit adherence panel (separate from daily habits)
+
+## Client Profile Habits Tab (Jun 24)
+- [x] Add Habits tab to client profile (coach panel) showing all habits from library with assign/unassign toggles
+- [x] Remove assign-to-clients panel from habit library cards in HabitsSection
