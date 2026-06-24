@@ -757,3 +757,12 @@
 
 ## Session Log Progression Arrows (Jun 24)
 - [x] SessionDetailPanel: show ↑/↓ progression arrows next to weight×reps for each exercise (compare vs previous session where that exercise appeared)
+
+## UI Refinements (Jun 24 round 3)
+- [x] Session Detail Panel: show machine preset (and settings) below exercise name
+- [x] Session Detail Panel: use Lucide ArrowUp/ArrowDown/Minus icons (consistent with Exercise Progress tab)
+- [x] Background: lighten all surfaces (background 0.10→0.16, card 0.14→0.20, secondary 0.18→0.25, etc.)
+- [x] Monthly Volume card: constrain width to calendar column only (not full width)
+- [x] Training > Program: fix column headers to align with actual exercise row grid
+- [x] Training > Program: remove Program Change History panel
+- [x] Training > Cardio & Activity: remove Change History panel

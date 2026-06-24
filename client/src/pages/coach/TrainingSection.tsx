@@ -613,12 +613,12 @@ function SortableDayCard({
           </button>
         </div>
         <div className="space-y-2">
-          <div className="grid grid-cols-12 gap-1 px-1">
-            <p className="col-span-1"></p>
-            <p className="col-span-6 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Exercise</p>
-            <p className="col-span-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground text-center">Sets</p>
-            <p className="col-span-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground text-center">Reps</p>
-            <p className="col-span-1"></p>
+          <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-1 px-1 items-center">
+            <div className="w-5" />
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Exercise</p>
+            <p className="w-10 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground text-center">Sets</p>
+            <p className="w-16 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground text-center">Reps</p>
+            <div className="w-16" />
           </div>
           <SortableContext
             items={(day.exercises ?? []).map((_: any, j: number) => `ex-${dayIdx}-${j}`)}

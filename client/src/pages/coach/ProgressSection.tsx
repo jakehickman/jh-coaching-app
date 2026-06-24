@@ -1261,16 +1261,25 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
               : isMiniSets
                 ? miniSetsCount ? `1 + ${miniSetsCount} mini sets` : '1 mini set'
                 : `${completedSets.length} set${completedSets.length !== 1 ? 's' : ''}`;
+            const machinePreset = ex.machinePreset ?? null;
+            const machineSettings = ex.machineSettings ?? null;
             return (
               <div key={i} className="flex items-center gap-2 py-1.5 border-b border-border/30 last:border-0">
-                {onExerciseClick ? (
-                  <button
-                    onClick={() => onExerciseClick(ex.name)}
-                    className="text-xs font-semibold text-foreground flex-1 min-w-0 text-left hover:text-primary hover:underline transition-colors"
-                  >{ex.name}</button>
-                ) : (
-                  <p className="text-xs font-semibold text-foreground flex-1 min-w-0">{ex.name}</p>
-                )}
+                <div className="flex-1 min-w-0">
+                  {onExerciseClick ? (
+                    <button
+                      onClick={() => onExerciseClick(ex.name)}
+                      className="text-xs font-semibold text-foreground text-left hover:text-primary hover:underline transition-colors block w-full truncate"
+                    >{ex.name}</button>
+                  ) : (
+                    <p className="text-xs font-semibold text-foreground truncate">{ex.name}</p>
+                  )}
+                  {machinePreset && (
+                    <p className="text-[10px] text-muted-foreground/70 truncate">
+                      {machinePreset}{machineSettings ? ` · ${machineSettings}` : ''}
+                    </p>
+                  )}
+                </div>
                 {isMiniSets && (
                   <Zap size={10} className="text-amber-400 shrink-0" />
                 )}
@@ -1280,8 +1289,9 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
                 {setStr && (
                   <span className="text-[11px] text-muted-foreground shrink-0 flex items-center gap-0.5">
                     {setStr}
-                    {progressArrow === 'up' && <span className="text-green-400 text-[10px] leading-none">↑</span>}
-                    {progressArrow === 'down' && <span className="text-red-400 text-[10px] leading-none">↓</span>}
+                    {progressArrow === 'up' && <ArrowUp className="w-3 h-3 text-green-400" />}
+                    {progressArrow === 'down' && <ArrowDown className="w-3 h-3 text-red-400" />}
+                    {progressArrow === 'same' && <Minus className="w-3 h-3 text-muted-foreground" />}
                   </span>
                 )}
                 <span className={`text-[11px] shrink-0 ${isSkipped ? 'text-amber-400/80' : isMiniSets ? 'text-amber-400/70' : 'text-muted-foreground/60'}`}>
@@ -1628,15 +1638,14 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
       )}
     </div>
 
-    {/* Monthly volume summary — spans only the calendar column */}
-    <div className="flex flex-col lg:grid lg:grid-cols-[1fr_288px] gap-4 items-start">
+    {/* Monthly volume summary — constrained to calendar column width */}
+    <div className="lg:max-w-[calc(100%-288px-1rem)]">
       <MonthlyVolumeCoachPanel
         workoutSessions={workoutSessions}
         exerciseLib={exerciseLib}
         year={calYear}
         month={calMonth}
       />
-      <div />
     </div>
     </>
   );
@@ -2448,19 +2457,11 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} initialExercise={jumpToExercise} />
               </TabsContent>
               <TabsContent value="program">
-                <div className="space-y-6">
-                  <TrainingSection fixedClientId={selectedUserId!} />
-                  <ChangeHistoryPanel label="Program Change History">
-                    <ProgramChangeLogTab clientId={selectedUserId!} />
-                  </ChangeHistoryPanel>
-                </div>
+                <TrainingSection fixedClientId={selectedUserId!} />
               </TabsContent>
               <TabsContent value="cardio">
-                <div className="max-w-xl space-y-6">
+                <div className="max-w-xl">
                   <CardioActivityCard clientId={selectedUserId!} />
-                  <ChangeHistoryPanel label="Cardio & Activity Change History">
-                    <CardioChangeLogTab clientId={selectedUserId!} />
-                  </ChangeHistoryPanel>
                 </div>
               </TabsContent>
             </Tabs>

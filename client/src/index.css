@@ -84,28 +84,28 @@
   --chart-4: oklch(0.35 0.06 152);
   --chart-5: oklch(0.27 0.04 152);
   --radius: 0.75rem;                         /* rounder corners */
-  --background: oklch(0.10 0.012 152);       /* very dark green-tinted black */
+  --background: oklch(0.16 0.012 152);       /* dark green-tinted background */
   --foreground: oklch(0.97 0 0);             /* white text */
-  --card: oklch(0.14 0.014 152);             /* dark green-tinted card surface */
+  --card: oklch(0.20 0.014 152);             /* green-tinted card surface */
   --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.16 0.014 152);
+  --popover: oklch(0.22 0.014 152);
   --popover-foreground: oklch(0.97 0 0);
-  --secondary: oklch(0.18 0.012 152);        /* subtle green-tinted secondary */
+  --secondary: oklch(0.25 0.012 152);        /* subtle green-tinted secondary */
   --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.16 0.010 152);
+  --muted: oklch(0.22 0.010 152);
   --muted-foreground: oklch(0.65 0.02 152);  /* muted green-grey text */
   --accent: oklch(0.65 0.12 152);
   --accent-foreground: oklch(0.97 0 0);
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: oklch(0.97 0 0);
-  --border: oklch(0.22 0.014 152);           /* subtle green-tinted border */
-  --input: oklch(0.17 0.012 152);            /* dark green-tinted input bg */
+  --border: oklch(0.28 0.014 152);           /* subtle green-tinted border */
+  --input: oklch(0.23 0.012 152);            /* green-tinted input bg */
   --ring: oklch(0.65 0.12 152);
-  --sidebar: oklch(0.11 0.012 152);
+  --sidebar: oklch(0.17 0.012 152);
   --sidebar-foreground: oklch(0.97 0 0);
-  --sidebar-accent: oklch(0.17 0.012 152);
+  --sidebar-accent: oklch(0.23 0.012 152);
   --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: oklch(0.20 0.012 152);
+  --sidebar-border: oklch(0.26 0.012 152);
   --sidebar-ring: oklch(0.65 0.12 152);
 }
 
@@ -139,9 +139,9 @@
     opacity: 1;
   }
   ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: oklch(0.13 0 0); }
-  ::-webkit-scrollbar-thumb { background: oklch(0.25 0 0); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: oklch(0.35 0 0); }
+  ::-webkit-scrollbar-track { background: oklch(0.18 0 0); }
+  ::-webkit-scrollbar-thumb { background: oklch(0.32 0 0); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: oklch(0.42 0 0); }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
