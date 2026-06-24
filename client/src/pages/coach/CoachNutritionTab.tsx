@@ -289,8 +289,6 @@ function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
       {/* Ideal zone */}
       <rect x={zoneX1} y={zoneY1} width={zoneX2 - zoneX1} height={zoneY2 - zoneY1}
         fill="#4ade80" fillOpacity={0.12} rx={3} />
-      <text x={zoneX1 + (zoneX2 - zoneX1) / 2} y={zoneY1 - 6}
-        textAnchor="middle" fontSize={8} fill="#4ade80" opacity={0.7}>Ideal</text>
       {/* Axis labels */}
       {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
         <g key={n}>
@@ -326,7 +324,10 @@ function TreatsChart({ treatsByWeek }: {
 
         return (
           <div key={week.weekStart} className="flex-1 flex flex-col items-center gap-1">
-            <div className="w-full flex flex-col-reverse rounded overflow-hidden" style={{ height: "96px" }}>
+            {week.total > 0 && (
+              <span className="text-[9px] font-medium text-foreground/70 mb-0.5">{week.total}</span>
+            )}
+            <div className="w-full flex flex-col-reverse rounded overflow-hidden" style={{ height: week.total > 0 ? "84px" : "96px" }}>
               {week.total === 0 ? (
                 <div className="w-full bg-secondary/30 rounded" style={{ height: "4px" }} />
               ) : (
