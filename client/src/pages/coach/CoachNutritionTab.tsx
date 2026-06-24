@@ -317,7 +317,7 @@ function TreatsChart({ treatsByWeek }: {
   const maxTotal = Math.max(...treatsByWeek.map(w => w.total), 1);
 
   return (
-    <div className="flex items-end gap-2 h-32">
+    <div className="flex items-end gap-2 h-32 w-full">
       {treatsByWeek.map((week) => {
         const totalH = (week.total / maxTotal) * 100;
         const smallH = week.total > 0 ? (week.small / week.total) * totalH : 0;
@@ -398,14 +398,29 @@ function InsightsView({ clientId }: { clientId: number }) {
         </div>
       )}
 
-      {/* Top stats row — narrow cards, left-aligned */}
-      <div className="flex gap-3">
-        <div className="bg-card border border-border rounded-xl p-4 min-w-[120px]">
+      {/* Top row: ideal zone card + 3 stat cards */}
+      <div className="flex gap-3 items-stretch">
+        {/* Ideal zone */}
+        {insights.idealZonePct != null && (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 flex-1">
+            <p className="text-4xl font-bold text-green-400">{insights.idealZonePct}%</p>
+            <p className="text-sm text-muted-foreground mt-1">of rated meals in ideal zone</p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground/70">
+              <span>Hunger 3–4 before eating</span>
+              <span>·</span>
+              <span>Fullness 6–7 after eating</span>
+              <span>·</span>
+              <span>last {days} days</span>
+            </div>
+          </div>
+        )}
+        {/* Stat cards */}
+        <div className="bg-card border border-border rounded-xl p-4 min-w-[110px]">
           <p className="text-2xl font-bold text-foreground">{insights.totalMeals}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Meals</p>
           <p className="text-[10px] text-muted-foreground/60 mt-1">last {days}d</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4 min-w-[140px]">
+        <div className="bg-card border border-border rounded-xl p-4 min-w-[130px]">
           <p className="text-2xl font-bold text-foreground">
             {insights.avgHunger ?? "—"}
             {insights.avgHunger != null && (
@@ -414,10 +429,10 @@ function InsightsView({ clientId }: { clientId: number }) {
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">Avg Hunger</p>
           {insights.prevAvgHunger != null && (
-            <p className="text-[10px] text-muted-foreground/60 mt-1">vs. {insights.prevAvgHunger} prev period</p>
+            <p className="text-[10px] text-muted-foreground/60 mt-1">vs. {insights.prevAvgHunger} prev</p>
           )}
         </div>
-        <div className="bg-card border border-border rounded-xl p-4 min-w-[140px]">
+        <div className="bg-card border border-border rounded-xl p-4 min-w-[130px]">
           <p className="text-2xl font-bold text-foreground">
             {insights.avgFullness ?? "—"}
             {insights.avgFullness != null && (
@@ -426,25 +441,10 @@ function InsightsView({ clientId }: { clientId: number }) {
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">Avg Fullness</p>
           {insights.prevAvgFullness != null && (
-            <p className="text-[10px] text-muted-foreground/60 mt-1">vs. {insights.prevAvgFullness} prev period</p>
+            <p className="text-[10px] text-muted-foreground/60 mt-1">vs. {insights.prevAvgFullness} prev</p>
           )}
         </div>
       </div>
-
-      {/* Ideal zone card */}
-      {insights.idealZonePct != null && (
-        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5">
-          <p className="text-4xl font-bold text-green-400">{insights.idealZonePct}%</p>
-          <p className="text-sm text-muted-foreground mt-1">of rated meals in ideal zone</p>
-          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground/70">
-            <span>Hunger 3–4 before eating</span>
-            <span>·</span>
-            <span>Fullness 6–7 after eating</span>
-            <span>·</span>
-            <span>last {days} days</span>
-          </div>
-        </div>
-      )}
 
       {/* Bottom 3-card row: scatter, treats, timing */}
       <div className="grid grid-cols-3 gap-4">
@@ -461,7 +461,7 @@ function InsightsView({ clientId }: { clientId: number }) {
         </div>
 
         {/* Treats */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+        <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
           <div>
             <p className="text-sm font-semibold text-foreground">Treats</p>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -473,7 +473,9 @@ function InsightsView({ clientId }: { clientId: number }) {
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-amber-400/80 inline-block" />Medium</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-red-400/80 inline-block" />Large</span>
           </div>
-          <TreatsChart treatsByWeek={insights.treatsByWeek} />
+          <div className="flex-1 flex items-end">
+            <TreatsChart treatsByWeek={insights.treatsByWeek} />
+          </div>
         </div>
 
         {/* Meal timing — moved into 3-col row */}
