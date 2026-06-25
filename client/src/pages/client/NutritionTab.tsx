@@ -601,7 +601,7 @@ function FullnessSheet({
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
-      <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-8" hideCloseButton>
+      <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-8 max-h-[85vh] overflow-y-auto" hideCloseButton>
         <SheetHeader className="flex flex-row items-center justify-between mb-2">
           <SheetTitle>How are you feeling?</SheetTitle>
           <button onClick={handleClose} className="text-muted-foreground hover:text-foreground p-1">
