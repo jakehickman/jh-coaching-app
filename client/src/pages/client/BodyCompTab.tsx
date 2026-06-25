@@ -660,7 +660,7 @@ export default function BodyCompTab() {
 
         {/* Entry form */}
         {showForm && !viewAsUserId && (
-          <Card className="space-y-5 mb-4">
+          <Card className="space-y-5 mb-4 px-5">
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Date</p>
               <DateInput
