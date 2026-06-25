@@ -12,10 +12,10 @@ import {
   Plus,
   Pencil,
   Trash2,
-  UtensilsCrossed,
-  Cookie,
   ZoomIn,
 } from "lucide-react";
+import { MdRestaurant } from "react-icons/md";
+import { FaCookieBite } from "react-icons/fa";
 import {
   Sheet,
   SheetContent,
@@ -863,9 +863,9 @@ function MealRow({
               </div>
             </>
           ) : isMeal ? (
-            <UtensilsCrossed size={22} className="text-muted-foreground/50" />
+            <MdRestaurant size={26} className="text-muted-foreground/50" />
           ) : (
-            <Cookie size={22} className="text-muted-foreground/50" />
+            <FaCookieBite size={22} className="text-muted-foreground/50" />
           )}
         </div>
 
@@ -964,7 +964,7 @@ function TodayScreen() {
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         {todayMeals.length === 0 ? (
           <div className="py-14 text-center flex flex-col items-center gap-2">
-            <UtensilsCrossed size={36} className="text-muted-foreground/30 mb-1" />
+            <MdRestaurant size={36} className="text-muted-foreground/30 mb-1" />
             <p className="text-foreground font-medium text-sm">No meals logged today</p>
             <p className="text-xs text-muted-foreground">Tap + Log to record your first meal</p>
           </div>
@@ -1183,7 +1183,7 @@ function HistoryScreen() {
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         {dayMeals.length === 0 ? (
           <div className="py-12 text-center flex flex-col items-center gap-2">
-            <UtensilsCrossed size={32} className="text-muted-foreground/30 mb-1" />
+            <MdRestaurant size={32} className="text-muted-foreground/30 mb-1" />
             <p className="text-muted-foreground text-sm">No meals logged on this day</p>
           </div>
         ) : (
