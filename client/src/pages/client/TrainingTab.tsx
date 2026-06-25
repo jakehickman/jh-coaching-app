@@ -62,16 +62,28 @@ function TrainingTab() {
 
       {schedule.length > 0 && (
         <Card>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Training Schedule</p>
-          <div className="flex gap-1.5 items-center overflow-x-auto pb-0.5">
-            {schedule.map((slot: string, i: number) => (
-              <span key={i} className={`flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold ${
-                slot === "Off"
-                  ? "bg-secondary text-muted-foreground"
-                  : "bg-primary/10 text-primary border border-primary/20"
-              }`}>{slot === "Off" ? "OFF" : slot}</span>
-            ))}
-            <span className="flex-shrink-0 text-xs text-muted-foreground/50 ml-1">→ repeat</span>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Training Schedule</p>
+          <div className="flex flex-wrap gap-1.5 items-center">
+            {schedule.map((slot: string, i: number) => {
+              const isOff = slot === "Off";
+              const label = isOff ? "OFF" : slot;
+              const isLong = label.length > 3;
+              return (
+                <span
+                  key={i}
+                  className={`inline-flex items-center justify-center rounded-lg font-semibold ${
+                    isLong ? "text-[10px] px-2 py-1.5" : "text-sm px-3 py-1.5"
+                  } ${
+                    isOff
+                      ? "bg-secondary text-muted-foreground"
+                      : "bg-primary/10 text-primary border border-primary/20"
+                  }`}
+                >
+                  {label}
+                </span>
+              );
+            })}
+            <span className="text-xs text-muted-foreground/40 ml-0.5">→ repeat</span>
           </div>
         </Card>
       )}
@@ -110,9 +122,9 @@ function TrainingTab() {
                 const embedUrl = videoUrl ? getYouTubeEmbedUrl(videoUrl) : null;
                 return (
                   <div key={j} className="border-t border-border">
-                    <div className="grid grid-cols-12 gap-2 items-center py-2">
+                    <div className="grid grid-cols-12 gap-2 items-center py-2.5">
                       <div className="col-span-8 flex items-center gap-1.5 min-w-0">
-                        <p className="text-sm text-foreground min-w-0 leading-snug">{ex.name}</p>
+                        <p className="text-sm text-foreground min-w-0 leading-tight">{ex.name}</p>
                         {embedUrl && (
                           <button
                             onClick={() => setVideoModal({ name: ex.name, embedUrl })}
