@@ -953,7 +953,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
   };
   // Schedule helpers
   const dayOptions = ["Off", ...days.map(d => d.name || `Day ${days.indexOf(d) + 1}`)];
-  const addScheduleSlot = () => setSchedule(s => [...s, days[0]?.name || "A"]);
+  const addScheduleSlot = () => setSchedule(s => [...s, "Off"]);
   const removeScheduleSlot = (i: number) => {
     setSchedule(s => {
       const removedSlot = s[i];

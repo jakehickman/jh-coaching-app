@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -232,12 +232,6 @@ export function BodyCompSummaryTable({ clientId }: Props) {
   );
 
   const weeks = (data?.weeks ?? []) as Week[];
-
-  useEffect(() => {
-    if (weeks.length === 0) return;
-    const inProgress = weeks.find(w => w.isInProgress);
-    if (inProgress) setExpanded(new Set([inProgress.weekStart]));
-  }, [weeks.length]);
 
   function toggleRow(weekStart: string) {
     setExpanded(prev => {
