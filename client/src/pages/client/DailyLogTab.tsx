@@ -138,7 +138,9 @@ function HabitsCard({ date, weekDays }: { date: string; weekDays: string[] }) {
   const { viewAsUserId } = useViewAs();
   const { data: habitsOwn = [] } = trpc.habits.myHabits.useQuery(undefined, { enabled: !viewAsUserId });
   const { data: habitsAdmin = [] } = trpc.habits.clientHabits.useQuery({ clientId: viewAsUserId! }, { enabled: !!viewAsUserId });
-  const habits = viewAsUserId ? habitsAdmin : habitsOwn;
+  const allHabits = viewAsUserId ? habitsAdmin : habitsOwn;
+  // Only show daily habits in the Daily Log — per-meal habits appear in the Fullness rating sheet
+  const habits = allHabits.filter((h: any) => h.scope !== 'per_meal');
 
   const from90 = useMemo(() => {
     const d = new Date();
