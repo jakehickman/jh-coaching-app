@@ -284,10 +284,13 @@ function hoursToHmm(h: number): string {
   return `${hrs}:${String(mins).padStart(2, '0')}`;
 }
 
-// Parse "h:mm" or plain number string → decimal hours, or null if invalid
+// Parse sleep input → decimal hours, or null if invalid.
+// Accepts: "7:55" → 7h55m | "755" → 7h55m | "1030" → 10h30m
+//          "7.55" → 7h55m | "7.5" → 7h30m (decimal only when mins part > 59)
 function hmmToHours(s: string): number | null {
   const trimmed = s.trim();
   if (!trimmed) return null;
+  // Explicit colon: "7:55"
   if (trimmed.includes(':')) {
     const [hPart, mPart] = trimmed.split(':');
     const h = parseInt(hPart, 10);
@@ -295,6 +298,22 @@ function hmmToHours(s: string): number | null {
     if (isNaN(h) || isNaN(m) || m < 0 || m > 59) return null;
     return h + m / 60;
   }
+  // Dot format: "7.55" → treat as 7h55m if mins ≤ 59, else decimal hours
+  if (trimmed.includes('.')) {
+    const [hPart, mPart] = trimmed.split('.');
+    const h = parseInt(hPart, 10);
+    const mRaw = parseInt(mPart.padEnd(2, '0').slice(0, 2), 10);
+    if (!isNaN(h) && !isNaN(mRaw) && mRaw <= 59) return h + mRaw / 60;
+    const n = parseFloat(trimmed);
+    return isNaN(n) ? null : n;
+  }
+  // 3–4 digit integer: treat last 2 digits as minutes (755 → 7:55, 1030 → 10:30)
+  if (/^\d{3,4}$/.test(trimmed)) {
+    const mins = parseInt(trimmed.slice(-2), 10);
+    const hrs = parseInt(trimmed.slice(0, -2), 10);
+    if (mins >= 0 && mins <= 59) return hrs + mins / 60;
+  }
+  // 1–2 digit plain number → whole hours
   const n = parseFloat(trimmed);
   return isNaN(n) ? null : n;
 }
