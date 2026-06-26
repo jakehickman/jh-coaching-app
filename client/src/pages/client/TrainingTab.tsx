@@ -756,6 +756,115 @@ function PastSessionsList({
   );
 }
 
+// ─── WorkoutMiniCalendar ─────────────────────────────────────────────────────
+// Identical approach to NutritionTab's MiniCalendar — proven to work on mobile.
+function WorkoutMiniCalendar({
+  selectedDate,
+  onSelect,
+  datesWithSessions,
+  onMonthChange,
+}: {
+  selectedDate: Date;
+  onSelect: (d: Date) => void;
+  datesWithSessions: Set<string>;
+  onMonthChange: (month: string) => void;
+}) {
+  const [viewMonth, setViewMonth] = useState(() => {
+    const d = new Date(selectedDate);
+    d.setDate(1);
+    return d;
+  });
+
+  const today = new Date();
+  const todayStr = toLocalDateStr(today);
+
+  const year = viewMonth.getFullYear();
+  const month = viewMonth.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startOffset = (firstDay + 6) % 7; // Mon=0
+  const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+
+  function prevMonth() {
+    const next = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1);
+    setViewMonth(next);
+    onMonthChange(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`);
+  }
+  function nextMonth() {
+    const now = new Date();
+    const next = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1);
+    if (next <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+      setViewMonth(next);
+      onMonthChange(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`);
+    }
+  }
+
+  const canGoNext = (() => {
+    const next = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1);
+    const now = new Date();
+    return next <= new Date(now.getFullYear(), now.getMonth(), 1);
+  })();
+
+  const selectedStr = toLocalDateStr(selectedDate);
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <button onClick={prevMonth} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary">
+          <ChevronLeft size={18} />
+        </button>
+        <p className="text-sm font-semibold text-foreground">
+          {viewMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+        </p>
+        <button
+          onClick={nextMonth}
+          disabled={!canGoNext}
+          className={cn('p-1.5 rounded-lg transition-colors', canGoNext ? 'text-muted-foreground hover:text-foreground hover:bg-secondary' : 'text-muted-foreground/20 cursor-not-allowed')}
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 mb-1">
+        {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => (
+          <div key={d} className="text-center text-xs text-muted-foreground/60 font-medium py-1">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-y-0.5">
+        {Array.from({ length: totalCells }, (_, i) => {
+          const dayNum = i - startOffset + 1;
+          if (dayNum < 1 || dayNum > daysInMonth) return <div key={i} />;
+          const cellDate = new Date(year, month, dayNum);
+          const cellStr = toLocalDateStr(cellDate);
+          const isSelected = cellStr === selectedStr;
+          const isT = cellStr === todayStr;
+          const hasSession = datesWithSessions.has(cellStr);
+          const isFuture = cellDate > today;
+          return (
+            <button
+              key={i}
+              type="button"
+              disabled={isFuture}
+              onClick={() => onSelect(cellDate)}
+              className={cn(
+                'relative flex flex-col items-center justify-center h-9 rounded-lg text-sm transition-all',
+                isFuture ? 'text-muted-foreground/20 cursor-not-allowed' :
+                isSelected ? 'bg-primary text-primary-foreground font-bold' :
+                isT ? 'border border-primary text-primary font-semibold' :
+                'text-foreground hover:bg-secondary'
+              )}
+            >
+              {dayNum}
+              {hasSession && !isSelected && (
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary/70" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function WorkoutLogTab() {
   const { viewAsUserId } = useViewAs();
   const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
@@ -1224,129 +1333,109 @@ function WorkoutLogTab() {
 
   const inputCls = "bg-secondary border border-border rounded-lg px-2 py-3 text-base text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary w-full";
 
-  // ── Session list grouped by month ────────────────────────────────────────
-  const sessionsByMonth = useMemo(() => {
-    const sorted = [...(sessions as any[])].sort(
-      (a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate))
-    );
-    const groups: Array<{ monthKey: string; label: string; sessions: any[] }> = [];
-    for (const s of sorted) {
-      const ds = toLocalDateStr(s.sessionDate);
-      const [y, m] = ds.split('-');
-      const key = `${y}-${m}`;
-      const existing = groups.find(g => g.monthKey === key);
-      if (existing) {
-        existing.sessions.push(s);
-      } else {
-        const d = new Date(parseInt(y), parseInt(m) - 1, 1);
-        const label = d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
-        groups.push({ monthKey: key, label, sessions: [s] });
-      }
-    }
-    return groups;
+  // ── Calendar history state ─────────────────────────────────────────────────────
+  const [calSelectedDate, setCalSelectedDate] = useState(() => new Date());
+  const datesWithSessions = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of sessions as any[]) set.add(toLocalDateStr(s.sessionDate));
+    return set;
   }, [sessions]);
+
+  const calSelectedDateStr = toLocalDateStr(calSelectedDate);
+  const sessionsForCalDay = useMemo(() => {
+    return (sessions as any[]).filter(s => toLocalDateStr(s.sessionDate) === calSelectedDateStr)
+      .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)));
+  }, [sessions, calSelectedDateStr]);
 
   // ── Delete confirmation state ─────────────────────────────────────────────
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
   if (!selectedDay) {
     return (
-      <div className="relative space-y-5 pb-28">
+      <div className="relative space-y-4 pb-28">
 
-        {/* ── Empty state ── */}
-        {sessionsLoaded && (sessions as any[]).length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <MdBolt size={36} className="text-muted-foreground/20" />
-            <p className="text-muted-foreground text-sm">No sessions logged yet</p>
-            <p className="text-xs text-muted-foreground/60">Tap "Start Session" to log your first workout</p>
-          </div>
-        )}
+        {/* ── Mini Calendar (same component/approach as NutritionTab) ── */}
+        <WorkoutMiniCalendar
+          selectedDate={calSelectedDate}
+          onSelect={setCalSelectedDate}
+          datesWithSessions={datesWithSessions}
+          onMonthChange={() => {}}
+        />
 
-        {/* ── Session list grouped by month ── */}
-        {sessionsByMonth.map(group => (
-          <div key={group.monthKey} className="space-y-2">
-            {/* Month header */}
-            <p className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase px-0.5">
-              {group.label}
-            </p>
+        {/* ── Selected day label ── */}
+        <p className="text-xs text-muted-foreground font-medium px-1">
+          {calSelectedDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
 
-            {/* Session cards */}
-            {group.sessions.map((s: any) => {
-              const dateStr = toLocalDateStr(s.sessionDate);
-              const dateLabel = (() => {
-                const d = new Date(dateStr + 'T12:00:00Z');
-                return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
-              })();
-              const allExercises = (s.exercises as any[]).filter((ex: any) => {
-                const sets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
-                return sets.length > 0;
-              });
-              const totalSets = allExercises.reduce((sum: number, ex: any) =>
-                sum + (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null).length, 0);
-              const isConfirmingDelete = deleteConfirmId === s.id;
-
-              return (
-                <div key={s.id} className="bg-card border border-border rounded-xl overflow-hidden border-l-4 border-l-primary/60">
-                  {/* Main row */}
-                  <div className="flex items-center gap-3 px-4 py-3.5">
-                    {/* Day badge */}
-                    <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-primary leading-tight text-center">{s.dayLabel}</span>
+        {/* ── Sessions for selected day ── */}
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          {sessionsForCalDay.length === 0 ? (
+            <div className="py-12 text-center flex flex-col items-center gap-2">
+              <MdBolt size={28} className="text-muted-foreground/30 mb-1" />
+              <p className="text-muted-foreground text-sm">No session logged on this day</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {sessionsForCalDay.map((s: any) => {
+                const dateStr = toLocalDateStr(s.sessionDate);
+                const allExercises = (s.exercises as any[]).filter((ex: any) => {
+                  const sets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
+                  return sets.length > 0;
+                });
+                const totalSets = allExercises.reduce((sum: number, ex: any) =>
+                  sum + (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null).length, 0);
+                const isConfirmingDelete = deleteConfirmId === s.id;
+                return (
+                  <div key={s.id} className="px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{s.dayLabel}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {allExercises.length} exercise{allExercises.length !== 1 ? 's' : ''} &middot; {totalSets} set{totalSets !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      {!viewAsUserId && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => { setSessionDate(dateStr); selectDay(s.dayLabel); }}
+                            className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:bg-secondary/70 transition-colors"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmId(s.id)}
+                            disabled={deleting === s.id}
+                            className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:text-red-400 active:bg-red-400/10 transition-colors"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    {/* Date + summary */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{dateLabel}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {allExercises.length} exercise{allExercises.length !== 1 ? 's' : ''} &middot; {totalSets} set{totalSets !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    {/* Action buttons */}
-                    {!viewAsUserId && (
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* Delete confirmation */}
+                    {isConfirmingDelete && (
+                      <div className="mt-3 flex items-center gap-3">
+                        <p className="flex-1 text-sm text-foreground">Delete this session?</p>
                         <button
                           type="button"
-                          onClick={() => { setSessionDate(dateStr); selectDay(s.dayLabel); }}
-                          className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:bg-secondary/70 transition-colors"
-                        >
-                          <Pencil size={15} />
-                        </button>
+                          onClick={() => { setDeleting(s.id); setDeleteConfirmId(null); deleteMutation.mutate({ id: s.id }); }}
+                          className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium"
+                        >Delete</button>
                         <button
                           type="button"
-                          onClick={() => setDeleteConfirmId(s.id)}
-                          disabled={deleting === s.id}
-                          className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:text-red-400 active:bg-red-400/10 transition-colors"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="px-4 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium"
+                        >Cancel</button>
                       </div>
                     )}
                   </div>
-
-                  {/* Delete confirmation row */}
-                  {isConfirmingDelete && (
-                    <div className="px-4 pb-3.5 flex items-center gap-3 border-t border-border pt-3">
-                      <p className="flex-1 text-sm text-foreground">Delete this session?</p>
-                      <button
-                        type="button"
-                        onClick={() => { setDeleting(s.id); setDeleteConfirmId(null); deleteMutation.mutate({ id: s.id }); }}
-                        className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium active:opacity-80 transition-opacity"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirmId(null)}
-                        className="px-4 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium active:opacity-80 transition-opacity"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* ── Floating Start Session button ── */}
         <button
