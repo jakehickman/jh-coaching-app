@@ -1010,6 +1010,21 @@ function TodayScreen() {
   const mealCount = todayMeals.filter((m) => m.mealType === "meal").length;
   const treatCount = todayMeals.filter((m) => m.mealType === "treat").length;
 
+  // Per-meal habit summary
+  const todayMealIds = useMemo(
+    () => todayMeals.filter((m) => m.mealType === "meal").map((m) => m.id),
+    [todayMeals]
+  );
+  const { data: mealHabits = [] } = trpc.habits.myMealHabits.useQuery();
+  const { data: allCompletions = [] } = trpc.habits.mealCompletions.useQuery(
+    { mealLogIds: todayMealIds },
+    { enabled: todayMealIds.length > 0 }
+  );
+  const completedMealIds = useMemo(
+    () => new Set((allCompletions as any[]).map((c: any) => `${c.habitId}-${c.mealLogId}`)),
+    [allCompletions]
+  );
+
   return (
     <div className="space-y-4">
 
@@ -1024,6 +1039,33 @@ function TodayScreen() {
           <p className="text-xs text-muted-foreground">Treats</p>
         </div>
       </div>
+
+      {/* Per-meal habit summary */}
+      {(mealHabits as any[]).length > 0 && mealCount > 0 && (
+        <div className="bg-card rounded-2xl border border-border px-4 py-3 space-y-2">
+          <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">Meal Habits</p>
+          {(mealHabits as any[]).map((habit: any) => {
+            const completed = todayMealIds.filter((id) =>
+              completedMealIds.has(`${habit.id}-${id}`)
+            ).length;
+            const pct = mealCount > 0 ? Math.round((completed / mealCount) * 100) : 0;
+            return (
+              <div key={habit.id} className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-foreground">{habit.name}</span>
+                  <span className="text-xs text-muted-foreground">{completed}/{mealCount}</span>
+                </div>
+                <div className="h-1 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Meal list */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
