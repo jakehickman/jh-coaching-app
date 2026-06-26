@@ -289,14 +289,14 @@ function MeasurementCalendar({
       </div>
 
       {/* Day cells */}
-      <div className="grid grid-cols-7 gap-y-1">
+      <div className="grid grid-cols-7 gap-y-0.5">
         {cells.map((day, idx) => {
           if (day === null) {
-            return <div key={`pad-${idx}`} />;
+            return <div key={`pad-${idx}`} className="h-9" />;
           }
           const iso = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const hasMeasurement = measurementDates.has(iso);
-          const hasWeight = !hasMeasurement && iso in weightByDate; // only show blue if no green
+          const hasWeight = !hasMeasurement && iso in weightByDate;
           const isToday = iso === todayStr;
           const isSelected = iso === selectedDate;
 
@@ -304,25 +304,19 @@ function MeasurementCalendar({
             <button
               key={iso}
               onClick={() => onSelectDate(isSelected ? null : iso)}
-              className={`relative flex flex-col items-center justify-center rounded-lg py-1.5 transition-colors
+              className={`relative flex flex-col items-center justify-center h-9 rounded-lg text-sm transition-colors
                 ${isSelected
-                  ? "bg-primary/20 ring-1 ring-primary"
+                  ? "bg-primary text-primary-foreground font-bold"
                   : isToday
-                  ? "bg-muted/60"
-                  : "hover:bg-muted/30"
+                  ? "border border-primary text-primary font-semibold"
+                  : "text-foreground hover:bg-secondary"
                 }`}
             >
-              <span className={`text-xs leading-none mb-1 ${
-                isToday ? "font-bold text-foreground" : "text-foreground/80"
-              }`}>
-                {day}
-              </span>
-              {hasMeasurement ? (
-                <span className="w-1.5 h-1.5 rounded-full bg-primary block" />
-              ) : hasWeight ? (
-                <span className="w-1 h-1 rounded-full bg-blue-400/60 block" />
-              ) : (
-                <span className="w-1.5 h-1.5 block" />
+              {day}
+              {(hasMeasurement || hasWeight) && !isSelected && (
+                <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full ${
+                  hasMeasurement ? "w-1 h-1 bg-primary/70" : "w-1 h-1 bg-blue-400/70"
+                }`} />
               )}
             </button>
           );
