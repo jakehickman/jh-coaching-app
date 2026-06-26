@@ -685,6 +685,35 @@ function EditSheet({
   const [scaleOpen, setScaleOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Per-meal habits
+  const { data: mealHabits = [] } = trpc.habits.myMealHabits.useQuery();
+  const editMealId = meal?.id ?? null;
+  const editMealLogIds = useMemo(() => (editMealId != null ? [editMealId] : []), [editMealId]);
+  const { data: editCompletionsData, refetch: refetchEditCompletions } = trpc.habits.mealCompletions.useQuery(
+    { mealLogIds: editMealLogIds },
+    { enabled: editMealId != null }
+  );
+  const editCompletions = editCompletionsData ?? [];
+  const [habitChecked, setHabitChecked] = useState<Record<number, boolean>>({});
+  const toggleHabitMut = trpc.habits.toggleMealCompletion.useMutation({
+    onSuccess: () => refetchEditCompletions(),
+  });
+  const editCompletionsKey = editCompletions.map((c: any) => c.habitId).join(',');
+  useEffect(() => {
+    if (open && editMealId != null) {
+      const checked: Record<number, boolean> = {};
+      editCompletions.forEach((c: any) => { checked[c.habitId] = true; });
+      setHabitChecked(checked);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editMealId, editCompletionsKey]);
+  function handleToggleHabit(habitId: number) {
+    if (editMealId == null) return;
+    const newVal = !habitChecked[habitId];
+    setHabitChecked(prev => ({ ...prev, [habitId]: newVal }));
+    toggleHabitMut.mutate({ habitId, mealLogId: editMealId });
+  }
+
   useEffect(() => {
     if (meal) {
       setName(meal.name ?? "");
@@ -805,6 +834,34 @@ function EditSheet({
                 <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
               </div>
             </>
+          )}
+
+          {/* Per-meal habits */}
+          {(mealHabits as any[]).length > 0 && meal?.mealType === "meal" && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Meal Habits</p>
+              <div className="space-y-2">
+                {(mealHabits as any[]).map((h: any) => (
+                  <label key={h.id} className="flex items-center gap-3 cursor-pointer">
+                    <div
+                      onClick={() => handleToggleHabit(h.id)}
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        habitChecked[h.id]
+                          ? "bg-primary border-primary"
+                          : "border-border bg-secondary"
+                      }`}
+                    >
+                      {habitChecked[h.id] && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-sm text-foreground">{h.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           )}
 
           <div className="space-y-2">
