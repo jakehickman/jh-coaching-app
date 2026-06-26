@@ -111,20 +111,22 @@ function TrainingTab() {
           </button>
 
           {expandedDays.has(i) && (
-            <div className="mt-4 space-y-2">
-              <div className="grid grid-cols-12 gap-2 px-1 mb-1">
-                <p className="col-span-8 text-[10px] text-muted-foreground uppercase tracking-wider">Exercise</p>
-                <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Sets</p>
-                <p className="col-span-2 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Reps</p>
+            <div className="mt-4">
+              {/* Header row */}
+              <div className="flex items-center px-1 mb-1">
+                <p className="flex-1 text-[10px] text-muted-foreground uppercase tracking-wider">Exercise</p>
+                <p className="w-10 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Sets</p>
+                <p className="w-14 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Reps</p>
               </div>
               {(day.exercises ?? []).map((ex: any, j: number) => {
                 const videoUrl = videoMap[ex.name];
                 const embedUrl = videoUrl ? getYouTubeEmbedUrl(videoUrl) : null;
                 return (
                   <div key={j} className="border-t border-border">
-                    <div className="grid grid-cols-12 gap-2 items-center py-2.5">
-                      <div className="col-span-8 flex items-center gap-1.5 min-w-0">
-                        <p className="text-sm text-foreground min-w-0 leading-tight">{ex.name}</p>
+                    <div className="flex items-center py-2.5 gap-2">
+                      {/* Exercise name + optional video button */}
+                      <div className="flex-1 flex items-center gap-1.5 min-w-0">
+                        <p className="text-sm text-foreground leading-snug">{ex.name}</p>
                         {embedUrl && (
                           <button
                             onClick={() => setVideoModal({ name: ex.name, embedUrl })}
@@ -135,8 +137,10 @@ function TrainingTab() {
                           </button>
                         )}
                       </div>
-                      <p className="col-span-2 text-sm text-foreground text-center">{ex.sets}</p>
-                      <p className="col-span-2 text-sm text-foreground text-center">{ex.reps}</p>
+                      {/* Sets */}
+                      <p className="w-10 text-sm text-foreground text-center flex-shrink-0">{ex.sets}</p>
+                      {/* Reps */}
+                      <p className="w-14 text-sm text-foreground text-center flex-shrink-0">{ex.reps}</p>
                     </div>
                     {ex.notes && (
                       <p className="text-xs text-muted-foreground pb-2 leading-relaxed">{ex.notes}</p>
