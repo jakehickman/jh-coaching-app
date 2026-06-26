@@ -294,16 +294,14 @@ function HabitForm({
   isPending,
   title,
 }: {
-  initial?: { name: string; scope: HabitScope; frequency: "daily" | "x_per_week"; targetDays: number };
+  initial?: { name: string; scope: HabitScope };
   onSave: (data: { name: string; scope: HabitScope; frequency: "daily" | "x_per_week"; targetDays: number }) => void;
   onCancel: () => void;
   isPending: boolean;
   title: string;
 }) {
   const [name, setName] = useState(initial?.name ?? "");
-  const [scope, setScope] = useState<HabitScope>(initial?.scope ?? "daily");
-  const [frequency, setFrequency] = useState<"daily" | "x_per_week">(initial?.frequency ?? "daily");
-  const [targetDays, setTargetDays] = useState(initial?.targetDays ?? 5);
+  const scope: HabitScope = initial?.scope ?? "daily";
 
   return (
     <div className="space-y-3">
@@ -311,31 +309,8 @@ function HabitForm({
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Habit name"
         className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
       <div className="flex gap-2">
-        <button type="button" onClick={() => setScope("daily")}
-          className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${scope === "daily" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:text-foreground"}`}>
-          Daily
-        </button>
-        <button type="button" onClick={() => setScope("per_meal")}
-          className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${scope === "per_meal" ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:text-foreground"}`}>
-          Per Meal
-        </button>
-      </div>
-      {scope === "daily" && (
-        <div className="flex gap-3">
-          <select value={frequency} onChange={(e) => setFrequency(e.target.value as any)}
-            className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm focus:outline-none">
-            <option value="daily">Daily</option>
-            <option value="x_per_week">x per week</option>
-          </select>
-          {frequency === "x_per_week" && (
-            <input type="number" min={1} max={7} value={targetDays} onChange={(e) => setTargetDays(Number(e.target.value))}
-              className="w-20 bg-secondary border border-border rounded-lg px-3 py-2 text-sm focus:outline-none" />
-          )}
-        </div>
-      )}
-      <div className="flex gap-2">
         <Button size="sm" disabled={!name.trim() || isPending}
-          onClick={() => onSave({ name: name.trim(), scope, frequency: scope === "per_meal" ? "daily" : frequency, targetDays: scope === "daily" && frequency === "x_per_week" ? targetDays : 7 })}>
+          onClick={() => onSave({ name: name.trim(), scope, frequency: "daily", targetDays: 7 })}>
           {isPending ? "Saving..." : "Save"}
         </Button>
         <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
@@ -381,7 +356,7 @@ function HabitLibraryColumn({
         <div className="bg-card border border-border rounded-xl p-4">
           <HabitForm
             title="New Habit"
-            initial={{ name: "", scope, frequency: "daily", targetDays: 5 }}
+            initial={{ name: "", scope }}
             isPending={addPending}
             onCancel={() => setShowAdd(false)}
             onSave={(data) => {
@@ -409,7 +384,7 @@ function HabitLibraryColumn({
                 <div className="p-4">
                   <HabitForm
                     title="Edit Habit"
-                    initial={{ name: h.name, scope: (h.scope ?? "daily") as HabitScope, frequency: (h.frequency ?? "daily") as any, targetDays: h.targetDays ?? 5 }}
+                    initial={{ name: h.name, scope: (h.scope ?? "daily") as HabitScope }}
                     isPending={editPending}
                     onCancel={() => setEditingId(null)}
                     onSave={(data) => {
