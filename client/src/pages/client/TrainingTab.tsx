@@ -2,7 +2,8 @@ import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon, BarChart2, Zap } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon, BarChart2 } from "lucide-react";
+import { MdBolt } from "react-icons/md";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -1332,7 +1333,7 @@ function WorkoutLogTab() {
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           {sessionsForCalendarDay.length === 0 ? (
             <div className="py-12 text-center flex flex-col items-center gap-2">
-              <Zap size={28} className="text-muted-foreground/30 mb-1" />
+              <MdBolt size={28} className="text-muted-foreground/30 mb-1" />
               <p className="text-muted-foreground text-sm">No session logged on this day</p>
             </div>
           ) : (
@@ -1719,7 +1720,7 @@ function WorkoutLogTab() {
                       return (
                         <div className="space-y-1.5 pb-1">
                           <p className="text-xs font-semibold tracking-widest text-amber-400/80 text-left flex items-center gap-1">
-                            <Zap size={11} className="inline-block" /> MINI SETS
+                            <MdBolt size={11} className="inline-block" /> MINI SETS
                           </p>
                           {currentPreset && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-primary/40 text-primary text-[11px] font-medium">
@@ -1826,7 +1827,7 @@ function WorkoutLogTab() {
                                         isMyoReps ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
                                       }`}
                                     >
-                                      <Zap size={14} />
+                                      <MdBolt size={14} />
                                     </button>
                                   </div>
                                    {/* Mini-set count row — shown when myo-reps is on */}
