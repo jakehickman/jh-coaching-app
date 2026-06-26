@@ -753,135 +753,143 @@ function EditSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto px-4 pb-8" hideCloseButton>
-        <SheetHeader className="flex flex-row items-center justify-between mb-4">
-          <SheetTitle>Edit {meal?.mealType === "treat" ? "Treat" : "Meal"}</SheetTitle>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
-            <X size={20} />
-          </button>
-        </SheetHeader>
-        <div className="space-y-5">
-          {/* Photo */}
-          <div>
-            {photoPreview ? (
-              <div className="relative">
-                <img src={photoPreview} alt="Meal" className="w-full h-40 object-cover rounded-xl" />
-                <button
-                  onClick={() => { setPhotoPreview(null); setPhotoData(null); }}
-                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1"
-                >
-                  <X size={14} className="text-white" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
-              >
-                <Camera size={16} /> Add photo
-              </button>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }}
-            />
+    <>
+      {open && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+            <button onClick={onClose} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
+              <ChevronLeft size={20} />
+              <span className="text-sm">Back</span>
+            </button>
+            <h2 className="text-base font-semibold text-foreground">Edit {meal?.mealType === "treat" ? "Treat" : "Meal"}</h2>
+            <div className="w-14" />
           </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Description</p>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="What are you eating?"
-              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
-
-          {meal?.mealType === "treat" && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
-              <div className="flex gap-2">
-                {(["small", "medium", "large"] as const).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPortion(portion === p ? null : p)}
-                    className={cn(
-                      "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
-                      portion === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
-                    )}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {meal?.mealType === "meal" && (
-            <>
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Hunger before</p>
-                <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Fullness after</p>
-                <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
-              </div>
-            </>
-          )}
-
-          {/* Per-meal habits */}
-          {(mealHabits as any[]).length > 0 && meal?.mealType === "meal" && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Meal Habits</p>
-              <div className="space-y-2">
-                {(mealHabits as any[]).map((h: any) => (
-                  <label key={h.id} className="flex items-center gap-3 cursor-pointer">
-                    <div
-                      onClick={() => handleToggleHabit(h.id)}
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        habitChecked[h.id]
-                          ? "bg-primary border-primary"
-                          : "border-border bg-secondary"
-                      }`}
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto px-4 py-5">
+            <div className="space-y-5 max-w-lg mx-auto pb-6">
+              {/* Photo */}
+              <div>
+                {photoPreview ? (
+                  <div className="relative">
+                    <img src={photoPreview} alt="Meal" className="w-full h-52 object-cover rounded-xl" />
+                    <button
+                      onClick={() => { setPhotoPreview(null); setPhotoData(null); }}
+                      className="absolute top-2 right-2 bg-black/60 rounded-full p-1"
                     >
-                      {habitChecked[h.id] && (
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                          <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="text-sm text-foreground">{h.name}</span>
-                  </label>
-                ))}
+                      <X size={14} className="text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 py-4 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
+                  >
+                    <Camera size={16} /> Add photo
+                  </button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }}
+                />
               </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Description</p>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="What are you eating?"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+
+              {meal?.mealType === "treat" && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Portion size</p>
+                  <div className="flex gap-2">
+                    {(["small", "medium", "large"] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPortion(portion === p ? null : p)}
+                        className={cn(
+                          "flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all capitalize",
+                          portion === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
+                        )}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {meal?.mealType === "meal" && (
+                <>
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Hunger before</p>
+                    <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Fullness after</p>
+                    <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
+                  </div>
+                </>
+              )}
+
+              {/* Per-meal habits */}
+              {(mealHabits as any[]).length > 0 && meal?.mealType === "meal" && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Meal Habits</p>
+                  <div className="space-y-2">
+                    {(mealHabits as any[]).map((h: any) => (
+                      <label key={h.id} className="flex items-center gap-3 cursor-pointer">
+                        <div
+                          onClick={() => handleToggleHabit(h.id)}
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                            habitChecked[h.id]
+                              ? "bg-primary border-primary"
+                              : "border-border bg-secondary"
+                          }`}
+                        >
+                          {habitChecked[h.id] && (
+                            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                              <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="text-sm text-foreground">{h.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Notes</p>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Anything to add?"
+                  rows={3}
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                />
+              </div>
+
+              <Button className="w-full" onClick={handleSave} disabled={editMutation.isPending}>
+                {editMutation.isPending ? "Saving..." : "Save changes"}
+              </Button>
             </div>
-          )}
-
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Notes</p>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Anything to add?"
-              rows={2}
-              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-            />
           </div>
-
-          <Button className="w-full" onClick={handleSave} disabled={editMutation.isPending}>
-            {editMutation.isPending ? "Saving..." : "Save changes"}
-          </Button>
         </div>
-        <ScaleModal open={scaleOpen} onClose={() => setScaleOpen(false)} />
-      </SheetContent>
-    </Sheet>
+      )}
+      <ScaleModal open={scaleOpen} onClose={() => setScaleOpen(false)} />
+    </>
   );
 }
 
