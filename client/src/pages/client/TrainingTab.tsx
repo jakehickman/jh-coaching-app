@@ -1500,8 +1500,18 @@ function WorkoutLogTab() {
       <div className="flex items-center gap-3 -mb-1">
         <button
           onClick={() => {
-            if (confirm('Exit session? Your progress will be saved as a draft.')) {
-              if (selectedDay) writeDraft(sessionDate, selectedDay);
+            // Check if there's any actual data worth saving as a draft
+            const hasData = Object.values(exerciseData).some(sets =>
+              sets.some(s => s.weight !== '' || s.reps !== '' || s.completed)
+            );
+            if (hasData) {
+              if (confirm('Exit session? Your progress will be saved as a draft.')) {
+                if (selectedDay) writeDraft(sessionDate, selectedDay);
+                setSelectedDay(null);
+              }
+            } else {
+              // Nothing to save — just exit silently
+              if (selectedDay) clearDraft(sessionDate, selectedDay);
               setSelectedDay(null);
             }
           }}
