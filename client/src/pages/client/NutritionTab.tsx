@@ -90,6 +90,39 @@ function timeAgo(d: Date) {
   return `${hrs}h ago`;
 }
 
+// Compress image to max 1200px and JPEG 80% quality before encoding
+async function compressImage(file: File): Promise<{ blob: Blob; mimeType: string }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 1200;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+        else { width = Math.round((width * MAX) / height); height = MAX; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => resolve({ blob: blob!, mimeType: "image/jpeg" }),
+        "image/jpeg",
+        0.8
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      // Fallback: return original file as-is
+      resolve({ blob: file, mimeType: file.type || "image/jpeg" });
+    };
+    img.src = url;
+  });
+}
+
 function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -344,7 +377,8 @@ function LogSheet({
   const [name, setName] = useState("");
   const [portion, setPortion] = useState<"small" | "medium" | "large" | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoData, setPhotoData] = useState<{ base64: string; mimeType: string } | null>(null);
+  // Background upload state: null = no photo, 'uploading' = in progress, string = S3 URL
+  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null | "uploading">(null);
   const [scaleOpen, setScaleOpen] = useState(false);
   const [loggedAt, setLoggedAt] = useState<Date>(() => new Date());
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -361,13 +395,21 @@ function LogSheet({
     onError: (e) => toast.error(e.message),
   });
 
+  const uploadPhotoMutation = trpc.mealLogs.uploadPhoto.useMutation({
+    onSuccess: (data) => setUploadedPhotoUrl(data.photoUrl),
+    onError: () => {
+      setUploadedPhotoUrl(null);
+      toast.error("Photo upload failed — please try again");
+    },
+  });
+
   function reset() {
     setMealType("meal");
     setHunger(null);
     setName("");
     setPortion(null);
     setPhotoPreview(null);
-    setPhotoData(null);
+    setUploadedPhotoUrl(null);
     setScaleOpen(false);
     setLoggedAt(new Date());
   }
@@ -375,18 +417,31 @@ function LogSheet({
   function handleClose() { reset(); onClose(); }
 
   async function handlePhoto(file: File) {
-    const data = await fileToBase64(file);
-    setPhotoData(data);
+    // Show preview immediately
     setPhotoPreview(URL.createObjectURL(file));
+    setUploadedPhotoUrl("uploading");
+    // Compress then upload in background
+    const { blob, mimeType } = await compressImage(file);
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    uploadPhotoMutation.mutate({ imageBase64: base64, mimeType: mimeType as any });
   }
 
   function handleSave() {
+    const photoUrl = typeof uploadedPhotoUrl === "string" && uploadedPhotoUrl !== "uploading"
+      ? uploadedPhotoUrl : undefined;
     logMutation.mutate({
       loggedAt: loggedAt.getTime(),
       mealType,
       name: name || undefined,
-      imageBase64: photoData?.base64,
-      mimeType: photoData?.mimeType as any,
+      photoUrl,
       portionSize: portion ?? undefined,
       hungerRating: mealType === "meal" ? (hunger ?? undefined) : undefined,
       isOffPlan: false,
@@ -429,7 +484,7 @@ function LogSheet({
             <div className="relative">
               <img src={photoPreview} alt="Meal" className="w-full h-52 object-cover rounded-xl" />
               <button
-                onClick={() => { setPhotoPreview(null); setPhotoData(null); }}
+                onClick={() => { setPhotoPreview(null); setUploadedPhotoUrl(null); }}
                 className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5"
               >
                 <X size={14} className="text-white" />
@@ -522,8 +577,14 @@ function LogSheet({
 
       {/* Sticky footer */}
       <div className="px-4 pb-8 pt-3 border-t border-border shrink-0">
-        <Button onClick={handleSave} className="w-full h-12 text-base" disabled={logMutation.isPending}>
-          {logMutation.isPending ? "Saving..." : mealType === "treat" ? "Save Treat" : "Save Meal"}
+        <Button
+          onClick={handleSave}
+          className="w-full h-12 text-base"
+          disabled={logMutation.isPending || uploadedPhotoUrl === "uploading"}
+        >
+          {logMutation.isPending ? "Saving..."
+            : uploadedPhotoUrl === "uploading" ? "Uploading photo..."
+            : mealType === "treat" ? "Save Treat" : "Save Meal"}
         </Button>
       </div>
 
@@ -681,7 +742,7 @@ function EditSheet({
   const [fullness, setFullness] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoData, setPhotoData] = useState<{ base64: string; mimeType: string } | null>(null);
+  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null | "uploading">(null);
   const [scaleOpen, setScaleOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -722,7 +783,7 @@ function EditSheet({
       setFullness(meal.fullnessRating ?? null);
       setNotes(meal.notes ?? "");
       setPhotoPreview(meal.photoUrl ?? null);
-      setPhotoData(null);
+      setUploadedPhotoUrl(null);
     }
   }, [meal]);
 
@@ -731,14 +792,31 @@ function EditSheet({
     onError: (e) => toast.error(e.message),
   });
 
+  const uploadPhotoMutation = trpc.mealLogs.uploadPhoto.useMutation({
+    onSuccess: (data) => setUploadedPhotoUrl(data.photoUrl),
+    onError: () => {
+      setUploadedPhotoUrl(null);
+      toast.error("Photo upload failed — please try again");
+    },
+  });
+
   async function handlePhoto(file: File) {
-    const data = await fileToBase64(file);
-    setPhotoData(data);
     setPhotoPreview(URL.createObjectURL(file));
+    setUploadedPhotoUrl("uploading");
+    const { blob, mimeType } = await compressImage(file);
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    uploadPhotoMutation.mutate({ imageBase64: base64, mimeType: mimeType as any });
   }
 
   function handleSave() {
     if (!meal) return;
+    const newPhotoUrl = typeof uploadedPhotoUrl === "string" && uploadedPhotoUrl !== "uploading"
+      ? uploadedPhotoUrl : undefined;
     editMutation.mutate({
       id: meal.id,
       name: name || undefined,
@@ -747,8 +825,7 @@ function EditSheet({
       fullnessRating: meal.mealType === "meal" ? fullness : undefined,
       isOffPlan: false,
       notes: notes || null,
-      imageBase64: photoData?.base64,
-      mimeType: photoData?.mimeType as any,
+      photoUrl: newPhotoUrl,
     });
   }
 
@@ -774,7 +851,7 @@ function EditSheet({
                   <div className="relative">
                     <img src={photoPreview} alt="Meal" className="w-full h-52 object-cover rounded-xl" />
                     <button
-                      onClick={() => { setPhotoPreview(null); setPhotoData(null); }}
+                      onClick={() => { setPhotoPreview(null); setUploadedPhotoUrl(null); }}
                       className="absolute top-2 right-2 bg-black/60 rounded-full p-1"
                     >
                       <X size={14} className="text-white" />

@@ -132,8 +132,10 @@ export const mealLogsRouter = router({
         loggedAt: z.number(), // Unix ms timestamp
         mealType: z.enum(["meal", "treat"]),
         name: z.string().max(256).optional(),
-        // Photo: base64 encoded image (without data: prefix)
-        imageBase64: z.string().optional(),
+        // Photo: either pre-uploaded URL (fast path) or base64 for inline upload
+        photoUrl: z.string().optional(),   // pre-uploaded S3 URL from uploadPhoto
+        photoKey: z.string().optional(),   // pre-uploaded S3 key from uploadPhoto
+        imageBase64: z.string().optional(), // fallback: inline base64
         mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]).optional(),
         portionSize: z.enum(["small", "medium", "large"]).optional(),
         hungerRating: z.number().int().min(1).max(10).optional(),
@@ -145,10 +147,11 @@ export const mealLogsRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
-      let photoUrl: string | null = null;
-      let photoKey: string | null = null;
+      let photoUrl: string | null = input.photoUrl ?? null;
+      let photoKey: string | null = input.photoKey ?? null;
 
-      if (input.imageBase64 && input.mimeType) {
+      // Fallback: inline base64 upload (legacy path)
+      if (!photoUrl && input.imageBase64 && input.mimeType) {
         const buffer = Buffer.from(input.imageBase64, "base64");
         const ext = input.mimeType === "image/png" ? "png" : input.mimeType === "image/webp" ? "webp" : "jpg";
         const key = `meal-photos/${ctx.user.id}/${Date.now()}-${randomSuffix()}.${ext}`;
@@ -204,7 +207,9 @@ export const mealLogsRouter = router({
         fullnessRating: z.number().int().min(1).max(10).nullable().optional(),
         isOffPlan: z.boolean().optional(),
         notes: z.string().nullable().optional(),
-        // Optional new photo
+        // Optional new photo — either pre-uploaded URL (fast) or inline base64
+        photoUrl: z.string().optional(),
+        photoKey: z.string().optional(),
         imageBase64: z.string().optional(),
         mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]).optional(),
       })
@@ -213,7 +218,7 @@ export const mealLogsRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
-      const { id, imageBase64, mimeType, ...fields } = input;
+      const { id, photoUrl: preUploadedUrl, photoKey: preUploadedKey, imageBase64, mimeType, ...fields } = input;
 
       const updateData: Record<string, unknown> = {};
       if (fields.name !== undefined) updateData.name = fields.name;
@@ -223,7 +228,12 @@ export const mealLogsRouter = router({
       if (fields.isOffPlan !== undefined) updateData.isOffPlan = fields.isOffPlan;
       if (fields.notes !== undefined) updateData.notes = fields.notes;
 
-      if (imageBase64 && mimeType) {
+      // Fast path: pre-uploaded photo URL
+      if (preUploadedUrl) {
+        updateData.photoUrl = preUploadedUrl;
+        if (preUploadedKey) updateData.photoKey = preUploadedKey;
+      } else if (imageBase64 && mimeType) {
+        // Fallback: inline base64 upload
         const buffer = Buffer.from(imageBase64, "base64");
         const ext = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
         const key = `meal-photos/${ctx.user.id}/${Date.now()}-${randomSuffix()}.${ext}`;
@@ -578,5 +588,23 @@ export const mealLogsRouter = router({
       const to = new Date(input.weekEnd + "T23:59:59.999Z");
       const logs = await getMealLogsForUser(input.userId, from, to);
       return computeInsights(logs, 7);
+    }),
+
+  // ── Client: pre-upload a meal photo, returns S3 URL immediately ──────────
+  // Call this as soon as the user selects a photo (before they tap Save).
+  // The log/update procedures accept photoUrl directly to skip re-uploading.
+  uploadPhoto: protectedProcedure
+    .input(
+      z.object({
+        imageBase64: z.string(),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const buffer = Buffer.from(input.imageBase64, "base64");
+      const ext = input.mimeType === "image/png" ? "png" : input.mimeType === "image/webp" ? "webp" : "jpg";
+      const key = `meal-photos/${ctx.user.id}/${Date.now()}-${randomSuffix()}.${ext}`;
+      const result = await storagePut(key, buffer, input.mimeType);
+      return { photoUrl: result.url, photoKey: key };
     }),
 });
