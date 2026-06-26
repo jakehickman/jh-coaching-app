@@ -1403,7 +1403,7 @@ function WorkoutLogTab() {
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => { setSessionDate(dateStr); selectDay(s.dayLabel); }}
+                            onClick={() => { clearDraft(dateStr, s.dayLabel); setSessionDate(dateStr); selectDay(s.dayLabel); }}
                             className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:bg-secondary/70 transition-colors"
                           >
                             <Pencil size={15} />
