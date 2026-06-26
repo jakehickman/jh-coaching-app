@@ -596,6 +596,10 @@ function PastSessionsList({
 }) {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [showAll, setShowAll] = useState(false);
+  const exerciseUnits = (() => {
+    try { return JSON.parse(localStorage.getItem('workout:exerciseUnits') ?? '{}') as Record<string, 'kg' | 'lbs'>; }
+    catch { return {} as Record<string, 'kg' | 'lbs'>; }
+  })();
 
   const displayed = showAll ? sessions.slice(0, 50) : sessions.slice(0, 10);
 
@@ -727,7 +731,7 @@ function PastSessionsList({
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-sm text-muted-foreground">
-                          {firstSet?.weight != null ? `${firstSet.weight}kg` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
+                          {firstSet?.weight != null ? `${firstSet.weight}${exerciseUnits[ex.name] ?? 'kg'}` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
                         </p>
                         <p className="text-[11px] text-muted-foreground/60">{setLabel}</p>
                       </div>
@@ -810,6 +814,22 @@ function WorkoutLogTab() {
   const [substitutions, setSubstitutions] = useState<Record<string, string>>({});
   const [changingDateId, setChangingDateId] = useState<number | null>(null);
   const [newDateVal, setNewDateVal] = useState("");
+
+  // ── Per-exercise unit preference (kg / lbs) ─────────────────────────────
+  const [exerciseUnits, setExerciseUnits] = useState<Record<string, 'kg' | 'lbs'>>(() => {
+    try {
+      const raw = localStorage.getItem('workout:exerciseUnits');
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+  function toggleExerciseUnit(exName: string) {
+    setExerciseUnits(prev => {
+      const current = prev[exName] ?? 'kg';
+      const next = { ...prev, [exName]: current === 'kg' ? 'lbs' as const : 'kg' as const };
+      try { localStorage.setItem('workout:exerciseUnits', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
 
   // ── Draft helpers ─────────────────────────────────────────────────────────
   const draftKey = (date: string, day: string) => `draft:workout:${date}:${day}`;
@@ -1450,7 +1470,8 @@ function WorkoutLogTab() {
                               const pw = prevSets[0]?.weight;
                               const pr = prevSets[0]?.reps;
                               if (pw == null && pr == null) return null;
-                              const parts = [pw != null ? pw : null, pr != null ? pr : null].filter(Boolean);
+                              const unit = exerciseUnits[displayName] ?? 'kg';
+                              const parts = [pw != null ? `${pw}${unit}` : null, pr != null ? pr : null].filter(Boolean);
                               return <span className="text-muted-foreground/50 font-normal"> · Last: {parts.join(' × ')}</span>;
                             })()}
                           </p>
@@ -1477,6 +1498,14 @@ function WorkoutLogTab() {
                           })()}
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {/* kg / lbs toggle */}
+                          <button
+                            onClick={e => { e.stopPropagation(); toggleExerciseUnit(displayName); }}
+                            title="Toggle weight unit"
+                            className="flex items-center justify-center h-7 px-2 rounded-lg bg-secondary text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {exerciseUnits[displayName] ?? 'kg'}
+                          </button>
                           <button
                             onClick={e => { e.stopPropagation(); setHistorySheet(displayName); }}
                             title="Exercise history"
@@ -1524,7 +1553,7 @@ function WorkoutLogTab() {
                             <p className="text-xs font-semibold tracking-widest text-green-500">COMPLETE</p>
                             {topSet && (
                               <p className="text-xs text-muted-foreground">
-                                {topSet.weight}kg × {topSet.reps}
+                                {topSet.weight}{exerciseUnits[displayName] ?? 'kg'} × {topSet.reps}
                                 {isRestPause && sets[0]?.miniSets && String(sets[0].miniSets) !== '' && (
                                   <span className="ml-2 text-muted-foreground/60">· 1 + {sets[0].miniSets} mini sets</span>
                                 )}
@@ -1580,7 +1609,7 @@ function WorkoutLogTab() {
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-9 flex-shrink-0" />
                             <div className="flex-1 text-center">
-                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Weight</p>
+                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{exerciseUnits[displayName] ?? 'kg'}</p>
                             </div>
                             <div className="flex-1 text-center">
                                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Reps</p>
@@ -1954,6 +1983,7 @@ function WorkoutLogTab() {
           {(() => {
             if (!historySheet) return null;
             const exName = historySheet;
+            const histUnit = exerciseUnits[exName] ?? 'kg';
             const pastSessions = [...sessions]
               .filter(s => (s.exercises as any[]).some((e: any) => e.name === exName))
               .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)));
@@ -1983,7 +2013,7 @@ function WorkoutLogTab() {
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {completedSets.map((st: any, idx: number) => (
                             <span key={idx} className={`text-xs border rounded-lg px-2 py-1 ${st.myoReps ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border text-foreground'}`}>
-                              {st.weight != null ? `${st.weight}kg` : '—'} × {st.reps != null ? st.reps : '—'}
+                              {st.weight != null ? `${st.weight}${histUnit}` : '—'} × {st.reps != null ? st.reps : '—'}
                               {st.myoReps && st.miniSets != null && (
                                 <span className="ml-1 text-[10px] opacity-70">+{st.miniSets} mini</span>
                               )}
