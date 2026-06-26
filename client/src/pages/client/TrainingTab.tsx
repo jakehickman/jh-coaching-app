@@ -756,6 +756,11 @@ function PastSessionsList({
   );
 }
 
+/** Convert a local Date to yyyy-mm-dd using LOCAL timezone parts (not UTC). */
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // ─── WorkoutMiniCalendar ─────────────────────────────────────────────────────
 // Identical approach to NutritionTab's MiniCalendar — proven to work on mobile.
 function WorkoutMiniCalendar({
@@ -776,7 +781,7 @@ function WorkoutMiniCalendar({
   });
 
   const today = new Date();
-  const todayStr = toLocalDateStr(today);
+  const todayStr = localDateStr(today);
 
   const year = viewMonth.getFullYear();
   const month = viewMonth.getMonth();
@@ -805,7 +810,7 @@ function WorkoutMiniCalendar({
     return next <= new Date(now.getFullYear(), now.getMonth(), 1);
   })();
 
-  const selectedStr = toLocalDateStr(selectedDate);
+  const selectedStr = localDateStr(selectedDate);
 
   return (
     <div className="bg-card border border-border rounded-2xl p-4">
@@ -834,7 +839,7 @@ function WorkoutMiniCalendar({
           const dayNum = i - startOffset + 1;
           if (dayNum < 1 || dayNum > daysInMonth) return <div key={i} />;
           const cellDate = new Date(year, month, dayNum);
-          const cellStr = toLocalDateStr(cellDate);
+          const cellStr = localDateStr(cellDate);
           const isSelected = cellStr === selectedStr;
           const isT = cellStr === todayStr;
           const hasSession = datesWithSessions.has(cellStr);
@@ -1341,7 +1346,7 @@ function WorkoutLogTab() {
     return set;
   }, [sessions]);
 
-  const calSelectedDateStr = toLocalDateStr(calSelectedDate);
+  const calSelectedDateStr = localDateStr(calSelectedDate);
   const sessionsForCalDay = useMemo(() => {
     return (sessions as any[]).filter(s => toLocalDateStr(s.sessionDate) === calSelectedDateStr)
       .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)));
