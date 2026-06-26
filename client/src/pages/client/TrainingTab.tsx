@@ -1012,6 +1012,8 @@ function WorkoutLogTab() {
       utils.dailyLog.list.invalidate();
       setSaving(false);
       setLastSaved(new Date());
+      setSelectedDay(null);
+      sessionStorage.removeItem('workoutLog:selectedDay');
       toast.success("Session saved!");
     },
     onError: () => { setSaving(false); toast.error("Failed to save session."); },
@@ -1291,7 +1293,7 @@ function WorkoutLogTab() {
               <div key={d} className="text-center text-xs text-muted-foreground/60 font-medium py-1">{d}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-y-0.5">
+          <div className="grid grid-cols-7">
             {Array.from({ length: totalCalCells }, (_, i) => {
               const dayNum = i - startOffset + 1;
               if (dayNum < 1 || dayNum > daysInCalMonth) return <div key={i} />;
@@ -1307,7 +1309,7 @@ function WorkoutLogTab() {
                   disabled={isFuture}
                   onClick={() => setCalendarViewDate(cellDate)}
                   className={cn(
-                    'relative flex flex-col items-center justify-center h-9 rounded-lg text-sm transition-all',
+                    'relative flex flex-col items-center justify-center h-10 rounded-lg text-sm transition-all',
                     isFuture ? 'text-muted-foreground/20 cursor-not-allowed' :
                     isSelected ? 'bg-primary text-primary-foreground font-bold' :
                     isToday ? 'border border-primary text-primary font-semibold' :
@@ -2014,7 +2016,7 @@ function WorkoutLogTab() {
                     disabled={saving}
                     className="w-full py-4 bg-primary text-primary-foreground font-bold text-base rounded-2xl shadow-2xl hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
-                    {saving ? "Saving..." : "Finish Session"}
+                    {saving ? "Saving..." : "Complete Session"}
                   </button>
                   {lastSaved && (
                     <p className="text-center text-xs text-muted-foreground mt-1">
