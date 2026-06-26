@@ -1252,8 +1252,10 @@ function WorkoutLogTab() {
   const calViewMonthNum = parseInt(calViewMonth.split('-')[1]) - 1;
   const daysInCalMonth = new Date(calViewYear, calViewMonthNum + 1, 0).getDate();
   const firstDayOfMonth = new Date(calViewYear, calViewMonthNum, 1).getDay();
-  const startOffset = (firstDayOfMonth + 6) % 7; // Mon=0
-  const totalCalCells = Math.ceil((startOffset + daysInCalMonth) / 7) * 7;
+  const startOffset = (firstDayOfMonth + 6) % 7; // Mon=0 … Sun=6
+  // Always render exactly 42 cells (6 rows × 7 cols) so every row has
+  // the same height and no row collapses due to missing cells.
+  const TOTAL_CAL_CELLS = 42;
   const canGoNextMonth = (() => {
     const now = new Date();
     return calViewYear < now.getFullYear() || (calViewYear === now.getFullYear() && calViewMonthNum < now.getMonth());
@@ -1293,10 +1295,18 @@ function WorkoutLogTab() {
               <div key={d} className="text-center text-xs text-muted-foreground/60 font-medium py-1">{d}</div>
             ))}
           </div>
+          {/* 42-cell grid (6 rows × 7 cols). Every cell — including empty
+              padding cells — is rendered as the same element with the same
+              fixed height so no row ever collapses, which was causing
+              mis-registered taps on mobile. */}
           <div className="grid grid-cols-7">
-            {Array.from({ length: totalCalCells }, (_, i) => {
+            {Array.from({ length: TOTAL_CAL_CELLS }, (_, i) => {
               const dayNum = i - startOffset + 1;
-              if (dayNum < 1 || dayNum > daysInCalMonth) return <div key={i} />;
+              const isEmpty = dayNum < 1 || dayNum > daysInCalMonth;
+              // Empty padding cell — same height as date cell, not interactive
+              if (isEmpty) {
+                return <div key={i} className="h-11" aria-hidden="true" />;
+              }
               const cellDate = new Date(calViewYear, calViewMonthNum, dayNum);
               const cellStr = `${calViewYear}-${String(calViewMonthNum + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
               const isSelected = cellStr === calendarViewDateStr;
@@ -1306,19 +1316,21 @@ function WorkoutLogTab() {
               return (
                 <button
                   key={i}
+                  type="button"
                   disabled={isFuture}
                   onClick={() => setCalendarViewDate(cellDate)}
                   className={cn(
-                    'relative flex flex-col items-center justify-center h-10 rounded-lg text-sm transition-all',
+                    // h-11 = 44 px — Apple/Google recommended minimum touch target
+                    'relative flex flex-col items-center justify-center h-11 rounded-xl text-sm font-medium transition-colors',
                     isFuture ? 'text-muted-foreground/20 cursor-not-allowed' :
-                    isSelected ? 'bg-primary text-primary-foreground font-bold' :
-                    isToday ? 'border border-primary text-primary font-semibold' :
-                    'text-foreground hover:bg-secondary'
+                    isSelected ? 'bg-primary text-primary-foreground' :
+                    isToday ? 'border border-primary text-primary' :
+                    'text-foreground active:bg-secondary'
                   )}
                 >
                   {dayNum}
                   {hasSession && !isSelected && (
-                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary/70" />
+                    <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
                   )}
                 </button>
               );
