@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { useViewAs } from "@/contexts/ViewAsContext";
 import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon, BarChart2, Zap } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -831,6 +832,14 @@ function WorkoutLogTab() {
     });
   }
 
+  // ── Calendar / history view state ─────────────────────────────────────────
+  const [dayPickerOpen, setDayPickerOpen] = useState(false);
+  const [calendarViewDate, setCalendarViewDate] = useState(() => new Date());
+  const [calViewMonth, setCalViewMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+
   // ── Draft helpers ─────────────────────────────────────────────────────────
   const draftKey = (date: string, day: string) => `draft:workout:${date}:${day}`;
 
@@ -1218,96 +1227,231 @@ function WorkoutLogTab() {
 
   const inputCls = "bg-secondary border border-border rounded-lg px-2 py-3 text-base text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary w-full";
 
-  return (
-    <div className="space-y-4">
-      {/* ── Compact session starter ─────────────────────────────── */}
-      <div className="bg-card border border-border rounded-xl p-4 border-l-4 border-l-primary">
-        {/* Row 1: date button + day pills */}
-        <div className="flex items-center gap-2 mb-3">
-          <div className="relative flex-shrink-0">
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors cursor-pointer select-none">
-                  <CalendarIcon size={14} />
-                  <span>{(() => { const d = new Date(sessionDate + 'T12:00:00Z'); return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); })()}</span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={new Date(sessionDate + 'T12:00:00Z')}
-                  onSelect={(date) => {
-                    if (!date) return;
-                    const newDate = [
-                      date.getFullYear(),
-                      String(date.getMonth() + 1).padStart(2, '0'),
-                      String(date.getDate()).padStart(2, '0'),
-                    ].join('-');
-                    // Auto-save current session before switching date
-                    if (selectedDay) {
-                      const dayDef = days.find(d => d.label === selectedDay);
-                      const exercises = (dayDef?.exercises ?? []).map(ex => {
-                        const subName = substitutions[ex.name];
-                        const nameToUse = subName ?? ex.name;
-                        return {
-                          name: nameToUse,
-                          substitutedFor: subName ? ex.name : undefined,
-                          equipmentDetails: equipmentDetails[nameToUse] || null,
-                          machinePreset: machinePreset[nameToUse] || null,
-                          presetId: machinePresetId[nameToUse] || null,
-                          machineSettings: machineSettings[nameToUse] || null,
-                          exerciseNotes: exerciseNotes[nameToUse] || null,
-                          sets: (exerciseData[nameToUse] ?? []).map(s => ({
-                            weight: s.weight !== '' ? parseFloat(s.weight) : null,
-                            reps: s.reps !== '' ? parseInt(s.reps) : null,
-                            notes: s.notes || null,
-                            completed: s.completed || s.weight !== '' || s.reps !== '',
-                            myoReps: s.myoReps || false,
-                            miniSets: s.miniSets !== '' && s.miniSets != null ? parseInt(s.miniSets) : null,
-                          })),
-                        };
-                      });
-                      saveMutation.mutate({ sessionDate, dayLabel: selectedDay, exercises, notes: sessionNotes || null });
-                    }
-                    setSessionDate(newDate);
-                    setSelectedDay(null);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+  // ── Derived calendar data ────────────────────────────────────────────────
+  const datesWithSessions = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of sessions as any[]) {
+      set.add(toLocalDateStr(s.sessionDate));
+    }
+    return set;
+  }, [sessions]);
+
+  const calendarViewDateStr = toLocalDateStr(calendarViewDate);
+  const sessionsForCalendarDay = useMemo(() => {
+    return (sessions as any[]).filter(s => toLocalDateStr(s.sessionDate) === calendarViewDateStr)
+      .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)));
+  }, [sessions, calendarViewDateStr]);
+
+  const todayStr = today;
+
+  // ── Calendar mini component (inline) ────────────────────────────────────
+  const calViewYear = parseInt(calViewMonth.split('-')[0]);
+  const calViewMonthNum = parseInt(calViewMonth.split('-')[1]) - 1;
+  const daysInCalMonth = new Date(calViewYear, calViewMonthNum + 1, 0).getDate();
+  const firstDayOfMonth = new Date(calViewYear, calViewMonthNum, 1).getDay();
+  const startOffset = (firstDayOfMonth + 6) % 7; // Mon=0
+  const totalCalCells = Math.ceil((startOffset + daysInCalMonth) / 7) * 7;
+  const canGoNextMonth = (() => {
+    const now = new Date();
+    return calViewYear < now.getFullYear() || (calViewYear === now.getFullYear() && calViewMonthNum < now.getMonth());
+  })();
+  function prevCalMonth() {
+    const d = new Date(calViewYear, calViewMonthNum - 1, 1);
+    setCalViewMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  function nextCalMonth() {
+    if (!canGoNextMonth) return;
+    const d = new Date(calViewYear, calViewMonthNum + 1, 1);
+    setCalViewMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+
+  if (!selectedDay) {
+    return (
+      <div className="relative space-y-4 pb-24">
+        {/* ── Mini Calendar ── */}
+        <div className="bg-card border border-border rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={prevCalMonth} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary">
+              <ChevronLeft size={18} />
+            </button>
+            <p className="text-sm font-semibold text-foreground">
+              {new Date(calViewYear, calViewMonthNum, 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+            </p>
+            <button
+              onClick={nextCalMonth}
+              disabled={!canGoNextMonth}
+              className={cn('p-1.5 rounded-lg transition-colors', canGoNextMonth ? 'text-muted-foreground hover:text-foreground hover:bg-secondary' : 'text-muted-foreground/20 cursor-not-allowed')}
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
-          {days.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No program assigned</p>
-          ) : (
-            <div className="flex gap-1.5 flex-wrap">
-              {days.map(d => (
+          <div className="grid grid-cols-7 mb-1">
+            {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => (
+              <div key={d} className="text-center text-xs text-muted-foreground/60 font-medium py-1">{d}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-y-0.5">
+            {Array.from({ length: totalCalCells }, (_, i) => {
+              const dayNum = i - startOffset + 1;
+              if (dayNum < 1 || dayNum > daysInCalMonth) return <div key={i} />;
+              const cellDate = new Date(calViewYear, calViewMonthNum, dayNum);
+              const cellStr = `${calViewYear}-${String(calViewMonthNum + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+              const isSelected = cellStr === calendarViewDateStr;
+              const isToday = cellStr === todayStr;
+              const hasSession = datesWithSessions.has(cellStr);
+              const isFuture = cellDate > new Date();
+              return (
                 <button
-                  key={d.label}
-                  onClick={() => selectDay(d.label)}
-                  className={`w-9 h-9 rounded-lg text-sm font-semibold transition-colors ${
-                    selectedDay === d.label
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-                  }`}
+                  key={i}
+                  disabled={isFuture}
+                  onClick={() => setCalendarViewDate(cellDate)}
+                  className={cn(
+                    'relative flex flex-col items-center justify-center h-9 rounded-lg text-sm transition-all',
+                    isFuture ? 'text-muted-foreground/20 cursor-not-allowed' :
+                    isSelected ? 'bg-primary text-primary-foreground font-bold' :
+                    isToday ? 'border border-primary text-primary font-semibold' :
+                    'text-foreground hover:bg-secondary'
+                  )}
                 >
-                  {d.label}
+                  {dayNum}
+                  {hasSession && !isSelected && (
+                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary/70" />
+                  )}
                 </button>
-              ))}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Selected day label ── */}
+        <p className="text-xs text-muted-foreground font-medium px-1">
+          {calendarViewDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+
+        {/* ── Sessions for selected day ── */}
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          {sessionsForCalendarDay.length === 0 ? (
+            <div className="py-12 text-center flex flex-col items-center gap-2">
+              <Zap size={28} className="text-muted-foreground/30 mb-1" />
+              <p className="text-muted-foreground text-sm">No session logged on this day</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {sessionsForCalendarDay.map((s: any) => {
+                const exCount = (s.exercises as any[]).length;
+                return (
+                  <div key={s.id} className="px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{s.dayLabel}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{exCount} exercise{exCount !== 1 ? 's' : ''}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => { setSessionDate(calendarViewDateStr); selectDay(s.dayLabel); }}
+                          className="px-3 py-1.5 rounded-lg bg-secondary text-xs font-medium text-foreground hover:bg-secondary/80 transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => { if (confirm('Delete this session?')) { setDeleting(s.id); deleteMutation.mutate({ id: s.id }); } }}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    {/* Exercise summary */}
+                    <div className="mt-2 space-y-1">
+                      {(s.exercises as any[]).slice(0, 4).map((ex: any) => (
+                        <div key={ex.name} className="flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground truncate flex-1 mr-2">{ex.name}</p>
+                          <p className="text-xs text-muted-foreground/60 flex-shrink-0">
+                            {(ex.sets as any[]).filter((set: any) => set.completed).length}/{(ex.sets as any[]).length} sets
+                          </p>
+                        </div>
+                      ))}
+                      {(s.exercises as any[]).length > 4 && (
+                        <p className="text-xs text-muted-foreground/50">+{(s.exercises as any[]).length - 4} more</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
-        {/* Row 2: Start Session CTA (only when day selected) */}
-        {selectedDay && (
-          <button
-            onClick={() => { window.scrollTo({ top: 200, behavior: 'smooth' }); }}
-            className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            Session {selectedDay} ↓
-          </button>
-        )}
-      </div>
 
+        {/* ── Floating Start Session button ── */}
+        <button
+          onClick={() => setDayPickerOpen(true)}
+          className="fixed bottom-24 right-4 z-30 flex items-center gap-2 px-5 py-3.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-lg hover:bg-primary/90 active:scale-95 transition-all"
+        >
+          <Plus size={18} />
+          Start Session
+        </button>
+
+        {/* ── Day picker sheet ── */}
+        <Sheet open={dayPickerOpen} onOpenChange={setDayPickerOpen}>
+          <SheetContent side="bottom" className="rounded-t-2xl max-h-[70vh] overflow-y-auto" hideCloseButton>
+            <SheetHeader className="px-5 pt-5 pb-3">
+              <div className="flex items-center justify-between">
+                <SheetTitle className="text-base font-semibold">Choose a session</SheetTitle>
+                <button onClick={() => setDayPickerOpen(false)} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+            </SheetHeader>
+            {days.length === 0 ? (
+              <p className="px-5 pb-6 text-sm text-muted-foreground">No program assigned yet.</p>
+            ) : (
+              <div className="px-5 pb-6 space-y-2">
+                {days.map((d: any) => (
+                  <button
+                    key={d.label}
+                    onClick={() => {
+                      setDayPickerOpen(false);
+                      setSessionDate(today);
+                      selectDay(d.label);
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl bg-secondary hover:bg-secondary/80 active:scale-[0.98] transition-all text-left"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{d.label}</p>
+                      {d.name && d.name !== d.label && <p className="text-xs text-muted-foreground mt-0.5">{d.name}</p>}
+                      <p className="text-xs text-muted-foreground mt-0.5">{(d.exercises ?? []).length} exercises</p>
+                    </div>
+                    <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </SheetContent>
+        </Sheet>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* ── Active session header ─────────────────────────────────── */}
+      <div className="flex items-center gap-3 -mb-1">
+        <button
+          onClick={() => {
+            if (confirm('Exit session? Your progress will be saved as a draft.')) {
+              if (selectedDay) writeDraft(sessionDate, selectedDay);
+              setSelectedDay(null);
+            }
+          }}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft size={16} />
+          Back
+        </button>
+        <div className="flex-1" />
+        <p className="text-sm font-semibold text-foreground">{selectedDay}</p>
+        <div className="flex-1" />
+      </div>
       {selectedDay && (() => {
         const dayDef = days.find(d => d.label === selectedDay);
 
@@ -1465,7 +1609,7 @@ function WorkoutLogTab() {
                         <div className="min-w-0">
                           {ex.notes && !subName && <p className="text-xs text-muted-foreground mb-0.5">{ex.notes}</p>}
                           <p className="text-sm font-medium text-foreground/70">
-                            {formatSetsRange(ex.sets)} sets × {ex.reps}
+                            {formatSetsRange(String(ex.sets))} sets × {ex.reps}
                             {(() => {
                               const pw = prevSets[0]?.weight;
                               const pr = prevSets[0]?.reps;
@@ -1869,7 +2013,7 @@ function WorkoutLogTab() {
                     disabled={saving}
                     className="w-full py-4 bg-primary text-primary-foreground font-bold text-base rounded-2xl shadow-2xl hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
-                    {saving ? "Saving..." : `Save Session ${selectedDay}`}
+                    {saving ? "Saving..." : "Finish Session"}
                   </button>
                   {lastSaved && (
                     <p className="text-center text-xs text-muted-foreground mt-1">
@@ -2056,25 +2200,6 @@ function WorkoutLogTab() {
         </div>
       )}
 
-      {/* Past sessions ─ accordion timeline */}
-      {sessions.length > 0 && (
-        <div className={selectedDay ? "pb-24" : ""}>
-        <PastSessionsList
-          sessions={sessions}
-          viewAsUserId={viewAsUserId}
-          deleting={deleting}
-          changingDateId={changingDateId}
-          newDateVal={newDateVal}
-          updateDatePending={updateDateMutation.isPending}
-          onEdit={(s) => { setSessionDate(toLocalDateStr(s.sessionDate)); selectDay(s.dayLabel); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-          onChangeDate={(id, val) => { setChangingDateId(id); setNewDateVal(val); }}
-          onSaveDate={(id) => { if (newDateVal) updateDateMutation.mutate({ id, sessionDate: newDateVal }); }}
-          onCancelDate={() => setChangingDateId(null)}
-          onNewDateVal={setNewDateVal}
-          onDelete={(id) => { if (confirm('Delete this session?')) { setDeleting(id); deleteMutation.mutate({ id }); } }}
-        />
-        </div>
-      )}
     </div>
   );
 }
