@@ -934,7 +934,7 @@ function SessionCard({ s, viewAsUserId, deleteConfirmId, deleting, setDeleteConf
               ? `${topSet.weight != null ? topSet.weight + 'kg' : 'BW'}${topSet.reps != null ? ' × ' + topSet.reps : ''} (${completedSets.length} set${completedSets.length !== 1 ? 's' : ''})`
               : `${completedSets.length} set${completedSets.length !== 1 ? 's' : ''}`;
             return (
-              <div key={exIdx} className="flex items-start justify-between gap-2">
+              <div key={exIdx} className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground truncate">{ex.name}</p>
                   <p className="text-[10px] text-muted-foreground/60 italic truncate">{ex.machinePreset ?? '\u00a0'}</p>

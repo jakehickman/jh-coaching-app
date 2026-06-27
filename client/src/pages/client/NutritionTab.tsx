@@ -384,6 +384,7 @@ function LogSheet({
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const utils = trpc.useUtils();
 
   // Reset loggedAt to now each time sheet opens
   useEffect(() => {
@@ -391,7 +392,11 @@ function LogSheet({
   }, [open]);
 
   const logMutation = trpc.mealLogs.log.useMutation({
-    onSuccess: () => { onSaved(); onClose(); },
+    onSuccess: async () => {
+      await utils.habits.mealCompletions.invalidate();
+      onSaved();
+      onClose();
+    },
     onError: (e) => toast.error(e.message),
   });
 
@@ -616,6 +621,7 @@ function FullnessSheet({
   const [fullness, setFullness] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [scaleOpen, setScaleOpen] = useState(false);
+  const utils = trpc.useUtils();
   // Per-meal habits
   const { data: mealHabits = [] } = trpc.habits.myMealHabits.useQuery();
   const mealLogIds = useMemo(() => (mealId != null ? [mealId] : []), [mealId]);
@@ -626,7 +632,12 @@ function FullnessSheet({
   const existingCompletions = existingCompletionsData ?? [];
   const [habitChecked, setHabitChecked] = useState<Record<number, boolean>>({});
   const toggleHabitMut = trpc.habits.toggleMealCompletion.useMutation({
-    onSuccess: () => refetchCompletions(),
+    onSuccess: async () => {
+      await Promise.all([
+        refetchCompletions(),
+        utils.habits.mealCompletions.invalidate(),
+      ]);
+    },
   });
 
   // Sync habit checked state from server when sheet opens
@@ -642,7 +653,11 @@ function FullnessSheet({
   }, [open, mealId, completionsKey]);
 
   const rateMutation = trpc.mealLogs.rateFullness.useMutation({
-    onSuccess: () => { onSaved(); onClose(); },
+    onSuccess: async () => {
+      await utils.habits.mealCompletions.invalidate();
+      onSaved();
+      onClose();
+    },
     onError: (e) => toast.error(e.message),
   });
 
@@ -745,6 +760,8 @@ function EditSheet({
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null | "uploading">(null);
   const [scaleOpen, setScaleOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const utils = trpc.useUtils();
 
   // Per-meal habits
   const { data: mealHabits = [] } = trpc.habits.myMealHabits.useQuery();
@@ -757,7 +774,12 @@ function EditSheet({
   const editCompletions = editCompletionsData ?? [];
   const [habitChecked, setHabitChecked] = useState<Record<number, boolean>>({});
   const toggleHabitMut = trpc.habits.toggleMealCompletion.useMutation({
-    onSuccess: () => refetchEditCompletions(),
+    onSuccess: async () => {
+      await Promise.all([
+        refetchEditCompletions(),
+        utils.habits.mealCompletions.invalidate(),
+      ]);
+    },
   });
   const editCompletionsKey = editCompletions.map((c: any) => c.habitId).join(',');
   useEffect(() => {
@@ -788,7 +810,11 @@ function EditSheet({
   }, [meal]);
 
   const editMutation = trpc.mealLogs.edit.useMutation({
-    onSuccess: () => { onSaved(); onClose(); },
+    onSuccess: async () => {
+      await utils.habits.mealCompletions.invalidate();
+      onSaved();
+      onClose();
+    },
     onError: (e) => toast.error(e.message),
   });
 
@@ -858,21 +884,36 @@ function EditSheet({
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 py-4 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
-                  >
-                    <Camera size={16} /> Add photo
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
+                    >
+                      <Camera size={16} /> Camera
+                    </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors text-sm"
+                    >
+                      <ImageIcon size={16} /> Gallery
+                    </button>
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }}
+                    />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }}
+                    />
+                  </div>
                 )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }}
-                />
               </div>
 
               {/* Description */}

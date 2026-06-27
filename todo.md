@@ -819,3 +819,6 @@
 - [ ] Mesocycle DB schema: mesocycles table, microcycle detection
 - [ ] Coach UI: create/close mesocycle per client
 - [ ] Coach UI: mesocycle review table (sessions grouped by day, top set per cell, date per microcycle column)
+- [x] Fix per-meal habit counter so it updates immediately after meal habit changes and meal save flows
+- [x] Allow gallery photo selection when editing an already logged meal
+- [x] Vertically center text in expanded training session exercise rows
