@@ -870,6 +870,95 @@ function WorkoutMiniCalendar({
   );
 }
 
+// ─── SessionCard ────────────────────────────────────────────────────────────
+interface SessionCardProps {
+  s: any;
+  viewAsUserId: number | null | undefined;
+  deleteConfirmId: number | null;
+  deleting: number | null;
+  setDeleteConfirmId: (id: number | null) => void;
+  setDeleting: (id: number | null) => void;
+  deleteMutation: { mutate: (args: { id: number }) => void };
+  clearDraft: (dateStr: string, dayLabel: string) => void;
+  setSessionDate: (date: string) => void;
+  selectDay: (day: string) => void;
+}
+function SessionCard({ s, viewAsUserId, deleteConfirmId, deleting, setDeleteConfirmId, setDeleting, deleteMutation, clearDraft, setSessionDate, selectDay }: SessionCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  const dateStr = toLocalDateStr(s.sessionDate);
+  const allExercises = (s.exercises as any[]).filter((ex: any) => {
+    const sets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
+    return sets.length > 0;
+  });
+  const totalSets = allExercises.reduce((sum: number, ex: any) =>
+    sum + (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null).length, 0);
+  const isConfirmingDelete = deleteConfirmId === s.id;
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpanded(e => !e)}>
+        <div>
+          <p className="text-sm font-semibold text-foreground">{s.dayLabel}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {allExercises.length} exercise{allExercises.length !== 1 ? 's' : ''} &middot; {totalSets} set{totalSets !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {!viewAsUserId && (
+            <>
+              <button type="button" onClick={e => { e.stopPropagation(); clearDraft(dateStr, s.dayLabel); setSessionDate(dateStr); selectDay(s.dayLabel); }}
+                className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:bg-secondary/70 transition-colors">
+                <Pencil size={15} />
+              </button>
+              <button type="button" onClick={e => { e.stopPropagation(); setDeleteConfirmId(s.id); }} disabled={deleting === s.id}
+                className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:text-red-400 active:bg-red-400/10 transition-colors">
+                <Trash2 size={15} />
+              </button>
+            </>
+          )}
+          <ChevronDown size={16} className={`text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        </div>
+      </div>
+      {expanded && allExercises.length > 0 && (
+        <div className="mt-3 space-y-2.5">
+          {allExercises.map((ex: any, exIdx: number) => {
+            const completedSets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
+            type TopSetAcc = { weight: number | null; reps: number | null } | null;
+            const topSet = (completedSets as any[]).reduce((best: TopSetAcc, st: any): TopSetAcc => {
+              if (!best) return { weight: st.weight ?? null, reps: st.reps ?? null };
+              const bw = best.weight ?? 0, sw = st.weight ?? 0;
+              if (sw > bw) return { weight: st.weight ?? null, reps: st.reps ?? null };
+              if (sw === bw && (st.reps ?? 0) > (best.reps ?? 0)) return { weight: st.weight ?? null, reps: st.reps ?? null };
+              return best;
+            }, null);
+            const topSetStr = topSet
+              ? `${topSet.weight != null ? topSet.weight + 'kg' : 'BW'}${topSet.reps != null ? ' × ' + topSet.reps : ''} (${completedSets.length} set${completedSets.length !== 1 ? 's' : ''})`
+              : `${completedSets.length} set${completedSets.length !== 1 ? 's' : ''}`;
+            return (
+              <div key={exIdx} className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-foreground truncate">{ex.name}</p>
+                  {ex.machinePreset && <p className="text-[10px] text-muted-foreground/60 italic truncate">{ex.machinePreset}</p>}
+                </div>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">{topSetStr}</p>
+              </div>
+            );
+          })}
+          {s.notes && <p className="text-xs text-muted-foreground/70 italic border-t border-border pt-2 mt-1">{s.notes}</p>}
+        </div>
+      )}
+      {isConfirmingDelete && (
+        <div className="mt-3 flex items-center gap-3">
+          <p className="flex-1 text-sm text-foreground">Delete this session?</p>
+          <button type="button" onClick={() => { setDeleting(s.id); setDeleteConfirmId(null); deleteMutation.mutate({ id: s.id }); }}
+            className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium">Delete</button>
+          <button type="button" onClick={() => setDeleteConfirmId(null)}
+            className="px-4 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium">Cancel</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WorkoutLogTab() {
   const { viewAsUserId } = useViewAs();
   const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
@@ -1381,63 +1470,22 @@ function WorkoutLogTab() {
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {sessionsForCalDay.map((s: any) => {
-                const dateStr = toLocalDateStr(s.sessionDate);
-                const allExercises = (s.exercises as any[]).filter((ex: any) => {
-                  const sets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
-                  return sets.length > 0;
-                });
-                const totalSets = allExercises.reduce((sum: number, ex: any) =>
-                  sum + (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null).length, 0);
-                const isConfirmingDelete = deleteConfirmId === s.id;
-                return (
-                  <div key={s.id} className="px-4 py-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{s.dayLabel}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {allExercises.length} exercise{allExercises.length !== 1 ? 's' : ''} &middot; {totalSets} set{totalSets !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                      {!viewAsUserId && (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => { clearDraft(dateStr, s.dayLabel); setSessionDate(dateStr); selectDay(s.dayLabel); }}
-                            className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:bg-secondary/70 transition-colors"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfirmId(s.id)}
-                            disabled={deleting === s.id}
-                            className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:text-red-400 active:bg-red-400/10 transition-colors"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    {/* Delete confirmation */}
-                    {isConfirmingDelete && (
-                      <div className="mt-3 flex items-center gap-3">
-                        <p className="flex-1 text-sm text-foreground">Delete this session?</p>
-                        <button
-                          type="button"
-                          onClick={() => { setDeleting(s.id); setDeleteConfirmId(null); deleteMutation.mutate({ id: s.id }); }}
-                          className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium"
-                        >Delete</button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteConfirmId(null)}
-                          className="px-4 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium"
-                        >Cancel</button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {sessionsForCalDay.map((s: any) => (
+                <SessionCard
+                  key={s.id}
+                  s={s}
+                  viewAsUserId={viewAsUserId}
+                  deleteConfirmId={deleteConfirmId}
+                  deleting={deleting}
+                  setDeleteConfirmId={setDeleteConfirmId}
+                  setDeleting={setDeleting}
+                  deleteMutation={deleteMutation}
+                  clearDraft={clearDraft}
+                  setSessionDate={setSessionDate}
+                  selectDay={selectDay}
+                />
+              ))}
+
             </div>
           )}
         </div>
