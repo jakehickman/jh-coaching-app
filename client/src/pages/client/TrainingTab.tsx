@@ -68,13 +68,10 @@ function TrainingTab() {
             {schedule.map((slot: string, i: number) => {
               const isOff = slot === "Off";
               const label = isOff ? "OFF" : slot;
-              const isLong = label.length > 3;
               return (
                 <span
                   key={i}
-                  className={`inline-flex items-center justify-center rounded-lg font-semibold ${
-                    isLong ? "text-[10px] px-2 py-1.5" : "text-sm px-3 py-1.5"
-                  } ${
+                  className={`inline-flex items-center justify-center rounded-lg font-semibold text-sm px-3 py-1.5 ${
                     isOff
                       ? "bg-secondary text-muted-foreground"
                       : "bg-primary/10 text-primary border border-primary/20"
