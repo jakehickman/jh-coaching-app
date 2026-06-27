@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Plus, ChevronRight, X, Check, Loader2, Lock, Trash2 } from "lucide-react";
@@ -89,7 +89,7 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
         </thead>
         <tbody>
           {review.dayReviews.map((day, di) => (
-            <>
+            <React.Fragment key={`day-group-${di}`}>
               {/* Day group header */}
               <tr key={`day-${di}`} className="border-t border-border/60">
                 <td
@@ -141,7 +141,7 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                   })}
                 </tr>
               ))}
-            </>
+            </React.Fragment>
           ))}
         </tbody>
       </table>
