@@ -53,9 +53,10 @@ function formatSets(entry: TopSetEntry): string {
   return `(${entry.totalSets} set${entry.totalSets !== 1 ? "s" : ""})`;
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string | Date | null | undefined): string {
   if (!dateStr) return "";
-  const d = new Date(dateStr + "T00:00:00");
+  const d = dateStr instanceof Date ? dateStr : new Date(dateStr + "T00:00:00");
+  if (isNaN(d.getTime())) return "";
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
@@ -199,7 +200,7 @@ function MesocycleCard({
               Started {formatDate(meso.startDate)}
               {meso.closedAt && (
                 <span className="ml-2 text-muted-foreground/60">
-                  · Closed {new Date(meso.closedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  · Closed {formatDate(meso.closedAt as unknown as Date)}
                 </span>
               )}
             </div>
