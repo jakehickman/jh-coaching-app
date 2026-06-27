@@ -556,11 +556,11 @@ export default function DailyLogTab() {
               className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.weight === '' ? 'border-amber-500/50' : 'border-border'}`} />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground block mb-1.5">Sleep Duration</label>
+            <label className="text-sm text-muted-foreground block mb-1.5">Sleep Duration (h:mm)</label>
             <input
               type="text"
               inputMode="numeric"
-              placeholder="e.g. 7:30"
+              placeholder=""
               value={form.sleepHours}
               onChange={e => {
                 let val = e.target.value;
