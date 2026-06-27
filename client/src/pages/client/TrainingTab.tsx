@@ -937,7 +937,7 @@ function SessionCard({ s, viewAsUserId, deleteConfirmId, deleting, setDeleteConf
               <div key={exIdx} className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground truncate">{ex.name}</p>
-                  {ex.machinePreset && <p className="text-[10px] text-muted-foreground/60 italic truncate">{ex.machinePreset}</p>}
+                  <p className="text-[10px] text-muted-foreground/60 italic truncate">{ex.machinePreset ?? '\u00a0'}</p>
                 </div>
                 <p className="text-xs text-muted-foreground whitespace-nowrap">{topSetStr}</p>
               </div>
