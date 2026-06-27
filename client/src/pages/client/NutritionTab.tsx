@@ -236,60 +236,63 @@ function RatingPicker({
   function increment() { onChange(Math.min(10, current + 1)); }
 
   return (
-    <div className="space-y-3">
+    <div className="rounded-2xl border border-border/40 bg-card px-4 pt-3 pb-3 space-y-2">
+      {/* Header row: label + scale reference */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground">
+          {type === "hunger" ? "Hunger Before" : "Fullness After"}
+        </span>
+        {onOpenScale && (
+          <button onClick={onOpenScale} className="flex items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+            <HelpCircle size={12} />
+            <span>Scale reference</span>
+          </button>
+        )}
+      </div>
       {/* Stepper */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
         <button
           onClick={decrement}
           disabled={current <= 1}
-          className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-3xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all"
+          className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all flex-shrink-0"
         >
           −
         </button>
         <div className="flex-1 text-center">
-          <p className={cn("text-7xl font-bold leading-none", isIdeal ? "text-green-400" : "text-foreground")}>
+          <p className={cn("text-[44px] font-bold leading-none", isIdeal ? "text-green-400" : "text-foreground")}>
             {current}
           </p>
-          <p className={cn("text-sm mt-2 font-medium", isIdeal ? "text-green-400" : "text-muted-foreground")}>
+          <p className={cn("text-xs mt-1 font-medium", isIdeal ? "text-green-400" : "text-muted-foreground")}>
             {label.label}
           </p>
         </div>
         <button
           onClick={increment}
           disabled={current >= 10}
-          className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-3xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all"
+          className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-xl font-light text-foreground hover:bg-secondary/80 disabled:opacity-30 transition-all flex-shrink-0"
         >
           +
         </button>
       </div>
       {/* Dot progress bar */}
-      <div className="flex items-center justify-between gap-1">
-        <span className="text-xs text-muted-foreground">1</span>
-        <div className="flex-1 flex gap-1 justify-between px-1">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] text-muted-foreground/50">1</span>
+        <div className="flex-1 flex gap-1 justify-between">
           {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
             <button
               key={n}
               onClick={() => onChange(n)}
               className={cn(
-                "flex-1 h-1.5 rounded-full transition-all",
+                "flex-1 h-[3px] rounded-full transition-all",
                 n <= current
-                  ? idealFn(n) ? "bg-green-400" : "bg-foreground/40"
+                  ? idealFn(n) ? "bg-green-400" : "bg-foreground/30"
                   : "bg-secondary"
               )}
             />
           ))}
         </div>
-        <span className="text-xs text-muted-foreground">10</span>
+        <span className="text-[10px] text-muted-foreground/50">10</span>
       </div>
-      {/* Info icon row */}
-      {onOpenScale && (
-        <div className="flex justify-end">
-          <button onClick={onOpenScale} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-            <HelpCircle size={14} />
-            <span>Scale reference</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -535,10 +538,7 @@ function LogSheet({
 
         {/* Hunger scale — meals only */}
         {mealType === "meal" && (
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Hunger before eating</p>
-            <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
-          </div>
+          <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
         )}
 
         {/* Portion — treats only */}
@@ -684,7 +684,6 @@ function FullnessSheet({
             <X size={20} />
           </button>
         </SheetHeader>
-        <p className="text-sm text-muted-foreground mb-5">Rate your fullness from 1–10.</p>
         <div className="space-y-5">
           <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
           {/* Per-meal habits */}
@@ -949,14 +948,8 @@ function EditSheet({
 
               {meal?.mealType === "meal" && (
                 <>
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Hunger before</p>
-                    <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Fullness after</p>
-                    <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
-                  </div>
+                  <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
+                  <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
                 </>
               )}
 
