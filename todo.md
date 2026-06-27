@@ -809,3 +809,13 @@
 ## Behaviour Tab Redesign (Jun 24)
 - [ ] Rename "Overview" tab to "Behaviour" in ClientHub tab bar (deferred — purpose still being defined)
 - [x] Apply premium dark analytics design system to the Overview tab: Last 7 Days summary cards (avg weight + % delta, days logged, avg steps, sleep duration, sleep quality, stress, sessions), remove toggle, add weight column to weekly history table
+
+## Phase 1 Quick UI Fixes
+- [ ] Larger meal habits checkboxes when rating fullness
+- [ ] Larger rate fullness banner
+- [ ] Larger myo-reps lightning bolt icon in workout log
+
+## Phase 2 Mesocycles
+- [ ] Mesocycle DB schema: mesocycles table, microcycle detection
+- [ ] Coach UI: create/close mesocycle per client
+- [ ] Coach UI: mesocycle review table (sessions grouped by day, top set per cell, date per microcycle column)

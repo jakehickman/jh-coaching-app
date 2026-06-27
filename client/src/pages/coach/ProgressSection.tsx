@@ -23,8 +23,8 @@ import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import { BodyCompSummaryTable } from "./BodyCompSummaryTable";
 import ProgramChangeLogTab from "./ProgramChangeLogTab";
 import CardioChangeLogTab from "./CardioChangeLogTab";
-
 import { UnifiedChangeLog } from "./UnifiedChangeLog";
+import { MesocyclesTab } from "./MesocyclesTab";
 
 // --- Collapsible Change History Panel ---------------------------------------
 function ChangeHistoryPanel({ children, label = "Change History" }: { children: React.ReactNode; label?: string }) {
@@ -1291,7 +1291,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
                   )}
                 </div>
                 {isMiniSets && (
-                  <Zap size={10} className="text-amber-400 shrink-0" />
+                  <Zap size={14} className="text-amber-400 shrink-0" />
                 )}
                 {ex.substitutedFor && (
                   <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded shrink-0">SUB</span>
@@ -2447,6 +2447,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsList className="mb-4">
                 <TabsTrigger value="session-log">Session Log</TabsTrigger>
                 <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
+                <TabsTrigger value="mesocycles">Mesocycles</TabsTrigger>
                 <TabsTrigger value="program">Program Builder</TabsTrigger>
                 <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
               </TabsList>
@@ -2463,6 +2464,9 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               </TabsContent>
               <TabsContent value="exercise-progress">
                 <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} initialExercise={jumpToExercise} />
+              </TabsContent>
+              <TabsContent value="mesocycles">
+                <MesocyclesTab clientId={selectedUserId!} />
               </TabsContent>
               <TabsContent value="program">
                 <TrainingSection fixedClientId={selectedUserId!} />

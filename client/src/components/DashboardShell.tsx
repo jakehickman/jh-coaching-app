@@ -449,7 +449,7 @@ function ClientLayout({
 
       {/* Global fullness reminder banner */}
       {showBanner && unratedMeal && (
-        <div className="flex items-center justify-between gap-2 px-4 py-2 bg-card border-b border-border text-sm">
+        <div className="flex items-center justify-between gap-2 px-4 py-3 bg-card border-b border-border text-sm">
           {/* Left: meal type + time */}
           <span className="text-foreground font-medium text-xs shrink-0">
             {unratedMeal.mealType === 'meal' ? 'Meal' : 'Treat'}

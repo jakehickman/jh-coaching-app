@@ -743,6 +743,209 @@ export async function getMesoCycles(userId: number) {
     .orderBy(desc(mesoCycles.createdAt));
 }
 
+export async function createMesoCycle(data: {
+  userId: number;
+  coachId: number;
+  mesoName: string;
+  startDate: string;
+  notes?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(mesoCycles).values(data as any);
+  return (result as any).insertId as number;
+}
+
+export async function closeMesoCycle(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(mesoCycles).set({ closedAt: new Date() } as any).where(eq(mesoCycles.id, id));
+}
+
+export async function deleteMesoCycle(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(mesoCycles).where(eq(mesoCycles.id, id));
+}
+
+/**
+ * getMesoCycleReview
+ * Builds the mesocycle review table:
+ * - Loads all workout sessions for the client on/after the meso startDate
+ * - Loads the client's training program to get the session order (schedule)
+ * - Groups sessions into microcycles (one full rotation through all training days)
+ * - For each exercise in each session, finds the top set per microcycle
+ * - Returns: sessions (ordered by program schedule), each with exercises,
+ *   each with an array of microcycle entries { microNum, sessionDate, topSet, totalSets }
+ */
+export async function getMesoCycleReview(mesoId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // 1. Load the meso
+  const mesoRows = await db.select().from(mesoCycles).where(eq(mesoCycles.id, mesoId)).limit(1);
+  const meso = mesoRows[0];
+  if (!meso) return null;
+
+  // 2. Load all workout sessions for this client on/after startDate, oldest first
+  const sessions = await db
+    .select()
+    .from(workoutSessions)
+    .where(
+      and(
+        eq(workoutSessions.userId, userId),
+        gte(workoutSessions.sessionDate, meso.startDate as any)
+      )
+    )
+    .orderBy(workoutSessions.sessionDate, workoutSessions.createdAt);
+
+  // 3. Load training program to get schedule order
+  const program = await getTrainingProgram(userId);
+  const schedule: string[] = (program as any)?.schedule ?? [];
+  const trainingDays = schedule.filter((s: string) => s.toUpperCase() !== 'OFF');
+  // Unique ordered day labels from the schedule (preserving order of first appearance)
+  const dayOrder: string[] = [];
+  for (const d of trainingDays) {
+    if (!dayOrder.includes(d)) dayOrder.push(d);
+  }
+  const rotationLength = dayOrder.length || 1;
+
+  // 4. Group sessions into microcycles
+  // A microcycle = one complete pass through all training day labels in schedule order
+  // We assign each session a microcycle number based on how many complete rotations
+  // have occurred before it (counting by day label sequence)
+  // Strategy: sort sessions by date, then assign microcycle by counting how many
+  // times each day label has appeared
+  const dayCount: Record<string, number> = {};
+  for (const d of dayOrder) dayCount[d] = 0;
+
+  interface SessionEntry {
+    sessionId: number;
+    sessionDate: string;
+    dayLabel: string;
+    microNum: number;
+    exercises: WorkoutExercise[];
+  }
+  const sessionEntries: SessionEntry[] = [];
+
+  for (const s of sessions) {
+    const label = s.dayLabel;
+    // Normalize label: strip extra info after first word boundary if needed
+    // Match against dayOrder by checking if any dayOrder entry is a prefix/match
+    const matchedDay = dayOrder.find(d =>
+      label === d ||
+      label.startsWith(d + ' ') ||
+      label.startsWith(d + '-') ||
+      label.toLowerCase() === d.toLowerCase()
+    ) ?? label;
+
+    if (!(matchedDay in dayCount)) {
+      dayCount[matchedDay] = 0;
+    }
+    dayCount[matchedDay]++;
+    const microNum = dayCount[matchedDay];
+
+    sessionEntries.push({
+      sessionId: s.id,
+      sessionDate: s.sessionDate as unknown as string,
+      dayLabel: label,
+      microNum,
+      exercises: (s.exercises as WorkoutExercise[]) ?? [],
+    });
+  }
+
+  // 5. Build review structure: per dayLabel, per exercise, per microcycle
+  // Group by dayLabel (in schedule order)
+  const allDayLabels = Array.from(new Set(sessionEntries.map(s => s.dayLabel)));
+  // Sort by schedule order
+  const sortedDayLabels = [
+    ...dayOrder.filter(d => allDayLabels.some(l => l === d || l.startsWith(d))),
+    ...allDayLabels.filter(l => !dayOrder.some(d => l === d || l.startsWith(d))),
+  ];
+
+  // Max microcycles seen
+  const maxMicro = Math.max(0, ...sessionEntries.map(s => s.microNum));
+
+  interface TopSetEntry {
+    microNum: number;
+    sessionDate: string;
+    topSet: { weight: number | null; reps: number | null } | null;
+    totalSets: number;
+  }
+
+  interface ExerciseReview {
+    exerciseName: string;
+    microcycles: TopSetEntry[];
+  }
+
+  interface DayReview {
+    dayLabel: string;
+    exercises: ExerciseReview[];
+  }
+
+  const dayReviews: DayReview[] = [];
+
+  for (const dayLabel of sortedDayLabels) {
+    const daySessions = sessionEntries.filter(s =>
+      s.dayLabel === dayLabel ||
+      dayOrder.some(d => s.dayLabel.startsWith(d) && dayLabel.startsWith(d))
+    );
+
+    // Collect all exercise names seen in this day across all microcycles
+    const exNames: string[] = [];
+    for (const s of daySessions) {
+      for (const ex of s.exercises) {
+        if (!exNames.includes(ex.name)) exNames.push(ex.name);
+      }
+    }
+
+    const exerciseReviews: ExerciseReview[] = exNames.map(exName => {
+      const microcycles: TopSetEntry[] = [];
+      for (let micro = 1; micro <= Math.min(maxMicro, 8); micro++) {
+        const session = daySessions.find(s => s.microNum === micro);
+        if (!session) {
+          microcycles.push({ microNum: micro, sessionDate: '', topSet: null, totalSets: 0 });
+          continue;
+        }
+        const ex = session.exercises.find(e => e.name === exName);
+        if (!ex) {
+          microcycles.push({ microNum: micro, sessionDate: session.sessionDate, topSet: null, totalSets: 0 });
+          continue;
+        }
+        const completedSets = (ex.sets ?? []).filter(s => s.completed || s.weight != null || s.reps != null);
+        const topSet = completedSets.reduce<{ weight: number | null; reps: number | null } | null>((best, s) => {
+          if (!best) return { weight: s.weight ?? null, reps: s.reps ?? null };
+          const bw = best.weight ?? 0, sw = s.weight ?? 0;
+          if (sw > bw) return { weight: s.weight ?? null, reps: s.reps ?? null };
+          if (sw === bw && (s.reps ?? 0) > (best.reps ?? 0)) return { weight: s.weight ?? null, reps: s.reps ?? null };
+          return best;
+        }, null);
+        microcycles.push({
+          microNum: micro,
+          sessionDate: session.sessionDate,
+          topSet,
+          totalSets: completedSets.length,
+        });
+      }
+      return { exerciseName: exName, microcycles };
+    });
+
+    dayReviews.push({ dayLabel, exercises: exerciseReviews });
+  }
+
+  return {
+    meso: {
+      id: meso.id,
+      mesoName: meso.mesoName,
+      startDate: meso.startDate as unknown as string,
+      closedAt: meso.closedAt,
+      notes: meso.notes,
+    },
+    maxMicro: Math.min(maxMicro, 8),
+    dayReviews,
+  };
+}
+
 export async function getMesoSessions(mesoId: number) {
   const db = await getDb();
   if (!db) return [];

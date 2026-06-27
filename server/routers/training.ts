@@ -50,28 +50,45 @@ export const trainingRouter = router({
 });
 
 export const mesoRouter = router({
+  // Legacy client-facing queries (kept for backward compat)
   cycles: protectedProcedure.query(({ ctx }) => db.getMesoCycles(ctx.user.id)),
+
+  // Coach: list all mesocycles for a client
   cyclesForClient: adminProcedure
     .input(z.object({ userId: z.number() }))
     .query(({ input }) => db.getMesoCycles(input.userId)),
-  sessions: protectedProcedure
-    .input(z.object({ mesoId: z.number() }))
-    .query(({ input }) => db.getMesoSessions(input.mesoId)),
-  upsertSession: protectedProcedure
-    .input(
-      z.object({
-        id: z.number().optional(),
-        mesoId: z.number(),
-        sessionDate: z.string().optional(),
-        weekNumber: z.number().optional(),
-        dayLabel: z.string().optional(),
-        exercises: z.any().optional(),
-        notes: z.string().optional(),
-      })
-    )
-    .mutation(({ ctx, input }) =>
-      db.upsertMesoSession({ userId: ctx.user.id, ...input })
-    ),
+
+  // Coach: create a new mesocycle for a client
+  create: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      mesoName: z.string(),
+      startDate: z.string(), // YYYY-MM-DD
+      notes: z.string().nullable().optional(),
+    }))
+    .mutation(({ ctx, input }) => db.createMesoCycle({
+      userId: input.userId,
+      coachId: ctx.user.id,
+      mesoName: input.mesoName,
+      startDate: input.startDate,
+      notes: input.notes ?? null,
+    })),
+
+  // Coach: close (archive) a mesocycle
+  close: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => db.closeMesoCycle(input.id)),
+
+  // Coach: delete a mesocycle
+  delete: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => db.deleteMesoCycle(input.id)),
+
+  // Coach: get the mesocycle review table data
+  // Returns exercises grouped by session, with top-set per microcycle
+  review: adminProcedure
+    .input(z.object({ mesoId: z.number(), userId: z.number() }))
+    .query(({ input }) => db.getMesoCycleReview(input.mesoId, input.userId)),
 });
 
 export const workoutSessionsRouter = router({

@@ -1898,7 +1898,7 @@ function WorkoutLogTab() {
                                         isMyoReps ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
                                       }`}
                                     >
-                                      <MdBolt size={14} />
+                                      <MdBolt size={20} />
                                     </button>
                                   </div>
                                    {/* Mini-set count row — shown when myo-reps is on */}

@@ -239,11 +239,11 @@ export type TrainingProgram = typeof trainingPrograms.$inferSelect;
 // MESO cycles — periodization tracker
 export const mesoCycles = mysqlTable("meso_cycles", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  mesoName: varchar("mesoName", { length: 64 }), // e.g. "MESO 1"
-  startDate: date("startDate"),
-  endDate: date("endDate"),
-  totalWeeks: int("totalWeeks").default(4),
+  userId: int("userId").notNull(),        // the client this meso belongs to
+  coachId: int("coachId"),                // the coach who created it
+  mesoName: varchar("mesoName", { length: 128 }).notNull(), // e.g. "Hypertrophy Block 1"
+  startDate: date("startDate").notNull(), // date the meso starts (sessions before this are excluded)
+  closedAt: timestamp("closedAt"),        // null = active, set = closed/archived
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

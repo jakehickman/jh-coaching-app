@@ -681,14 +681,14 @@ function FullnessSheet({
                   <label key={h.id} className="flex items-center gap-3 cursor-pointer">
                     <div
                       onClick={() => handleToggleHabit(h.id)}
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      className={`w-7 h-7 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
                         habitChecked[h.id]
                           ? "bg-primary border-primary"
                           : "border-border bg-secondary"
                       }`}
                     >
                       {habitChecked[h.id] && (
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                        <svg width="13" height="10" viewBox="0 0 10 8" fill="none">
                           <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground" />
                         </svg>
                       )}
