@@ -556,13 +556,28 @@ export default function DailyLogTab() {
               className={`w-full bg-secondary rounded-lg px-3 py-3 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-primary border ${form.weight === '' ? 'border-amber-500/50' : 'border-border'}`} />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground block mb-1.5">Sleep (h:mm)</label>
+            <label className="text-sm text-muted-foreground block mb-1.5">Sleep Duration</label>
             <input
               type="text"
               inputMode="numeric"
               placeholder="e.g. 7:30"
               value={form.sleepHours}
-              onChange={f("sleepHours")}
+              onChange={e => {
+                let val = e.target.value;
+                // Auto-insert colon: when user types digits only and length hits 2 without colon, insert it
+                const digitsOnly = val.replace(/[^0-9]/g, '');
+                if (!val.includes(':') && digitsOnly.length >= 2) {
+                  // Insert colon after first digit if result would be h:mm (1 digit hour)
+                  // or after second digit if hh:mm (2 digit hour)
+                  // Heuristic: if first digit > 2, treat as single-digit hour
+                  const firstDigit = parseInt(digitsOnly[0], 10);
+                  const splitAt = firstDigit > 2 ? 1 : Math.min(2, digitsOnly.length > 2 ? 2 : 1);
+                  if (digitsOnly.length > splitAt) {
+                    val = digitsOnly.slice(0, splitAt) + ':' + digitsOnly.slice(splitAt, splitAt + 2);
+                  }
+                }
+                setForm(prev => ({ ...prev, sleepHours: val }));
+              }}
               onBlur={e => {
                 const parsed = hmmToHours(e.target.value);
                 if (parsed !== null) {
