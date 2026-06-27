@@ -871,6 +871,7 @@ export async function getMesoCycleReview(mesoId: number, userId: number) {
     sessionDate: string;
     topSet: { weight: number | null; reps: number | null } | null;
     totalSets: number;
+    machinePreset: string | null;
   }
 
   interface ExerciseReview {
@@ -904,12 +905,12 @@ export async function getMesoCycleReview(mesoId: number, userId: number) {
       for (let micro = 1; micro <= Math.min(maxMicro, 8); micro++) {
         const session = daySessions.find(s => s.microNum === micro);
         if (!session) {
-          microcycles.push({ microNum: micro, sessionDate: '', topSet: null, totalSets: 0 });
+          microcycles.push({ microNum: micro, sessionDate: '', topSet: null, totalSets: 0, machinePreset: null });
           continue;
         }
         const ex = session.exercises.find(e => e.name === exName);
         if (!ex) {
-          microcycles.push({ microNum: micro, sessionDate: session.sessionDate, topSet: null, totalSets: 0 });
+          microcycles.push({ microNum: micro, sessionDate: session.sessionDate, topSet: null, totalSets: 0, machinePreset: null });
           continue;
         }
         const completedSets = (ex.sets ?? []).filter(s => s.completed || s.weight != null || s.reps != null);
@@ -925,6 +926,7 @@ export async function getMesoCycleReview(mesoId: number, userId: number) {
           sessionDate: session.sessionDate,
           topSet,
           totalSets: completedSets.length,
+          machinePreset: ex?.machinePreset ?? null,
         });
       }
       return { exerciseName: exName, microcycles };

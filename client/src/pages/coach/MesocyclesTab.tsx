@@ -13,6 +13,7 @@ interface TopSetEntry {
   sessionDate: string;
   topSet: { weight: number | null; reps: number | null } | null;
   totalSets: number;
+  machinePreset?: string | null;
 }
 
 interface ExerciseReview {
@@ -131,6 +132,11 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                             {hasData && (
                               <div className="text-muted-foreground/60 text-[10px] mt-0.5">
                                 {formatSets(entry)}
+                              </div>
+                            )}
+                            {entry.machinePreset && (
+                              <div className="text-muted-foreground/50 text-[10px] mt-0.5 italic truncate max-w-[100px] mx-auto">
+                                {entry.machinePreset}
                               </div>
                             )}
                           </div>
