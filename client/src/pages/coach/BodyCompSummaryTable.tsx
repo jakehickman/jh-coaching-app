@@ -138,85 +138,87 @@ function WeekRow({ week, isExpanded, onToggle }: {
         </td>
       </tr>
 
-      {/* Expanded detail */}
-      {isExpanded && hasData && (
-        <tr className="border-b border-border/40 bg-muted/10">
-          <td colSpan={6} className="px-6 py-3">
-            <div className="flex flex-wrap gap-8">
-              {/* Daily weigh-ins */}
-              {(week.weighIns ?? []).length > 0 && (
-                <div className="min-w-[160px]">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Daily Weigh-ins</p>
-                  <div>
-                    {[...(week.weighIns ?? [])].sort((a, b) => a.logDate.localeCompare(b.logDate)).map((wi) => {
-                      const d = new Date(wi.logDate + "T00:00:00");
-                      const label = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
-                      return (
-                        <div key={wi.logDate} className="flex items-center py-1 border-b border-border/30 last:border-0">
-                          <span className="text-xs text-muted-foreground flex-1">{label}</span>
-                          <span className="text-xs font-medium tabular-nums ml-4">{wi.weight.toFixed(1)} kg</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+      {/* Expanded detail — per-date sub-rows aligned to parent columns */}
+      {isExpanded && hasData && (() => {
+        // Build a map of date -> { weight, waist, hip, skinfold, sites }
+        const byDate: Record<string, {
+          weight?: number;
+          waist?: number | null;
+          hip?: number | null;
+          skinfold?: number | null;
+          sites?: { name: string; val: number }[];
+        }> = {};
 
-              {/* Measurement entries */}
-              {(week.measurementEntries ?? []).length > 0 && (
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Measurements</p>
-                  {(week.measurementEntries ?? []).map((m) => {
-                    const d = new Date(m.measureDate + "T00:00:00");
-                    const label = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
-                    const sites = [
-                      m.umbilical != null ? { name: "Umbilical", val: m.umbilical } : null,
-                      m.suprailiac != null ? { name: "Suprailiac", val: m.suprailiac } : null,
-                      m.calf != null ? { name: "Calf", val: m.calf } : null,
-                      m.thigh != null ? { name: "Thigh", val: m.thigh } : null,
-                    ].filter(Boolean) as { name: string; val: number }[];
-                    return (
-                      <div key={m.id} className="mb-3 last:mb-0">
-                        <p className="text-[10px] font-semibold text-muted-foreground mb-2">{label}</p>
-                        {/* Circumferences */}
-                        <div className="flex gap-6 mb-2">
-                          {m.waist != null && (
-                            <div>
-                              <p className="text-[10px] text-muted-foreground mb-0.5">Waist</p>
-                              <p className="text-xs font-medium tabular-nums">{m.waist.toFixed(1)} cm</p>
-                            </div>
-                          )}
-                          {m.hips != null && (
-                            <div>
-                              <p className="text-[10px] text-muted-foreground mb-0.5">Hip</p>
-                              <p className="text-xs font-medium tabular-nums">{m.hips.toFixed(1)} cm</p>
-                            </div>
-                          )}
-                        </div>
-                        {/* Skinfold sites */}
-                        {sites.length > 0 && (
-                          <div>
-                            {m.totalSkinfold != null && (
-                              <p className="text-[10px] text-muted-foreground mb-1">Skinfolds — total: <span className="font-medium text-foreground">{m.totalSkinfold.toFixed(1)} mm</span></p>
-                            )}
-                            <div className="flex flex-wrap gap-x-5 gap-y-1">
-                              {sites.map(site => (
-                                <span key={site.name} className="text-[11px] text-muted-foreground">
-                                  {site.name}: <span className="font-medium text-foreground tabular-nums">{site.val.toFixed(1)} mm</span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </td>
-        </tr>
-      )}
+        for (const wi of (week.weighIns ?? [])) {
+          byDate[wi.logDate] = { ...byDate[wi.logDate], weight: wi.weight };
+        }
+        for (const m of (week.measurementEntries ?? [])) {
+          const sites = [
+            m.umbilical != null ? { name: "Umbilical", val: m.umbilical } : null,
+            m.suprailiac != null ? { name: "Suprailiac", val: m.suprailiac } : null,
+            m.calf != null ? { name: "Calf", val: m.calf } : null,
+            m.thigh != null ? { name: "Thigh", val: m.thigh } : null,
+          ].filter(Boolean) as { name: string; val: number }[];
+          byDate[m.measureDate] = {
+            ...byDate[m.measureDate],
+            waist: m.waist,
+            hip: m.hips,
+            skinfold: m.totalSkinfold,
+            sites,
+          };
+        }
+
+        const sortedDates = Object.keys(byDate).sort();
+
+        return sortedDates.map((date) => {
+          const row = byDate[date];
+          const d = new Date(date + "T00:00:00");
+          const dateLabel = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+          return (
+            <tr key={date} className="border-b border-border/20 bg-muted/5 last:border-b-0">
+              {/* Date — indented under Week column */}
+              <td className="px-3 py-2">
+                <span className="pl-5 text-[11px] text-muted-foreground">{dateLabel}</span>
+              </td>
+              {/* Weight (Weigh-ins column) */}
+              <td className="px-3 py-2 text-right">
+                <span className="text-[11px] tabular-nums text-foreground">
+                  {row.weight != null ? `${row.weight.toFixed(1)} kg` : "—"}
+                </span>
+              </td>
+              {/* Avg Weight column — blank for daily rows */}
+              <td className="px-3 py-2" />
+              {/* Waist */}
+              <td className="px-3 py-2 text-right">
+                <span className="text-[11px] tabular-nums text-foreground">
+                  {row.waist != null ? `${row.waist.toFixed(1)} cm` : "—"}
+                </span>
+              </td>
+              {/* Hip */}
+              <td className="px-3 py-2 text-right">
+                <span className="text-[11px] tabular-nums text-foreground">
+                  {row.hip != null ? `${row.hip.toFixed(1)} cm` : "—"}
+                </span>
+              </td>
+              {/* Skinfold */}
+              <td className="px-3 py-2 text-right">
+                {row.skinfold != null ? (
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="text-[11px] tabular-nums text-foreground">{row.skinfold.toFixed(1)} mm</span>
+                    {row.sites && row.sites.length > 0 && (
+                      <span className="text-[9px] text-muted-foreground/60">
+                        {row.sites.map(s => `${s.name.slice(0,3)}: ${s.val.toFixed(1)}`).join(" · ")}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-[11px] tabular-nums text-foreground">—</span>
+                )}
+              </td>
+            </tr>
+          );
+        });
+      })()}
     </>
   );
 }
