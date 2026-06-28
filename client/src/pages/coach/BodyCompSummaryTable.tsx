@@ -202,18 +202,9 @@ function WeekRow({ week, isExpanded, onToggle }: {
               </td>
               {/* Skinfold */}
               <td className="px-3 py-2 text-right">
-                {row.skinfold != null ? (
-                  <div className="flex flex-col items-end gap-0.5">
-                    <span className="text-[11px] tabular-nums text-foreground">{row.skinfold.toFixed(1)} mm</span>
-                    {row.sites && row.sites.length > 0 && (
-                      <span className="text-[9px] text-muted-foreground/60">
-                        {row.sites.map(s => `${s.name.slice(0,3)}: ${s.val.toFixed(1)}`).join(" · ")}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-[11px] tabular-nums text-foreground">—</span>
-                )}
+                <span className="text-[11px] tabular-nums text-foreground">
+                  {row.skinfold != null ? `${row.skinfold.toFixed(1)} mm` : "—"}
+                </span>
               </td>
             </tr>
           );
