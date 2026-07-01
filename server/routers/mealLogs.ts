@@ -510,24 +510,6 @@ export const mealLogsRouter = router({
         .filter(t => t >= 240) // exclude midnight-4am artefacts
         .sort((a, b) => a - b);
 
-      // Determine how many slots to create: use mode of meals-per-day
-      const mealsByDay: Record<string, number> = {};
-      for (const m of mealOnly) {
-        const offset = (m as any).utcOffsetMins ?? 0;
-        const localDate = new Date(m.loggedAt.getTime() + offset * 60 * 1000);
-        const k = `${localDate.getUTCFullYear()}-${localDate.getUTCMonth()}-${localDate.getUTCDate()}`;
-        mealsByDay[k] = (mealsByDay[k] ?? 0) + 1;
-      }
-      const dayCounts = Object.values(mealsByDay);
-      // Use mode of days with 2+ meals (excludes likely-incomplete days from skewing the slot count)
-      // Fall back to all days if no day has 2+ meals
-      const fullDayCounts = dayCounts.filter(c => c >= 2);
-      const countsForMode = fullDayCounts.length > 0 ? fullDayCounts : dayCounts;
-      const countFreq: Record<number, number> = {};
-      for (const c of countsForMode) countFreq[c] = (countFreq[c] ?? 0) + 1;
-      const numSlots = dayCounts.length === 0 ? 0 :
-        Math.min(6, Number(Object.entries(countFreq).sort((a, b) => b[1] - a[1] || Number(b[0]) - Number(a[0]))[0][0]));
-
       // Circular distance between two time-of-day values (minutes)
       const circDist = (a: number, b: number) => {
         const d = Math.abs(a - b) % 1440;
@@ -542,17 +524,16 @@ export const mealLogsRouter = router({
         if (angle < 0) angle += TWO_PI;
         return (angle / TWO_PI) * 1440;
       };
-
-      // K-means clustering on circular time
-      const slots: { label: string; anchor: string; anchorMins: number; driftMin: number }[] = [];
-      if (numSlots > 0 && allMealMins.length >= numSlots) {
-        // Initialise centroids spread evenly across eating window (6am–8pm)
-        let centroids = Array.from({ length: numSlots }, (_, i) =>
-          360 + (i * (1200 - 360) / Math.max(numSlots - 1, 1))
+      // Run k-means for a given k, return WCSS (within-cluster sum of squares)
+      const runKMeans = (pts: number[], k: number): { wcss: number; centroids: number[]; clusters: number[][] } => {
+        if (pts.length < k) return { wcss: Infinity, centroids: [], clusters: [] };
+        let centroids = Array.from({ length: k }, (_, i) =>
+          360 + (i * (1200 - 360) / Math.max(k - 1, 1))
         );
+        let clusters: number[][] = [];
         for (let iter = 0; iter < 100; iter++) {
-          const clusters: number[][] = Array.from({ length: numSlots }, () => []);
-          for (const p of allMealMins) {
+          clusters = Array.from({ length: k }, () => []);
+          for (const p of pts) {
             const nearest = centroids.reduce(
               (best, c, i) => circDist(p, c) < circDist(p, centroids[best]) ? i : best, 0
             );
@@ -564,17 +545,45 @@ export const mealLogsRouter = router({
           if (newCentroids.every((c, i) => Math.abs(c - centroids[i]) < 0.5)) break;
           centroids = newCentroids;
         }
-        // Final assignment
-        const finalClusters: number[][] = Array.from({ length: numSlots }, () => []);
-        for (const p of allMealMins) {
-          const nearest = centroids.reduce(
-            (best, c, i) => circDist(p, c) < circDist(p, centroids[best]) ? i : best, 0
-          );
-          finalClusters[nearest].push(p);
+        const wcss = clusters.reduce((sum, cl, i) =>
+          sum + cl.reduce((s, p) => s + Math.pow(circDist(p, centroids[i]), 2), 0), 0
+        );
+        return { wcss, centroids, clusters };
+      };
+      // Auto-detect numSlots using elbow method (k=2..6)
+      let numSlots = 0;
+      let bestCentroids: number[] = [];
+      let bestClusters: number[][] = [];
+      if (allMealMins.length >= 2) {
+        const maxK = Math.min(6, allMealMins.length);
+        const wcssValues: number[] = [];
+        for (let k = 1; k <= maxK; k++) {
+          wcssValues.push(runKMeans(allMealMins, k).wcss);
         }
-        // Build slots sorted by centroid time
-        finalClusters
-          .map((cl, i) => ({ cl, centroid: centroids[i] }))
+        // Find elbow: largest drop in WCSS improvement ratio
+        // Use the point where adding another cluster gives < 25% of the improvement from k=1 to k=2
+        let chosenK = 1;
+        const baseline = wcssValues[0]; // k=1 WCSS
+        for (let k = 2; k <= maxK; k++) {
+          const improvement = wcssValues[k - 2] - wcssValues[k - 1];
+          const relImprovement = baseline > 0 ? improvement / baseline : 0;
+          if (relImprovement >= 0.15) {
+            chosenK = k;
+          } else {
+            break;
+          }
+        }
+        numSlots = chosenK;
+        const result = runKMeans(allMealMins, numSlots);
+        bestCentroids = result.centroids;
+        bestClusters = result.clusters;
+      }
+
+      // Build slots from elbow-method k-means result
+      const slots: { label: string; anchor: string; anchorMins: number; driftMin: number }[] = [];
+      if (numSlots > 0 && bestCentroids.length > 0) {
+        bestClusters
+          .map((cl, i) => ({ cl, centroid: bestCentroids[i] }))
           .filter(({ cl }) => cl.length > 0)
           .sort((a, b) => a.centroid - b.centroid)
           .forEach(({ cl, centroid }, i) => {
