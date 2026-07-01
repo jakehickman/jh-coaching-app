@@ -497,7 +497,7 @@ export const mealLogsRouter = router({
           });
         }
       }
-      // Meal timing slots — largest-gap splitting
+      // Meal timing slots — k-means circular clustering
       const mealOnly = curLogs.filter(l => l.mealType === 'meal');
       // Use stored utcOffsetMins to convert UTC loggedAt to local time for timing
       const toLocalMins = (m: typeof mealOnly[0]) => {
@@ -513,55 +513,74 @@ export const mealLogsRouter = router({
       // Determine how many slots to create: use mode of meals-per-day
       const mealsByDay: Record<string, number> = {};
       for (const m of mealOnly) {
-        const utcMins = m.loggedAt.getUTCHours() * 60 + m.loggedAt.getUTCMinutes();
         const offset = (m as any).utcOffsetMins ?? 0;
-        const localMins = ((utcMins + offset) % 1440 + 1440) % 1440;
         const localDate = new Date(m.loggedAt.getTime() + offset * 60 * 1000);
         const k = `${localDate.getUTCFullYear()}-${localDate.getUTCMonth()}-${localDate.getUTCDate()}`;
-        void localMins;
         mealsByDay[k] = (mealsByDay[k] ?? 0) + 1;
       }
       const dayCounts = Object.values(mealsByDay);
       const countFreq: Record<number, number> = {};
       for (const c of dayCounts) countFreq[c] = (countFreq[c] ?? 0) + 1;
       const numSlots = dayCounts.length === 0 ? 0 :
-        Number(Object.entries(countFreq).sort((a, b) => b[1] - a[1] || Number(b[0]) - Number(a[0]))[0][0]);
+        Math.min(6, Number(Object.entries(countFreq).sort((a, b) => b[1] - a[1] || Number(b[0]) - Number(a[0]))[0][0]));
 
-      // Split allMealMins into numSlots groups by finding the (numSlots-1) largest gaps
+      // Circular distance between two time-of-day values (minutes)
+      const circDist = (a: number, b: number) => {
+        const d = Math.abs(a - b) % 1440;
+        return Math.min(d, 1440 - d);
+      };
+      // Circular mean of a set of minute values
+      const circularMean = (vals: number[]) => {
+        const TWO_PI = 2 * Math.PI;
+        const sinSum = vals.reduce((s, v) => s + Math.sin(v / 1440 * TWO_PI), 0);
+        const cosSum = vals.reduce((s, v) => s + Math.cos(v / 1440 * TWO_PI), 0);
+        let angle = Math.atan2(sinSum / vals.length, cosSum / vals.length);
+        if (angle < 0) angle += TWO_PI;
+        return (angle / TWO_PI) * 1440;
+      };
+
+      // K-means clustering on circular time
       const slots: { label: string; anchor: string; anchorMins: number; driftMin: number }[] = [];
       if (numSlots > 0 && allMealMins.length >= numSlots) {
-        // Compute gaps between consecutive sorted times
-        const gaps: { idx: number; gap: number }[] = [];
-        for (let i = 1; i < allMealMins.length; i++) {
-          gaps.push({ idx: i, gap: allMealMins[i] - allMealMins[i - 1] });
+        // Initialise centroids spread evenly across eating window (6am–8pm)
+        let centroids = Array.from({ length: numSlots }, (_, i) =>
+          360 + (i * (1200 - 360) / Math.max(numSlots - 1, 1))
+        );
+        for (let iter = 0; iter < 100; iter++) {
+          const clusters: number[][] = Array.from({ length: numSlots }, () => []);
+          for (const p of allMealMins) {
+            const nearest = centroids.reduce(
+              (best, c, i) => circDist(p, c) < circDist(p, centroids[best]) ? i : best, 0
+            );
+            clusters[nearest].push(p);
+          }
+          const newCentroids = clusters.map((cl, i) =>
+            cl.length > 0 ? circularMean(cl) : centroids[i]
+          );
+          if (newCentroids.every((c, i) => Math.abs(c - centroids[i]) < 0.5)) break;
+          centroids = newCentroids;
         }
-        // Pick the (numSlots-1) largest gaps as split points
-        const splitIdxs = gaps
-          .sort((a, b) => b.gap - a.gap)
-          .slice(0, numSlots - 1)
-          .map(g => g.idx)
-          .sort((a, b) => a - b);
-        // Build clusters from split points
-        const clusters: number[][] = [];
-        let start = 0;
-        for (const si of splitIdxs) {
-          clusters.push(allMealMins.slice(start, si));
-          start = si;
+        // Final assignment
+        const finalClusters: number[][] = Array.from({ length: numSlots }, () => []);
+        for (const p of allMealMins) {
+          const nearest = centroids.reduce(
+            (best, c, i) => circDist(p, c) < circDist(p, centroids[best]) ? i : best, 0
+          );
+          finalClusters[nearest].push(p);
         }
-        clusters.push(allMealMins.slice(start));
-        // Build slots from clusters
-        clusters.forEach((cluster, i) => {
-          if (cluster.length === 0) return;
-          const sorted = cluster.slice().sort((a, b) => a - b);
-          const mid = Math.floor(sorted.length / 2);
-          const anchorMins = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-          const drift = cluster.reduce((s, t) => s + Math.abs(t - anchorMins), 0) / cluster.length;
-          const h = Math.floor(anchorMins / 60) % 24;
-          const m = Math.round(anchorMins % 60);
-          const ampm = h >= 12 ? 'pm' : 'am';
-          const h12 = h % 12 === 0 ? 12 : h % 12;
-          slots.push({ label: `Meal ${i + 1}`, anchor: `${h12}:${String(m).padStart(2, '0')} ${ampm}`, anchorMins, driftMin: Math.round(drift) });
-        });
+        // Build slots sorted by centroid time
+        finalClusters
+          .map((cl, i) => ({ cl, centroid: centroids[i] }))
+          .filter(({ cl }) => cl.length > 0)
+          .sort((a, b) => a.centroid - b.centroid)
+          .forEach(({ cl, centroid }, i) => {
+            const drift = cl.reduce((s, p) => s + circDist(p, centroid), 0) / cl.length;
+            const h = Math.floor(centroid / 60) % 24;
+            const m = Math.round(centroid % 60);
+            const ampm = h >= 12 ? 'pm' : 'am';
+            const h12 = h % 12 === 0 ? 12 : h % 12;
+            slots.push({ label: `Meal ${i + 1}`, anchor: `${h12}:${String(m).padStart(2, '0')} ${ampm}`, anchorMins: centroid, driftMin: Math.round(drift) });
+          });
       }
       // Consistency score
       let onTime = 0;
