@@ -292,14 +292,10 @@ export function WeeklyReviewTab({ clientId }: Props) {
   );
 
   const weeks = (data?.weeks ?? []) as Week[];
-  const last7DaysLogged = data?.last7DaysLogged ?? null;
-  const last7Sessions = data?.last7Sessions ?? null;
-  const last7AvgSleepHours = data?.last7AvgSleepHours ?? null;
-  const prev7AvgSleepHours = data?.prev7AvgSleepHours ?? null;
+  const r = data?.rolling7 ?? null;
 
-  // ── Current week (weeks[0]) and previous week (weeks[1]) for summary cards ──
+  // ── Current week (weeks[0]) still used for the history table only ──
   const cur = weeks[0] ?? null;
-  const prev = weeks[1] ?? null;
 
   if (isLoading) {
     return (
@@ -335,27 +331,24 @@ export function WeeklyReviewTab({ clientId }: Props) {
   const visibleWeeks = showAll ? weeks : weeks.slice(0, DEFAULT_VISIBLE);
   const hasMore = weeks.length > DEFAULT_VISIBLE;
 
-  // ── Deltas for summary cards ──────────────────────────────────────────────
-  const weightDelta = calcDelta(cur?.avgWeight, prev?.avgWeight, false, true); // % delta
-  const stepsDelta  = calcDelta(cur?.avgSteps, prev?.avgSteps, false, false);
-  const qualDelta   = calcDelta(cur?.avgSleepQuality, prev?.avgSleepQuality, false, false);
-  const stressDelta = calcDelta(cur?.avgStress, prev?.avgStress, true, false);
-  // Sleep delta in minutes (meaningful alongside h:mm display) — use same week buckets as sleep quality
+  // ── Rolling-7 deltas (all vs prev 7 days) ───────────────────────────────
+  const weightDelta = calcDelta(r?.avgWeight, r?.prevAvgWeight, false, true);
+  const stepsDelta  = calcDelta(r?.avgSteps, r?.prevAvgSteps, false, false);
+  const qualDelta   = calcDelta(r?.avgSleepQuality, r?.prevAvgSleepQuality, false, false);
+  const stressDelta = calcDelta(r?.avgStress, r?.prevAvgStress, true, false);
+  const sessDelta   = calcDelta(r?.sessions, r?.prevSessions, false, false);
   const sleepDeltaMins: DeltaResult | null = (() => {
-    if (cur?.avgSleepHours == null || prev?.avgSleepHours == null) return null;
-    const diffMins = Math.round((cur.avgSleepHours - prev.avgSleepHours) * 60);
+    if (r?.avgSleepHours == null || r?.prevAvgSleepHours == null) return null;
+    const diffMins = Math.round((r.avgSleepHours - r.prevAvgSleepHours) * 60);
     if (Math.abs(diffMins) < 2) return { arrow: "flat" as const, good: true };
     return { arrow: diffMins > 0 ? "up" as const : "down" as const, good: diffMins > 0, abs: Math.abs(diffMins) };
   })();
 
-  // Colour for stress value
-  const stressColour = cur?.avgStress != null
-    ? cur.avgStress >= 4 ? C.red : cur.avgStress >= 3 ? C.amber : C.green
+  const stressColour = r?.avgStress != null
+    ? r.avgStress >= 4 ? C.red : r.avgStress >= 3 ? C.amber : C.green
     : C.fg;
-
-  // Colour for days logged (based on last 7 calendar days)
-  const daysColour = last7DaysLogged != null
-    ? last7DaysLogged >= 6 ? C.green : last7DaysLogged >= 4 ? C.amber : C.red
+  const daysColour = r?.daysLogged != null
+    ? r.daysLogged >= 6 ? C.green : r.daysLogged >= 4 ? C.amber : C.red
     : C.fg;
 
   return (
@@ -372,71 +365,38 @@ export function WeeklyReviewTab({ clientId }: Props) {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
 
           {/* Avg Weight */}
-          {cur?.avgWeight != null && (
-            <SummaryCard
-              label="Avg Weight"
-              value={fmt(cur.avgWeight)}
-              unit="kg"
-              delta={weightDelta}
-            />
+          {r?.avgWeight != null && (
+            <SummaryCard label="Avg Weight" value={fmt(r.avgWeight)} unit="kg" delta={weightDelta} />
           )}
 
           {/* Days Logged */}
-          {last7DaysLogged != null && (
-            <SummaryCard
-              label="Days Logged"
-              value={`${last7DaysLogged}`}
-              unit="/ 7"
-              valueColour={daysColour}
-            />
+          {r?.daysLogged != null && (
+            <SummaryCard label="Days Logged" value={`${r.daysLogged}`} unit="/ 7" valueColour={daysColour} />
           )}
 
           {/* Avg Steps */}
-          {cur?.avgSteps != null && (
-            <SummaryCard
-              label="Avg Steps"
-              value={fmtK(Math.round(cur.avgSteps))}
-              delta={stepsDelta}
-            />
+          {r?.avgSteps != null && (
+            <SummaryCard label="Avg Steps" value={fmtK(Math.round(r.avgSteps))} delta={stepsDelta} />
           )}
 
           {/* Sleep Duration */}
-          {last7AvgSleepHours != null && (
-            <SummaryCard
-              label="Avg Sleep"
-              value={hoursToHmm(last7AvgSleepHours)}
-              delta={sleepDeltaMins}
-              deltaUnit="min"
-            />
+          {r?.avgSleepHours != null && (
+            <SummaryCard label="Avg Sleep" value={hoursToHmm(r.avgSleepHours)} delta={sleepDeltaMins} deltaUnit="min" />
           )}
 
           {/* Sleep Quality */}
-          {cur?.avgSleepQuality != null && (
-          <SummaryCard
-            label="Sleep Quality"
-              value={fmt(cur.avgSleepQuality)}
-              unit="/ 5"
-              delta={qualDelta}
-            />
+          {r?.avgSleepQuality != null && (
+            <SummaryCard label="Sleep Quality" value={fmt(r.avgSleepQuality)} unit="/ 5" delta={qualDelta} />
           )}
 
           {/* Stress */}
-          {cur?.avgStress != null && (
-            <SummaryCard
-              label="Avg Stress"
-              value={fmt(cur.avgStress)}
-              unit="/ 5"
-              delta={stressDelta}
-              valueColour={stressColour}
-            />
+          {r?.avgStress != null && (
+            <SummaryCard label="Avg Stress" value={fmt(r.avgStress)} unit="/ 5" delta={stressDelta} valueColour={stressColour} />
           )}
 
           {/* Training Sessions */}
-          {last7Sessions != null && (
-            <SummaryCard
-              label="Sessions"
-              value={String(last7Sessions)}
-            />
+          {r?.sessions != null && (
+            <SummaryCard label="Sessions" value={String(r.sessions)} delta={sessDelta} />
           )}
 
         </div>

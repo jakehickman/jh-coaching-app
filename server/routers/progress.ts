@@ -260,39 +260,70 @@ export const progressRouter = router({
         return { ...w, avgWeightPct };
       });
 
-      // Count distinct daily log dates in the last 7 calendar days (using client's local date)
+      // ── Rolling 7-day summary stats (all cards use true calendar windows) ──
       const localMs = today.getTime() + tzOffsetMinutes * 60 * 1000;
       const localToday = new Date(localMs);
       const todayStr = toDateStr(new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())));
-      const sevenDaysAgoMs = new Date(todayStr + "T00:00:00Z").getTime() - 6 * 24 * 60 * 60 * 1000;
-      const sevenDaysAgoStr = toDateStr(new Date(sevenDaysAgoMs));
-      const last7DaysLogged = new Set(
-        logs
-          .map((l) => typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date))
-          .filter((d) => d >= sevenDaysAgoStr && d <= todayStr)
-      ).size;
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const curStartMs = new Date(todayStr + "T00:00:00Z").getTime() - 6 * msPerDay;
+      const curStartStr = toDateStr(new Date(curStartMs));
+      const prevEndMs = curStartMs - msPerDay;
+      const prevStartMs = prevEndMs - 6 * msPerDay;
+      const prevStartStr = toDateStr(new Date(prevStartMs));
+      const prevEndStr = toDateStr(new Date(prevEndMs));
 
-      // Count sessions in the last 7 calendar days
+      // Filter daily logs for each window
+      const curLogs = logs.filter((l) => {
+        const d = typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date);
+        return d >= curStartStr && d <= todayStr;
+      });
+      const prevLogs = logs.filter((l) => {
+        const d = typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date);
+        return d >= prevStartStr && d <= prevEndStr;
+      });
+
+      // Days logged
+      const last7DaysLogged = new Set(curLogs.map((l) => typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date))).size;
+
+      // Sessions
       const last7Sessions = sessions.filter((s) => {
         const d = typeof s.sessionDate === "string" ? s.sessionDate : toDateStr(s.sessionDate as Date);
-        return d >= sevenDaysAgoStr && d <= todayStr;
+        return d >= curStartStr && d <= todayStr;
+      }).length;
+      const prev7Sessions = sessions.filter((s) => {
+        const d = typeof s.sessionDate === "string" ? s.sessionDate : toDateStr(s.sessionDate as Date);
+        return d >= prevStartStr && d <= prevEndStr;
       }).length;
 
-      // Avg sleep hours for last 7 days and the 7 days before that (for a meaningful delta in minutes)
-      const prevSevenDaysAgoMs = sevenDaysAgoMs - 7 * 24 * 60 * 60 * 1000;
-      const prevSevenDaysAgoStr = toDateStr(new Date(prevSevenDaysAgoMs));
-      const prevSevenDaysEndStr = toDateStr(new Date(sevenDaysAgoMs - 24 * 60 * 60 * 1000));
-      const last7SleepLogs = logs.filter((l) => {
-        const d = typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date);
-        return d >= sevenDaysAgoStr && d <= todayStr && l.sleepHours != null;
-      });
-      const prev7SleepLogs = logs.filter((l) => {
-        const d = typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date);
-        return d >= prevSevenDaysAgoStr && d <= prevSevenDaysEndStr && l.sleepHours != null;
-      });
-      const last7AvgSleepHours = avg(last7SleepLogs.map((l) => l.sleepHours));
-      const prev7AvgSleepHours = avg(prev7SleepLogs.map((l) => l.sleepHours));
+      // Averages for all daily-log metrics
+      const last7AvgWeight     = avg(curLogs.map((l) => l.weight));
+      const prev7AvgWeight     = avg(prevLogs.map((l) => l.weight));
+      const last7AvgSteps      = avg(curLogs.filter((l) => l.stepsCount != null).map((l) => l.stepsCount));
+      const prev7AvgSteps      = avg(prevLogs.filter((l) => l.stepsCount != null).map((l) => l.stepsCount));
+      const last7AvgSleepHours = avg(curLogs.filter((l) => l.sleepHours != null).map((l) => l.sleepHours));
+      const prev7AvgSleepHours = avg(prevLogs.filter((l) => l.sleepHours != null).map((l) => l.sleepHours));
+      const last7AvgSleepQuality = avg(curLogs.filter((l) => l.sleepQuality != null).map((l) => l.sleepQuality));
+      const prev7AvgSleepQuality = avg(prevLogs.filter((l) => l.sleepQuality != null).map((l) => l.sleepQuality));
+      const last7AvgStress     = avg(curLogs.filter((l) => l.stressLevel != null).map((l) => l.stressLevel));
+      const prev7AvgStress     = avg(prevLogs.filter((l) => l.stressLevel != null).map((l) => l.stressLevel));
 
-      return { weeks, last7DaysLogged, last7Sessions, last7AvgSleepHours, prev7AvgSleepHours };
+      const rolling7 = {
+        daysLogged: last7DaysLogged,
+        sessions: last7Sessions,
+        prevSessions: prev7Sessions,
+        avgWeight: last7AvgWeight,
+        prevAvgWeight: prev7AvgWeight,
+        avgSteps: last7AvgSteps,
+        prevAvgSteps: prev7AvgSteps,
+        avgSleepHours: last7AvgSleepHours,
+        prevAvgSleepHours: prev7AvgSleepHours,
+        avgSleepQuality: last7AvgSleepQuality,
+        prevAvgSleepQuality: prev7AvgSleepQuality,
+        avgStress: last7AvgStress,
+        prevAvgStress: prev7AvgStress,
+        stepGoal: profile.stepGoal ?? null,
+      };
+
+      return { weeks, rolling7 };
     }),
 });
