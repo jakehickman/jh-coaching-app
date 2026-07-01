@@ -290,6 +290,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
   );
 
   const weeks = (data?.weeks ?? []) as Week[];
+  const last7DaysLogged = data?.last7DaysLogged ?? null;
 
   // ── Current week (weeks[0]) and previous week (weeks[1]) for summary cards ──
   const cur = weeks[0] ?? null;
@@ -342,9 +343,9 @@ export function WeeklyReviewTab({ clientId }: Props) {
     ? cur.avgStress >= 4 ? C.red : cur.avgStress >= 3 ? C.amber : C.green
     : C.fg;
 
-  // Colour for days logged
-  const daysColour = cur != null
-    ? cur.daysLogged >= 6 ? C.green : cur.daysLogged >= 4 ? C.amber : C.red
+  // Colour for days logged (based on last 7 calendar days)
+  const daysColour = last7DaysLogged != null
+    ? last7DaysLogged >= 6 ? C.green : last7DaysLogged >= 4 ? C.amber : C.red
     : C.fg;
 
   return (
@@ -371,10 +372,10 @@ export function WeeklyReviewTab({ clientId }: Props) {
           )}
 
           {/* Days Logged */}
-          {cur != null && (
+          {last7DaysLogged != null && (
             <SummaryCard
               label="Days Logged"
-              value={`${cur.daysLogged}`}
+              value={`${last7DaysLogged}`}
               unit="/ 7"
               valueColour={daysColour}
             />

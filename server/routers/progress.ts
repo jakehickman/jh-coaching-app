@@ -260,6 +260,18 @@ export const progressRouter = router({
         return { ...w, avgWeightPct };
       });
 
-      return { weeks };
+      // Count distinct daily log dates in the last 7 calendar days (using client's local date)
+      const localMs = today.getTime() + tzOffsetMinutes * 60 * 1000;
+      const localToday = new Date(localMs);
+      const todayStr = toDateStr(new Date(Date.UTC(localToday.getUTCFullYear(), localToday.getUTCMonth(), localToday.getUTCDate())));
+      const sevenDaysAgoMs = new Date(todayStr + "T00:00:00Z").getTime() - 6 * 24 * 60 * 60 * 1000;
+      const sevenDaysAgoStr = toDateStr(new Date(sevenDaysAgoMs));
+      const last7DaysLogged = new Set(
+        logs
+          .map((l) => typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date))
+          .filter((d) => d >= sevenDaysAgoStr && d <= todayStr)
+      ).size;
+
+      return { weeks, last7DaysLogged };
     }),
 });
