@@ -483,8 +483,7 @@ function TreatsChart({
   treatsByWeek: { weekStart: string; small: number; medium: number; large: number; total: number }[];
   days: 7 | 28;
 }) {
-  // In 7d mode server returns 7 daily entries; in 28d mode returns 5 weekly entries, cap at 4
-  const bars = days === 7 ? treatsByWeek : treatsByWeek.slice(-4);
+  const bars = treatsByWeek;
   const maxTotal = Math.max(...bars.map(w => w.total), 1);
   const BAR_MAX_PX = 190;
 
@@ -920,7 +919,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               Large
             </span>
           </div>
-          <TreatsChart treatsByWeek={insights.treatsByWeek.slice(-4)} days={days} />
+          <TreatsChart treatsByWeek={days === 7 ? insights.treatsByWeek : insights.treatsByWeek.slice(-4)} days={days} />
         </Card>
       </div>
 

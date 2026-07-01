@@ -585,11 +585,13 @@ export const mealLogsRouter = router({
       }
 
       // Build slots from elbow-method k-means result
+      // Reject tiny clusters: must have at least 3 meals AND at least 10% of total meals
+      const minClusterSize = Math.max(3, Math.ceil(allMealMins.length * 0.10));
       const slots: { label: string; anchor: string; anchorMins: number; driftMin: number }[] = [];
       if (numSlots > 0 && bestCentroids.length > 0) {
         bestClusters
           .map((cl, i) => ({ cl, centroid: bestCentroids[i] }))
-          .filter(({ cl }) => cl.length > 0)
+          .filter(({ cl }) => cl.length >= minClusterSize)
           .sort((a, b) => a.centroid - b.centroid)
           .forEach(({ cl, centroid }, i) => {
             const drift = cl.reduce((s, p) => s + circDist(p, centroid), 0) / cl.length;
