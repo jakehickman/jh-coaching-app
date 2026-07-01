@@ -519,8 +519,12 @@ export const mealLogsRouter = router({
         mealsByDay[k] = (mealsByDay[k] ?? 0) + 1;
       }
       const dayCounts = Object.values(mealsByDay);
+      // Use mode of days with 2+ meals (excludes likely-incomplete days from skewing the slot count)
+      // Fall back to all days if no day has 2+ meals
+      const fullDayCounts = dayCounts.filter(c => c >= 2);
+      const countsForMode = fullDayCounts.length > 0 ? fullDayCounts : dayCounts;
       const countFreq: Record<number, number> = {};
-      for (const c of dayCounts) countFreq[c] = (countFreq[c] ?? 0) + 1;
+      for (const c of countsForMode) countFreq[c] = (countFreq[c] ?? 0) + 1;
       const numSlots = dayCounts.length === 0 ? 0 :
         Math.min(6, Number(Object.entries(countFreq).sort((a, b) => b[1] - a[1] || Number(b[0]) - Number(a[0]))[0][0]));
 
