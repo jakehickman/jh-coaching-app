@@ -340,10 +340,10 @@ export function WeeklyReviewTab({ clientId }: Props) {
   const stepsDelta  = calcDelta(cur?.avgSteps, prev?.avgSteps, false, false);
   const qualDelta   = calcDelta(cur?.avgSleepQuality, prev?.avgSleepQuality, false, false);
   const stressDelta = calcDelta(cur?.avgStress, prev?.avgStress, true, false);
-  // Sleep delta in minutes (meaningful alongside h:mm display)
+  // Sleep delta in minutes (meaningful alongside h:mm display) — use same week buckets as sleep quality
   const sleepDeltaMins: DeltaResult | null = (() => {
-    if (last7AvgSleepHours == null || prev7AvgSleepHours == null) return null;
-    const diffMins = Math.round((last7AvgSleepHours - prev7AvgSleepHours) * 60);
+    if (cur?.avgSleepHours == null || prev?.avgSleepHours == null) return null;
+    const diffMins = Math.round((cur.avgSleepHours - prev.avgSleepHours) * 60);
     if (Math.abs(diffMins) < 2) return { arrow: "flat" as const, good: true };
     return { arrow: diffMins > 0 ? "up" as const : "down" as const, good: diffMins > 0, abs: Math.abs(diffMins) };
   })();
