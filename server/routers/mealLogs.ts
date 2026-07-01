@@ -572,7 +572,7 @@ export const mealLogsRouter = router({
         for (let i = 1; i < improvements.length; i++) {
           // ratio = how much this step improves relative to the previous step
           const ratio = improvements[i - 1] > 0 ? improvements[i] / improvements[i - 1] : 0;
-          if (ratio >= 0.05) {
+          if (ratio >= 0.20) {
             chosenK = i + 2; // k is i+2 because improvements[0] = k=1->k=2
           } else {
             break;
