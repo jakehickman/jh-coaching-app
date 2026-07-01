@@ -168,7 +168,7 @@ function WeekRow({ week, isExpanded, onToggle }: {
           };
         }
 
-        const sortedDates = Object.keys(byDate).sort();
+        const sortedDates = Object.keys(byDate).sort().reverse();
 
         return sortedDates.map((date) => {
           const row = byDate[date];
