@@ -550,7 +550,9 @@ export const mealLogsRouter = router({
         );
         return { wcss, centroids, clusters };
       };
-      // Auto-detect numSlots using elbow method (k=2..6)
+      // Auto-detect numSlots using ratio-of-consecutive-improvements elbow method
+      // Keep adding k while improvement[k] / improvement[k-1] >= 5%
+      // (i.e., the new cluster still reduces variance meaningfully relative to the previous step)
       let numSlots = 0;
       let bestCentroids: number[] = [];
       let bestClusters: number[][] = [];
@@ -560,15 +562,18 @@ export const mealLogsRouter = router({
         for (let k = 1; k <= maxK; k++) {
           wcssValues.push(runKMeans(allMealMins, k).wcss);
         }
-        // Find elbow: largest drop in WCSS improvement ratio
-        // Use the point where adding another cluster gives < 25% of the improvement from k=1 to k=2
-        let chosenK = 1;
-        const baseline = wcssValues[0]; // k=1 WCSS
-        for (let k = 2; k <= maxK; k++) {
-          const improvement = wcssValues[k - 2] - wcssValues[k - 1];
-          const relImprovement = baseline > 0 ? improvement / baseline : 0;
-          if (relImprovement >= 0.15) {
-            chosenK = k;
+        // Compute improvements between consecutive k values
+        const improvements: number[] = [];
+        for (let i = 1; i < wcssValues.length; i++) {
+          improvements.push(wcssValues[i - 1] - wcssValues[i]);
+        }
+        // Start at k=2 (always better than k=1 if we have data)
+        let chosenK = Math.min(2, maxK);
+        for (let i = 1; i < improvements.length; i++) {
+          // ratio = how much this step improves relative to the previous step
+          const ratio = improvements[i - 1] > 0 ? improvements[i] / improvements[i - 1] : 0;
+          if (ratio >= 0.05) {
+            chosenK = i + 2; // k is i+2 because improvements[0] = k=1->k=2
           } else {
             break;
           }
