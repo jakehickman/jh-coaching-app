@@ -325,7 +325,16 @@ function IdealZoneCard({
   return (
     <Card>
       <div className="flex items-start justify-between gap-4 mb-4">
-        <SectionLabel>Ideal Zone</SectionLabel>
+        <div className="flex items-center gap-1.5">
+          <SectionLabel>Ideal Zone</SectionLabel>
+          <div className="relative group">
+            <Info className="w-3.5 h-3.5 cursor-pointer" style={{ color: C.muted }} />
+            <div className="absolute left-0 top-5 z-10 hidden group-hover:block w-56 rounded-lg px-3 py-2 text-[11px] leading-relaxed shadow-lg"
+              style={{ background: "#1A2020", border: `1px solid ${C.border}`, color: C.muted }}>
+              % of meals where hunger (3–4) <span style={{ color: C.fg, fontWeight: 600 }}>and</span> fullness (6–7) were both in range at the same meal
+            </div>
+          </div>
+        </div>
         <span className="text-[11px]" style={{ color: C.muted }}>Last {days}d</span>
       </div>
 
@@ -356,46 +365,24 @@ function IdealZoneCard({
         </div>
       )}
 
-      {/* Hunger / Fullness split */}
-      {(hungerInZonePct != null || fullnessInZonePct != null) && (
-        <div className="mt-4 pt-4 grid grid-cols-2 gap-4" style={{ borderTop: `1px solid ${C.border}` }}>
-          {hungerInZonePct != null && (
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.7px] mb-2" style={{ color: C.muted }}>
-                Hunger (3–4)
-              </p>
-              <div className="flex items-baseline gap-1.5 mb-1.5">
-                <span className="text-[22px] font-bold leading-none" style={{ color: C.fg }}>
-                  {hungerInZonePct}%
-                </span>
-                <span className="text-[11px]" style={{ color: C.muted }}>in zone</span>
-              </div>
-              <ProgressBar value={hungerInZonePct} color={scoreColor(hungerInZonePct)} />
-            </div>
-          )}
-          {fullnessInZonePct != null && (
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.7px] mb-2" style={{ color: C.muted }}>
-                Fullness (6–7)
-              </p>
-              <div className="flex items-baseline gap-1.5 mb-1.5">
-                <span className="text-[22px] font-bold leading-none" style={{ color: C.fg }}>
-                  {fullnessInZonePct}%
-                </span>
-                <span className="text-[11px]" style={{ color: C.muted }}>in zone</span>
-              </div>
-              <ProgressBar value={fullnessInZonePct} color={scoreColor(fullnessInZonePct)} />
-            </div>
-          )}
-        </div>
-      )}
+
     </Card>
   );
 }
 
 // ─── Scatter plot ─────────────────────────────────────────────────────────────
 
-function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
+function ScatterPlot({
+  scatter,
+  idealZonePct,
+  hungerInZonePct,
+  fullnessInZonePct,
+}: {
+  scatter: { h: number; f: number }[];
+  idealZonePct?: number | null;
+  hungerInZonePct?: number | null;
+  fullnessInZonePct?: number | null;
+}) {
   const SIZE = 260;
   const PAD = 28;
   const INNER = SIZE - PAD * 2;
@@ -444,7 +431,7 @@ function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
         stroke={C.primary} strokeOpacity={0.25} strokeWidth={1}
         rx={3}
       />
-      {/* Ideal zone label — above the rectangle */}
+      {/* Ideal zone label + combined % inside the rectangle */}
       <text
         x={(zoneX1 + zoneX2) / 2} y={zoneY1 - 5}
         textAnchor="middle" fontSize={9}
@@ -452,6 +439,15 @@ function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
       >
         Ideal zone
       </text>
+      {idealZonePct != null && (
+        <text
+          x={(zoneX1 + zoneX2) / 2} y={(zoneY1 + zoneY2) / 2 + 4}
+          textAnchor="middle" fontSize={13} fontWeight="700"
+          fill={C.primary} opacity={0.85}
+        >
+          {idealZonePct}%
+        </text>
+      )}
       {/* Axis labels */}
       {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
         <g key={n}>
@@ -459,10 +455,31 @@ function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
           <text x={PAD - 9} y={toY(n) + 3.5} textAnchor="middle" fontSize={9} fill={C.muted} opacity={0.5}>{n}</text>
         </g>
       ))}
-      {/* Axis titles */}
+      {/* Axis titles + in-zone % annotations */}
       <text x={SIZE / 2} y={SIZE - 2} textAnchor="middle" fontSize={10} fill={C.muted} opacity={0.55}>Hunger</text>
       <text x={9} y={SIZE / 2} textAnchor="middle" fontSize={10} fill={C.muted} opacity={0.55}
         transform={`rotate(-90, 9, ${SIZE / 2})`}>Fullness</text>
+      {/* Hunger in-zone % — below the 3–4 range on x-axis */}
+      {hungerInZonePct != null && (
+        <text
+          x={(toX(3) + toX(4) + STEP) / 2} y={SIZE - PAD + 24}
+          textAnchor="middle" fontSize={9} fontWeight="600"
+          fill={C.primary} opacity={0.75}
+        >
+          {hungerInZonePct}%
+        </text>
+      )}
+      {/* Fullness in-zone % — to the right of the 6–7 range on y-axis */}
+      {fullnessInZonePct != null && (
+        <text
+          x={SIZE - PAD + 18} y={(toY(6) + toY(7) + STEP) / 2 + 4}
+          textAnchor="middle" fontSize={9} fontWeight="600"
+          fill={C.primary} opacity={0.75}
+          transform={`rotate(-90, ${SIZE - PAD + 18}, ${(toY(6) + toY(7) + STEP) / 2 + 4})`}
+        >
+          {fullnessInZonePct}%
+        </text>
+      )}
       {/* Dots */}
       {dots.map((d, i) => (
         <circle
@@ -896,7 +913,12 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           <SectionLabel>Hunger vs. Fullness</SectionLabel>
           {insights.scatter.length > 0 ? (
             <div className="flex justify-center">
-              <ScatterPlot scatter={insights.scatter} />
+              <ScatterPlot
+                scatter={insights.scatter}
+                idealZonePct={insights.idealZonePct}
+                hungerInZonePct={insights.hungerInZonePct}
+                fullnessInZonePct={insights.fullnessInZonePct}
+              />
             </div>
           ) : (
             <p className="text-[13px] py-8 text-center" style={{ color: C.muted }}>No rated meals yet</p>
