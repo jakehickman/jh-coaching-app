@@ -3,7 +3,6 @@ import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, ArrowUp, ArrowDown, Minus } from "lucide-react";
-import { CoachHabitsPanel } from "./HabitsSection";
 
 interface Props {
   clientId: number;
@@ -401,9 +400,6 @@ export function WeeklyReviewTab({ clientId }: Props) {
 
         </div>
       </div>
-
-      {/* ── Habit adherence ── */}
-      <CoachHabitsPanel clientId={clientId} />
 
       {/* ── Weekly history table ── */}
       <div>
