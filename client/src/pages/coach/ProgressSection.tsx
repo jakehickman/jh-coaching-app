@@ -624,10 +624,11 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
   function fmtDate(iso: string) {
     if (!iso || iso.length < 10) return iso;
     const dt = new Date(iso.slice(0, 10) + "T12:00:00Z");
+    const weekday = dt.toLocaleDateString("en-AU", { weekday: "short", timeZone: "UTC" });
     const day = dt.getUTCDate();
     const month = dt.toLocaleDateString("en-AU", { month: "long", timeZone: "UTC" });
     const year = dt.getUTCFullYear();
-    return `${day} ${month} ${year}`;
+    return `${weekday}, ${day} ${month} ${year}`;
   }
 
   function diffBadge(curr: number | null, prev: number | null, invertGood = false) {
