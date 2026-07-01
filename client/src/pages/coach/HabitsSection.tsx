@@ -15,10 +15,10 @@ function normDate(val: any): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function buildLast28Days(today: string): string[] {
+function buildLastNDays(today: string, n: number): string[] {
   const result: string[] = [];
   const base = new Date(today + "T00:00:00");
-  for (let i = 27; i >= 0; i--) {
+  for (let i = n - 1; i >= 0; i--) {
     const d = new Date(base);
     d.setDate(d.getDate() - i);
     result.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
@@ -28,11 +28,12 @@ function buildLast28Days(today: string): string[] {
 
 // ─── HabitCard (adherence dot grid) ──────────────────────────────────────────
 
-function HabitCard({ habit, days, completedSet, today }: {
+function HabitCard({ habit, days, completedSet, today, periodDays }: {
   habit: any;
   days: string[];
   completedSet: Set<string>;
   today: string;
+  periodDays: 7 | 28;
 }) {
   const assignedAt = normDate(habit.assignedAt);
   const eligible = days.filter(d => d >= assignedAt && d <= today);
@@ -45,8 +46,13 @@ function HabitCard({ habit, days, completedSet, today }: {
     : pct >= 50 ? "text-amber-500"
     : "text-red-500";
 
+  // 7d: single row of 7 dots; 28d: 4 rows × 7
   const rows: string[][] = [];
-  for (let r = 0; r < 4; r++) rows.push(days.slice(r * 7, r * 7 + 7));
+  if (periodDays === 7) {
+    rows.push(days.slice(0, 7));
+  } else {
+    for (let r = 0; r < 4; r++) rows.push(days.slice(r * 7, r * 7 + 7));
+  }
 
   return (
     <div className="bg-card border border-border rounded-xl p-4">
@@ -85,7 +91,7 @@ function HabitCard({ habit, days, completedSet, today }: {
 
 // ─── MealHabitAdherencePanel ──────────────────────────────────────────────────
 
-function MealHabitAdherencePanel({ clientId, fromDate }: { clientId: number; fromDate: string }) {
+function MealHabitAdherencePanel({ clientId, fromDate, periodDays }: { clientId: number; fromDate: string; periodDays: 7 | 28 }) {
   const { data } = trpc.habits.clientMealAdherence.useQuery(
     { clientId, fromDate },
     { enabled: !!clientId }
@@ -96,7 +102,7 @@ function MealHabitAdherencePanel({ clientId, fromDate }: { clientId: number; fro
   return (
     <div className="mt-6">
       <div className="mb-3">
-        <SectionLabel>Per-Meal Habit Adherence — Last 4 Weeks</SectionLabel>
+        <SectionLabel>Per-Meal Habit Adherence — Last {periodDays === 7 ? "7 Days" : "4 Weeks"}</SectionLabel>
       </div>
       <div className="grid grid-cols-5 gap-3">
         {data.habits.map((h: any) => {
@@ -126,15 +132,15 @@ function MealHabitAdherencePanel({ clientId, fromDate }: { clientId: number; fro
   );
 }
 
-// ─── CoachHabitsPanel (adherence only — used in Overview tab) ─────────────────
+// ─── CoachHabitsPanel (adherence only — used in Nutrition Insights + Weekly Review) ─
 
-export function CoachHabitsPanel({ clientId }: { clientId: number }) {
+export function CoachHabitsPanel({ clientId, periodDays = 28 }: { clientId: number; periodDays?: 7 | 28 }) {
   const today = useMemo(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }, []);
 
-  const days = useMemo(() => buildLast28Days(today), [today]);
+  const days = useMemo(() => buildLastNDays(today, periodDays), [today, periodDays]);
   const fromDate = days[0];
 
   const { data: habits = [] } = trpc.habits.clientHabits.useQuery({ clientId }, { enabled: !!clientId });
@@ -154,16 +160,16 @@ export function CoachHabitsPanel({ clientId }: { clientId: number }) {
       {dailyHabits.length > 0 && (
         <>
           <div className="mb-3">
-            <SectionLabel>Daily Habit Adherence — Last 4 Weeks</SectionLabel>
+            <SectionLabel>Daily Habit Adherence — Last {periodDays === 7 ? "7 Days" : "4 Weeks"}</SectionLabel>
           </div>
           <div className="grid grid-cols-5 gap-3">
             {dailyHabits.map((h) => (
-              <HabitCard key={h.id} habit={h} days={days} completedSet={completedSet} today={today} />
+              <HabitCard key={h.id} habit={h} days={days} completedSet={completedSet} today={today} periodDays={periodDays} />
             ))}
           </div>
         </>
       )}
-      <MealHabitAdherencePanel clientId={clientId} fromDate={fromDate} />
+      <MealHabitAdherencePanel clientId={clientId} fromDate={fromDate} periodDays={periodDays} />
     </div>
   );
 }

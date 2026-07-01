@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { CoachHabitsPanel } from "./HabitsSection";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Info, UtensilsCrossed, ArrowUp, ArrowDown, Minus } from "lucide-react";
 
@@ -940,6 +941,9 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           </Card>
         )}
       </div>
+
+      {/* ── Row 4: Habit Performance ── */}
+      <CoachHabitsPanel clientId={clientId} periodDays={days} />
     </div>
   );
 }
