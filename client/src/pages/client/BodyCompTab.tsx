@@ -37,11 +37,9 @@ function delta(curr: number | null, prev: number | null, unit: string, lowerIsBe
 function fmtDate(iso: string | Date) {
   if (iso instanceof Date) iso = iso.toISOString().slice(0, 10);
   const isoStr = String(iso).slice(0, 10);
-  const dt = new Date(isoStr + "T12:00:00Z");
-  const weekday = dt.toLocaleDateString("en-AU", { weekday: "short", timeZone: "UTC" });
   const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const [y, m, d] = isoStr.split("-");
-  return `${weekday}, ${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
+  return `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
 }
 
 function isoToDate(d: string | Date): string {
