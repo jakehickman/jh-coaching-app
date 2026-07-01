@@ -746,6 +746,7 @@ export const mealLogs = mysqlTable("meal_logs", {
   fullnessRating: int("fullnessRating"),         // 1-10, meals only, set after eating
   isOffPlan: boolean("isOffPlan").default(false).notNull(),
   notes: text("notes"),
+  utcOffsetMins: int("utcOffsetMins"),             // client's UTC offset in minutes at log time (e.g. 600 for UTC+10)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

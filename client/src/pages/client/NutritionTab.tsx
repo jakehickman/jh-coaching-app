@@ -453,6 +453,7 @@ function LogSheet({
       portionSize: portion ?? undefined,
       hungerRating: mealType === "meal" ? (hunger ?? undefined) : undefined,
       isOffPlan: false,
+      utcOffsetMins: -new Date().getTimezoneOffset(),
     });
   }
 

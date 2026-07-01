@@ -64,12 +64,22 @@ function computeInsights(logs: typeof mealLogs.$inferSelect[], periodDays: numbe
   for (let i = 1; i <= 10; i++) fullnessDist[i] = 0;
   meals.forEach((m) => { if (m.fullnessRating != null) fullnessDist[m.fullnessRating]++; });
 
-  // Meal timing
-  const dayMap: Record<string, Date[]> = {};
+  // Meal timing — use stored utcOffsetMins for local time if available
+  const toLocalMinsFn = (l: typeof logs[0]) => {
+    const utcMins = l.loggedAt.getUTCHours() * 60 + l.loggedAt.getUTCMinutes();
+    const offset = (l as any).utcOffsetMins ?? 0;
+    return ((utcMins + offset) % 1440 + 1440) % 1440;
+  };
+  const toLocalDayKey = (l: typeof logs[0]) => {
+    const offset = (l as any).utcOffsetMins ?? 0;
+    const localDate = new Date(l.loggedAt.getTime() + offset * 60 * 1000);
+    return `${localDate.getUTCFullYear()}-${localDate.getUTCMonth()}-${localDate.getUTCDate()}`;
+  };
+  const dayMap: Record<string, number[]> = {};
   logs.forEach((l) => {
-    const d = l.loggedAt.toISOString().slice(0, 10);
+    const d = toLocalDayKey(l);
     if (!dayMap[d]) dayMap[d] = [];
-    dayMap[d].push(l.loggedAt);
+    dayMap[d].push(toLocalMinsFn(l));
   });
 
   const firstMealTimes: number[] = []; // minutes since midnight
@@ -77,7 +87,7 @@ function computeInsights(logs: typeof mealLogs.$inferSelect[], periodDays: numbe
   const gapsBetweenMeals: number[] = [];
 
   Object.values(dayMap).forEach((times) => {
-    const sorted = times.map((t) => t.getHours() * 60 + t.getMinutes()).sort((a, b) => a - b);
+    const sorted = [...times].sort((a, b) => a - b);
     if (sorted.length > 0) {
       firstMealTimes.push(sorted[0]);
       lastMealTimes.push(sorted[sorted.length - 1]);
@@ -141,6 +151,7 @@ export const mealLogsRouter = router({
         hungerRating: z.number().int().min(1).max(10).optional(),
         isOffPlan: z.boolean().optional(),
         notes: z.string().optional(),
+        utcOffsetMins: z.number().int().optional(), // client's UTC offset in minutes
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -172,6 +183,7 @@ export const mealLogsRouter = router({
         fullnessRating: null,
         isOffPlan: input.isOffPlan ?? false,
         notes: input.notes ?? null,
+        utcOffsetMins: input.utcOffsetMins ?? null,
       });
 
       return { id: (result as any).insertId as number };
@@ -487,16 +499,26 @@ export const mealLogsRouter = router({
       }
       // Meal timing slots — largest-gap splitting
       const mealOnly = curLogs.filter(l => l.mealType === 'meal');
+      // Use stored utcOffsetMins to convert UTC loggedAt to local time for timing
+      const toLocalMins = (m: typeof mealOnly[0]) => {
+        const utcMins = m.loggedAt.getUTCHours() * 60 + m.loggedAt.getUTCMinutes();
+        const offset = (m as any).utcOffsetMins ?? 0;
+        return ((utcMins + offset) % 1440 + 1440) % 1440;
+      };
       const allMealMins = mealOnly
-        .map(m => m.loggedAt.getHours() * 60 + m.loggedAt.getMinutes())
+        .map(toLocalMins)
         .filter(t => t >= 240) // exclude midnight-4am artefacts
         .sort((a, b) => a - b);
 
       // Determine how many slots to create: use mode of meals-per-day
       const mealsByDay: Record<string, number> = {};
       for (const m of mealOnly) {
-        const d = m.loggedAt;
-        const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        const utcMins = m.loggedAt.getUTCHours() * 60 + m.loggedAt.getUTCMinutes();
+        const offset = (m as any).utcOffsetMins ?? 0;
+        const localMins = ((utcMins + offset) % 1440 + 1440) % 1440;
+        const localDate = new Date(m.loggedAt.getTime() + offset * 60 * 1000);
+        const k = `${localDate.getUTCFullYear()}-${localDate.getUTCMonth()}-${localDate.getUTCDate()}`;
+        void localMins;
         mealsByDay[k] = (mealsByDay[k] ?? 0) + 1;
       }
       const dayCounts = Object.values(mealsByDay);
@@ -546,7 +568,7 @@ export const mealLogsRouter = router({
       const totalForConsistency = mealOnly.length;
       if (slots.length > 0) {
         for (const m of mealOnly) {
-          const mins = m.loggedAt.getHours() * 60 + m.loggedAt.getMinutes();
+          const mins = toLocalMins(m);
           const nearest = Math.min(...slots.map(s => Math.abs(mins - s.anchorMins)));
           if (nearest <= 60) onTime++;
         }
