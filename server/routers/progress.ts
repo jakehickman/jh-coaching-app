@@ -272,6 +272,27 @@ export const progressRouter = router({
           .filter((d) => d >= sevenDaysAgoStr && d <= todayStr)
       ).size;
 
-      return { weeks, last7DaysLogged };
+      // Count sessions in the last 7 calendar days
+      const last7Sessions = sessions.filter((s) => {
+        const d = typeof s.sessionDate === "string" ? s.sessionDate : toDateStr(s.sessionDate as Date);
+        return d >= sevenDaysAgoStr && d <= todayStr;
+      }).length;
+
+      // Avg sleep hours for last 7 days and the 7 days before that (for a meaningful delta in minutes)
+      const prevSevenDaysAgoMs = sevenDaysAgoMs - 7 * 24 * 60 * 60 * 1000;
+      const prevSevenDaysAgoStr = toDateStr(new Date(prevSevenDaysAgoMs));
+      const prevSevenDaysEndStr = toDateStr(new Date(sevenDaysAgoMs - 24 * 60 * 60 * 1000));
+      const last7SleepLogs = logs.filter((l) => {
+        const d = typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date);
+        return d >= sevenDaysAgoStr && d <= todayStr && l.sleepHours != null;
+      });
+      const prev7SleepLogs = logs.filter((l) => {
+        const d = typeof l.logDate === "string" ? l.logDate : toDateStr(l.logDate as Date);
+        return d >= prevSevenDaysAgoStr && d <= prevSevenDaysEndStr && l.sleepHours != null;
+      });
+      const last7AvgSleepHours = avg(last7SleepLogs.map((l) => l.sleepHours));
+      const prev7AvgSleepHours = avg(prev7SleepLogs.map((l) => l.sleepHours));
+
+      return { weeks, last7DaysLogged, last7Sessions, last7AvgSleepHours, prev7AvgSleepHours };
     }),
 });

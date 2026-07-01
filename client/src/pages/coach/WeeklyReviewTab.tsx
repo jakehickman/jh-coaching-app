@@ -101,6 +101,7 @@ function SummaryCard({
   value,
   unit,
   delta,
+  deltaUnit,
   interpretation,
   valueColour,
 }: {
@@ -108,6 +109,7 @@ function SummaryCard({
   value: string;
   unit?: string;
   delta?: DeltaResult | null;
+  deltaUnit?: string;
   interpretation?: string;
   valueColour?: string;
 }) {
@@ -140,7 +142,7 @@ function SummaryCard({
       </div>
       {delta !== undefined && (
         <div className="flex items-center gap-1 mt-0.5">
-          <DeltaBadge delta={delta ?? null} />
+          <DeltaBadge delta={delta ?? null} unit={deltaUnit} />
           {delta && delta.arrow !== "flat" && (
             <span className="text-[11px]" style={{ color: C.muted }}>vs prev 7d</span>
           )}
@@ -291,6 +293,9 @@ export function WeeklyReviewTab({ clientId }: Props) {
 
   const weeks = (data?.weeks ?? []) as Week[];
   const last7DaysLogged = data?.last7DaysLogged ?? null;
+  const last7Sessions = data?.last7Sessions ?? null;
+  const last7AvgSleepHours = data?.last7AvgSleepHours ?? null;
+  const prev7AvgSleepHours = data?.prev7AvgSleepHours ?? null;
 
   // ── Current week (weeks[0]) and previous week (weeks[1]) for summary cards ──
   const cur = weeks[0] ?? null;
@@ -333,10 +338,15 @@ export function WeeklyReviewTab({ clientId }: Props) {
   // ── Deltas for summary cards ──────────────────────────────────────────────
   const weightDelta = calcDelta(cur?.avgWeight, prev?.avgWeight, false, true); // % delta
   const stepsDelta  = calcDelta(cur?.avgSteps, prev?.avgSteps, false, false);
-  const sleepDelta  = calcDelta(cur?.avgSleepHours, prev?.avgSleepHours, false, false);
   const qualDelta   = calcDelta(cur?.avgSleepQuality, prev?.avgSleepQuality, false, false);
   const stressDelta = calcDelta(cur?.avgStress, prev?.avgStress, true, false);
-  const sessDelta   = calcDelta(cur?.sessionsCompleted, prev?.sessionsCompleted, false, false);
+  // Sleep delta in minutes (meaningful alongside h:mm display)
+  const sleepDeltaMins: DeltaResult | null = (() => {
+    if (last7AvgSleepHours == null || prev7AvgSleepHours == null) return null;
+    const diffMins = Math.round((last7AvgSleepHours - prev7AvgSleepHours) * 60);
+    if (Math.abs(diffMins) < 2) return { arrow: "flat" as const, good: true };
+    return { arrow: diffMins > 0 ? "up" as const : "down" as const, good: diffMins > 0, abs: Math.abs(diffMins) };
+  })();
 
   // Colour for stress value
   const stressColour = cur?.avgStress != null
@@ -391,11 +401,12 @@ export function WeeklyReviewTab({ clientId }: Props) {
           )}
 
           {/* Sleep Duration */}
-          {cur?.avgSleepHours != null && (
+          {last7AvgSleepHours != null && (
             <SummaryCard
               label="Avg Sleep"
-              value={hoursToHmm(cur.avgSleepHours)}
-              delta={sleepDelta}
+              value={hoursToHmm(last7AvgSleepHours)}
+              delta={sleepDeltaMins}
+              deltaUnit="min"
             />
           )}
 
@@ -421,11 +432,10 @@ export function WeeklyReviewTab({ clientId }: Props) {
           )}
 
           {/* Training Sessions */}
-          {cur != null && (
+          {last7Sessions != null && (
             <SummaryCard
               label="Sessions"
-              value={cur.sessionsCompleted > 0 ? String(cur.sessionsCompleted) : "0"}
-              delta={sessDelta}
+              value={String(last7Sessions)}
             />
           )}
 
