@@ -13,7 +13,7 @@ import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
   MeasurementsCard, MuscleGroupSection, DailyLogRow, ProgressHistoryTable
 } from "./shared";
-import { CoachHabitsPanel } from "./HabitsSection";
+import { CoachHabitsPanel, ClientHabitsTab } from "./HabitsSection";
 import { WeeklyReviewTab } from "./WeeklyReviewTab";
 import TrainingSection from "./TrainingSection";
 import MealPlansSection from "./MealPlansSection";
@@ -2409,6 +2409,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+              <TabsTrigger value="habits">Habits</TabsTrigger>
 
             </TabsList>
           </div>
@@ -2483,6 +2484,11 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             {/* -- Nutrition: Meal Log + Insights -- */}
           <TabsContent value="nutrition">
             <CoachNutritionTab clientId={selectedUserId!} />
+          </TabsContent>
+
+          {/* -- Habits: assign/unassign habits to client -- */}
+          <TabsContent value="habits">
+            <ClientHabitsTab clientId={selectedUserId!} />
           </TabsContent>
 
         </Tabs>
