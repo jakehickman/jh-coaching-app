@@ -65,8 +65,11 @@ function formatDate(dateStr: string | Date | null | undefined): string {
 
 // ─── Review Table ─────────────────────────────────────────────────────────────
 
+const TOTAL_MICROS = 8;
+
 function MesocycleReviewTable({ review }: { review: ReviewData }) {
-  const cols = Array.from({ length: review.maxMicro }, (_, i) => i + 1);
+  // Always show 8 columns regardless of how many have data
+  const cols = Array.from({ length: TOTAL_MICROS }, (_, i) => i + 1);
 
   if (review.dayReviews.length === 0) {
     return (
@@ -78,14 +81,14 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse min-w-[600px]">
+      <table className="w-full text-sm border-collapse min-w-[900px]">
         <thead>
           <tr>
             <th className="text-left py-2 px-3 font-medium text-muted-foreground w-44 sticky left-0 bg-background z-10">
               Exercise
             </th>
             {cols.map(micro => (
-              <th key={micro} className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[110px]">
+              <th key={micro} className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[100px]">
                 <div className="text-xs font-semibold">Micro {micro}</div>
               </th>
             ))}
@@ -97,23 +100,26 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
               {/* Day group header */}
               <tr key={`day-${di}`} className="border-t border-border/60">
                 <td
-                  colSpan={cols.length + 1}
-                  className="py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/20 sticky left-0"
+                  className="py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/20 sticky left-0 z-10"
                 >
                   {day.dayLabel}
-                  {/* Show dates per microcycle inline */}
-                  <span className="ml-3 font-normal normal-case tracking-normal">
-                    {cols.map(micro => {
-                      const anyEx = day.exercises[0];
-                      const entry = anyEx?.microcycles.find(m => m.microNum === micro);
-                      return entry?.sessionDate ? (
-                        <span key={micro} className="mr-4 text-muted-foreground/60">
-                          Micro {micro}: {formatDate(entry.sessionDate)}
-                        </span>
-                      ) : null;
-                    })}
-                  </span>
                 </td>
+                {/* Session date per microcycle column — aligned with performance data */}
+                {cols.map(micro => {
+                  const anyEx = day.exercises[0];
+                  const entry = anyEx?.microcycles.find(m => m.microNum === micro);
+                  return (
+                    <td key={micro} className="py-2 px-2 text-center bg-muted/20">
+                      {entry?.sessionDate ? (
+                        <span className="text-xs text-muted-foreground/60">
+                          {formatDate(entry.sessionDate)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/20 text-xs">—</span>
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
               {day.exercises.map((ex, ei) => (
                 <tr
