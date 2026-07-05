@@ -229,7 +229,10 @@ function PresetSelector({
   const [renameValue, setRenameValue] = useState("");
   const [addingNew, setAddingNew] = useState(false);
   const [newName, setNewName] = useState("");
+  const [editingSettings, setEditingSettings] = useState(false);
+  const [settingsDraft, setSettingsDraft] = useState("");
   const addInputRef = useRef<HTMLInputElement>(null);
+  const settingsInputRef = useRef<HTMLInputElement>(null);
 
   const handleSettingsBlur = (val: string) => {
     if (currentPreset) upsertMutation.mutate({ exerciseName, presetName: currentPreset, lastSettings: val });
@@ -266,19 +269,21 @@ function PresetSelector({
 
   return (
     <>
-      <button
-        onClick={e => { e.stopPropagation(); onPopoverOpenChange(true); }}
-        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs transition-colors ${
-          currentPreset
-            ? "bg-primary/10 border-primary/20 text-primary/80 hover:bg-primary/20"
-            : "bg-secondary border-border text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        {currentPreset || "Add machine"}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={e => { e.stopPropagation(); onPopoverOpenChange(true); }}
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs transition-colors ${
+            currentPreset
+              ? "bg-primary/10 border-primary/20 text-primary/80 hover:bg-primary/20"
+              : "bg-secondary border-border text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {currentPreset || "Add machine"}
+        </button>
         {currentPreset && currentSettings && (
-          <span className="text-[10px] opacity-60">· {currentSettings}</span>
+          <span className="text-xs text-muted-foreground/70">{currentSettings}</span>
         )}
-      </button>
+      </div>
 
       <Sheet open={popoverOpen} onOpenChange={open => { if (!open) closeSheet(); }}>
         <SheetContent
@@ -347,26 +352,51 @@ function PresetSelector({
             ))}
           </div>
 
-          {/* Setup field for selected preset */}
+          {/* Setup notes for selected preset — Option A: display/edit toggle */}
           {currentPreset && (
             <div className="px-5 py-4 border-t border-border/40 flex-shrink-0">
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Setup notes</p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={currentSettings}
-                  onChange={e => onSettingsChange(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { handleSettingsBlur(currentSettings); (e.target as HTMLInputElement).blur(); } }}
-                  placeholder="e.g. Seat 3, pin 8"
-                  className="flex-1 bg-secondary border border-border rounded-xl px-4 py-3.5 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+              {editingSettings ? (
+                <div className="flex gap-2">
+                  <input
+                    ref={settingsInputRef}
+                    type="text"
+                    value={settingsDraft}
+                    onChange={e => setSettingsDraft(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        onSettingsChange(settingsDraft);
+                        handleSettingsBlur(settingsDraft);
+                        setEditingSettings(false);
+                      }
+                      if (e.key === 'Escape') setEditingSettings(false);
+                    }}
+                    placeholder="e.g. Seat 3, pin 8"
+                    className="flex-1 bg-secondary border border-primary rounded-xl px-4 py-3.5 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => {
+                      onSettingsChange(settingsDraft);
+                      handleSettingsBlur(settingsDraft);
+                      setEditingSettings(false);
+                    }}
+                    className="px-4 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium shrink-0 active:opacity-80 transition-opacity"
+                  >
+                    Save
+                  </button>
+                </div>
+              ) : (
                 <button
-                  onClick={() => handleSettingsBlur(currentSettings)}
-                  className="px-4 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium shrink-0 active:opacity-80 transition-opacity"
+                  onClick={() => { setSettingsDraft(currentSettings); setEditingSettings(true); setTimeout(() => settingsInputRef.current?.focus(), 50); }}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 bg-secondary rounded-xl text-left group hover:bg-secondary/70 transition-colors"
                 >
-                  Save
+                  <span className={currentSettings ? "text-base text-foreground" : "text-base text-muted-foreground/50"}>
+                    {currentSettings || "Tap to add setup notes"}
+                  </span>
+                  <Pencil size={14} className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
                 </button>
-              </div>
+              )}
             </div>
           )}
 
