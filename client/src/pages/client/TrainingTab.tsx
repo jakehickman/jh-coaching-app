@@ -45,10 +45,6 @@ function TrainingTab() {
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
   const days = (program?.days as any[]) ?? [];
   const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set());
-  // Expand all days once program loads
-  useEffect(() => {
-    if (days.length > 0) setExpandedDays(new Set(days.map((_: any, i: number) => i)));
-  }, [days.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const [videoModal, setVideoModal] = useState<{ name: string; embedUrl: string } | null>(null);
   const schedule = Array.isArray(program?.schedule) ? (program!.schedule as string[]) : [];
 
