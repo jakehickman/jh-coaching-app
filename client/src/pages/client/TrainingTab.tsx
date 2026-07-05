@@ -38,9 +38,10 @@ function getYouTubeEmbedUrl(url: string): string | null {
 // ─── TrainingTab ────────────────────────────────────────────────────────────────────────────────
 function TrainingTab() {
   const { viewAsUserId } = useViewAs();
-  const { data: programOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
-  const { data: programAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
+  const { data: programOwn, isLoading: programLoadingOwn } = trpc.training.get.useQuery(undefined, { enabled: !viewAsUserId });
+  const { data: programAdmin, isLoading: programLoadingAdmin } = trpc.training.getForClient.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
   const program = viewAsUserId ? programAdmin : programOwn;
+  const programLoading = viewAsUserId ? programLoadingAdmin : programLoadingOwn;
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
   const days = (program?.days as any[]) ?? [];
   const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set());
@@ -57,6 +58,30 @@ function TrainingTab() {
       .map((e: any) => [e.name, e.videoUrl as string])
   );
 
+  if (programLoading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        {[0,1,2].map(i => (
+          <div key={i} className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="h-4 w-28 bg-muted rounded" />
+              <div className="h-3 w-20 bg-muted/60 rounded" />
+            </div>
+            <div className="space-y-2">
+              {[0,1,2].map(j => (
+                <div key={j} className="flex items-center gap-3 py-2">
+                  <div className="flex-1 h-3.5 bg-muted rounded" />
+                  <div className="w-10 h-3.5 bg-muted/60 rounded" />
+                  <div className="w-14 h-3.5 bg-muted/60 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {program?.programName && (
@@ -65,7 +90,7 @@ function TrainingTab() {
 
       {schedule.length > 0 && (
         <Card>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Training Schedule</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Training Schedule</p>
           <div className="flex flex-wrap gap-1.5 items-center">
             {schedule.map((slot: string, i: number) => {
               const isOff = slot === "Off";
@@ -99,7 +124,7 @@ function TrainingTab() {
         <Card key={i} className="overflow-hidden">
           <button
             onClick={() => setExpandedDays(prev => { const next = new Set(prev); next.has(i) ? next.delete(i) : next.add(i); return next; })}
-            className="w-full flex items-center justify-between"
+            className="w-full flex items-center justify-between active:opacity-70 transition-opacity"
           >
             <div className="text-left">
               <p className="text-sm font-semibold text-foreground">{day.name ?? `Day ${i + 1}`}</p>
@@ -114,9 +139,9 @@ function TrainingTab() {
             <div className="mt-4">
               {/* Header row */}
               <div className="flex items-center px-1 mb-1">
-                <p className="flex-1 text-[10px] text-muted-foreground uppercase tracking-wider">Exercise</p>
-                <p className="w-10 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Sets</p>
-                <p className="w-14 text-[10px] text-muted-foreground uppercase tracking-wider text-center">Reps</p>
+                <p className="flex-1 text-xs text-muted-foreground uppercase tracking-wider">Exercise</p>
+                <p className="w-10 text-xs text-muted-foreground uppercase tracking-wider text-center">Sets</p>
+                <p className="w-14 text-xs text-muted-foreground uppercase tracking-wider text-center">Reps</p>
               </div>
               {(day.exercises ?? []).map((ex: any, j: number) => {
                 const videoUrl = videoMap[ex.name];
@@ -155,7 +180,7 @@ function TrainingTab() {
 
       {program?.notes && (
         <Card>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Coach Notes</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Coach Notes</p>
           <p className="text-sm text-foreground">{program.notes}</p>
         </Card>
       )}
@@ -616,10 +641,10 @@ function MonthlyVolumePanel({ sessions, exerciseLib }: { sessions: any[]; exerci
             <div className="px-4 py-3 space-y-2">
               {/* Column headers */}
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-20 flex-shrink-0">Muscle</span>
+                <span className="text-xs uppercase tracking-wider text-muted-foreground/60 w-20 flex-shrink-0">Muscle</span>
                 <span className="flex-1" />
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-10 text-right flex-shrink-0">Total</span>
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-12 text-right flex-shrink-0">Wk avg</span>
+                <span className="text-xs uppercase tracking-wider text-muted-foreground/60 w-10 text-right flex-shrink-0">Total</span>
+                <span className="text-xs uppercase tracking-wider text-muted-foreground/60 w-12 text-right flex-shrink-0">Wk avg</span>
               </div>
               {activeRows
                 .sort((a, b) => totals[b.key] - totals[a.key])
@@ -639,7 +664,7 @@ function MonthlyVolumePanel({ sessions, exerciseLib }: { sessions: any[]; exerci
                     </div>
                   );
                 })}
-              <p className="text-[10px] text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Rest-pause: activation set + 1 per 2 mini-sets.</p>
+              <p className="text-xs text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Rest-pause: activation set + 1 per 2 mini-sets.</p>
             </div>
           )}
         </div>
@@ -705,7 +730,7 @@ function PastSessionsList({
           <div key={s.id} className="bg-card border border-border rounded-xl overflow-hidden border-l-4 border-l-primary/60">
             {/* Header row ─ always visible */}
             <div
-              className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
+              className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none active:bg-white/5 transition-colors"
               onClick={() => toggleExpand(s.id)}
             >
               {/* Day badge */}
@@ -791,11 +816,11 @@ function PastSessionsList({
                         <p className="text-sm font-medium text-foreground leading-snug">
                           {ex.name}
                           {ex.substitutedFor && (
-                            <span className="ml-1.5 text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded align-middle">SUB</span>
+                            <span className="ml-1.5 text-xs font-semibold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded align-middle">SUB</span>
                           )}
                         </p>
                         {ex.machinePreset && (
-                          <p className="text-[11px] text-muted-foreground/60">{ex.machinePreset}</p>
+                          <p className="text-xs text-muted-foreground/60">{ex.machinePreset}</p>
                         )}
                         {ex.substitutedFor && (
                           <p className="text-[11px] text-muted-foreground/50">↳ for {ex.substitutedFor}</p>
@@ -1008,7 +1033,7 @@ function SessionCard({ s, viewAsUserId, deleteConfirmId, deleting, setDeleteConf
               <div key={exIdx} className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground truncate">{ex.name}</p>
-                  <p className="text-[10px] text-muted-foreground/60 italic truncate">{ex.machinePreset ?? '\u00a0'}</p>
+                  <p className="text-xs text-muted-foreground/60 italic truncate">{ex.machinePreset ?? '\u00a0'}</p>
                 </div>
                 <p className="text-xs text-muted-foreground whitespace-nowrap">{topSetStr}</p>
               </div>
@@ -1755,7 +1780,7 @@ function WorkoutLogTab() {
                             <button
                               onClick={e => { e.stopPropagation(); setVideoModal({ name: displayName, embedUrl: exEmbedUrl }); }}
                               title="Demo video"
-                              className="flex items-center gap-1 text-[10px] font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-400/10 px-1.5 py-0.5 rounded"
+                              className="flex items-center gap-1 text-xs font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-400/10 px-1.5 py-0.5 rounded"
                             >
                               <Play size={10} fill="currentColor" /> Demo
                             </button>
@@ -1822,7 +1847,7 @@ function WorkoutLogTab() {
                               <>
                                 <button
                                   onClick={e => { e.stopPropagation(); setPrevNoteOpen(prev => ({ ...prev, [displayName]: !prev[displayName] })); }}
-                                  className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                  className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                   Prev note {isNoteOpen ? '↑' : '↓'}
                                 </button>
@@ -1945,10 +1970,10 @@ function WorkoutLogTab() {
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-9 flex-shrink-0" />
                             <div className="flex-1 text-center">
-                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{exerciseUnits[displayName] ?? 'kg'}</p>
+                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{exerciseUnits[displayName] ?? 'kg'}</p>
                             </div>
                             <div className="flex-1 text-center">
-                               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Reps</p>
+                               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reps</p>
                             </div>
                             <div className="w-6 flex-shrink-0" />
                           </div>
@@ -2271,7 +2296,7 @@ function WorkoutLogTab() {
                       </div>
                       <div className="flex items-center gap-2">
                         {e._score >= 1 && (
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">
+                          <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">
                             Recommended
                           </span>
                         )}
@@ -2337,7 +2362,7 @@ function WorkoutLogTab() {
                     <div key={s.id} className="bg-secondary rounded-xl px-4 py-3 space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-xs font-semibold text-foreground">{dateStr}</p>
-                        <span className="text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">{s.dayLabel}</span>
+                        <span className="text-xs font-semibold bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">{s.dayLabel}</span>
                       </div>
                       {(exEntry.machinePreset || exEntry.equipmentDetails) && (
                         <p className="text-xs text-muted-foreground">{exEntry.machinePreset ?? exEntry.equipmentDetails}</p>
@@ -2351,7 +2376,7 @@ function WorkoutLogTab() {
                             <span key={idx} className={`text-xs border rounded-lg px-2 py-1 ${st.myoReps ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border text-foreground'}`}>
                               {st.weight != null ? `${st.weight}${histUnit}` : '—'} × {st.reps != null ? st.reps : '—'}
                               {st.myoReps && st.miniSets != null && (
-                                <span className="ml-1 text-[10px] opacity-70">+{st.miniSets} mini</span>
+                                <span className="ml-1 text-xs opacity-70">+{st.miniSets} mini</span>
                               )}
                             </span>
                           ))}

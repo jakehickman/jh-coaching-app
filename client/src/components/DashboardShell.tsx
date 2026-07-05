@@ -273,7 +273,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
           {/* Brand */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-border">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 JH Coaching
               </p>
               <p className="text-sm font-bold text-foreground mt-0.5">Coach Panel</p>
@@ -322,7 +322,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                   </span>
                   <span className="flex-1 truncate">{item.label}</span>
                   {item.href === "/coach/clients" && pendingCount > 0 && (
-                    <span className="ml-auto flex-shrink-0 min-w-[18px] h-4 px-1 rounded-full bg-amber-500 text-black text-[10px] font-bold flex items-center justify-center">
+                    <span className="ml-auto flex-shrink-0 min-w-[18px] h-4 px-1 rounded-full bg-amber-500 text-black text-xs font-bold flex items-center justify-center">
                       {pendingCount}
                     </span>
                   )}
@@ -340,7 +340,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-foreground truncate">{user?.name ?? "User"}</p>
-                <p className="text-[10px] text-muted-foreground capitalize">{user?.role}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
               </div>
             </div>
             <button
@@ -446,9 +446,9 @@ function ClientLayout({
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top header — minimal, just branding + user initial */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar sticky top-0 z-10">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar sticky top-0 z-10 shadow-sm">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">JH Coaching</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground leading-none">JH Coaching</p>
           <p className="text-sm font-bold text-foreground mt-0.5">
             {clientNav.find(n => location === n.href || location.startsWith(n.href))?.label ?? "Dashboard"}
           </p>
@@ -551,7 +551,7 @@ function ClientLayout({
       />
 
       {/* Bottom navigation bar — 4 evenly-spaced tabs */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-sidebar border-t border-border">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-sidebar border-t border-border shadow-[0_-1px_12px_rgba(0,0,0,0.35)]">
         <div className="max-w-2xl mx-auto flex items-stretch">
           {clientNav.map(item => {
             const isActive = location === item.href || location.startsWith(item.href);
@@ -559,15 +559,20 @@ function ClientLayout({
               <Link
                 key={item.href}
                 href={`${item.href}${viewAsParams}`}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex flex-1 flex-col items-center justify-center gap-1.5 py-3 transition-colors min-h-[68px]",
+                  "flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-colors min-h-[68px] active:opacity-70",
                   isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <span className="relative inline-flex">
+                {/* MD3 indicator pill behind active icon */}
+                <span className={cn(
+                  "relative inline-flex items-center justify-center rounded-full transition-all duration-200",
+                  isActive ? "bg-primary/15 px-5 py-1" : "px-5 py-1"
+                )}>
                   {item.icon}
                 </span>
-                <span className={cn("text-[11px] font-medium leading-none whitespace-nowrap", isActive ? "text-primary" : "text-muted-foreground")}>
+                <span className={cn("text-xs font-medium leading-none whitespace-nowrap", isActive ? "text-primary" : "text-muted-foreground")}>
                   {item.label}
                 </span>
               </Link>

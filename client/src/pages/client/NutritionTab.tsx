@@ -1074,7 +1074,7 @@ function MealRow({
       <div className="flex items-center gap-3 py-3 border-b border-border last:border-0">
         {/* Thumbnail */}
         <div
-          className={cn("w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-secondary flex items-center justify-center", meal.photoUrl && "cursor-pointer relative group")}
+          className={cn("w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-secondary flex items-center justify-center", meal.photoUrl && "cursor-pointer relative group active:opacity-70 transition-opacity")}
           onClick={() => meal.photoUrl && setLightboxOpen(true)}
         >
           {meal.photoUrl ? (
@@ -1116,7 +1116,7 @@ function MealRow({
               )}
             </div>
           ) : (
-            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">Treat</span>
+            <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">Treat</span>
           )}
         </div>
 
@@ -1149,7 +1149,7 @@ function TodayScreen() {
   const [deleteConfirm, setDeleteConfirm] = useState<any | null>(null);
 
   const todayStr = toLocalDateStr(new Date());
-  const { data: meals = [], refetch } = trpc.mealLogs.listByDay.useQuery(
+  const { data: meals, isLoading: mealsLoading, refetch } = trpc.mealLogs.listByDay.useQuery(
     { date: todayStr },
     { refetchInterval: 60_000 }
   );
@@ -1159,7 +1159,32 @@ function TodayScreen() {
     onError: (e) => toast.error(e.message),
   });
 
-  const todayMeals = (meals as any[]).filter((m) => {
+  const mealsList = meals ?? [];
+
+  if (mealsLoading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="flex gap-2">
+          <div className="flex-1 bg-secondary rounded-xl h-16" />
+          <div className="flex-1 bg-secondary rounded-xl h-16" />
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+          {[0,1,2].map(i => (
+            <div key={i} className="flex items-center gap-3 py-3 border-b border-border last:border-0">
+              <div className="w-14 h-14 rounded-xl bg-muted shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 w-16 bg-muted rounded" />
+                <div className="h-4 w-32 bg-muted rounded" />
+                <div className="h-3 w-24 bg-muted/60 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const todayMeals = (mealsList as any[]).filter((m) => {
     const d = new Date(m.loggedAt);
     return toLocalDateStr(d) === todayStr;
   }).sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
@@ -1200,7 +1225,7 @@ function TodayScreen() {
       {/* Per-meal habit summary */}
       {(mealHabits as any[]).length > 0 && mealCount > 0 && (
         <div className="bg-card rounded-2xl border border-border px-4 py-3 space-y-2">
-          <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">Meal Habits</p>
+          <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Meal Habits</p>
           {(mealHabits as any[]).map((habit: any) => {
             const completed = todayMealIds.filter((id) =>
               completedMealIds.has(`${habit.id}-${id}`)

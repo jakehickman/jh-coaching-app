@@ -81,7 +81,7 @@ function WeekSummaryPanel({
                 ? 'bg-primary/10'
                 : isFuture || isPast
                 ? 'opacity-30 cursor-not-allowed'
-                : 'hover:bg-muted/30 cursor-pointer'
+                : 'hover:bg-muted/30 active:bg-muted/50 cursor-pointer'
             }`}
           >
             {/* Status indicator */}
@@ -481,6 +481,39 @@ export default function DailyLogTab() {
     if (weekBack === 1) return 'Last week';
     return `${weekBack} weeks ago`;
   }, [weekBack]);
+
+  // Show skeleton while initial data loads
+  if (!logs) {
+    return (
+      <div className="space-y-5 pb-8 animate-pulse">
+        {/* Week strip skeleton */}
+        <div className="bg-card border border-border rounded-xl p-3 space-y-2">
+          <div className="h-4 w-24 bg-muted rounded" />
+          <div className="space-y-2">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0">
+                <div className="w-5 h-5 rounded-full bg-muted" />
+                <div className="flex-1 space-y-1">
+                  <div className="h-3.5 w-20 bg-muted rounded" />
+                  <div className="h-3 w-32 bg-muted/60 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Form skeleton */}
+        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+          {[0,1,2,3,4].map(i => (
+            <div key={i} className="space-y-2">
+              <div className="h-3 w-24 bg-muted rounded" />
+              <div className="h-11 w-full bg-muted rounded-xl" />
+            </div>
+          ))}
+          <div className="h-12 w-full bg-muted rounded-xl" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 pb-8">

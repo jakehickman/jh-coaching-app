@@ -87,7 +87,7 @@ function HabitsSummary() {
         <div className="px-4 pt-3 pb-1 grid" style={{ gridTemplateColumns: '1fr repeat(7, 1fr)' }}>
           <div />
           {dayLabels.map((lbl, i) => (
-            <div key={i} className="text-center text-[10px] text-muted-foreground/50 font-medium">{lbl}</div>
+            <div key={i} className="text-center text-xs text-muted-foreground/50 font-medium">{lbl}</div>
           ))}
         </div>
         {habitStats.map((h: any, idx: number) => {
@@ -101,7 +101,7 @@ function HabitsSummary() {
                 <div className="flex items-center gap-2 min-w-0 pr-2">
                   <p className="text-sm font-medium text-foreground leading-snug truncate">{h.name}</p>
                   {h.streak > 1 && (
-                    <span className="shrink-0 text-[10px] font-semibold text-primary/80">{h.streak}d</span>
+                    <span className="shrink-0 text-xs font-semibold text-primary/80">{h.streak}d</span>
                   )}
                 </div>
                 {last7.map(d => {

@@ -840,3 +840,13 @@
 - [x] CoachNutritionTab: MealLogView flex-row layout → flex-col sm:flex-row (stacks on mobile)
 - [x] MesocyclesTab: already had overflow-x-auto — no change needed
 - [x] ExerciseLibrarySection: already had overflow-x-auto — no change needed
+
+## Material Design 3 Polish (Jul 2026)
+- [x] Bottom nav: add indicator pill behind active icon (bg-primary/15 rounded-full)
+- [x] Bottom nav: add aria-current="page" to active tab links
+- [x] Add active: press states to all tappable list rows (meal rows, training rows, habit rows, daily log rows)
+- [x] Replace text-[9px] and text-[10px] with text-xs minimum across client pages
+- [x] Audit and replace inline section label patterns with shared SectionLabel component
+- [x] Add shadow-sm to Card in shared.tsx, shadow-md to bottom nav, shadow-sm to sticky header
+- [x] Bump Button default radius to rounded-xl to match card language
+- [x] Add skeleton loading states to DailyLogTab, NutritionTab today view, TrainingTab

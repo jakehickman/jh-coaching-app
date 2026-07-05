@@ -45,7 +45,7 @@ export function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-card border border-border rounded-xl p-4 ${className}`}>
+    <div className={`bg-card border border-border rounded-xl p-4 shadow-sm ${className}`}>
       {children}
     </div>
   );
@@ -54,7 +54,7 @@ export function Card({ children, className = "" }: { children: React.ReactNode; 
 export function MetricCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <Card className="p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
       <p className="text-xl font-bold text-foreground mt-1">{value}</p>
       {sub && <p className="text-xs text-muted-foreground mt-1 leading-snug">{sub}</p>}
     </Card>
