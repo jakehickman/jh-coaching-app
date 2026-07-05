@@ -683,18 +683,28 @@ function FullnessSheet({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-50 bg-black/60 transition-opacity duration-300 ${
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
+        className="fixed inset-0 z-50 bg-black/60"
+        style={{
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? "auto" : "none",
+          visibility: open ? "visible" : "hidden",
+          transition: "opacity 200ms ease-out, visibility 200ms ease-out",
+        }}
         onClick={handleClose}
       />
 
       {/* Bottom sheet */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col bg-background rounded-t-2xl transition-transform duration-300 ease-out ${
-          open ? "translate-y-0" : "translate-y-full"
-        }`}
-        style={{ maxHeight: "90dvh" }}
+        className="fixed inset-x-0 bottom-0 z-50 flex flex-col bg-background rounded-t-2xl"
+        style={{
+          maxHeight: "90dvh",
+          willChange: "transform",
+          visibility: open ? "visible" : "hidden",
+          transform: open ? "translateY(0)" : "translateY(100%)",
+          transition: open
+            ? "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0ms"
+            : "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0ms 250ms",
+        }}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 shrink-0">
