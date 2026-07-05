@@ -1096,10 +1096,10 @@ function MealRow({
 
         {/* Actions */}
         <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => onEdit(meal)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => onEdit(meal)} className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:bg-secondary/70 transition-colors">
             <Pencil size={15} />
           </button>
-          <button onClick={() => onDelete(meal)} className="p-2 text-muted-foreground hover:text-red-400 transition-colors">
+          <button onClick={() => onDelete(meal)} className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:text-red-400 active:bg-red-400/10 transition-colors">
             <Trash2 size={15} />
           </button>
         </div>
