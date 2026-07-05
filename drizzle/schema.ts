@@ -62,6 +62,7 @@ export interface WorkoutExercise {
   presetId?: number | null;          // FK to equipment_presets.id — links performance to preset permanently
   machineSettings?: string | null;  // session-specific settings e.g. "Seat 4, pad 2"
   exerciseNotes?: string | null;
+  weightUnit?: 'kg' | 'lbs' | null;
   sets: WorkoutSet[];
 }
 

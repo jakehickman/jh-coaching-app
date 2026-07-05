@@ -45,7 +45,7 @@ function formatTopSet(entry: TopSetEntry): string {
   if (!entry.topSet) return "—";
   const { weight, reps } = entry.topSet;
   if (weight == null && reps == null) return "—";
-  const unit = (entry as any).weightUnit ?? 'kg';
+  const unit = entry.weightUnit ?? 'kg';
   const wStr = weight != null ? `${weight}${unit}` : "BW";
   const rStr = reps != null ? `× ${reps}` : "";
   return `${wStr}${rStr ? " " + rStr : ""}`;

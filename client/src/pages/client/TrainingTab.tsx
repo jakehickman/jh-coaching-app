@@ -826,7 +826,7 @@ function PastSessionsList({
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-sm text-muted-foreground">
-                          {firstSet?.weight != null ? `${firstSet.weight}${exerciseUnits[ex.name] ?? 'kg'}` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
+                          {firstSet?.weight != null ? `${firstSet.weight}${(ex.weightUnit as string | undefined) ?? exerciseUnits[ex.name] ?? 'kg'}` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
                         </p>
                         <p className="text-[11px] text-muted-foreground/60">{setLabel}</p>
                       </div>
