@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -464,8 +465,8 @@ function LogSheet({
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] bg-background flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-border shrink-0">
         <h2 className="text-lg font-semibold text-foreground">Log {mealType === "treat" ? "Treat" : "Meal"}</h2>
@@ -605,7 +606,8 @@ function LogSheet({
           onClose={() => setDatePickerOpen(false)}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -897,10 +899,10 @@ function EditSheet({
     });
   }
 
-  return (
+  return createPortal(
     <>
       {open && (
-        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+        <div className="fixed inset-0 z-[60] bg-background flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
             <button onClick={onClose} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
@@ -1046,7 +1048,8 @@ function EditSheet({
         </div>
       )}
       <ScaleModal open={scaleOpen} onClose={() => setScaleOpen(false)} />
-    </>
+    </>,
+    document.body
   );
 }
 
