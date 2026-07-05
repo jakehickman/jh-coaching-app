@@ -1363,8 +1363,10 @@ function WorkoutLogTab() {
       const msData: Record<string, string> = {};
       const enData: Record<string, string> = {};
       const subData: Record<string, string> = {};
+      const unitData: Record<string, 'kg' | 'lbs'> = {};
       for (const ex of (existing.exercises as any[])) {
         if (ex.substitutedFor) subData[ex.substitutedFor] = ex.name;
+        if (ex.weightUnit === 'lbs' || ex.weightUnit === 'kg') unitData[ex.name] = ex.weightUnit;
         exData[ex.name] = (ex.sets ?? []).map((s: any) => ({
           weight: s.weight != null ? String(s.weight) : '',
           reps: s.reps != null ? String(s.reps) : '',
@@ -1385,6 +1387,9 @@ function WorkoutLogTab() {
       setMachineSettings(msData);
       setExerciseNotes(enData);
       setSubstitutions(subData);
+      if (Object.keys(unitData).length > 0) {
+        setExerciseUnits(prev => ({ ...prev, ...unitData }));
+      }
       setSessionNotes((existing.notes as string) ?? '');
       const persisted = loadCollapsed(date, label);
       const defaultCollapsed: Record<string, boolean> = {};
