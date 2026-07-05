@@ -256,7 +256,7 @@ export default function ExerciseLibrarySection() {
               </button>
             </div>
             <div>
-              <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">
+              <label className="block text-xs text-muted-foreground mb-1 uppercase tracking-wider">
                 Exercise Name
               </label>
               <input
@@ -270,7 +270,7 @@ export default function ExerciseLibrarySection() {
               />
             </div>
             <div>
-              <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">
+              <label className="block text-xs text-muted-foreground mb-1 uppercase tracking-wider">
                 Demo Video URL (YouTube)
               </label>
               <input
@@ -286,7 +286,7 @@ export default function ExerciseLibrarySection() {
             <div className="grid grid-cols-2 gap-2">
               {MUSCLE_GROUPS.map((mg) => (
                 <div key={mg.key}>
-                  <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">
+                  <label className="block text-xs text-muted-foreground mb-1 uppercase tracking-wider">
                     {mg.label}
                   </label>
                   <input
@@ -340,18 +340,18 @@ export default function ExerciseLibrarySection() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/50">
-                <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[300px]">
+                <th className="text-left px-4 py-2.5 text-xs uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[300px]">
                   Exercise
                 </th>
                 {MUSCLE_GROUPS.map((mg) => (
                   <th
                     key={mg.key}
-                    className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[70px]"
+                    className="px-3 py-2.5 text-xs uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[70px]"
                   >
                     {mg.label}
                   </th>
                 ))}
-                <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[80px]">
+                <th className="px-3 py-2.5 text-xs uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[80px]">
                   Actions
                 </th>
               </tr>
@@ -380,7 +380,7 @@ export default function ExerciseLibrarySection() {
                       {(ex as any).videoUrl && (
                         <button
                           onClick={() => setVideoPreview({ name: ex.name, url: (ex as any).videoUrl })}
-                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-colors"
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-colors"
                           title="Play demo video"
                         >
                           <Play size={8} />

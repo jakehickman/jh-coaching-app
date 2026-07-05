@@ -32,7 +32,7 @@ function MacroRangeInput({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className={`text-[11px] uppercase tracking-wider font-semibold ${highlight ? "text-primary" : "text-muted-foreground"}`}>
+      <span className={`text-xs uppercase tracking-wider font-semibold ${highlight ? "text-primary" : "text-muted-foreground"}`}>
         {label} <span className="font-normal text-muted-foreground/50">({unit})</span>
       </span>
       <div className="flex items-center gap-1.5">
@@ -234,7 +234,7 @@ export default function MacroTargetsEditor({
             {upsert.isPending ? "Saving…" : "Save Macro Targets"}
           </button>
           {lastSavedAt && (
-            <p className="text-center text-[11px] text-muted-foreground">
+            <p className="text-center text-xs text-muted-foreground">
               Saved {lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </p>
           )}
@@ -244,11 +244,11 @@ export default function MacroTargetsEditor({
       {/* Right column: sticky Daily Totals */}
       <div>
         <Card className="sticky top-20">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Daily Totals</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Daily Totals</p>
           {hasTotals ? (
             <div className="space-y-2">
               <div className="bg-primary/10 border border-primary/20 rounded-lg px-3 py-3 text-center">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Calories</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">Calories</p>
                 <p className="text-2xl font-bold text-primary leading-none">
                   {totals.calMin > 0 || totals.calMax > 0 ? `${totals.calMin} – ${totals.calMax}` : "—"}
                   <span className="text-xs font-normal ml-1">kcal</span>
@@ -261,7 +261,7 @@ export default function MacroTargetsEditor({
                   { l: "Fat", min: totals.fatMin, max: totals.fatMax },
                 ].map(({ l, min, max }) => (
                   <div key={l} className="bg-secondary rounded-lg px-2 py-2 text-center">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{l}</p>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">{l}</p>
                     <p className="text-sm font-bold text-foreground">
                       {min > 0 || max > 0 ? `${min} – ${max}g` : "—"}
                     </p>

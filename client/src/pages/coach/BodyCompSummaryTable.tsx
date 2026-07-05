@@ -85,7 +85,7 @@ function WeekRow({ week, isExpanded, onToggle }: {
             <div>
               <span className="text-xs font-semibold text-foreground">{week.label}</span>
               {week.isInProgress && (
-                <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                <span className="ml-1.5 text-xs font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
                   Current
                 </span>
               )}
@@ -107,7 +107,7 @@ function WeekRow({ week, isExpanded, onToggle }: {
               {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
             </span>
             {weightDeltaPct != null && (
-              <span className={`text-[10px] font-semibold ${
+              <span className={`text-xs font-semibold ${
                 weightDeltaPct < 0 ? "text-green-400" : weightDeltaPct > 0 ? "text-red-400" : "text-muted-foreground"
               }`}>
                 {weightDeltaPct > 0 ? "+" : ""}{weightDeltaPct.toFixed(2)}%
@@ -178,11 +178,11 @@ function WeekRow({ week, isExpanded, onToggle }: {
             <tr key={date} className="border-b border-border/20 bg-muted/5 last:border-b-0">
               {/* Date — indented under Week column */}
               <td className="px-3 py-2">
-                <span className="pl-5 text-[11px] text-muted-foreground">{dateLabel}</span>
+                <span className="pl-5 text-xs text-muted-foreground">{dateLabel}</span>
               </td>
               {/* Weight (Weigh-ins column) */}
               <td className="px-3 py-2 text-right">
-                <span className="text-[11px] tabular-nums text-foreground">
+                <span className="text-xs tabular-nums text-foreground">
                   {row.weight != null ? `${row.weight.toFixed(1)} kg` : "—"}
                 </span>
               </td>
@@ -190,19 +190,19 @@ function WeekRow({ week, isExpanded, onToggle }: {
               <td className="px-3 py-2" />
               {/* Waist */}
               <td className="px-3 py-2 text-right">
-                <span className="text-[11px] tabular-nums text-foreground">
+                <span className="text-xs tabular-nums text-foreground">
                   {row.waist != null ? `${row.waist.toFixed(1)} cm` : "—"}
                 </span>
               </td>
               {/* Hip */}
               <td className="px-3 py-2 text-right">
-                <span className="text-[11px] tabular-nums text-foreground">
+                <span className="text-xs tabular-nums text-foreground">
                   {row.hip != null ? `${row.hip.toFixed(1)} cm` : "—"}
                 </span>
               </td>
               {/* Skinfold */}
               <td className="px-3 py-2 text-right">
-                <span className="text-[11px] tabular-nums text-foreground">
+                <span className="text-xs tabular-nums text-foreground">
                   {row.skinfold != null ? `${row.skinfold.toFixed(1)} mm` : "—"}
                 </span>
               </td>
@@ -258,12 +258,12 @@ export function BodyCompSummaryTable({ clientId }: Props) {
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[26%]">Week</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">Weigh-ins</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Avg Weight</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Waist</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Hip</th>
-                <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Skinfold</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[26%]">Week</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">Weigh-ins</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Avg Weight</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Waist</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Hip</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Skinfold</th>
               </tr>
             </thead>
             <tbody>

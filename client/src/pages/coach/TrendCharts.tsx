@@ -30,7 +30,7 @@ export function TrendSparklineCard({ title, unit, color, data, isScore, onClick 
       className="bg-card border border-border rounded-xl p-3 text-left w-full hover:border-primary/40 transition-colors active:scale-[0.98]"
     >
       <div className="flex items-start justify-between mb-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{title}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{title}</p>
       </div>
       {avg != null && (
         <p className="text-lg font-bold text-foreground mb-1.5" style={{ color }}>
@@ -236,7 +236,7 @@ export function DailyLogTrendsPanel({ logs, clientStartDate, gridCols = "grid-co
               <button
                 key={opt.key}
                 onClick={() => setRange(opt.key)}
-                className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors ${
+                className={`text-xs font-medium px-2.5 py-1 rounded-md transition-colors ${
                   range === opt.key
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:text-foreground'
@@ -263,7 +263,7 @@ export function DailyLogTrendsPanel({ logs, clientStartDate, gridCols = "grid-co
             );
           })}
         </div>
-        <p className="text-[10px] text-muted-foreground/50 text-center mt-2">Click a card to expand</p>
+        <p className="text-xs text-muted-foreground/50 text-center mt-2">Click a card to expand</p>
       </div>
       {expandedTrend && (
         <TrendFullModal

@@ -111,7 +111,7 @@ function NutritionCard({ changes, prev }: { changes: NutritionChanges; prev?: Nu
     <div className="mt-3 grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
       {/* Training day */}
       <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Training Day</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Training Day</p>
         <MacroRow label="Calories" value={changes.trainingCalories} unit=" kcal" prev={prev?.trainingCalories} />
         <MacroRow label="Protein" value={changes.trainingProtein} unit="g" prev={prev?.trainingProtein} />
         <MacroRow label="Carbs" value={changes.trainingCarbs} unit="g" prev={prev?.trainingCarbs} />
@@ -119,7 +119,7 @@ function NutritionCard({ changes, prev }: { changes: NutritionChanges; prev?: Nu
       </div>
       {/* Rest day */}
       <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Rest Day</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Rest Day</p>
         <MacroRow label="Calories" value={changes.restCalories} unit=" kcal" prev={prev?.restCalories} />
         <MacroRow label="Protein" value={changes.restProtein} unit="g" prev={prev?.restProtein} />
         <MacroRow label="Carbs" value={changes.restCarbs} unit="g" prev={prev?.restCarbs} />

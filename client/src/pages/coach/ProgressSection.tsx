@@ -101,7 +101,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
       {/* Targets card */}
       <div className="bg-card border border-border rounded-xl p-5">
         <div className="flex items-center justify-between mb-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Weekly Targets</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Weekly Targets</p>
           {!editing ? (
             <button
               onClick={() => setEditing(true)}
@@ -165,7 +165,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
           <div className="grid grid-cols-2 gap-6">
             {/* Step Goal tile */}
             <div className="bg-secondary/40 rounded-xl p-4 border border-border/50">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Daily Step Goal</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Daily Step Goal</p>
               {currentStepGoal ? (
                 <>
                   <p className="text-base font-bold tabular-nums text-foreground leading-none">
@@ -179,7 +179,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
             </div>
             {/* LISS Cardio tile */}
             <div className="bg-secondary/40 rounded-xl p-4 border border-border/50">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">LISS Cardio</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">LISS Cardio</p>
               {currentLissSet ? (
                 <>
                   <p className="text-base font-bold tabular-nums text-foreground leading-none">
@@ -293,14 +293,14 @@ function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
             <div className="flex flex-col items-end gap-0.5">
               <span className="text-sm font-semibold tabular-nums text-foreground leading-none">
                 {value != null ? value.toLocaleString() : "—"}
-                <span className="text-[10px] font-normal text-muted-foreground/50 ml-0.5">{unit}</span>
+                <span className="text-xs font-normal text-muted-foreground/50 ml-0.5">{unit}</span>
               </span>
               {delta != null ? (
-                <span className={`text-[10px] font-semibold leading-none ${delta > 0 ? "text-emerald-500" : "text-red-400"}`}>
+                <span className={`text-xs font-semibold leading-none ${delta > 0 ? "text-emerald-500" : "text-red-400"}`}>
                   {delta > 0 ? "+" : ""}{delta}
                 </span>
               ) : (
-                <span className="text-[10px] leading-none text-transparent select-none">·</span>
+                <span className="text-xs leading-none text-transparent select-none">·</span>
               )}
             </div>
           );
@@ -333,19 +333,19 @@ function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
             <div className="overflow-x-auto -mx-1 px-1">
               <div className="min-w-[280px]">
                 <div className="grid grid-cols-5 mb-1.5">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 col-span-1" />
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground/50 col-span-1" />
                   {cols.map(c => (
-                    <span key={c.label} className="text-[10px] uppercase tracking-wider text-muted-foreground/60 text-right">{c.label}</span>
+                    <span key={c.label} className="text-xs uppercase tracking-wider text-muted-foreground/60 text-right">{c.label}</span>
                   ))}
                 </div>
                 <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
-                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Train</span>
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide self-center">Train</span>
                   {cols.map(c => (
                     <Cell key={c.label} value={c.tVal} unit={c.unit} delta={getDelta(c.tVal, c.tPrev)} />
                   ))}
                 </div>
                 <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
-                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Rest</span>
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide self-center">Rest</span>
                   {cols.map(c => (
                     <Cell key={c.label} value={c.rVal} unit={c.unit} delta={getDelta(c.rVal, c.rPrev)} />
                   ))}
@@ -414,7 +414,7 @@ function WeeklyCalorySummary({
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Daily Average</p>
         {isLive && (
-          <span className="flex items-center gap-1.5 text-[10px] text-primary/80 font-medium">
+          <span className="flex items-center gap-1.5 text-xs text-primary/80 font-medium">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
@@ -500,11 +500,11 @@ function NutritionTab({ clientId }: { clientId: number }) {
   function MacroTile({ label, value, unit }: { label: string; value: number | null | undefined; unit: string }) {
     return (
       <div className="flex flex-col gap-0.5">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">{label}</span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-none">{label}</span>
         <span className="text-xl font-bold tabular-nums text-foreground">
           {value != null ? value.toLocaleString() : "—"}
         </span>
-        <span className="text-[10px] text-muted-foreground/50 leading-none">{unit}</span>
+        <span className="text-xs text-muted-foreground/50 leading-none">{unit}</span>
       </div>
     );
   }
@@ -524,14 +524,14 @@ function NutritionTab({ clientId }: { clientId: number }) {
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">{label}</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">Calories</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-none">Calories</span>
             <span className="text-xl font-bold tabular-nums text-foreground">
               {displayCals != null ? displayCals.toLocaleString() : "—"}
             </span>
               {treat > 0 && mealCals != null && (
-              <span className="text-[10px] text-muted-foreground/50 leading-none">{mealCals.toLocaleString()} meals + {treat} free</span>
+              <span className="text-xs text-muted-foreground/50 leading-none">{mealCals.toLocaleString()} meals + {treat} free</span>
             )}
-            <span className="text-[10px] text-muted-foreground/50 leading-none">kcal</span>
+            <span className="text-xs text-muted-foreground/50 leading-none">kcal</span>
           </div>
           <MacroTile label="Protein" value={plan.totalProtein} unit="g" />
           <MacroTile label="Carbs" value={plan.totalCarbs} unit="g" />
@@ -582,7 +582,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
                   <span className="text-sm text-muted-foreground ml-1.5">kcal / day</span>
 
                   {weeklyAvgCaloriesWithTreat != null && (
-                    <div className="text-[10px] text-muted-foreground/50 mt-0.5">{weeklyAvgCalories.toLocaleString()} meals + free cal avg</div>
+                    <div className="text-xs text-muted-foreground/50 mt-0.5">{weeklyAvgCalories.toLocaleString()} meals + free cal avg</div>
                   )}
                 </div>
               </div>
@@ -641,7 +641,7 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
     if (d === 0) return null;
     const isGood = invertGood ? d > 0 : d < 0;
     return (
-      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+      <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
         isGood ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
       }`}>
         {d > 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
@@ -656,7 +656,7 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
     if (d === 0) return null;
     const isGood = d < 0;
     return (
-      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+      <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
         isGood ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
       }`}>
         {d > 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
@@ -775,7 +775,7 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
           {/* Weight + Waist chart */}
           {hasWeightWaist && (
             <div className="bg-card border border-border rounded-xl p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Weight &amp; Waist</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Weight &amp; Waist</p>
                 <ResponsiveContainer width="100%" height={200}>
                   <ComposedChart data={combinedTrendData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
@@ -792,11 +792,11 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
                   </ComposedChart>
                 </ResponsiveContainer>
                 <div className="flex items-center gap-4 mt-2 justify-center">
-                  <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <span className="w-3 h-0.5 bg-blue-500 inline-block rounded" />
                     Weight (kg)
                   </span>
-                  <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <span className="w-3 h-0.5 bg-amber-500 inline-block rounded" />
                     Waist (cm)
                   </span>
@@ -806,7 +806,7 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
           {/* Skinfold vs Weight dual-axis chart (shared date axis) */}
           {hasSkinfold && (
             <div className="bg-card border border-border rounded-xl p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Skinfold vs Weight</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Skinfold vs Weight</p>
                 <ResponsiveContainer width="100%" height={200}>
                   <ComposedChart data={skinfoldWeightData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
@@ -825,11 +825,11 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
                   </ComposedChart>
                 </ResponsiveContainer>
                 <div className="flex items-center gap-4 mt-2 justify-center">
-                  <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />
                     Skinfold (mm)
                   </span>
-                  <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <span className="w-3 h-0.5 bg-blue-500 inline-block rounded" />
                     Avg Weight (kg)
                   </span>
@@ -876,7 +876,7 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
                   <div className="px-4 pb-4 border-t border-border">
                     {/* Waist */}
                     <div className="pt-3 pb-2">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">Waist Circumference</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Waist Circumference</p>
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-bold text-foreground">{m.waist != null ? `${m.waist} cm` : '—'}</span>
                         {waistDiffBadge(m.waist ?? null, prev?.waist ?? null)}
@@ -893,7 +893,7 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
                         return (
                           <div key={s.key} className="bg-secondary rounded-lg p-3">
                             <div className="flex items-center justify-between mb-2">
-                              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{s.label}</p>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{s.label}</p>
                               <div className="flex items-center gap-1.5">
                                 {sAvg != null && <span className="text-sm font-bold text-foreground">{sAvg} mm</span>}
                                 {diffBadge(sAvg, prevAvg)}
@@ -902,7 +902,7 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
                             {hasAny ? (
                               <div className="flex gap-1.5 flex-wrap">
                                 {readings.map((v, ri) => (
-                                  <span key={ri} className={`text-[11px] px-2 py-0.5 rounded font-mono ${
+                                  <span key={ri} className={`text-xs px-2 py-0.5 rounded font-mono ${
                                     v != null ? 'bg-card text-foreground' : 'bg-card/50 text-muted-foreground'
                                   }`}>
                                     {v != null ? `${v}` : '—'}
@@ -927,7 +927,7 @@ function MeasurementsTab({ measurements, logs, chartOnly, historyOnly, clientId 
                           if (d === 0) return null;
                           const isGood = d < 0;
                           return (
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
                               isGood ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
                             }`}>
                               {d > 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
@@ -1023,14 +1023,14 @@ function RecentLogsPanel({ logs, visibleDays, clientId }: { logs: DailyLogRow[];
               {/* Left: date + day */}
               <div className="w-20 flex-shrink-0">
                 <p className="text-sm font-semibold text-foreground">{fmtDay(iso)}</p>
-                <p className="text-[10px] text-muted-foreground">{dayLabel(iso)}</p>
+                <p className="text-xs text-muted-foreground">{dayLabel(iso)}</p>
               </div>
               {/* Middle: chips + note preview */}
               <div className="flex-1 flex flex-col gap-1 px-3">
                 <div className="flex items-center gap-2 flex-wrap">
                   {hasData ? (
                     <>
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                      <span className={`text-xs px-2 py-0.5 rounded font-medium ${
                         trained ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                       }`}>{sessionLabel}</span>
                       {(log.offPlanMeals ?? 0) > 0 ? (
@@ -1039,7 +1039,7 @@ function RecentLogsPanel({ logs, visibleDays, clientId }: { logs: DailyLogRow[];
                         </span>
                       ) : null}
                       {((log as any).lissMinutes ?? 0) > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400" title="LISS Cardio">
+                        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400" title="LISS Cardio">
                           <Activity size={11} />{(log as any).lissMinutes}m
                         </span>
                       ) : null}
@@ -1049,7 +1049,7 @@ function RecentLogsPanel({ logs, visibleDays, clientId }: { logs: DailyLogRow[];
                   )}
                 </div>
                 {hasData && log.notes ? (
-                  <p className="text-[11px] text-muted-foreground italic truncate max-w-[220px]">{log.notes}</p>
+                  <p className="text-xs text-muted-foreground italic truncate max-w-[220px]">{log.notes}</p>
                 ) : null}
               </div>
               {/* Right: weight + chevron */}
@@ -1069,35 +1069,35 @@ function RecentLogsPanel({ logs, visibleDays, clientId }: { logs: DailyLogRow[];
               <div className="px-4 pb-4 bg-muted/20 border-t border-border">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 pt-3">
                   {log.weight != null && (
-                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Weight</p><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>
+                    <div><p className="text-xs text-muted-foreground uppercase tracking-wide">Weight</p><p className="text-sm font-semibold text-foreground">{log.weight} kg</p></div>
                   )}
                   {log.stepsCount != null && (
-                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>
+                    <div><p className="text-xs text-muted-foreground uppercase tracking-wide">Steps</p><p className="text-sm font-semibold text-foreground">{log.stepsCount.toLocaleString()}</p></div>
                   )}
                   {log.sleepHours != null && (
-                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep</p><p className="text-sm font-semibold text-foreground">{(() => { const h = Math.floor(log.sleepHours!); const m = Math.round((log.sleepHours! - h) * 60); return `${h}:${String(m).padStart(2,'0')}`; })()}</p></div>
+                    <div><p className="text-xs text-muted-foreground uppercase tracking-wide">Sleep</p><p className="text-sm font-semibold text-foreground">{(() => { const h = Math.floor(log.sleepHours!); const m = Math.round((log.sleepHours! - h) * 60); return `${h}:${String(m).padStart(2,'0')}`; })()}</p></div>
                   )}
                   {log.sleepQuality != null && (
-                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>
+                    <div><p className="text-xs text-muted-foreground uppercase tracking-wide">Sleep Quality</p><p className="text-sm font-semibold text-foreground">{log.sleepQuality}/5</p></div>
                   )}
                   {log.hungerLevel != null && (
-                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>
+                    <div><p className="text-xs text-muted-foreground uppercase tracking-wide">Hunger</p><p className="text-sm font-semibold text-foreground">{log.hungerLevel}/5</p></div>
                   )}
                   {(log as any).stressLevel != null && (
-                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Stress</p><p className="text-sm font-semibold text-foreground">{(log as any).stressLevel}/5</p></div>
+                    <div><p className="text-xs text-muted-foreground uppercase tracking-wide">Stress</p><p className="text-sm font-semibold text-foreground">{(log as any).stressLevel}/5</p></div>
                   )}
                   {log.caffeineServings != null && (
-                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wide">Caffeine</p><p className="text-sm font-semibold text-foreground">{log.caffeineServings} srv</p></div>
+                    <div><p className="text-xs text-muted-foreground uppercase tracking-wide">Caffeine</p><p className="text-sm font-semibold text-foreground">{log.caffeineServings} srv</p></div>
                   )}
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Training</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Training</p>
                     <p className="text-sm font-semibold text-foreground">{sessionLabel}</p>
                   </div>
 
                 </div>
                 {log.notes && (
                   <div className="mt-3 pt-3 border-t border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Notes</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Notes</p>
                     <p className="text-sm text-foreground italic">{log.notes}</p>
                   </div>
                 )}
@@ -1212,7 +1212,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
           <p className="text-sm font-bold text-foreground">
             Session {session.dayLabel}
             {hasIncomplete && (
-              <span className="ml-2 text-[10px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">Incomplete</span>
+              <span className="ml-2 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">Incomplete</span>
             )}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">{dateLabel} &middot; {exercises.length} exercises &middot; {totalSets} sets</p>
@@ -1291,7 +1291,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
                     <p className="text-xs font-semibold text-foreground truncate">{ex.name}</p>
                   )}
                   {machinePreset && (
-                    <p className="text-[10px] text-muted-foreground/70 truncate">
+                    <p className="text-xs text-muted-foreground/70 truncate">
                       {machinePreset}{machineSettings ? ` · ${machineSettings}` : ''}
                     </p>
                   )}
@@ -1300,17 +1300,17 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
                   <Zap size={14} className="text-amber-400 shrink-0" />
                 )}
                 {ex.substitutedFor && (
-                  <span className="text-[9px] font-semibold bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded shrink-0">SUB</span>
+                  <span className="text-xs font-semibold bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded shrink-0">SUB</span>
                 )}
                 {setStr && (
-                  <span className="text-[11px] text-muted-foreground shrink-0 flex items-center gap-0.5">
+                  <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-0.5">
                     {setStr}
                     {progressArrow === 'up' && <ArrowUp className="w-3 h-3 text-green-400" />}
                     {progressArrow === 'down' && <ArrowDown className="w-3 h-3 text-red-400" />}
                     {progressArrow === 'same' && <Minus className="w-3 h-3 text-muted-foreground" />}
                   </span>
                 )}
-                <span className={`text-[11px] shrink-0 ${isSkipped ? 'text-amber-400/80' : isMiniSets ? 'text-amber-400/70' : 'text-muted-foreground/60'}`}>
+                <span className={`text-xs shrink-0 ${isSkipped ? 'text-amber-400/80' : isMiniSets ? 'text-amber-400/70' : 'text-muted-foreground/60'}`}>
                   {setsLabel}
                 </span>
               </div>
@@ -1318,7 +1318,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
           })}
           {sessionNotes && (
             <div className="pt-2 border-t border-border/50">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Session notes</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Session notes</p>
               <p className="text-xs text-muted-foreground/80 italic">&ldquo;{sessionNotes}&rdquo;</p>
             </div>
           )}
@@ -1448,10 +1448,10 @@ function MonthlyVolumeCoachPanel({ workoutSessions, exerciseLib, year, month }: 
           ) : (
             <div className="px-4 py-3 space-y-2">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-20 flex-shrink-0">Muscle</span>
+                <span className="text-xs uppercase tracking-wider text-muted-foreground/60 w-20 flex-shrink-0">Muscle</span>
                 <span className="flex-1" />
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-10 text-right flex-shrink-0">Total</span>
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 w-12 text-right flex-shrink-0">Wk avg</span>
+                <span className="text-xs uppercase tracking-wider text-muted-foreground/60 w-10 text-right flex-shrink-0">Total</span>
+                <span className="text-xs uppercase tracking-wider text-muted-foreground/60 w-12 text-right flex-shrink-0">Wk avg</span>
               </div>
               {[...activeRows]
                 .sort((a, b) => totals[b.key] - totals[a.key])
@@ -1471,7 +1471,7 @@ function MonthlyVolumeCoachPanel({ workoutSessions, exerciseLib, year, month }: 
                     </div>
                   );
                 })}
-              <p className="text-[10px] text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Rest-pause: activation set + 1 per 2 mini-sets.</p>
+              <p className="text-xs text-muted-foreground/50 pt-1">Sets weighted by muscle contribution. Rest-pause: activation set + 1 per 2 mini-sets.</p>
             </div>
           )}
         </div>
@@ -1564,7 +1564,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
           <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
         </button>
       </div>
-      <span className="text-[11px] text-muted-foreground">
+      <span className="text-xs text-muted-foreground">
         <span className="font-semibold text-foreground">{monthSessionCount}</span> session{monthSessionCount !== 1 ? 's' : ''} this month
       </span>
     </div>
@@ -1576,7 +1576,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
           {/* Weekday headers */}
           <div className="grid grid-cols-7 bg-muted/30 border-b border-border divide-x divide-border">
             {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
-              <div key={d} className="py-2 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{d}</div>
+              <div key={d} className="py-2 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">{d}</div>
             ))}
           </div>
           {/* Day cells — wrap each row in a div so borders are clean */}
@@ -1609,11 +1609,11 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
                     'min-h-[60px] sm:min-h-[90px] p-1 sm:p-1.5 bg-card',
                     isToday ? 'bg-primary/5' : '',
                     isSelected ? 'ring-1 ring-inset ring-primary/40' : '',
-                    sess ? 'cursor-pointer hover:bg-muted/20' : '',
+                    sess ? 'cursor-pointer hover:bg-muted/20 active:opacity-70' : '',
                   ].join(' ')}
                   onClick={() => sess ? setSelectedSession(isSelected ? null : sess) : undefined}
                 >
-                  <span className={`text-[11px] font-medium block mb-1 ${
+                  <span className={`text-xs font-medium block mb-1 ${
                     isToday ? 'text-primary font-bold' : cell.otherMonth ? 'text-muted-foreground/30' : 'text-muted-foreground'
                   }`}>{cell.day}</span>
 
@@ -1625,15 +1625,15 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
                         : 'bg-primary/10 border-primary/20',
                     ].join(' ')}>
                       <div className="flex items-center gap-1">
-                        <span className={`text-[11px] font-black ${
+                        <span className={`text-xs font-black ${
                           hasIncomplete ? 'text-amber-400' : 'text-primary'
                         }`}>{sess.dayLabel}</span>
-                        <span className="text-[10px] text-muted-foreground truncate">
+                        <span className="text-xs text-muted-foreground truncate">
                           {exercises.length} ex &middot; {totalSets} sets
                         </span>
                       </div>
                       {hasIncomplete && (
-                        <span className="text-[9px] font-semibold text-amber-400/80">incomplete</span>
+                        <span className="text-xs font-semibold text-amber-400/80">incomplete</span>
                       )}
                     </div>
                   )}
@@ -1693,7 +1693,7 @@ function CoachPresetEditor({ clientId, exerciseName, onClose }: { clientId: numb
   return (
     <div className="mt-3 pt-3 border-t border-border/60 space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Machine Presets</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Machine Presets</p>
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
       </div>
       {isLoading ? (
@@ -1719,7 +1719,7 @@ function CoachPresetEditor({ clientId, exerciseName, onClose }: { clientId: numb
               ) : (
                 <>
                   <span className="flex-1 text-xs text-foreground truncate">{p.presetName}</span>
-                  {p.lastSettings && <span className="text-[10px] text-muted-foreground/60 truncate max-w-[80px]">{p.lastSettings}</span>}
+                  {p.lastSettings && <span className="text-xs text-muted-foreground/60 truncate max-w-[80px]">{p.lastSettings}</span>}
                   <button onClick={() => { setRenamingId(p.id); setRenameVal(p.presetName); }} className="text-muted-foreground hover:text-foreground"><Pencil className="w-3 h-3" /></button>
                   <button onClick={() => del.mutate({ userId: clientId, id: p.id })} className="text-red-400 hover:text-red-300"><Trash2 className="w-3 h-3" /></button>
                 </>
@@ -1842,7 +1842,7 @@ function ExerciseProgressTab({
     <div className="flex gap-5 min-h-0">
       {/* Left: muscle group sidebar */}
       <div className="w-36 flex-shrink-0">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Muscle Group</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Muscle Group</p>
         <div className="flex flex-col gap-0.5">
           {muscleGroups.map(g => (
             <button
@@ -1856,7 +1856,7 @@ function ExerciseProgressTab({
             >
               {g}
               {g !== 'All' && byMuscle[g] && (
-                <span className="ml-1.5 text-[10px] opacity-60">{byMuscle[g].length}</span>
+                <span className="ml-1.5 text-xs opacity-60">{byMuscle[g].length}</span>
               )}
             </button>
           ))}
@@ -1914,7 +1914,7 @@ function ExerciseProgressTab({
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <p className="text-sm font-semibold text-foreground">{name}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{exToMuscle[name] ?? 'Other'} &middot; {history.length} session{history.length !== 1 ? 's' : ''}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{exToMuscle[name] ?? 'Other'} &middot; {history.length} session{history.length !== 1 ? 's' : ''}</p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {trend === 'up' && <ArrowUp className="w-4 h-4 text-green-400" />}
@@ -1927,7 +1927,7 @@ function ExerciseProgressTab({
                   {filterOptions.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-3">
                       {filterOptions.length === 1 ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground border border-primary font-medium">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground border border-primary font-medium">
                           {filterOptions[0]}
                         </span>
                       ) : (
@@ -1935,7 +1935,7 @@ function ExerciseProgressTab({
                           <button
                             key={p}
                             onClick={() => setPresetFilter(prev => ({ ...prev, [name]: p }))}
-                            className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                            className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
                               activeMachineFilter === p
                                 ? 'bg-primary text-primary-foreground border-primary font-medium'
                                 : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
@@ -1986,7 +1986,7 @@ function ExerciseProgressTab({
                           }`}>{weightStr}{repsStr}</span>
                           {/* Machine preset label (read-only) */}
                           {presetStr && (
-                            <span className="text-[10px] text-muted-foreground/60 truncate flex-1">{presetStr}</span>
+                            <span className="text-xs text-muted-foreground/60 truncate flex-1">{presetStr}</span>
                           )}
                           {!presetStr && <span className="flex-1" />}
                           {/* Trend arrow */}
@@ -2097,7 +2097,7 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-xs text-muted-foreground">{fmtDate(note.noteDate)}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-primary/20 text-primary">{note.category ?? "General"}</span>
+                      <span className="text-xs px-2 py-0.5 rounded font-medium bg-primary/20 text-primary">{note.category ?? "General"}</span>
                     </div>
                     <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
                   </div>
@@ -2392,9 +2392,9 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
   }) {
     return (
       <div className="bg-secondary rounded-xl p-3">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
         <p className="text-xl font-bold text-foreground">{value}</p>
-        {sub && <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>}
+        {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
       </div>
     );
   }

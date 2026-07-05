@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CoachHabitsPanel } from "./HabitsSection";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Info, UtensilsCrossed, ArrowUp, ArrowDown, Minus } from "lucide-react";
@@ -82,7 +83,7 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-medium uppercase tracking-[0.8px]" style={{ color: C.muted }}>
+    <p className="text-xs font-medium uppercase tracking-[0.8px]" style={{ color: C.muted }}>
       {children}
     </p>
   );
@@ -212,7 +213,7 @@ function IdealZoneSparkline({
 
   if (plotPoints.length < 2) {
     return (
-      <p className="text-[11px]" style={{ color: C.muted }}>
+      <p className="text-xs" style={{ color: C.muted }}>
         Not enough weekly data for trend line
       </p>
     );
@@ -329,13 +330,13 @@ function IdealZoneCard({
           <SectionLabel>Ideal Zone</SectionLabel>
           <div className="relative group">
             <Info className="w-3.5 h-3.5 cursor-pointer" style={{ color: C.muted }} />
-            <div className="absolute left-0 top-5 z-10 hidden group-hover:block w-56 rounded-lg px-3 py-2 text-[11px] leading-relaxed shadow-lg"
+            <div className="absolute left-0 top-5 z-10 hidden group-hover:block w-56 rounded-lg px-3 py-2 text-xs leading-relaxed shadow-lg"
               style={{ background: "#1A2020", border: `1px solid ${C.border}`, color: C.muted }}>
               % of meals where hunger (3–4) <span style={{ color: C.fg, fontWeight: 600 }}>and</span> fullness (6–7) were both in range at the same meal
             </div>
           </div>
         </div>
-        <span className="text-[11px]" style={{ color: C.muted }}>Last {days}d</span>
+        <span className="text-xs" style={{ color: C.muted }}>Last {days}d</span>
       </div>
 
       {/* Score + trend */}
@@ -370,28 +371,28 @@ function IdealZoneCard({
         <div className="mt-4 pt-4 grid grid-cols-2 gap-4" style={{ borderTop: `1px solid ${C.border}` }}>
           {hungerInZonePct != null && (
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.7px] mb-2" style={{ color: C.muted }}>
+              <p className="text-xs font-medium uppercase tracking-[0.7px] mb-2" style={{ color: C.muted }}>
                 Hunger (3–4)
               </p>
               <div className="flex items-baseline gap-1.5 mb-1.5">
                 <span className="text-[22px] font-bold leading-none" style={{ color: C.fg }}>
                   {hungerInZonePct}%
                 </span>
-                <span className="text-[11px]" style={{ color: C.muted }}>in zone</span>
+                <span className="text-xs" style={{ color: C.muted }}>in zone</span>
               </div>
               <ProgressBar value={hungerInZonePct} color={scoreColor(hungerInZonePct)} />
             </div>
           )}
           {fullnessInZonePct != null && (
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.7px] mb-2" style={{ color: C.muted }}>
+              <p className="text-xs font-medium uppercase tracking-[0.7px] mb-2" style={{ color: C.muted }}>
                 Fullness (6–7)
               </p>
               <div className="flex items-baseline gap-1.5 mb-1.5">
                 <span className="text-[22px] font-bold leading-none" style={{ color: C.fg }}>
                   {fullnessInZonePct}%
                 </span>
-                <span className="text-[11px]" style={{ color: C.muted }}>in zone</span>
+                <span className="text-xs" style={{ color: C.muted }}>in zone</span>
               </div>
               <ProgressBar value={fullnessInZonePct} color={scoreColor(fullnessInZonePct)} />
             </div>
@@ -702,8 +703,10 @@ function MealLogView({ clientId }: { clientId: number }) {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: C.primary, borderTopColor: "transparent" }} />
+          <div className="grid grid-cols-7 gap-1">
+            {[...Array(35)].map((_, i) => (
+              <Skeleton key={i} className="aspect-square rounded-lg" style={{ background: `${C.fg}08` }} />
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-7 gap-1">
@@ -778,10 +781,10 @@ function MealLogView({ clientId }: { clientId: number }) {
                           <div className="flex items-center gap-2 mb-0.5">
                             <span className="text-[12px]" style={{ color: C.muted }}>{formatTime(new Date(meal.loggedAt))}</span>
                             {meal.mealType === "treat" && (
-                              <span className="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}18`, color: C.amber }}>Treat</span>
+                              <span className="text-xs font-medium uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}18`, color: C.amber }}>Treat</span>
                             )}
                             {meal.isOffPlan && (
-                              <span className="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.red}18`, color: C.red }}>Off Plan</span>
+                              <span className="text-xs font-medium uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.red}18`, color: C.red }}>Off Plan</span>
                             )}
                           </div>
                           {meal.name && <p className="text-[13px] font-medium truncate" style={{ color: C.fg }}>{meal.name}</p>}
@@ -790,13 +793,13 @@ function MealLogView({ clientId }: { clientId: number }) {
                             <div className="flex items-center gap-4 mt-1.5">
                               {h != null && (
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[11px]" style={{ color: C.muted }}>Hunger</span>
+                                  <span className="text-xs" style={{ color: C.muted }}>Hunger</span>
                                   <span className="text-[12px] font-bold" style={{ color: isIdealHunger(h) ? C.primary : C.amber }}>{h}</span>
                                 </div>
                               )}
                               {f != null && (
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[11px]" style={{ color: C.muted }}>Fullness</span>
+                                  <span className="text-xs" style={{ color: C.muted }}>Fullness</span>
                                   <span className="text-[12px] font-bold" style={{ color: isIdealFullness(f) ? C.primary : C.amber }}>{f}</span>
                                 </div>
                               )}
@@ -836,8 +839,32 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: C.primary, borderTopColor: "transparent" }} />
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="rounded-xl p-4 border" style={{ background: C.surface, borderColor: C.border }}>
+              <Skeleton className="h-3 w-24 mb-3" />
+              <Skeleton className="h-8 w-16 mb-2" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="rounded-xl p-4 border" style={{ background: C.surface, borderColor: C.border }}>
+              <Skeleton className="h-3 w-28 mb-3" />
+              <Skeleton className="h-32 w-full rounded-lg" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="rounded-xl p-4 border" style={{ background: C.surface, borderColor: C.border }}>
+              <Skeleton className="h-3 w-28 mb-3" />
+              <Skeleton className="h-24 w-full rounded-lg" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

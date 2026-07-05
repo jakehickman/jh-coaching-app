@@ -435,7 +435,7 @@ function ClientsSection() {
         <div className="bg-card border border-border rounded-lg px-5 py-3 flex items-center gap-3">
           <Users size={16} className="text-muted-foreground" />
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Clients</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Clients</p>
             <p className="text-xl font-bold text-foreground">{clients.length}</p>
           </div>
         </div>
@@ -452,7 +452,7 @@ function ClientsSection() {
                 key={user.id}
                 onClick={() => setSelectedId(user.id === selectedId ? null : user.id)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${
-                  selectedId === user.id ? "border-primary bg-primary/5" : "border-border bg-card hover:border-border/80"
+                  selectedId === user.id ? "border-primary bg-primary/5" : "border-border bg-card hover:bg-muted/20 hover:border-border/80 active:opacity-70"
                 }`}
               >
                 <div className="relative flex-shrink-0">
@@ -466,7 +466,7 @@ function ClientsSection() {
                   <p className="text-xs text-muted-foreground truncate">{user.email ?? "No email"}</p>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${user.role === "admin" ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${user.role === "admin" ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
                     {user.role}
                   </span>
                   {user.role !== "admin" && (
@@ -476,7 +476,7 @@ function ClientsSection() {
                           e.stopPropagation();
                           setApproved.mutate({ userId: user.id, approved: !(user as any).approved });
                         }}
-                        className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${
+                        className={`text-xs px-1.5 py-0.5 rounded-full border transition-colors ${
                           (user as any).approved
                             ? "border-primary/40 text-primary bg-primary/10 hover:bg-primary/20"
                             : "border-border text-muted-foreground bg-secondary hover:border-primary/40 hover:text-primary"
@@ -543,7 +543,8 @@ function ClientsSection() {
                     className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                   />
                 </div>
-                <button
+                <Button
+                  className="w-full"
                   onClick={() => {
                     upsertProfile.mutate({
                       userId: selectedId,
@@ -557,10 +558,9 @@ function ClientsSection() {
                     });
                   }}
                   disabled={upsertProfile.isPending || updateClientConfig.isPending}
-                  className="w-full py-2 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
                 >
                   {(upsertProfile.isPending || updateClientConfig.isPending) ? 'Saving...' : 'Save Profile'}
-                </button>
+                </Button>
               </Card>
             )}
           </div>
@@ -604,7 +604,7 @@ function SortableDayCard({
             className="w-32 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground font-semibold focus:outline-none focus:ring-1 focus:ring-primary" />
           <div className="flex-1" />
           {totalSets > 0 && (
-            <span className="text-[11px] text-muted-foreground tabular-nums flex-shrink-0">
+            <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0">
               {totalSets} sets
             </span>
           )}
@@ -615,9 +615,9 @@ function SortableDayCard({
         <div className="space-y-2">
           <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-1 px-1 items-center">
             <div className="w-5" />
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Exercise</p>
-            <p className="w-10 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground text-center">Sets</p>
-            <p className="w-16 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground text-center">Reps</p>
+            <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Exercise</p>
+            <p className="w-10 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-center">Sets</p>
+            <p className="w-16 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-center">Reps</p>
             <div className="w-16" />
           </div>
           <SortableContext
@@ -1026,7 +1026,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                     <Plus size={11} /> Add
                   </button>
                   {schedule.length > 0 && (
-                    <span className="text-[10px] text-primary/70 ml-1">→ repeat</span>
+                    <span className="text-xs text-primary/70 ml-1">→ repeat</span>
                   )}
                 </div>
               </SortableContext>
@@ -1068,7 +1068,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                   {upsert.isPending ? "Saving..." : "Save Training Program"}
                 </button>
                 {lastSavedAt && (
-                  <p className="text-center text-[11px] text-muted-foreground">
+                  <p className="text-center text-xs text-muted-foreground">
                     Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
@@ -1154,7 +1154,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                   {upsert.isPending ? "Saving..." : "Save Training Program"}
                 </button>
                 {lastSavedAt && (
-                  <p className="text-center text-[11px] text-muted-foreground">
+                  <p className="text-center text-xs text-muted-foreground">
                     Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
@@ -1168,18 +1168,18 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                     <thead>
                       <tr className="border-b border-border bg-secondary/50">
                         <th colSpan={days.length + 2} className="px-3 py-2 text-left">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">Weekly Volume</span>
-                          <span className="ml-2 text-[10px] text-muted-foreground">{schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(1)} · sets/wk</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-foreground">Weekly Volume</span>
+                          <span className="ml-2 text-xs text-muted-foreground">{schedule.length > 0 ? schedule.length : days.length} days · ×{volumeTable.multiplier.toFixed(1)} · sets/wk</span>
                         </th>
                       </tr>
                       <tr className="border-b border-border bg-secondary/30">
-                        <th className="text-left px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Muscle</th>
+                        <th className="text-left px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground font-semibold">Muscle</th>
                         {days.map(d => (
-                          <th key={d.name} className="px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center border-l border-border/40">
+                          <th key={d.name} className="px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground font-semibold text-center border-l border-border/40">
                             {(d.name || 'Day').slice(0, 4)}
                           </th>
                         ))}
-                        <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-primary font-semibold text-center border-l border-border/40">Wk</th>
+                        <th className="px-3 py-2 text-xs uppercase tracking-wider text-primary font-semibold text-center border-l border-border/40">Wk</th>
                       </tr>
                     </thead>
                     <tbody>

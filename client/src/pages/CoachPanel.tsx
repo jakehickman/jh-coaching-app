@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { Trash2, Users, Eye, Pencil, Link2, Copy, Trash, UserPlus, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import ExerciseLibrarySection from "./coach/ExerciseLibrarySection";
 import NutritionDataSection from "./coach/NutritionDataSection";
 import HabitsSection from "./coach/HabitsSection";
@@ -82,16 +83,16 @@ function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => 
           <textarea value={form.notes} onChange={e => setForm((p: any) => ({ ...p, notes: e.target.value }))} rows={3}
             className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
         </div>
-        <button
+        <Button
+          className="w-full"
           onClick={() => {
             upsertProfile.mutate({ userId, displayName: form.displayName || undefined, startDate: form.startDate || undefined, notes: form.notes || null, photoType: form.photoType });
             updateClientConfig.mutate({ userId, stepGoal: form.stepGoal ? parseInt(form.stepGoal) : null });
           }}
           disabled={upsertProfile.isPending || updateClientConfig.isPending}
-          className="w-full py-2 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
         >
           {(upsertProfile.isPending || updateClientConfig.isPending) ? 'Saving...' : 'Save Changes'}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -279,7 +280,7 @@ function InviteLinksSection() {
 function ClientsSection() {
   const [confirm, ConfirmDialogNode] = useConfirm();
   const [, navigate] = useLocation();
-  const { data: allUsers } = trpc.users.list.useQuery();
+  const { data: allUsers, isLoading: usersLoading } = trpc.users.list.useQuery();
   const utils = trpc.useUtils();
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -307,15 +308,15 @@ function ClientsSection() {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-card border border-border rounded-xl px-5 py-4">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Total</p>
           <p className="text-2xl font-bold text-foreground">{totalClients}</p>
         </div>
         <div className="bg-card border border-border rounded-xl px-5 py-4">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Approved</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Approved</p>
           <p className="text-2xl font-bold text-foreground">{approvedCount}</p>
         </div>
         <div className="bg-card border border-border rounded-xl px-5 py-4">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pending</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Pending</p>
           <p className="text-2xl font-bold text-foreground">{pendingCount}</p>
         </div>
 
@@ -324,13 +325,27 @@ function ClientsSection() {
       {/* Client roster */}
       <div>
         <SectionLabel>Clients</SectionLabel>
+        {usersLoading ? (
+          <div className="space-y-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-4 py-3.5 rounded-xl border border-border bg-card">
+                <Skeleton className="w-10 h-10 rounded-full flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+                <Skeleton className="w-16 h-7 rounded-lg" />
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="space-y-2">
           {sortedClients.map(user => {
             return (
               <div
                 key={user.id}
                 onClick={() => navigate(`/coach/client/${user.id}`)}
-                className="flex items-center gap-4 px-4 py-3.5 rounded-xl border cursor-pointer transition-all border-border bg-card hover:border-primary/40 hover:bg-primary/5 group"
+                className="flex items-center gap-4 px-4 py-3.5 rounded-xl border cursor-pointer transition-all border-border bg-card hover:border-primary/40 hover:bg-primary/5 active:opacity-70 group"
               >
                 {/* Avatar */}
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
@@ -342,10 +357,10 @@ function ClientsSection() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-foreground">{user.name ?? "Unnamed"}</p>
                     {user.role === 'admin' && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">admin</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">admin</span>
                     )}
                     {!(user as any).approved && user.role !== 'admin' && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Pending Approval</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Pending Approval</span>
                     )}
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 flex-wrap">
@@ -358,7 +373,7 @@ function ClientsSection() {
                   {!(user as any).approved && (
                     <button
                       onClick={e => { e.stopPropagation(); setApproved.mutate({ userId: user.id, approved: true }); }}
-                      className="text-[10px] px-2.5 py-1.5 rounded-lg border font-medium transition-colors border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 mr-1"
+                      className="text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-colors border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 mr-1"
                     >
                       Approve
                     </button>
@@ -393,6 +408,7 @@ function ClientsSection() {
             );
           })}
         </div>
+        )}
       </div>
 
 
@@ -447,7 +463,7 @@ export default function CoachPanel() {
   return (
     <DashboardShell mode="coach">
       <div className="mb-6">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Coach Panel</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Coach Panel</p>
         <h1 className="text-xl font-bold text-foreground mt-0.5">{SECTION_TITLES[section] ?? "Coach Panel"}</h1>
       </div>
       {(SECTION_MAP[section] ?? (() => <ClientsSection />))()}

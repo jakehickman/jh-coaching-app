@@ -38,7 +38,7 @@ export function DateInput({
 
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
       {children}
     </p>
   );
@@ -52,7 +52,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div className={`bg-card border border-border rounded-xl p-4 ${className}`}>
+    <div className={`bg-card border border-border rounded-xl p-4 shadow-sm ${className}`}>
       {children}
     </div>
   );
@@ -111,7 +111,7 @@ export function ClientCombobox({
                 : "Select client…"}
             </span>
             {selected && draftUserIds?.has(selected.id) && (
-              <span className="flex items-center gap-1 flex-shrink-0 text-amber-400 text-[10px] font-medium">
+              <span className="flex items-center gap-1 flex-shrink-0 text-amber-400 text-xs font-medium">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 unsaved
               </span>
@@ -233,7 +233,7 @@ export function MeasurementsCard({
       <Card className="space-y-0 p-0 overflow-hidden">
         <div className="grid grid-cols-2 divide-x divide-border">
           <div className="p-4">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
               Waist Circumference
             </p>
             <p className="text-xs text-muted-foreground mb-1">{latestDate}</p>
@@ -263,7 +263,7 @@ export function MeasurementsCard({
             )}
           </div>
           <div className="p-4">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
               Skinfold Total
             </p>
             <p className="text-xs text-muted-foreground mb-1">{latestDate}</p>
@@ -319,7 +319,7 @@ export function MeasurementsCard({
                   key={label}
                   className="bg-card rounded-lg p-3 border border-border"
                 >
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                     {label}
                   </p>
                   <p className="text-lg font-bold text-foreground">
@@ -580,7 +580,7 @@ export function ProgressHistoryTable({
               {/* Metrics row */}
               <div className="grid grid-cols-3 gap-px bg-border mx-4 mb-3 rounded-lg overflow-hidden">
                 <div className="bg-card px-3 py-2.5">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Avg Weight</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Avg Weight</p>
                   <div className="flex items-center gap-1.5">
                     <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
                       {row.avg != null ? `${row.avg.toFixed(1)} kg` : <span className="text-muted-foreground text-sm">—</span>}
@@ -592,10 +592,10 @@ export function ProgressHistoryTable({
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{row.entries} {row.entries === 1 ? 'entry' : 'entries'}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{row.entries} {row.entries === 1 ? 'entry' : 'entries'}</p>
                 </div>
                 <div className="bg-card px-3 py-2.5">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist Circumference</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Waist Circumference</p>
                   <div className="flex items-center gap-1.5">
                     <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
                       {row.waist != null ? `${row.waist} cm` : <span className="text-muted-foreground text-sm">—</span>}
@@ -618,7 +618,7 @@ export function ProgressHistoryTable({
                   </div>
                 </div>
                 <div className="bg-card px-3 py-2.5">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Skinfold Thickness</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Skinfold Thickness</p>
                   <div className="flex items-center gap-1.5">
                     <p className={`text-base font-bold ${isFirst ? 'text-foreground' : 'text-foreground/80'}`}>
                       {row.skinfold != null ? `${row.skinfold} mm` : <span className="text-muted-foreground text-sm">—</span>}

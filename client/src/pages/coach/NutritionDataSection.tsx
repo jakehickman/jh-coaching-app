@@ -129,7 +129,7 @@ export default function NutritionDataSection() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             {MACRO_FIELDS.map((f) => (
               <div key={f.key}>
-                <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">
+                <label className="block text-xs text-muted-foreground mb-1 uppercase tracking-wider">
                   {f.label} ({f.unit})
                 </label>
                 <input
@@ -155,7 +155,7 @@ export default function NutritionDataSection() {
           {/* Serving size fields */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">
+              <label className="block text-xs text-muted-foreground mb-1 uppercase tracking-wider">
                 Serving Unit{" "}
                 <span className="normal-case font-normal">
                   (e.g. egg, slice, tbsp)
@@ -175,7 +175,7 @@ export default function NutritionDataSection() {
               />
             </div>
             <div>
-              <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">
+              <label className="block text-xs text-muted-foreground mb-1 uppercase tracking-wider">
                 Grams per serving
               </label>
               <input
@@ -199,7 +199,7 @@ export default function NutritionDataSection() {
               />
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             All macro values are per 100g. Serving unit is optional — used in
             meal plans for unit-based foods.
           </p>
@@ -225,25 +225,25 @@ export default function NutritionDataSection() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-secondary/50">
-              <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[200px]">
+              <th className="text-left px-4 py-2.5 text-xs uppercase tracking-wider text-muted-foreground font-semibold sticky left-0 bg-secondary/50 min-w-[200px]">
                 Food
               </th>
               {MACRO_FIELDS.map((f) => (
                 <th
                   key={f.key}
-                  className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-right min-w-[80px]"
+                  className="px-3 py-2.5 text-xs uppercase tracking-wider text-muted-foreground font-semibold text-right min-w-[80px]"
                 >
                   {f.label}
                   <br />
-                  <span className="text-[9px] normal-case font-normal">
+                  <span className="text-xs normal-case font-normal">
                     (per 100g)
                   </span>
                 </th>
               ))}
-              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-left min-w-[100px]">
+              <th className="px-3 py-2.5 text-xs uppercase tracking-wider text-muted-foreground font-semibold text-left min-w-[100px]">
                 Serving
               </th>
-              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[80px]">
+              <th className="px-3 py-2.5 text-xs uppercase tracking-wider text-muted-foreground font-semibold text-center min-w-[80px]">
                 Actions
               </th>
             </tr>

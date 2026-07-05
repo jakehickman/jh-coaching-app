@@ -132,12 +132,12 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                           <div className={`text-xs leading-tight ${hasData ? "text-foreground" : "text-muted-foreground/40"}`}>
                             <div className="font-medium">{formatTopSet(entry)}</div>
                             {hasData && (
-                              <div className="text-muted-foreground/60 text-[10px] mt-0.5">
+                              <div className="text-muted-foreground/60 text-xs mt-0.5">
                                 {formatSets(entry)}
                               </div>
                             )}
                             {entry.machinePreset && (
-                              <div className="text-muted-foreground/50 text-[10px] mt-0.5 italic truncate max-w-[100px] mx-auto">
+                              <div className="text-muted-foreground/50 text-xs mt-0.5 italic truncate max-w-[100px] mx-auto">
                                 {entry.machinePreset}
                               </div>
                             )}
@@ -194,7 +194,7 @@ function MesocycleCard({
     <Card className="overflow-hidden">
       {/* Header row */}
       <div
-        className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/10 transition-colors"
+        className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/30 active:opacity-70 transition-colors"
         onClick={() => setExpanded(e => !e)}
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -290,7 +290,7 @@ function MesocycleCard({
             </div>
           )}
           {isActive && (
-            <span className="text-[10px] font-semibold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
               Active
             </span>
           )}

@@ -179,7 +179,7 @@ function KanbanExCard({
               onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); repsRef.current?.focus(); } }}
               placeholder="—"
               title="Sets"
-              className="w-12 bg-secondary/80 border border-border/60 rounded text-[11px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary/50 px-0.5 py-0.5 placeholder:text-muted-foreground/30"
+              className="w-12 bg-secondary/80 border border-border/60 rounded text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary/50 px-0.5 py-0.5 placeholder:text-muted-foreground/30"
             />
           </div>
 
@@ -203,7 +203,7 @@ function KanbanExCard({
 
         {/* Row 2: sets × reps + notes (shown when expanded) */}
         {expanded && <div className="flex items-center gap-1 pl-4 mt-0.5">
-          <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wide w-8">Sets</span>
+          <span className="text-xs text-muted-foreground/50 uppercase tracking-wide w-8">Sets</span>
           <input
             ref={setsRef}
             type="text"
@@ -213,8 +213,8 @@ function KanbanExCard({
             placeholder="—"
             className="w-8 bg-secondary/60 border border-border/40 rounded text-[12px] text-foreground text-center focus:outline-none focus:ring-1 focus:ring-primary/40 px-1 py-0.5 placeholder:text-muted-foreground/40"
           />
-          <span className="text-muted-foreground/30 text-[10px]">×</span>
-          <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wide w-8">Reps</span>
+          <span className="text-muted-foreground/30 text-xs">×</span>
+          <span className="text-xs text-muted-foreground/50 uppercase tracking-wide w-8">Reps</span>
           <select
             ref={repsRef as any}
             value={REPS_OPTIONS.includes(ex.reps) ? ex.reps : "__custom__"}
@@ -236,7 +236,7 @@ function KanbanExCard({
           value={ex.notes ?? ""}
           onChange={e => updateExercise(dayIdx, exIdx, "notes", e.target.value)}
           placeholder="Add note..."
-          className="w-full bg-secondary/30 border border-border/40 rounded px-2 py-1 text-[11px] text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:text-foreground ml-4"
+          className="w-full bg-secondary/30 border border-border/40 rounded px-2 py-1 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:text-foreground ml-4"
         />
       )}
     </div>
@@ -252,10 +252,10 @@ function DragCard({ ex }: { ex: Exercise }) {
         <span className="flex-1 min-w-0 text-[12px] text-foreground truncate">{ex.name || "Exercise"}</span>
       </div>
       <div className="flex items-center gap-1 pl-4 mt-0.5">
-        <span className="text-[10px] text-muted-foreground/50 w-8">Sets</span>
+        <span className="text-xs text-muted-foreground/50 w-8">Sets</span>
         <span className="text-[12px] text-foreground">{ex.sets || "—"}</span>
-        <span className="text-muted-foreground/30 text-[10px]">×</span>
-        <span className="text-[10px] text-muted-foreground/50 w-8">Reps</span>
+        <span className="text-muted-foreground/30 text-xs">×</span>
+        <span className="text-xs text-muted-foreground/50 w-8">Reps</span>
         <span className="text-[12px] text-foreground">{ex.reps || "—"}</span>
       </div>
     </div>
@@ -316,7 +316,7 @@ function KanbanColumn({
         />
         <div className="flex-1" />
         {totalSetsMax > 0 && (
-          <span className="text-[11px] text-muted-foreground tabular-nums">{totalSetsLabel}</span>
+          <span className="text-xs text-muted-foreground tabular-nums">{totalSetsLabel}</span>
         )}
         <button
           onClick={() => removeDay(dayIdx)}
@@ -363,7 +363,7 @@ function KanbanColumn({
           })}
         </SortableContext>
         {exercises.length === 0 && !isDragTarget && (
-          <div className="flex items-center justify-center h-10 text-[11px] text-muted-foreground/40 border border-dashed border-border/30 rounded-lg">
+          <div className="flex items-center justify-center h-10 text-xs text-muted-foreground/40 border border-dashed border-border/30 rounded-lg">
             Drop exercises here
           </div>
         )}
@@ -595,8 +595,8 @@ export default function KanbanProgramView({
     {volumeTable && volumeTable.activeMgs.length > 0 && (
       <div className="mt-4 pt-4 border-t border-border/40">
         <div className="flex items-baseline gap-2 mb-2">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Weekly Volume</p>
-          <span className="text-[10px] text-muted-foreground/50">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">Weekly Volume</p>
+          <span className="text-xs text-muted-foreground/50">
             Cycle: {schedule.length > 0 ? schedule.length : days.length} days
           </span>
         </div>
@@ -605,19 +605,19 @@ export default function KanbanProgramView({
             <thead>
               {/* Single header row: day names + Wk */}
               <tr>
-                <th className="text-left text-[10px] uppercase tracking-wider text-muted-foreground pr-4 pb-1.5 font-medium">Muscle</th>
+                <th className="text-left text-xs uppercase tracking-wider text-muted-foreground pr-4 pb-1.5 font-medium">Muscle</th>
                 {days.map((d, i) => (
-                  <th key={i} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground px-3 pb-1.5 font-medium border-l border-border/20">
+                  <th key={i} className="text-center text-xs uppercase tracking-wider text-muted-foreground px-3 pb-1.5 font-medium border-l border-border/20">
                     {d.name || `Day ${i + 1}`}
                   </th>
                 ))}
-                <th className="text-center text-[10px] uppercase tracking-wider text-primary/70 px-3 pb-1.5 font-medium border-l border-border/20">Wk</th>
+                <th className="text-center text-xs uppercase tracking-wider text-primary/70 px-3 pb-1.5 font-medium border-l border-border/20">Wk</th>
               </tr>
             </thead>
             <tbody>
               {volumeTable.activeMgs.map(mg => (
                 <tr key={mg.key} className="border-t border-border/20">
-                  <td className="pr-4 py-1 text-muted-foreground/80 whitespace-nowrap font-medium text-[11px] uppercase tracking-wide">{mg.label}</td>
+                  <td className="pr-4 py-1 text-muted-foreground/80 whitespace-nowrap font-medium text-xs uppercase tracking-wide">{mg.label}</td>
                   {days.map((d, i) => {
                     const range = volumeTable.dayTotals[d.name || "Unnamed"]?.[mg.key] as any;
                     const maxV = Math.round(range?.max ?? 0);

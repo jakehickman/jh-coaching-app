@@ -87,7 +87,7 @@ function DeltaBadge({ delta, unit = "" }: { delta: DeltaResult | null; unit?: st
         ? `${delta.abs.toFixed(1)}${unit}`
         : "";
   return (
-    <span className="inline-flex items-center gap-0.5 text-[11px] font-medium" style={{ color: colour }}>
+    <span className="inline-flex items-center gap-0.5 text-xs font-medium" style={{ color: colour }}>
       <Icon className="w-3 h-3" />
       {label && <span>{label}</span>}
     </span>
@@ -121,7 +121,7 @@ function SummaryCard({
       }}
     >
       <p
-        className="text-[11px] font-medium uppercase tracking-[0.8px]"
+        className="text-xs font-medium uppercase tracking-[0.8px]"
         style={{ color: C.muted }}
       >
         {label}
@@ -143,10 +143,10 @@ function SummaryCard({
         <div className="flex items-center gap-1 mt-0.5">
           <DeltaBadge delta={delta ?? null} unit={deltaUnit} />
           {delta && delta.arrow !== "flat" && (
-            <span className="text-[11px]" style={{ color: C.muted }}>vs prev 7d</span>
+            <span className="text-xs" style={{ color: C.muted }}>vs prev 7d</span>
           )}
           {delta && delta.arrow === "flat" && (
-            <span className="text-[11px]" style={{ color: C.muted }}>vs prev 7d</span>
+            <span className="text-xs" style={{ color: C.muted }}>vs prev 7d</span>
           )}
         </div>
       )}
@@ -173,7 +173,7 @@ function WeekRow({ week }: { week: Week }) {
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-semibold text-foreground">{week.label}</span>
           {week.isInProgress && (
-            <span className="text-[9px] font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+            <span className="text-xs font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
               Current
             </span>
           )}
@@ -356,7 +356,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
       {/* ── Last 7 Days summary ── */}
       <div>
         <p
-          className="text-[11px] font-medium uppercase tracking-[0.8px] mb-4"
+          className="text-xs font-medium uppercase tracking-[0.8px] mb-4"
           style={{ color: C.muted }}
         >
           Last 7 Days
@@ -404,7 +404,7 @@ export function WeeklyReviewTab({ clientId }: Props) {
       {/* ── Weekly history table ── */}
       <div>
         <p
-          className="text-[11px] font-medium uppercase tracking-[0.8px] mb-4"
+          className="text-xs font-medium uppercase tracking-[0.8px] mb-4"
           style={{ color: C.muted }}
         >
           Weekly History
@@ -414,14 +414,14 @@ export function WeeklyReviewTab({ clientId }: Props) {
             <table className="w-full text-sm table-fixed">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[22%]">Week</th>
-                  <th className="text-center px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[8%]">Days</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Weight</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Steps</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Sleep</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Quality</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Stress</th>
-                  <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Sessions</th>
+                  <th className="text-left px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[22%]">Week</th>
+                  <th className="text-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[8%]">Days</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Weight</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Steps</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Sleep</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Quality</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Stress</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Sessions</th>
                 </tr>
               </thead>
               <tbody>

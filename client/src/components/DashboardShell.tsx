@@ -310,8 +310,9 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-3.5 lg:py-2.5 rounded-md text-[13px] transition-colors",
+                    "flex items-center gap-3 px-3 py-3.5 lg:py-2.5 rounded-md text-[13px] transition-colors active:opacity-70",
                     isActive
                       ? "bg-primary/10 text-primary font-medium"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"

@@ -240,7 +240,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                         <span className="text-xs">{isUploading ? "Uploading..." : "Upload"}</span>
                       </button>
                     )}
-                    <div className="px-2 py-1.5 text-[11px] font-medium text-center truncate border-t border-border bg-card">
+                    <div className="px-2 py-1.5 text-xs font-medium text-center truncate border-t border-border bg-card">
                       {POSE_LABELS[pose]}
                     </div>
                   </div>
@@ -302,7 +302,7 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
                 const photoB = compareByPoseWeek[pose]?.[compareWeekB];
                 return (
                   <div key={pose} className="space-y-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       {POSE_LABELS[pose]}
                     </p>
                     <div className="grid grid-cols-2 gap-4 max-w-3xl">

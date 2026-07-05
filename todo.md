@@ -850,3 +850,11 @@
 - [x] Add shadow-sm to Card in shared.tsx, shadow-md to bottom nav, shadow-sm to sticky header
 - [x] Bump Button default radius to rounded-xl to match card language
 - [x] Add skeleton loading states to DailyLogTab, NutritionTab today view, TrainingTab
+
+## Coach Side Material Design 3 Polish (Jul 2026)
+- [ ] Fix text-[10px]/text-[11px] → text-xs in all coach pages
+- [ ] Add shadow-sm to coach card components
+- [ ] Add aria-current="page" to coach sidebar nav items
+- [ ] Add hover:bg-muted/30 to all interactive table/list rows in coach pages
+- [ ] Standardise Button usage in coach forms (replace raw button elements)
+- [ ] Add skeleton loading states to client list, check-in history, coach nutrition data view

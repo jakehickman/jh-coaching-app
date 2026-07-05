@@ -106,14 +106,14 @@ export function WeeklyBodyCompCards({ clientId }: { clientId: number }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Date</th>
-                {hasWaist && <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Waist</th>}
-                {hasHip   && <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Hip</th>}
+                <th className="text-left px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Date</th>
+                {hasWaist && <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Waist</th>}
+                {hasHip   && <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Hip</th>}
                 {activeSites.map(s => (
-                  <th key={s.key} className="text-right px-3 py-2.5 text-[10px] font-medium uppercase tracking-wider whitespace-nowrap" style={{ color: "rgba(236,237,238,0.35)" }}>{s.label}</th>
+                  <th key={s.key} className="text-right px-3 py-2.5 text-xs font-medium uppercase tracking-wider whitespace-nowrap" style={{ color: "rgba(236,237,238,0.35)" }}>{s.label}</th>
                 ))}
-                {hasSf && <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Total</th>}
-                {hasNotes && <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</th>}
+                {hasSf && <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Total</th>}
+                {hasNotes && <th className="text-left px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes</th>}
               </tr>
             </thead>
             <tbody>
