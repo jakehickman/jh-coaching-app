@@ -91,24 +91,26 @@ function TrainingTab() {
       {schedule.length > 0 && (
         <Card>
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Training Schedule</p>
-          <div className="flex flex-wrap gap-1.5 items-center">
+          <div className="space-y-1">
             {schedule.map((slot: string, i: number) => {
               const isOff = slot === "Off";
-              const label = isOff ? "OFF" : slot;
               return (
-                <span
+                <div
                   key={i}
-                  className={`inline-flex items-center justify-center rounded-lg font-semibold text-sm px-3 py-1.5 ${
-                    isOff
-                      ? "bg-secondary text-muted-foreground"
-                      : "bg-primary/10 text-primary border border-primary/20"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${
+                    isOff ? "bg-secondary/50" : "bg-primary/8"
                   }`}
                 >
-                  {label}
-                </span>
+                  <span className="w-5 text-xs font-semibold text-muted-foreground/60 shrink-0 text-right">{i + 1}</span>
+                  <span className={`text-sm font-semibold ${
+                    isOff ? "text-muted-foreground" : "text-primary"
+                  }`}>
+                    {isOff ? "Rest Day" : slot}
+                  </span>
+                </div>
               );
             })}
-            <span className="text-xs text-muted-foreground/40 ml-0.5">→ repeat</span>
+            <p className="text-xs text-muted-foreground/50 text-center pt-1">Repeats in order</p>
           </div>
         </Card>
       )}
