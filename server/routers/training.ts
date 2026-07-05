@@ -109,6 +109,7 @@ export const workoutSessionsRouter = router({
             machinePreset: z.string().nullable().optional(),
             machineSettings: z.string().nullable().optional(),
             exerciseNotes: z.string().nullable().optional(),
+            weightUnit: z.enum(['kg', 'lbs']).optional(),
             sets: z.array(
               z.object({
                 weight: z.number().nullable().optional(),

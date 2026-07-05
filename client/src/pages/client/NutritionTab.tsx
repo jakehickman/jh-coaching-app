@@ -243,9 +243,12 @@ function RatingPicker({
           {type === "hunger" ? "Hunger Before" : "Fullness After"}
         </span>
         {onOpenScale && (
-          <button onClick={onOpenScale} className="flex items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-            <HelpCircle size={12} />
-            <span>Scale reference</span>
+          <button
+            onClick={onOpenScale}
+            className="text-muted-foreground/50 hover:text-muted-foreground transition-colors p-1 -mr-1"
+            title="Scale reference"
+          >
+            <HelpCircle size={16} />
           </button>
         )}
       </div>
@@ -677,64 +680,77 @@ function FullnessSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
-      <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-8 max-h-[85vh] overflow-y-auto" hideCloseButton>
-        <SheetHeader className="flex flex-row items-center justify-between mb-2">
-          <SheetTitle>How are you feeling?</SheetTitle>
-          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground p-1">
-            <X size={20} />
-          </button>
-        </SheetHeader>
-        <div className="space-y-5">
-          <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
-          {/* Per-meal habits */}
-          {(mealHabits as any[]).length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Meal Habits</p>
-              <div className="space-y-2">
-                {(mealHabits as any[]).map((h: any) => (
-                  <label key={h.id} className="flex items-center gap-3 cursor-pointer">
-                    <div
-                      onClick={() => handleToggleHabit(h.id)}
-                      className={`w-7 h-7 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        habitChecked[h.id]
-                          ? "bg-primary border-primary"
-                          : "border-border bg-secondary"
-                      }`}
-                    >
-                      {habitChecked[h.id] && (
-                        <svg width="13" height="10" viewBox="0 0 10 8" fill="none">
-                          <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="text-sm text-foreground">{h.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Notes</p>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Anything to add?"
-              rows={2}
-              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-            />
+    <>
+      {open && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+            <button onClick={handleClose} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
+              <ChevronLeft size={20} />
+              <span className="text-sm">Back</span>
+            </button>
+            <h2 className="text-base font-semibold text-foreground">How are you feeling?</h2>
+            <div className="w-14" />
           </div>
-          <Button
-            className="w-full"
-            disabled={fullness == null || rateMutation.isPending || mealId == null}
-            onClick={() => mealId != null && fullness != null && rateMutation.mutate({ id: mealId, fullnessRating: fullness, notes: notes || null })}
-          >
-            {rateMutation.isPending ? "Saving..." : "Save"}
-          </Button>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5">
+            <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
+
+            {/* Per-meal habits — checkbox on RIGHT for right-hand thumb reach */}
+            {(mealHabits as any[]).length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Meal Habits</p>
+                <div className="space-y-2">
+                  {(mealHabits as any[]).map((h: any) => (
+                    <label key={h.id} className="flex items-center justify-between gap-3 cursor-pointer py-1">
+                      <span className="text-sm text-foreground">{h.name}</span>
+                      <div
+                        onClick={() => handleToggleHabit(h.id)}
+                        className={`w-7 h-7 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          habitChecked[h.id]
+                            ? "bg-primary border-primary"
+                            : "border-border bg-secondary"
+                        }`}
+                      >
+                        {habitChecked[h.id] && (
+                          <svg width="13" height="10" viewBox="0 0 10 8" fill="none">
+                            <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground" />
+                          </svg>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Notes</p>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Anything to add?"
+                rows={2}
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 pb-safe pt-3 border-t border-border/50">
+            <Button
+              className="w-full"
+              disabled={fullness == null || rateMutation.isPending || mealId == null}
+              onClick={() => mealId != null && fullness != null && rateMutation.mutate({ id: mealId, fullnessRating: fullness, notes: notes || null })}
+            >
+              {rateMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </div>
         </div>
-        <ScaleModal open={scaleOpen} onClose={() => setScaleOpen(false)} />
-      </SheetContent>
-    </Sheet>
+      )}
+      <ScaleModal open={scaleOpen} onClose={() => setScaleOpen(false)} />
+    </>
   );
 }
 

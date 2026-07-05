@@ -14,6 +14,7 @@ interface TopSetEntry {
   topSet: { weight: number | null; reps: number | null } | null;
   totalSets: number;
   machinePreset?: string | null;
+  weightUnit?: string | null;
 }
 
 interface ExerciseReview {
@@ -44,7 +45,8 @@ function formatTopSet(entry: TopSetEntry): string {
   if (!entry.topSet) return "—";
   const { weight, reps } = entry.topSet;
   if (weight == null && reps == null) return "—";
-  const wStr = weight != null ? `${weight}kg` : "BW";
+  const unit = (entry as any).weightUnit ?? 'kg';
+  const wStr = weight != null ? `${weight}${unit}` : "BW";
   const rStr = reps != null ? `× ${reps}` : "";
   return `${wStr}${rStr ? " " + rStr : ""}`;
 }

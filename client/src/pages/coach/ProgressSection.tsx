@@ -1227,8 +1227,9 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
             const completedSets = allSets.filter((s: any) => s.completed || s.weight != null || s.reps != null);
             const isSkipped = completedSets.length === 0 && totalExSets > 0;
             const firstSet = completedSets[0];
+            const exUnit = (ex.weightUnit as string | undefined) ?? 'kg';
             const setStr = firstSet
-              ? `${firstSet.weight != null ? firstSet.weight + ' kg' : '—'} × ${firstSet.reps != null ? firstSet.reps : '—'}`
+              ? `${firstSet.weight != null ? firstSet.weight + ' ' + exUnit : '—'} × ${firstSet.reps != null ? firstSet.reps : '—'}`
               : null;
             // Find previous session where this exercise was performed with the same machine preset
             // (matches Exercise Progress tab logic: compare within same preset, or no-preset vs no-preset)
@@ -1794,7 +1795,7 @@ function ExerciseProgressTab({
   }
 
   // Build per-exercise history (chronological)
-  const exerciseHistory: Record<string, Array<{ sessionId: number; date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }>; substitutedFor?: string; equipmentDetails?: string | null; machinePreset?: string | null; machineSettings?: string | null }>> = {};
+  const exerciseHistory: Record<string, Array<{ sessionId: number; date: string; topSet: { weight: number | null; reps: number | null } | null; allSets: Array<{ weight: number | null; reps: number | null }>; substitutedFor?: string; equipmentDetails?: string | null; machinePreset?: string | null; machineSettings?: string | null; weightUnit?: string | null }>> = {};
   for (const session of [...workoutSessions].reverse()) {
     const dateStr = toLocalDateStr(session.sessionDate);
     for (const ex of (session.exercises as any[])) {
@@ -1812,7 +1813,7 @@ function ExerciseProgressTab({
         if (sw === bw && (s.reps ?? 0) > (best.reps ?? 0)) return s;
         return best;
       }, null);
-      exerciseHistory[ex.name].push({ sessionId: session.id, date: dateStr, topSet, allSets: sets, substitutedFor: ex.substitutedFor ?? undefined, equipmentDetails: ex.equipmentDetails ?? null, machinePreset: ex.machinePreset ?? null, machineSettings: ex.machineSettings ?? null });
+      exerciseHistory[ex.name].push({ sessionId: session.id, date: dateStr, topSet, allSets: sets, substitutedFor: ex.substitutedFor ?? undefined, equipmentDetails: ex.equipmentDetails ?? null, machinePreset: ex.machinePreset ?? null, machineSettings: ex.machineSettings ?? null, weightUnit: ex.weightUnit ?? null });
     }
   }
 
@@ -1958,7 +1959,8 @@ function ExerciseProgressTab({
                       const wDown = w != null && pw != null && w < pw;
                       const rUp = !wUp && !wDown && w != null && pw != null && w === pw && r != null && pr != null && r > pr;
                       const rDown = !wUp && !wDown && w != null && pw != null && w === pw && r != null && pr != null && r < pr;
-                      const weightStr = w != null ? `${w} kg` : '—';
+                      const entryUnit = (entry.weightUnit as string | undefined) ?? 'kg';
+                      const weightStr = w != null ? `${w} ${entryUnit}` : '—';
                       const repsStr = r != null ? ` × ${r}` : '';
                       // Only show per-row preset label when multiple presets exist (so user knows which machine each entry used).
                       // When there's only one preset it's already shown as a pill in the header.

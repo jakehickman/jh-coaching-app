@@ -745,7 +745,7 @@ function MealLogView({ clientId }: { clientId: number }) {
         </div>
       </div>
 
-      <div className="w-96 shrink-0">
+      <div className="w-80 shrink-0">
         {selectedDate && selectedDayData ? (
           <div className="rounded-xl overflow-hidden" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
             <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${C.border}` }}>
@@ -847,7 +847,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
   const periodLabel = `Last ${days}d`;
 
   return (
-    <div className="max-w-[900px] mx-auto space-y-4">
+    <div className="max-w-[900px] space-y-4">
 
       {/* Low data warning */}
       {insights.totalMeals < 5 && (
@@ -964,7 +964,7 @@ export function CoachNutritionTab({ clientId }: { clientId: number }) {
   const [days, setDays] = useState<7 | 28>(28);
 
   return (
-    <div>
+    <div className="max-w-[900px]">
       {/* Header row: sub-tabs left, period toggle right */}
       <div className="flex items-center justify-between mb-6">
         <div

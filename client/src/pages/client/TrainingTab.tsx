@@ -268,13 +268,16 @@ function PresetSelector({
     <>
       <button
         onClick={e => { e.stopPropagation(); onPopoverOpenChange(true); }}
-        className={`inline-flex items-center px-3 py-1 rounded-full border text-xs transition-colors ${
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs transition-colors ${
           currentPreset
             ? "bg-primary/10 border-primary/20 text-primary/80 hover:bg-primary/20"
             : "bg-secondary border-border text-muted-foreground hover:text-foreground"
         }`}
       >
         {currentPreset || "Add machine"}
+        {currentPreset && currentSettings && (
+          <span className="text-[10px] opacity-60">· {currentSettings}</span>
+        )}
       </button>
 
       <Sheet open={popoverOpen} onOpenChange={open => { if (!open) closeSheet(); }}>
@@ -348,14 +351,22 @@ function PresetSelector({
           {currentPreset && (
             <div className="px-5 py-4 border-t border-border/40 flex-shrink-0">
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Setup notes</p>
-              <input
-                type="text"
-                value={currentSettings}
-                onChange={e => onSettingsChange(e.target.value)}
-                onBlur={e => handleSettingsBlur(e.target.value)}
-                placeholder="e.g. Seat 3, pin 8"
-                className="w-full bg-secondary border border-border rounded-xl px-4 py-3.5 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={currentSettings}
+                  onChange={e => onSettingsChange(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { handleSettingsBlur(currentSettings); (e.target as HTMLInputElement).blur(); } }}
+                  placeholder="e.g. Seat 3, pin 8"
+                  className="flex-1 bg-secondary border border-border rounded-xl px-4 py-3.5 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <button
+                  onClick={() => handleSettingsBlur(currentSettings)}
+                  className="px-4 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium shrink-0 active:opacity-80 transition-opacity"
+                >
+                  Save
+                </button>
+              </div>
             </div>
           )}
 
@@ -1409,6 +1420,7 @@ function WorkoutLogTab() {
         presetId: machinePresetId[nameToUse] || null,
         machineSettings: machineSettings[nameToUse] || null,
         exerciseNotes: exerciseNotes[nameToUse] || null,
+        weightUnit: exerciseUnits[nameToUse] ?? 'kg',
         sets: (exerciseData[nameToUse] ?? []).map(s => ({
           weight: s.weight !== "" ? parseFloat(s.weight) : null,
           reps: s.reps !== "" ? parseInt(s.reps) : null,
@@ -2130,7 +2142,7 @@ function WorkoutLogTab() {
                     disabled={saving}
                     className="w-full py-4 bg-primary text-primary-foreground font-bold text-base rounded-2xl shadow-2xl hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
-                    {saving ? "Saving..." : "Complete Session"}
+                    {saving ? "Saving..." : "Save Session"}
                   </button>
                   {lastSaved && (
                     <p className="text-center text-xs text-muted-foreground mt-1">
