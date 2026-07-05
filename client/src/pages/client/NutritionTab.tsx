@@ -983,7 +983,7 @@ function EditSheet({
                       >
                         <span className="text-sm text-foreground">{h.name}</span>
                         <div
-                          className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          className={`w-7 h-7 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
                             habitChecked[h.id]
                               ? "bg-primary border-primary"
                               : "border-border bg-secondary"

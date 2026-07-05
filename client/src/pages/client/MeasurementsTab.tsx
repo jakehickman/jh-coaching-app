@@ -128,9 +128,9 @@ function MeasurementCard({
         {!readOnly && (
           <button
             onClick={onDelete}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:text-red-400 active:bg-red-400/10 transition-colors"
           >
-            <Trash2 size={14} />
+            <Trash2 size={15} />
           </button>
         )}
       </div>
@@ -140,14 +140,14 @@ function MeasurementCard({
         <div className="grid grid-cols-2 gap-3">
           {entry.waist != null && (
             <div className="bg-secondary/50 rounded-lg px-3 py-2.5">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Waist</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Waist</p>
               <p className="text-base font-semibold text-foreground">{entry.waist} <span className="text-xs font-normal text-muted-foreground">cm</span></p>
               <Delta curr={entry.waist} prev={prev?.waist ?? null} unit=" cm" />
             </div>
           )}
           {entry.hips != null && (
             <div className="bg-secondary/50 rounded-lg px-3 py-2.5">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Hip</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Hip</p>
               <p className="text-base font-semibold text-foreground">{entry.hips} <span className="text-xs font-normal text-muted-foreground">cm</span></p>
               <Delta curr={entry.hips} prev={prev?.hips ?? null} unit=" cm" />
             </div>
@@ -158,12 +158,12 @@ function MeasurementCard({
       {/* Skinfolds */}
       {skinfoldSites.some(s => s.curr != null) && (
         <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">Skinfolds</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Skinfolds</p>
           <div className="grid grid-cols-2 gap-2">
             {skinfoldSites.map(({ label, curr, prev: p }) =>
               curr != null ? (
                 <div key={label} className="bg-secondary/50 rounded-lg px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground mb-0.5">{label}</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-sm font-semibold text-foreground">{curr} <span className="text-xs font-normal text-muted-foreground">mm</span></span>
                     <Delta curr={curr} prev={p} unit=" mm" />

@@ -6,6 +6,8 @@ import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus
 import { MdBolt } from "react-icons/md";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { SectionLabel, Card, DateInput } from "./shared";
@@ -243,11 +245,17 @@ function PresetSelector({
     onSelectPreset(preset.presetName, preset.lastSettings ?? null, preset.id);
   };
 
+  const [deleteConfirmPreset, setDeleteConfirmPreset] = useState<any | null>(null);
+
   const handleDeletePreset = (preset: any) => {
-    if (confirm(`Delete "${preset.presetName}"?`)) {
-      onDeletePreset(preset.id, preset.presetName);
-      deleteMutation.mutate({ id: preset.id });
-    }
+    setDeleteConfirmPreset(preset);
+  };
+
+  const confirmDeletePreset = () => {
+    if (!deleteConfirmPreset) return;
+    onDeletePreset(deleteConfirmPreset.id, deleteConfirmPreset.presetName);
+    deleteMutation.mutate({ id: deleteConfirmPreset.id });
+    setDeleteConfirmPreset(null);
   };
 
   const commitRename = () => {
@@ -440,6 +448,20 @@ function PresetSelector({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Delete preset confirm dialog */}
+      <Dialog open={!!deleteConfirmPreset} onOpenChange={(v) => !v && setDeleteConfirmPreset(null)}>
+        <DialogContent className="max-w-xs mx-auto">
+          <DialogHeader>
+            <DialogTitle>Delete preset?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Delete &ldquo;{deleteConfirmPreset?.presetName}&rdquo;? This cannot be undone.</p>
+          <div className="flex gap-3 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setDeleteConfirmPreset(null)}>Cancel</Button>
+            <Button variant="destructive" className="flex-1" onClick={confirmDeletePreset}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -999,9 +1021,9 @@ function SessionCard({ s, viewAsUserId, deleteConfirmId, deleting, setDeleteConf
         <div className="mt-3 flex items-center gap-3">
           <p className="flex-1 text-sm text-foreground">Delete this session?</p>
           <button type="button" onClick={() => { setDeleting(s.id); setDeleteConfirmId(null); deleteMutation.mutate({ id: s.id }); }}
-            className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium">Delete</button>
+            className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium active:opacity-80 transition-opacity">Delete</button>
           <button type="button" onClick={() => setDeleteConfirmId(null)}
-            className="px-4 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium">Cancel</button>
+            className="px-4 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium active:opacity-80 transition-opacity">Cancel</button>
         </div>
       )}
     </div>
@@ -1816,7 +1838,7 @@ function WorkoutLogTab() {
                           <button
                             onClick={e => { e.stopPropagation(); toggleExerciseUnit(displayName); }}
                             title="Toggle weight unit"
-                            className="flex items-center justify-center h-7 px-2 rounded-lg bg-secondary text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                            className="flex items-center justify-center h-9 px-3 rounded-lg bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                           >
                             {exerciseUnits[displayName] ?? 'kg'}
                           </button>
@@ -2012,7 +2034,7 @@ function WorkoutLogTab() {
                                              updated[0] = { ...updated[0], miniSets: String(Math.max(0, cur - 1)) };
                                              return { ...prev, [displayName]: updated };
                                            })}
-                                           className="w-7 h-7 rounded-full bg-secondary hover:bg-secondary/70 text-muted-foreground font-bold text-base flex items-center justify-center transition-colors"
+                                           className="w-9 h-9 rounded-full bg-secondary hover:bg-secondary/70 text-muted-foreground font-bold text-base flex items-center justify-center transition-colors"
                                          >−</button>
                                          <span className="w-6 text-center text-base font-bold text-primary tabular-nums">
                                            {s.miniSets && s.miniSets !== "" ? s.miniSets : "0"}
@@ -2025,7 +2047,7 @@ function WorkoutLogTab() {
                                              updated[0] = { ...updated[0], miniSets: String(cur + 1) };
                                              return { ...prev, [displayName]: updated };
                                            })}
-                                           className="w-7 h-7 rounded-full bg-secondary hover:bg-secondary/70 text-muted-foreground font-bold text-base flex items-center justify-center transition-colors"
+                                           className="w-9 h-9 rounded-full bg-secondary hover:bg-secondary/70 text-muted-foreground font-bold text-base flex items-center justify-center transition-colors"
                                          >+</button>
                                        </div>
                                      </div>
@@ -2083,8 +2105,8 @@ function WorkoutLogTab() {
                                         }`}
                                       />
                                     </div>
-                                    <button onClick={() => removeSet(displayName, idx)} className="w-6 flex-shrink-0 flex items-center justify-center text-muted-foreground/50 hover:text-destructive transition-colors">
-                                      <Minus size={14} />
+                                    <button onClick={() => removeSet(displayName, idx)} className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg bg-secondary text-muted-foreground active:text-red-400 active:bg-red-400/10 transition-colors">
+                                      <Minus size={15} />
                                     </button>
                                   </div>
                                 </div>

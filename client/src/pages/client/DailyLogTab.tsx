@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr, localToday, dayLabel } from "@/lib/dates";
 import { SectionLabel, Card, ScoreInput, DailyLogRow } from "./shared";
+import { Button } from "@/components/ui/button";
 
 // ─── WeekSummaryPanel ────────────────────────────────────────────────────────
 function WeekSummaryPanel({
@@ -489,7 +490,7 @@ export default function DailyLogTab() {
           <button
             onClick={() => setWeekBack(w => w + 1)}
             disabled={!canGoBack}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+            className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
           >
             <ChevronLeft size={18} />
           </button>
@@ -497,7 +498,7 @@ export default function DailyLogTab() {
           <button
             onClick={() => setWeekBack(w => Math.max(0, w - 1))}
             disabled={!canGoForward}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+            className="w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
           >
             <ChevronRight size={18} />
           </button>
@@ -525,7 +526,7 @@ export default function DailyLogTab() {
                     : 'hover:bg-muted/40 text-foreground'
                 }`}
               >
-                <span className={`text-[10px] font-medium uppercase ${
+                <span className={`text-xs font-medium uppercase ${
                   isSelected ? 'text-primary-foreground' : isToday ? 'text-primary' : 'text-muted-foreground'
                 }`}>{label.slice(0, 2)}</span>
                 <span className={`text-sm font-bold leading-none ${
@@ -612,10 +613,9 @@ export default function DailyLogTab() {
       <HabitsCard date={date} weekDays={weekDays} />
 
       {!viewAsUserId && (
-        <button onClick={handleSave} disabled={upsert.isPending}
-          className="w-full py-4 bg-primary text-primary-foreground font-semibold text-base rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
+        <Button onClick={handleSave} disabled={upsert.isPending} className="w-full py-4 text-base font-semibold rounded-lg">
           {upsert.isPending ? "Saving..." : "Save Log"}
-        </button>
+        </Button>
       )}
 
       {/* ── This week ── */}

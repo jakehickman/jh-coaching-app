@@ -113,9 +113,9 @@ function HistoryCard({
         {!readOnly && (
           <button
             onClick={onDelete}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-muted-foreground active:text-red-400 active:bg-red-400/10 transition-colors"
           >
-            <Trash2 size={14} />
+            <Trash2 size={15} />
           </button>
         )}
       </div>
@@ -123,7 +123,7 @@ function HistoryCard({
       {/* Weight from daily log (if available) */}
       {weightOnDay != null && (
         <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Weight</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Weight</p>
           <p className="text-sm font-semibold text-foreground">{weightOnDay} kg</p>
         </div>
       )}
@@ -133,7 +133,7 @@ function HistoryCard({
         <div className="grid grid-cols-2 gap-3">
           {entry.waist != null && (
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Waist</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Waist</p>
               <p className="text-sm font-semibold text-foreground">
                 {entry.waist} cm
                 <DeltaBadge curr={entry.waist} prev={prevEntry?.waist ?? null} unit="cm" lowerIsBetter />
@@ -142,7 +142,7 @@ function HistoryCard({
           )}
           {entry.hips != null && (
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Hip</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Hip</p>
               <p className="text-sm font-semibold text-foreground">
                 {entry.hips} cm
                 <DeltaBadge curr={entry.hips} prev={prevEntry?.hips ?? null} unit="cm" lowerIsBetter />
@@ -165,7 +165,7 @@ function HistoryCard({
               if (a == null) return null;
               return (
                 <div key={label}>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
                   <p className="text-sm font-semibold text-foreground">
                     {a} mm
                     <DeltaBadge curr={a} prev={prevA} unit="mm" lowerIsBetter />
@@ -265,25 +265,25 @@ function MeasurementCalendar({
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={prevMonth}
-          className="p-1.5 rounded-md text-muted-foreground hover:bg-muted/40 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/40 transition-colors"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={18} />
         </button>
         <p className="text-sm font-semibold text-foreground">
           {monthNames[month]} {year}
         </p>
         <button
           onClick={nextMonth}
-          className="p-1.5 rounded-md text-muted-foreground hover:bg-muted/40 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/40 transition-colors"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={18} />
         </button>
       </div>
 
       {/* Day-of-week header */}
       <div className="grid grid-cols-7 mb-1">
         {dayLetters.map((l, i) => (
-          <div key={i} className="text-center text-[10px] font-medium text-muted-foreground py-1">
+          <div key={i} className="text-center text-xs font-medium text-muted-foreground py-1">
             {l}
           </div>
         ))}
@@ -305,7 +305,7 @@ function MeasurementCalendar({
             <button
               key={iso}
               onClick={() => onSelectDate(isSelected ? null : iso)}
-              className={`relative flex flex-col items-center justify-center h-9 rounded-lg text-sm transition-colors
+              className={`relative flex flex-col items-center justify-center h-10 rounded-lg text-sm transition-colors
                 ${isSelected
                   ? "bg-primary text-primary-foreground font-bold"
                   : isToday
@@ -326,11 +326,11 @@ function MeasurementCalendar({
 
       {/* Legend */}
       <div className="flex items-center gap-4 mt-3 justify-center">
-        <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
           Measurements
         </span>
-        <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="w-1 h-1 rounded-full bg-blue-400/60 inline-block" />
           Weight
         </span>
@@ -755,7 +755,7 @@ export default function BodyCompTab() {
         {selectedDate && !selectedEntry && selectedWeight != null && (
           <div className="mb-4 bg-card border border-border rounded-xl px-4 py-3">
             <p className="text-sm font-semibold text-foreground mb-1">{fmtDate(selectedDate)}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Weight</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Weight</p>
             <p className="text-sm font-semibold text-foreground">{selectedWeight} kg</p>
             <p className="text-xs text-muted-foreground mt-2">No measurement logged for this day.</p>
           </div>
