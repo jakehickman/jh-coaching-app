@@ -1173,7 +1173,7 @@ function WorkoutLogTab() {
     if (!loadedRef.current) return;
     const [date, day] = loadedRef.current.split(':');
     writeDraft(date, day);
-  }, [exerciseData, sessionNotes, equipmentDetails, exerciseNotes, substitutions]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [exerciseData, sessionNotes, equipmentDetails, machinePreset, machineSettings, exerciseNotes, substitutions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Sub picker ────────────────────────────────────────────────────────────
   const [subPicker, setSubPicker] = useState<{ originalName: string } | null>(null);
