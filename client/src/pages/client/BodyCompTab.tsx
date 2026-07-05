@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { DateInput } from "@/pages/client/shared";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -711,19 +712,20 @@ export default function BodyCompTab() {
               />
             </div>
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="outline"
+                className="flex-1 h-12"
                 onClick={() => setShowForm(false)}
-                className="flex-1 py-3 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted/30 transition-colors"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                className="flex-1 h-12 text-base font-semibold"
                 onClick={handleSave}
                 disabled={addMutation.isPending}
-                className="flex-1 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {addMutation.isPending ? "Saving..." : "Save"}
-              </button>
+              </Button>
             </div>
           </Card>
         )}

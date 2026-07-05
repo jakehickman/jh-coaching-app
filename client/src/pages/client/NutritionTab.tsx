@@ -361,7 +361,7 @@ function DateTimePicker({
             />
           </div>
         </div>
-        <Button className="w-full" onClick={handleSave}>Done</Button>
+        <Button className="w-full h-12 text-base font-semibold" onClick={handleSave}>Done</Button>
       </div>
     </div>
   );
@@ -588,7 +588,7 @@ function LogSheet({
       <div className="px-4 pb-8 pt-3 border-t border-border shrink-0">
         <Button
           onClick={handleSave}
-          className="w-full h-12 text-base"
+          className="w-full h-12 text-base font-semibold"
           disabled={logMutation.isPending || uploadedPhotoUrl === "uploading"}
         >
           {logMutation.isPending ? "Saving..."
@@ -766,7 +766,7 @@ function FullnessSheet({
         {/* Footer */}
         <div className="px-4 pb-8 pt-3 border-t border-border/50 shrink-0">
           <Button
-            className="w-full"
+            className="w-full h-12 text-base font-semibold"
             disabled={fullness == null || rateMutation.isPending || mealId == null}
             onClick={() => mealId != null && fullness != null && rateMutation.mutate({ id: mealId, fullnessRating: fullness, notes: notes || null })}
           >
@@ -1038,7 +1038,7 @@ function EditSheet({
                 />
               </div>
 
-              <Button className="w-full" onClick={handleSave} disabled={editMutation.isPending}>
+              <Button className="w-full h-12 text-base font-semibold" onClick={handleSave} disabled={editMutation.isPending}>
                 {editMutation.isPending ? "Saving..." : "Save changes"}
               </Button>
             </div>

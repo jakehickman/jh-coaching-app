@@ -613,7 +613,7 @@ export default function DailyLogTab() {
       <HabitsCard date={date} weekDays={weekDays} />
 
       {!viewAsUserId && (
-        <Button onClick={handleSave} disabled={upsert.isPending} className="w-full py-4 text-base font-semibold rounded-lg">
+        <Button onClick={handleSave} disabled={upsert.isPending} className="w-full h-12 text-base font-semibold">
           {upsert.isPending ? "Saving..." : "Save Log"}
         </Button>
       )}

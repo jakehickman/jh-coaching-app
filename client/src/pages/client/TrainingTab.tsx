@@ -2200,13 +2200,13 @@ function WorkoutLogTab() {
             {!viewAsUserId && (
               <div className="fixed bottom-16 left-0 right-0 z-40 px-4 pb-2 pointer-events-none">
                 <div className="max-w-lg mx-auto pointer-events-auto">
-                  <button
+                  <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="w-full py-4 bg-primary text-primary-foreground font-bold text-base rounded-2xl shadow-2xl hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="w-full h-12 text-base font-semibold shadow-2xl"
                   >
                     {saving ? "Saving..." : "Save Session"}
-                  </button>
+                  </Button>
                   {lastSaved && (
                     <p className="text-center text-xs text-muted-foreground mt-1">
                       Last saved: {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
