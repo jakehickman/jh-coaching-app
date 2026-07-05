@@ -1686,6 +1686,7 @@ function WorkoutLogTab() {
           sets: Array<{ weight: number | null; reps: number | null }>;
           presetId: number | null;
           presetName: string;
+          weightUnit: string | null;
         };
         const allPastEntries: PastExEntry[] = [];
         for (const s of pastSessions) {
@@ -1697,6 +1698,7 @@ function WorkoutLogTab() {
                 sets: filteredSets,
                 presetId: ex.presetId ?? null,
                 presetName: ex.machinePreset || ex.equipmentDetails || "",
+                weightUnit: (ex.weightUnit as string | undefined) ?? null,
               });
             }
           }
@@ -1743,24 +1745,25 @@ function WorkoutLogTab() {
               // have one; falls back to name string for legacy sessions.
               // If no preset is selected, use the most recent entry regardless of preset.
               const lookupName = subName ? displayName : ex.name;
-              const prevSets = (() => {
+              const prevEntry = (() => {
                 const candidates = allPastEntries.filter(e => e.name === lookupName);
-                if (candidates.length === 0) return [];
+                if (candidates.length === 0) return null;
                 // No preset selected on current exercise → show most recent regardless
-                if (!currentPreset) return candidates[0].sets;
+                if (!currentPreset) return candidates[0];
                 // Preset selected → find most recent entry with same preset
                 for (const entry of candidates) {
                   // Both sides have IDs: use stable ID comparison
                   if (currentPresetId && entry.presetId) {
-                    if (currentPresetId === entry.presetId) return entry.sets;
+                    if (currentPresetId === entry.presetId) return entry;
                   } else {
                     // One or both sides lack an ID: fall back to name comparison
-                    if (currentPreset && currentPreset === entry.presetName) return entry.sets;
+                    if (currentPreset && currentPreset === entry.presetName) return entry;
                   }
                 }
                 // No matching preset found in history
-                return [];
+                return null;
               })();
+              const prevSets = prevEntry?.sets ?? [];
               const isSheetOpen = !!equipmentOpen[displayName];
               return (
                 <Card key={displayName}>
@@ -1829,7 +1832,7 @@ function WorkoutLogTab() {
                               const pw = prevSets[0]?.weight;
                               const pr = prevSets[0]?.reps;
                               if (pw == null && pr == null) return null;
-                              const unit = exerciseUnits[displayName] ?? 'kg';
+                              const unit = prevEntry?.weightUnit ?? '';
                               const parts = [pw != null ? `${pw}${unit}` : null, pr != null ? pr : null].filter(Boolean);
                               return <span className="text-muted-foreground/50 font-normal"> · Last: {parts.join(' × ')}</span>;
                             })()}
@@ -2342,7 +2345,6 @@ function WorkoutLogTab() {
           {(() => {
             if (!historySheet) return null;
             const exName = historySheet;
-            const histUnit = exerciseUnits[exName] ?? 'kg';
             const pastSessions = [...sessions]
               .filter(s => (s.exercises as any[]).some((e: any) => e.name === exName))
               .sort((a, b) => toLocalDateStr(b.sessionDate).localeCompare(toLocalDateStr(a.sessionDate)));
@@ -2372,7 +2374,7 @@ function WorkoutLogTab() {
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {completedSets.map((st: any, idx: number) => (
                             <span key={idx} className={`text-xs border rounded-lg px-2 py-1 ${st.myoReps ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border text-foreground'}`}>
-                              {st.weight != null ? `${st.weight}${histUnit}` : '—'} × {st.reps != null ? st.reps : '—'}
+                              {st.weight != null ? `${st.weight}${(exEntry.weightUnit as string | undefined) ?? ''}` : '—'} × {st.reps != null ? st.reps : '—'}
                               {st.myoReps && st.miniSets != null && (
                                 <span className="ml-1 text-xs opacity-70">+{st.miniSets} mini</span>
                               )}
