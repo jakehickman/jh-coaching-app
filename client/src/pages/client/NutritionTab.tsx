@@ -703,14 +703,14 @@ function FullnessSheet({
                 <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Meal Habits</p>
                 <div className="space-y-2">
                   {(mealHabits as any[]).map((h: any) => (
-                    <label key={h.id} className="flex items-center justify-between gap-3 cursor-pointer py-1">
+                    <label key={h.id} className="flex items-center justify-between gap-3 cursor-pointer bg-secondary rounded-xl px-4 py-3">
                       <span className="text-sm text-foreground">{h.name}</span>
                       <div
                         onClick={() => handleToggleHabit(h.id)}
                         className={`w-7 h-7 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
                           habitChecked[h.id]
                             ? "bg-primary border-primary"
-                            : "border-border bg-secondary"
+                            : "border-border bg-card"
                         }`}
                       >
                         {habitChecked[h.id] && (
@@ -978,7 +978,7 @@ function EditSheet({
                     {(mealHabits as any[]).map((h: any) => (
                       <div
                         key={h.id}
-                        className="flex items-center justify-between gap-3 cursor-pointer py-0.5"
+                        className="flex items-center justify-between gap-3 cursor-pointer bg-secondary rounded-xl px-4 py-3"
                         onClick={() => handleToggleHabit(h.id)}
                       >
                         <span className="text-sm text-foreground">{h.name}</span>
@@ -986,7 +986,7 @@ function EditSheet({
                           className={`w-7 h-7 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
                             habitChecked[h.id]
                               ? "bg-primary border-primary"
-                              : "border-border bg-secondary"
+                              : "border-border bg-card"
                           }`}
                         >
                           {habitChecked[h.id] && (
