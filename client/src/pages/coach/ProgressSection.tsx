@@ -330,23 +330,27 @@ function MacroPlanHistoryTab({ clientId }: { clientId: number }) {
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="grid grid-cols-5 mb-1.5">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 col-span-1" />
-              {cols.map(c => (
-                <span key={c.label} className="text-[10px] uppercase tracking-wider text-muted-foreground/60 text-right">{c.label}</span>
-              ))}
-            </div>
-            <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Train</span>
-              {cols.map(c => (
-                <Cell key={c.label} value={c.tVal} unit={c.unit} delta={getDelta(c.tVal, c.tPrev)} />
-              ))}
-            </div>
-            <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Rest</span>
-              {cols.map(c => (
-                <Cell key={c.label} value={c.rVal} unit={c.unit} delta={getDelta(c.rVal, c.rPrev)} />
-              ))}
+            <div className="overflow-x-auto -mx-1 px-1">
+              <div className="min-w-[280px]">
+                <div className="grid grid-cols-5 mb-1.5">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 col-span-1" />
+                  {cols.map(c => (
+                    <span key={c.label} className="text-[10px] uppercase tracking-wider text-muted-foreground/60 text-right">{c.label}</span>
+                  ))}
+                </div>
+                <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Train</span>
+                  {cols.map(c => (
+                    <Cell key={c.label} value={c.tVal} unit={c.unit} delta={getDelta(c.tVal, c.tPrev)} />
+                  ))}
+                </div>
+                <div className="grid grid-cols-5 items-start py-2 border-t border-border/40">
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide self-center">Rest</span>
+                  {cols.map(c => (
+                    <Cell key={c.label} value={c.rVal} unit={c.unit} delta={getDelta(c.rVal, c.rPrev)} />
+                  ))}
+                </div>
+              </div>
             </div>
             <MealPlanNoteEditor entryId={entry.id} initialNote={entry.note} />
           </div>
@@ -518,7 +522,7 @@ function NutritionTab({ clientId }: { clientId: number }) {
     return (
       <div className="bg-card border border-border rounded-xl p-5">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">{label}</p>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">Calories</span>
             <span className="text-xl font-bold tabular-nums text-foreground">
@@ -1602,7 +1606,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
                 <div
                   key={idx}
                   className={[
-                    'min-h-[90px] p-1.5 bg-card',
+                    'min-h-[60px] sm:min-h-[90px] p-1 sm:p-1.5 bg-card',
                     isToday ? 'bg-primary/5' : '',
                     isSelected ? 'ring-1 ring-inset ring-primary/40' : '',
                     sess ? 'cursor-pointer hover:bg-muted/20' : '',
@@ -2405,14 +2409,13 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
 
       {selectedUserId && (
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <div className="-mx-4 px-4 lg:-mx-6 lg:px-6 pt-2 pb-2 border-b border-border/40">
-            <TabsList>
+          <div className="-mx-4 px-4 lg:-mx-6 lg:px-6 pt-2 pb-2 border-b border-border/40 overflow-x-auto">
+            <TabsList className="flex-nowrap min-w-max">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
+              <TabsTrigger value="body-comp">Body Comp</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
               <TabsTrigger value="habits">Habits</TabsTrigger>
-
             </TabsList>
           </div>
 
@@ -2448,13 +2451,15 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           {/* -- Training: Session Log, Exercise Progress, Program, Cardio sub-tabs -- */}
           <TabsContent value="training">
             <Tabs value={getSubTab("training") || "session-log"} onValueChange={handleSubTabChange} className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="session-log">Session Log</TabsTrigger>
-                <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
-                <TabsTrigger value="mesocycles">Mesocycles</TabsTrigger>
-                <TabsTrigger value="program">Program Builder</TabsTrigger>
-                <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto mb-4">
+                <TabsList className="flex-nowrap min-w-max">
+                  <TabsTrigger value="session-log">Session Log</TabsTrigger>
+                  <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
+                  <TabsTrigger value="mesocycles">Mesocycles</TabsTrigger>
+                  <TabsTrigger value="program">Program Builder</TabsTrigger>
+                  <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
+                </TabsList>
+              </div>
               <TabsContent value="session-log">
                 <WorkoutSessionsTab
                   workoutSessions={workoutSessions}

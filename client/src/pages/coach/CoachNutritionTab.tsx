@@ -669,7 +669,7 @@ function MealLogView({ clientId }: { clientId: number }) {
   const selectedDayData: DayData | null = selectedDate ? (byDate[selectedDate] ?? null) : null;
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col sm:flex-row gap-6">
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-4">
           <button
@@ -745,7 +745,7 @@ function MealLogView({ clientId }: { clientId: number }) {
         </div>
       </div>
 
-      <div className="w-80 shrink-0">
+      <div className="w-full sm:w-80 shrink-0">
         {selectedDate && selectedDayData ? (
           <div className="rounded-xl overflow-hidden" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
             <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${C.border}` }}>
@@ -847,7 +847,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
   const periodLabel = `Last ${days}d`;
 
   return (
-    <div className="max-w-[900px] space-y-4">
+    <div className="space-y-4">
 
       {/* Low data warning */}
       {insights.totalMeals < 5 && (
@@ -862,7 +862,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
       )}
 
       {/* ── Row 1: Meals logged + Avg Hunger + Avg Fullness ── */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           label="Meals Logged"
           value={insights.totalMeals}
@@ -899,7 +899,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
       </div>
 
       {/* ── Row 2: Scatter + Treats ── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Scatter */}
         <Card className="flex flex-col gap-4">
           <SectionLabel>Hunger vs. Fullness</SectionLabel>
@@ -934,7 +934,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
       </div>
 
       {/* ── Row 3: Ideal Zone + Meal Timing side by side ── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <IdealZoneCard insights={insights} days={days} />
         {insights.hasTimingData ? (
           <MealTimingCard
@@ -964,7 +964,7 @@ export function CoachNutritionTab({ clientId }: { clientId: number }) {
   const [days, setDays] = useState<7 | 28>(28);
 
   return (
-    <div className="max-w-[900px]">
+    <div>
       {/* Header row: sub-tabs left, period toggle right */}
       <div className="flex items-center justify-between mb-6">
         <div

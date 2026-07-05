@@ -157,6 +157,24 @@ const coachNav: NavItem[] = [
   { href: "/coach/habits",           label: "Habits",            icon: <CheckSquare size={18} /> },
 ];
 
+// Full section title map (includes sections not in sidebar nav)
+const COACH_SECTION_TITLES: Record<string, string> = {
+  clients: "Clients",
+  training: "Training Programs",
+  "meal-plans": "Meal Plans",
+  progress: "Client Progress",
+  "exercise-library": "Exercise Library",
+  "nutrition-data": "Nutrition Data",
+  habits: "Habits",
+};
+
+function getCoachPageTitle(location: string): string {
+  // Match /coach/<section> pattern
+  const match = location.match(/^\/coach\/([^/?]+)/);
+  if (match) return COACH_SECTION_TITLES[match[1]] ?? "Coach Panel";
+  return "Coach Panel";
+}
+
 interface DashboardShellProps {
   children: React.ReactNode;
   mode: "client" | "coach";
@@ -245,10 +263,10 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
           />
         )}
 
-        {/* Sidebar — compact for desktop */}
+        {/* Sidebar — compact for desktop, wider on mobile for touch */}
         <aside
           className={cn(
-            "fixed top-0 left-0 h-full w-60 bg-sidebar border-r border-border z-30 flex flex-col transition-transform duration-200",
+            "fixed top-0 left-0 h-full w-72 lg:w-60 bg-sidebar border-r border-border z-30 flex flex-col transition-transform duration-200",
             mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           )}
         >
@@ -281,7 +299,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
             </div>
           )}
 
-          {/* Nav — compact items */}
+          {/* Nav — compact items on desktop, taller touch targets on mobile */}
           <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
             {coachNav.map((item) => {
               const isActive =
@@ -293,7 +311,7 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] transition-colors",
+                    "flex items-center gap-3 px-3 py-3.5 lg:py-2.5 rounded-md text-[13px] transition-colors",
                     isActive
                       ? "bg-primary/10 text-primary font-medium"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -337,16 +355,16 @@ export default function DashboardShell({ children, mode }: DashboardShellProps) 
 
         {/* Main content — full width on desktop, no max-w cap */}
         <div className="flex-1 lg:ml-60 flex flex-col min-h-screen">
-          {/* Mobile header */}
+          {/* Mobile header — shows current section name */}
           <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar sticky top-0 z-10">
             <button
               onClick={() => setMobileOpen(true)}
-              className="text-muted-foreground hover:text-foreground p-1"
+              className="text-muted-foreground hover:text-foreground p-2 -ml-1 rounded-lg active:bg-secondary"
             >
               <Menu size={22} />
             </button>
-            <p className="text-sm font-bold text-foreground">JH Coaching</p>
-            <div className="w-8" />
+            <p className="text-sm font-bold text-foreground">{getCoachPageTitle(location)}</p>
+            <div className="w-10" />
           </header>
 
           {/* Desktop header bar */}

@@ -822,3 +822,21 @@
 - [x] Fix per-meal habit counter so it updates immediately after meal habit changes and meal save flows
 - [x] Allow gallery photo selection when editing an already logged meal
 - [x] Vertically center text in expanded training session exercise rows
+
+## Responsive Coach Layout (Jul 5)
+- [x] DashboardShell: mobile header shows current section name (derived from location)
+- [x] DashboardShell: sidebar widens to w-72 on mobile for better touch targets
+- [x] DashboardShell: nav items use py-3.5 on mobile, py-2.5 on desktop
+- [x] DashboardShell: hamburger button has active:bg-secondary feedback
+- [x] ProgressSection: main tab bar uses overflow-x-auto + flex-nowrap min-w-max for horizontal scroll on mobile
+- [x] ProgressSection: training sub-tab bar uses overflow-x-auto + flex-nowrap min-w-max
+- [x] ProgressSection: grid-cols-5 nutrition history wrapped in overflow-x-auto with min-w-[280px]
+- [x] ProgressSection: grid-cols-4 macro tiles changed to grid-cols-2 sm:grid-cols-4
+- [x] ProgressSection: training calendar cells use min-h-[60px] sm:min-h-[90px] and smaller padding on mobile
+- [x] CoachNutritionTab: InsightsView max-w-[900px] removed (full width)
+- [x] CoachNutritionTab: grid-cols-3 stats row → grid-cols-1 sm:grid-cols-3
+- [x] CoachNutritionTab: grid-cols-2 scatter/treats and ideal-zone/timing rows → grid-cols-1 sm:grid-cols-2
+- [x] CoachNutritionTab: MealLogView w-80 detail pane → w-full sm:w-80 (stacks on mobile)
+- [x] CoachNutritionTab: MealLogView flex-row layout → flex-col sm:flex-row (stacks on mobile)
+- [x] MesocyclesTab: already had overflow-x-auto — no change needed
+- [x] ExerciseLibrarySection: already had overflow-x-auto — no change needed
