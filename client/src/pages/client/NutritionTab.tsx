@@ -970,15 +970,19 @@ function EditSheet({
                 </>
               )}
 
-              {/* Per-meal habits */}
+              {/* Per-meal habits — checkbox on RIGHT for right-hand thumb reach */}
               {(mealHabits as any[]).length > 0 && meal?.mealType === "meal" && (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Meal Habits</p>
                   <div className="space-y-2">
                     {(mealHabits as any[]).map((h: any) => (
-                      <label key={h.id} className="flex items-center gap-3 cursor-pointer">
+                      <div
+                        key={h.id}
+                        className="flex items-center justify-between gap-3 cursor-pointer py-0.5"
+                        onClick={() => handleToggleHabit(h.id)}
+                      >
+                        <span className="text-sm text-foreground">{h.name}</span>
                         <div
-                          onClick={() => handleToggleHabit(h.id)}
                           className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
                             habitChecked[h.id]
                               ? "bg-primary border-primary"
@@ -991,8 +995,7 @@ function EditSheet({
                             </svg>
                           )}
                         </div>
-                        <span className="text-sm text-foreground">{h.name}</span>
-                      </label>
+                      </div>
                     ))}
                   </div>
                 </div>

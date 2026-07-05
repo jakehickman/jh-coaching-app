@@ -396,6 +396,17 @@ function PresetSelector({
                 Add machine
               </button>
             )}
+            {(presetList as any[]).length > 0 && !addingNew && (
+              <p className="text-center text-xs text-muted-foreground pb-4">
+                Rename or delete presets in{" "}
+                <button
+                  onClick={closeSheet}
+                  className="text-primary underline underline-offset-2"
+                >
+                  Settings
+                </button>
+              </p>
+            )}
           </div>
         </SheetContent>
       </Sheet>

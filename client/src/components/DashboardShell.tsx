@@ -14,12 +14,14 @@ import {
   LogOut,
   Menu,
   PersonStanding,
+  Settings,
   Users,
   Utensils,
   X,
 } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { Link, useLocation, useSearch } from "wouter";
+import ManageEquipmentTab from "@/pages/client/ManageEquipmentTab";
 
 // ─── Global fullness reminder ─────────────────────────────────────────────────
 
@@ -392,6 +394,7 @@ function ClientLayout({
   const [dismissedId, setDismissedId] = useState<number | null>(null);
   const [fullnessOpen, setFullnessOpen] = useState(false);
   const [fullnessMealId, setFullnessMealId] = useState<number | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [, forceUpdate] = useState(0);
   const utils = trpc.useUtils();
 
@@ -441,9 +444,12 @@ function ClientLayout({
               Coach Panel
             </Link>
           )}
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold">
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold active:opacity-70 transition-opacity"
+          >
             {user?.name?.charAt(0)?.toUpperCase() ?? "?"}
-          </div>
+          </button>
         </div>
       </header>
 
@@ -478,6 +484,45 @@ function ClientLayout({
       <main className="flex-1 px-4 pt-5 pb-24 max-w-2xl w-full mx-auto">
         {children}
       </main>
+
+      {/* Settings sheet */}
+      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] flex flex-col p-0">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+            <div className="flex items-center gap-2.5">
+              <Settings size={18} className="text-muted-foreground" />
+              <h2 className="text-base font-semibold text-foreground">Settings</h2>
+            </div>
+            <button onClick={() => setSettingsOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+            {/* Machine Presets */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Machine Presets</p>
+              <ManageEquipmentTab />
+            </div>
+            {/* Account */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Account</p>
+              <div className="rounded-xl border border-border overflow-hidden">
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="text-sm font-medium text-foreground">{user?.name ?? "\u2014"}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{user?.email ?? "\u2014"}</p>
+                </div>
+                <button
+                  onClick={() => { setSettingsOpen(false); logout(); }}
+                  className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <LogOut size={15} />
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Fullness rating sheet */}
       <GlobalFullnessSheet
