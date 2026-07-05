@@ -826,7 +826,7 @@ function PastSessionsList({
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-sm text-muted-foreground">
-                          {firstSet?.weight != null ? `${firstSet.weight}${exerciseUnits[ex.name] ?? 'kg'}` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
+                          {firstSet?.weight != null ? `${firstSet.weight}${exerciseUnits[ex.name] ?? 'lbs'}` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
                         </p>
                         <p className="text-[11px] text-muted-foreground/60">{setLabel}</p>
                       </div>
@@ -1123,7 +1123,7 @@ function WorkoutLogTab() {
   });
   function toggleExerciseUnit(exName: string) {
     setExerciseUnits(prev => {
-      const current = prev[exName] ?? 'kg';
+      const current = prev[exName] ?? 'lbs';
       const next = { ...prev, [exName]: current === 'kg' ? 'lbs' as const : 'kg' as const };
       try { localStorage.setItem('workout:exerciseUnits', JSON.stringify(next)); } catch {}
       return next;
@@ -1512,7 +1512,7 @@ function WorkoutLogTab() {
         presetId: machinePresetId[nameToUse] || null,
         machineSettings: machineSettings[nameToUse] || null,
         exerciseNotes: exerciseNotes[nameToUse] || null,
-        weightUnit: exerciseUnits[nameToUse] ?? 'kg',
+        weightUnit: exerciseUnits[nameToUse] ?? 'lbs',
         sets: (exerciseData[nameToUse] ?? []).map(s => ({
           weight: s.weight !== "" ? parseFloat(s.weight) : null,
           reps: s.reps !== "" ? parseInt(s.reps) : null,
@@ -1872,7 +1872,7 @@ function WorkoutLogTab() {
                             title="Toggle weight unit"
                             className="flex items-center justify-center h-9 px-3 rounded-lg bg-secondary text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                           >
-                            {exerciseUnits[displayName] ?? 'kg'}
+                            {exerciseUnits[displayName] ?? 'lbs'}
                           </button>
                           <button
                             onClick={e => { e.stopPropagation(); setHistorySheet(displayName); }}
@@ -1921,7 +1921,7 @@ function WorkoutLogTab() {
                             <p className="text-xs font-semibold tracking-widest text-green-500">COMPLETE</p>
                             {topSet && (
                               <p className="text-xs text-muted-foreground">
-                                {topSet.weight}{exerciseUnits[displayName] ?? 'kg'} × {topSet.reps}
+                                {topSet.weight}{exerciseUnits[displayName] ?? 'lbs'} × {topSet.reps}
                                 {isRestPause && sets[0]?.miniSets && String(sets[0].miniSets) !== '' && (
                                   <span className="ml-2 text-muted-foreground/60">· 1 + {sets[0].miniSets} mini sets</span>
                                 )}
@@ -1977,7 +1977,7 @@ function WorkoutLogTab() {
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-9 flex-shrink-0" />
                             <div className="flex-1 text-center">
-                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{exerciseUnits[displayName] ?? 'kg'}</p>
+                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{exerciseUnits[displayName] ?? 'lbs'}</p>
                             </div>
                             <div className="flex-1 text-center">
                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reps</p>
