@@ -826,7 +826,7 @@ function PastSessionsList({
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-sm text-muted-foreground">
-                          {firstSet?.weight != null ? `${firstSet.weight}${(ex.weightUnit as string | undefined) ?? exerciseUnits[ex.name] ?? 'kg'}` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
+                          {firstSet?.weight != null ? `${firstSet.weight}${exerciseUnits[ex.name] ?? 'kg'}` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
                         </p>
                         <p className="text-[11px] text-muted-foreground/60">{setLabel}</p>
                       </div>
@@ -1024,8 +1024,9 @@ function SessionCard({ s, viewAsUserId, deleteConfirmId, deleting, setDeleteConf
               if (sw === bw && (st.reps ?? 0) > (best.reps ?? 0)) return { weight: st.weight ?? null, reps: st.reps ?? null };
               return best;
             }, null);
+            const exUnit = (ex.weightUnit as string | undefined) ?? 'kg';
             const topSetStr = topSet
-              ? `${topSet.weight != null ? topSet.weight + 'kg' : 'BW'}${topSet.reps != null ? ' × ' + topSet.reps : ''} (${completedSets.length} set${completedSets.length !== 1 ? 's' : ''})`
+              ? `${topSet.weight != null ? topSet.weight + exUnit : 'BW'}${topSet.reps != null ? ' × ' + topSet.reps : ''} (${completedSets.length} set${completedSets.length !== 1 ? 's' : ''})`
               : `${completedSets.length} set${completedSets.length !== 1 ? 's' : ''}`;
             return (
               <div key={exIdx} className="flex items-center justify-between gap-2">
