@@ -409,8 +409,9 @@ function LogSheet({
 
   const uploadPhotoMutation = trpc.mealLogs.uploadPhoto.useMutation({
     onSuccess: (data) => setUploadedPhotoUrl(data.photoUrl),
-    onError: () => {
+    onError: (e) => {
       setUploadedPhotoUrl(null);
+      console.error("[uploadPhoto] error:", e?.message, e);
       toast.error("Photo upload failed — please try again");
     },
   });
@@ -432,18 +433,20 @@ function LogSheet({
     // Show preview immediately
     setPhotoPreview(URL.createObjectURL(file));
     setUploadedPhotoUrl("uploading");
-    // Compress then upload in background
-    const { blob, mimeType } = await compressImage(file);
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result.split(",")[1]);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-    uploadPhotoMutation.mutate({ imageBase64: base64, mimeType: mimeType as any });
+    // Compress then upload via direct multipart POST (avoids base64 overhead in tRPC JSON)
+    try {
+      const { blob, mimeType } = await compressImage(file);
+      const form = new FormData();
+      form.append("photo", blob, `photo.${mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg"}`);
+      const res = await fetch("/api/upload/meal-photo", { method: "POST", credentials: "include", body: form });
+      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+      const data = await res.json();
+      setUploadedPhotoUrl(data.photoUrl);
+    } catch (err: any) {
+      console.error("[uploadPhoto] error:", err?.message, err);
+      setUploadedPhotoUrl(null);
+      toast.error("Photo upload failed — please try again");
+    }
   }
 
   function handleSave() {
@@ -864,8 +867,9 @@ function EditSheet({
 
   const uploadPhotoMutation = trpc.mealLogs.uploadPhoto.useMutation({
     onSuccess: (data) => setUploadedPhotoUrl(data.photoUrl),
-    onError: () => {
+    onError: (e) => {
       setUploadedPhotoUrl(null);
+      console.error("[uploadPhoto] error:", e?.message, e);
       toast.error("Photo upload failed — please try again");
     },
   });
@@ -873,14 +877,19 @@ function EditSheet({
   async function handlePhoto(file: File) {
     setPhotoPreview(URL.createObjectURL(file));
     setUploadedPhotoUrl("uploading");
-    const { blob, mimeType } = await compressImage(file);
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve((reader.result as string).split(",")[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-    uploadPhotoMutation.mutate({ imageBase64: base64, mimeType: mimeType as any });
+    try {
+      const { blob, mimeType } = await compressImage(file);
+      const form = new FormData();
+      form.append("photo", blob, `photo.${mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg"}`);
+      const res = await fetch("/api/upload/meal-photo", { method: "POST", credentials: "include", body: form });
+      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+      const data = await res.json();
+      setUploadedPhotoUrl(data.photoUrl);
+    } catch (err: any) {
+      console.error("[uploadPhoto] error:", err?.message, err);
+      setUploadedPhotoUrl(null);
+      toast.error("Photo upload failed — please try again");
+    }
   }
 
   function handleSave() {
