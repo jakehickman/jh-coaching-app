@@ -899,43 +899,42 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
       {/* ── Row 1: Meals logged + Avg Hunger + Avg Fullness — single card ── */}
       <Card className="flex divide-x divide-border">
         {/* Meals Logged */}
-        <div className="flex-1 flex flex-col justify-between gap-2 px-4 py-3">
+        <div className="flex-1 flex flex-col gap-2 px-4 py-3">
           <SectionLabel>Meals</SectionLabel>
-          <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
+          <span className="font-bold leading-none flex-1 flex items-center" style={{ fontSize: 32, color: C.fg }}>
             {insights.totalMeals}
           </span>
-
+          {/* empty row to match height of hunger/fullness cells */}
+          <div className="h-5" />
         </div>
         {/* Avg Hunger */}
-        <div className="flex-1 flex flex-col justify-between gap-2 px-4 py-3">
+        <div className="flex-1 flex flex-col gap-2 px-4 py-3">
           <SectionLabel>Avg Hunger</SectionLabel>
-          <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
+          <span className="font-bold leading-none flex-1 flex items-center" style={{ fontSize: 32, color: C.fg }}>
             {insights.avgHunger ?? "—"}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 h-5">
             <TrendBadge
               current={insights.avgHunger}
               previous={insights.prevAvgHunger}
               higherIsBetter={false}
               threshold={0.15}
             />
-
           </div>
         </div>
         {/* Avg Fullness */}
-        <div className="flex-1 flex flex-col justify-between gap-2 px-4 py-3">
+        <div className="flex-1 flex flex-col gap-2 px-4 py-3">
           <SectionLabel>Avg Fullness</SectionLabel>
-          <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
+          <span className="font-bold leading-none flex-1 flex items-center" style={{ fontSize: 32, color: C.fg }}>
             {insights.avgFullness ?? "—"}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 h-5">
             <TrendBadge
               current={insights.avgFullness}
               previous={insights.prevAvgFullness}
               higherIsBetter={true}
               threshold={0.15}
             />
-
           </div>
         </div>
       </Card>
