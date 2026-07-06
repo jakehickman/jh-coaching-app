@@ -900,16 +900,15 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
       <Card className="flex divide-x divide-border">
         {/* Meals Logged */}
         <div className="flex-1 flex flex-col gap-2 px-4 py-3">
-          <SectionLabel>Meals</SectionLabel>
+          <div className="min-h-[2.5rem] flex items-start"><SectionLabel>Meals</SectionLabel></div>
           <span className="font-bold leading-none flex-1 flex items-center" style={{ fontSize: 32, color: C.fg }}>
             {insights.totalMeals}
           </span>
-          {/* empty row to match height of hunger/fullness cells */}
           <div className="h-5" />
         </div>
         {/* Avg Hunger */}
         <div className="flex-1 flex flex-col gap-2 px-4 py-3">
-          <SectionLabel>Avg Hunger</SectionLabel>
+          <div className="min-h-[2.5rem] flex items-start"><SectionLabel>Avg Hunger</SectionLabel></div>
           <span className="font-bold leading-none flex-1 flex items-center" style={{ fontSize: 32, color: C.fg }}>
             {insights.avgHunger ?? "—"}
           </span>
@@ -924,7 +923,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         </div>
         {/* Avg Fullness */}
         <div className="flex-1 flex flex-col gap-2 px-4 py-3">
-          <SectionLabel>Avg Fullness</SectionLabel>
+          <div className="min-h-[2.5rem] flex items-start"><SectionLabel>Avg Fullness</SectionLabel></div>
           <span className="font-bold leading-none flex-1 flex items-center" style={{ fontSize: 32, color: C.fg }}>
             {insights.avgFullness ?? "—"}
           </span>
