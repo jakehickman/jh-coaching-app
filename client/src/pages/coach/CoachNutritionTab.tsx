@@ -317,7 +317,7 @@ function IdealZoneCard({
   }
 
   const delta = prevIdealZonePct != null ? idealZonePct - prevIdealZonePct : null;
-  const trend = getTrend(idealZonePct, prevIdealZonePct, 5);
+  const trend = getTrend(idealZonePct, prevIdealZonePct ?? null, 5);
   const accentColor = scoreColor(idealZonePct);
   const trendCol = trendColor(trend);
 

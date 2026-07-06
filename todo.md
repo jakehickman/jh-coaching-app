@@ -861,3 +861,11 @@
 - [ ] Add hover:bg-muted/30 to all interactive table/list rows in coach pages
 - [ ] Standardise Button usage in coach forms (replace raw button elements)
 - [ ] Add skeleton loading states to client list, check-in history, coach nutrition data view
+
+## Mobile Layout Fixes (Jul 2026)
+- [x] Mobile: Weekly History table (Overview) — remove table-fixed, add min-w-[560px] + overflow-x-auto, fix Current badge overlap
+- [x] Mobile: Weekly Summary table (Body Comp) — remove table-fixed, add min-w-[420px], fix Current badge overlap
+- [x] Mobile: Session calendar cell — stack session name and stats vertically to prevent overlap
+- [x] Mobile: Habit adherence cards — change grid-cols-5 to grid-cols-2 sm:grid-cols-3 lg:grid-cols-5
+- [x] Mobile: SessionDetailPanel header — wrap Incomplete badge so it doesn't overflow into close button
+- [x] Fix TS errors: invite token db.ts null guards, oauth.ts upsertClientProfile args, TrainingTab exData types, CoachNutritionTab prevIdealZonePct, CoachPanel SectionLabel className

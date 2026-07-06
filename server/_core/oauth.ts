@@ -69,7 +69,7 @@ export function registerOAuthRoutes(app: Express) {
               await db.setUserApproved(user.id, true);
               await db.redeemInviteToken(inviteToken, user.id);
               // Ensure client profile exists and is linked to coach
-              await db.upsertClientProfile(user.id, { coachId: invite.coachId });
+              await db.upsertClientProfile({ userId: user.id, coachId: invite.coachId });
             }
           }
         } catch (e) {

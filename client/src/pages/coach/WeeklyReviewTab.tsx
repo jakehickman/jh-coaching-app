@@ -169,11 +169,11 @@ function WeekRow({ week }: { week: Week }) {
         week.isInProgress ? "bg-amber-500/5" : !hasData ? "opacity-40" : ""
       }`}
     >
-      <td className="px-3 py-2.5 whitespace-nowrap">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-semibold text-foreground">{week.label}</span>
+      <td className="px-3 py-2.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-semibold text-foreground whitespace-nowrap">{week.label}</span>
           {week.isInProgress && (
-            <span className="text-xs font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+            <span className="text-xs font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded whitespace-nowrap">
               Current
             </span>
           )}
@@ -411,17 +411,17 @@ export function WeeklyReviewTab({ clientId }: Props) {
         </p>
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm table-fixed">
+            <table className="w-full text-sm min-w-[560px]">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  <th className="text-left px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[22%]">Week</th>
-                  <th className="text-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[8%]">Days</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Weight</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">Steps</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Sleep</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Quality</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Stress</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">Sessions</th>
+                  <th className="text-left px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Week</th>
+                  <th className="text-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Days</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Weight</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Steps</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Sleep</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Quality</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Stress</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Sessions</th>
                 </tr>
               </thead>
               <tbody>

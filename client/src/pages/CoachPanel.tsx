@@ -146,7 +146,7 @@ function InviteLinksSection() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <SectionLabel className="mb-0">Invite Links</SectionLabel>
+        <SectionLabel>Invite Links</SectionLabel>
         <Button size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
           <UserPlus size={14} />
           Add Client

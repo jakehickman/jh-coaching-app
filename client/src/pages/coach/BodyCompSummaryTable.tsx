@@ -73,19 +73,19 @@ function WeekRow({ week, isExpanded, onToggle }: {
         onClick={() => hasData && onToggle()}
       >
         {/* Week label */}
-        <td className="px-3 py-2.5 whitespace-nowrap">
-          <div className="flex items-center gap-1.5">
+        <td className="px-3 py-2.5">
+          <div className="flex items-start gap-1.5">
             {hasData ? (
               isExpanded
-                ? <ChevronDown size={12} className="text-muted-foreground flex-shrink-0" />
-                : <ChevronRight size={12} className="text-muted-foreground flex-shrink-0" />
+                ? <ChevronDown size={12} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+                : <ChevronRight size={12} className="text-muted-foreground flex-shrink-0 mt-0.5" />
             ) : (
               <span className="w-3" />
             )}
-            <div>
-              <span className="text-xs font-semibold text-foreground">{week.label}</span>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-foreground whitespace-nowrap">{week.label}</span>
               {week.isInProgress && (
-                <span className="ml-1.5 text-xs font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                <span className="ml-1.5 text-xs font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded whitespace-nowrap">
                   Current
                 </span>
               )}
@@ -255,15 +255,15 @@ export function BodyCompSummaryTable({ clientId }: Props) {
       <SectionLabel>Weekly Summary</SectionLabel>
       <div className="mt-2 bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm table-fixed">
+          <table className="w-full text-sm min-w-[420px]">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[26%]">Week</th>
-                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">Weigh-ins</th>
-                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Avg Weight</th>
-                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Waist</th>
-                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Hip</th>
-                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">Skinfold</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Week</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Weigh-ins</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Avg Weight</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Waist</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Hip</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Skinfold</th>
               </tr>
             </thead>
             <tbody>

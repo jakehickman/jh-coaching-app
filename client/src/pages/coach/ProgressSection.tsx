@@ -1209,12 +1209,12 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
       {/* Header */}
       <div className="flex items-start justify-between px-4 py-3 border-b border-border bg-muted/30">
         <div>
-          <p className="text-sm font-bold text-foreground">
-            Session {session.dayLabel}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="text-sm font-bold text-foreground whitespace-nowrap">Session {session.dayLabel}</p>
             {hasIncomplete && (
-              <span className="ml-2 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">Incomplete</span>
+              <span className="text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded whitespace-nowrap">Incomplete</span>
             )}
-          </p>
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">{dateLabel} &middot; {exercises.length} exercises &middot; {totalSets} sets</p>
         </div>
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors mt-0.5">
@@ -1624,12 +1624,12 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
                         ? 'bg-amber-500/10 border-amber-500/20'
                         : 'bg-primary/10 border-primary/20',
                     ].join(' ')}>
-                      <div className="flex items-center gap-1">
-                        <span className={`text-xs font-black ${
+                      <div className="flex flex-col gap-0">
+                        <span className={`text-xs font-black leading-tight ${
                           hasIncomplete ? 'text-amber-400' : 'text-primary'
                         }`}>{sess.dayLabel}</span>
-                        <span className="text-xs text-muted-foreground truncate">
-                          {exercises.length} ex &middot; {totalSets} sets
+                        <span className="text-[10px] text-muted-foreground leading-tight">
+                          {exercises.length}ex·{totalSets}s
                         </span>
                       </div>
                       {hasIncomplete && (

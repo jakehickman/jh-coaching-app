@@ -104,7 +104,7 @@ function MealHabitAdherencePanel({ clientId, fromDate, periodDays }: { clientId:
       <div className="mb-3">
         <SectionLabel>Per-Meal Habit Adherence — Last {periodDays === 7 ? "7 Days" : "4 Weeks"}</SectionLabel>
       </div>
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {data.habits.map((h: any) => {
           const pct = data.totalMeals > 0 ? Math.round((h.completedCount / data.totalMeals) * 100) : null;
           const pctColor =
@@ -162,7 +162,7 @@ export function CoachHabitsPanel({ clientId, periodDays = 28 }: { clientId: numb
           <div className="mb-3">
             <SectionLabel>Daily Habit Adherence — Last {periodDays === 7 ? "7 Days" : "4 Weeks"}</SectionLabel>
           </div>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {dailyHabits.map((h) => (
               <HabitCard key={h.id} habit={h} days={days} completedSet={completedSet} today={today} periodDays={periodDays} />
             ))}

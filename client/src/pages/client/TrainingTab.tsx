@@ -1205,7 +1205,7 @@ function WorkoutLogTab() {
         }
       }
       // Reset auto-collapse tracking when exercise is un-done
-      for (const exName of autoCollapsedRef.current) {
+      for (const exName of Array.from(autoCollapsedRef.current)) {
         if (!exerciseDone[exName]) autoCollapsedRef.current.delete(exName);
       }
       if (!changed) return prev;
@@ -1240,7 +1240,7 @@ function WorkoutLogTab() {
     const pb = primaryMuscles(b);
     if (pa.size === 0 || pb.size === 0) return false;
     if (pa.size !== pb.size) return false;
-    for (const m of pa) if (!pb.has(m)) return false;
+    for (const m of Array.from(pa)) if (!pb.has(m)) return false;
     return true;
   }
 
@@ -1325,7 +1325,7 @@ function WorkoutLogTab() {
 
     const draft = readDraft(date, label);
     if (draft) {
-      const migratedData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
+      const migratedData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean; myoReps?: boolean; miniSets?: string }>> = {};
       for (const [k, sets] of Object.entries(draft.exerciseData ?? {})) {
         migratedData[k] = (sets as any[]).map((s: any) => ({ ...s, completed: s.completed ?? (s.weight !== '' || s.reps !== ''), myoReps: s.myoReps ?? false, miniSets: s.miniSets ?? '' }));
       }
@@ -1358,7 +1358,7 @@ function WorkoutLogTab() {
 
     const existing = sessions.find(s => toLocalDateStr(s.sessionDate) === date && s.dayLabel === label);
     if (existing) {
-      const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean }>> = {};
+      const exData: Record<string, Array<{ weight: string; reps: string; notes: string; completed: boolean; myoReps?: boolean; miniSets?: string }>> = {};
       const eqData: Record<string, string> = {};
       const mpData: Record<string, string> = {};
       const msData: Record<string, string> = {};
