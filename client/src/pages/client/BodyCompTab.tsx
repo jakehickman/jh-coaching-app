@@ -575,7 +575,7 @@ export default function BodyCompTab() {
         <div className="bg-card border border-border rounded-xl p-4">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Weight &amp; Waist</p>
           <ResponsiveContainer width="100%" height={200}>
-            <ComposedChart data={combinedTrendData} margin={{ top: 4, right: 40, left: 0, bottom: 4 }}>
+            <ComposedChart data={combinedTrendData} margin={{ top: 4, right: 0, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="date" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} interval="preserveStartEnd" tickLine={false} />
               <YAxis yAxisId="weight" tick={{ fill: "#3b82f6", fontSize: 10 }} width={36} domain={["auto", "auto"]} tickLine={false} axisLine={false} />
