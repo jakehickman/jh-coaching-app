@@ -904,7 +904,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
             {insights.totalMeals}
           </span>
-          <span className="text-xs" style={{ color: C.muted }}>{periodLabel}</span>
+          <span className="text-xs" style={{ color: C.muted }}>&nbsp;</span>
         </div>
         {/* Avg Hunger */}
         <div className="flex-1 flex flex-col justify-between gap-2 px-4 py-3">
@@ -919,7 +919,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               higherIsBetter={false}
               threshold={0.15}
             />
-            <span className="text-xs" style={{ color: C.muted }}>ideal 3–4</span>
+
           </div>
         </div>
         {/* Avg Fullness */}
@@ -935,7 +935,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               higherIsBetter={true}
               threshold={0.15}
             />
-            <span className="text-xs" style={{ color: C.muted }}>ideal 6–7</span>
+
           </div>
         </div>
       </Card>
