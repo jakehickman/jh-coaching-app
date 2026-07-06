@@ -1574,62 +1574,54 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
     <div className="flex flex-col lg:grid lg:grid-cols-[1fr_384px] gap-4 items-start">
       {/* Calendar grid */}
       <div className="min-w-0 w-full">
-        <div className="border border-border rounded-xl overflow-hidden">
-          {/* Weekday headers */}
-          <div className="grid grid-cols-7 bg-muted/30 border-b border-border divide-x divide-border">
-            {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
-              <div key={d} className="py-2 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">{d}</div>
-            ))}
-          </div>
-          {/* Day cells — wrap each row in a div so borders are clean */}
-          <div className="grid grid-cols-7 divide-x divide-y divide-border">
-            {cells.map((cell, idx) => {
-              const sess = cell.iso ? sessionByDate[cell.iso] : null;
-              const isToday = cell.iso === todayIso;
-              const isSelected = selectedSession && cell.iso && toLocalDateStr(selectedSession.sessionDate) === cell.iso;
+        {/* Weekday headers */}
+        <div className="grid grid-cols-7 mb-1">
+          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
+            <div key={d} className="text-center py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground opacity-70">{d}</div>
+          ))}
+        </div>
+        {/* Day cells — aspect-square, gap-1, no borders */}
+        <div className="grid grid-cols-7 gap-1">
+          {cells.map((cell, idx) => {
+            const sess = cell.iso ? sessionByDate[cell.iso] : null;
+            const isToday = cell.iso === todayIso;
+            const isSelected = !!(selectedSession && cell.iso && toLocalDateStr(selectedSession.sessionDate) === cell.iso);
 
-              let exercises: any[] = [];
-              let totalSets = 0;
-              let hasIncomplete = false;
-              if (sess) {
-                exercises = (sess.exercises as any[]) ?? [];
-                totalSets = exercises.reduce((acc: number, ex: any) =>
-                  acc + (ex.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null).length, 0);
-                hasIncomplete = exercises.some((ex: any) => {
-                  const sets = ex.sets ?? [];
-                  if (sets.length === 0) return false;
-                  const isMiniSets = !!sets[0]?.myoReps;
-                  if (isMiniSets) return !sets[0]?.completed;
-                  return sets.filter((s: any) => s.completed).length < sets.length;
-                });
-              }
+            let hasIncomplete = false;
+            if (sess) {
+              const exercises = (sess.exercises as any[]) ?? [];
+              hasIncomplete = exercises.some((ex: any) => {
+                const sets = ex.sets ?? [];
+                if (sets.length === 0) return false;
+                const isMiniSets = !!sets[0]?.myoReps;
+                if (isMiniSets) return !sets[0]?.completed;
+                return sets.filter((s: any) => s.completed).length < sets.length;
+              });
+            }
 
-              return (
-                <div
-                  key={idx}
-                  className={[
-                    'min-h-[48px] sm:min-h-[60px] p-1 sm:p-1.5 bg-card',
-                    isToday ? 'bg-primary/5' : '',
-                    isSelected ? 'ring-1 ring-inset ring-primary/40' : '',
-                    sess ? 'cursor-pointer hover:bg-muted/20 active:opacity-70' : '',
-                  ].join(' ')}
-                  onClick={() => sess ? setSelectedSession(isSelected ? null : sess) : undefined}
-                >
-                  <span className={`text-xs font-medium block mb-1 ${
-                    isToday ? 'text-primary font-bold' : cell.otherMonth ? 'text-muted-foreground/30' : 'text-muted-foreground'
-                  }`}>{cell.day}</span>
+            const dotColor = hasIncomplete ? 'bg-amber-400' : 'bg-primary';
 
-                  {sess && (
-                    <div className="flex justify-center mt-1">
-                      <span className={`w-2 h-2 rounded-full block ${
-                        hasIncomplete ? 'bg-amber-400' : 'bg-primary'
-                      }`} />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+            return (
+              <button
+                key={idx}
+                className={[
+                  'relative aspect-square flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors',
+                  sess ? 'cursor-pointer' : 'cursor-default',
+                ].join(' ')}
+                style={{
+                  background: isSelected ? 'hsl(var(--primary) / 0.13)' : sess ? 'hsl(var(--foreground) / 0.05)' : 'transparent',
+                  outline: isSelected ? '1px solid hsl(var(--primary))' : isToday && !isSelected ? '1px solid hsl(var(--primary) / 0.4)' : 'none',
+                  color: cell.otherMonth ? 'hsl(var(--muted-foreground) / 0.3)' : isToday ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
+                }}
+                onClick={() => sess ? setSelectedSession(isSelected ? null : sess) : undefined}
+              >
+                <span className={isToday ? 'font-bold' : ''}>{cell.day}</span>
+                {sess && (
+                  <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${dotColor}`} />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
