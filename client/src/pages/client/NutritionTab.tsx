@@ -1171,7 +1171,31 @@ function TodayScreen() {
     onError: (e) => toast.error(e.message),
   });
 
-  const mealsList = meals ?? [];
+  const mealsList = useMemo(() => meals ?? [], [meals]);
+
+  // All hooks must be declared before any early return
+  const todayMeals = useMemo(
+    () => (mealsList as any[]).filter((m) => {
+      const d = new Date(m.loggedAt);
+      return toLocalDateStr(d) === todayStr;
+    }).sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime()),
+    [mealsList, todayStr]
+  );
+  const mealCount = useMemo(() => todayMeals.filter((m) => m.mealType === "meal").length, [todayMeals]);
+  const treatCount = useMemo(() => todayMeals.filter((m) => m.mealType === "treat").length, [todayMeals]);
+  const todayMealIds = useMemo(
+    () => todayMeals.filter((m) => m.mealType === "meal").map((m) => m.id),
+    [todayMeals]
+  );
+  const { data: mealHabits = [] } = trpc.habits.myMealHabits.useQuery();
+  const { data: allCompletions = [] } = trpc.habits.mealCompletions.useQuery(
+    { mealLogIds: todayMealIds },
+    { enabled: todayMealIds.length > 0 }
+  );
+  const completedMealIds = useMemo(
+    () => new Set((allCompletions as any[]).map((c: any) => `${c.habitId}-${c.mealLogId}`)),
+    [allCompletions]
+  );
 
   if (mealsLoading) {
     return (
@@ -1195,32 +1219,6 @@ function TodayScreen() {
       </div>
     );
   }
-
-  const todayMeals = useMemo(
-    () => (mealsList as any[]).filter((m) => {
-      const d = new Date(m.loggedAt);
-      return toLocalDateStr(d) === todayStr;
-    }).sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime()),
-    [mealsList, todayStr]
-  );
-
-  const mealCount = useMemo(() => todayMeals.filter((m) => m.mealType === "meal").length, [todayMeals]);
-  const treatCount = useMemo(() => todayMeals.filter((m) => m.mealType === "treat").length, [todayMeals]);
-
-  // Per-meal habit summary
-  const todayMealIds = useMemo(
-    () => todayMeals.filter((m) => m.mealType === "meal").map((m) => m.id),
-    [todayMeals]
-  );
-  const { data: mealHabits = [] } = trpc.habits.myMealHabits.useQuery();
-  const { data: allCompletions = [] } = trpc.habits.mealCompletions.useQuery(
-    { mealLogIds: todayMealIds },
-    { enabled: todayMealIds.length > 0 }
-  );
-  const completedMealIds = useMemo(
-    () => new Set((allCompletions as any[]).map((c: any) => `${c.habitId}-${c.mealLogId}`)),
-    [allCompletions]
-  );
 
   return (
     <div className="space-y-4">
