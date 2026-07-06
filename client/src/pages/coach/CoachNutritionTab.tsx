@@ -347,7 +347,7 @@ function IdealZoneCard({
             </div>
           </div>
         </div>
-        <span className="text-xs" style={{ color: C.muted }}>Last {days}d</span>
+
       </div>
 
       {/* Score + trend */}
