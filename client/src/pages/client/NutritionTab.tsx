@@ -1134,8 +1134,10 @@ function MealRow({
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               {h != null ? (
                 <span className={cn("text-xs font-semibold", ratingColor(h, "hunger"))}>H{h}</span>
-              ) : null}
-              {h != null && <span className="text-muted-foreground text-xs">·</span>}
+              ) : (
+                <span className="text-xs font-semibold text-muted-foreground/40">H?</span>
+              )}
+              <span className="text-muted-foreground/40 text-xs">·</span>
               {f != null ? (
                 <span className={cn("text-xs font-semibold", ratingColor(f, "fullness"))}>F{f}</span>
               ) : (
