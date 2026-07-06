@@ -1012,8 +1012,18 @@ function EditSheet({
 
               {meal?.mealType === "meal" && (
                 <>
-                  <RatingPicker value={hunger} onChange={setHunger} type="hunger" onOpenScale={() => setScaleOpen(true)} />
-                  <RatingPicker value={fullness} onChange={setFullness} type="fullness" onOpenScale={() => setScaleOpen(true)} />
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Hunger &amp; Fullness</p>
+                    <button
+                      onClick={() => setScaleOpen(true)}
+                      className="text-muted-foreground/50 hover:text-muted-foreground transition-colors p-1 -mr-1"
+                      title="Scale reference"
+                    >
+                      <HelpCircle size={16} />
+                    </button>
+                  </div>
+                  <RatingPicker value={hunger} onChange={setHunger} type="hunger" />
+                  <RatingPicker value={fullness} onChange={setFullness} type="fullness" />
                 </>
               )}
 
