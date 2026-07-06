@@ -1512,7 +1512,7 @@ function WorkoutLogTab() {
         presetId: machinePresetId[nameToUse] || null,
         machineSettings: machineSettings[nameToUse] || null,
         exerciseNotes: exerciseNotes[nameToUse] || null,
-        weightUnit: exerciseUnits[nameToUse] ?? 'lbs',
+        weightUnit: exerciseUnits[nameToUse] ?? 'kg',
         sets: (exerciseData[nameToUse] ?? []).map(s => ({
           weight: s.weight !== "" ? parseFloat(s.weight) : null,
           reps: s.reps !== "" ? parseInt(s.reps) : null,
