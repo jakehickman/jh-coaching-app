@@ -75,7 +75,7 @@ function calcDelta(
   return { arrow: positive ? "up" : "down", good, pct, abs };
 }
 
-function DeltaBadge({ delta, unit = "" }: { delta: DeltaResult | null; unit?: string }) {
+function DeltaBadge({ delta, unit = "", decimals = 1 }: { delta: DeltaResult | null; unit?: string; decimals?: number }) {
   if (!delta) return null;
   const colour = delta.arrow === "flat" ? C.muted : delta.good ? C.green : C.red;
   const Icon = delta.arrow === "up" ? ArrowUp : delta.arrow === "down" ? ArrowDown : Minus;
@@ -84,7 +84,7 @@ function DeltaBadge({ delta, unit = "" }: { delta: DeltaResult | null; unit?: st
     : delta.pct != null
       ? `${delta.pct.toFixed(1)}%`
       : delta.abs != null
-        ? `${delta.abs.toFixed(1)}${unit}`
+        ? `${delta.abs.toFixed(decimals)}${unit}`
         : "";
   return (
     <span className="inline-flex items-center gap-0.5 text-xs font-medium" style={{ color: colour }}>
@@ -101,6 +101,7 @@ function SummaryCard({
   unit,
   delta,
   deltaUnit,
+  deltaDecimals,
   interpretation,
   valueColour,
 }: {
@@ -109,6 +110,7 @@ function SummaryCard({
   unit?: string;
   delta?: DeltaResult | null;
   deltaUnit?: string;
+  deltaDecimals?: number;
   interpretation?: string;
   valueColour?: string;
 }) {
@@ -141,7 +143,7 @@ function SummaryCard({
       </div>
       {delta !== undefined && (
         <div className="flex items-center gap-1 mt-0.5">
-          <DeltaBadge delta={delta ?? null} unit={deltaUnit} />
+          <DeltaBadge delta={delta ?? null} unit={deltaUnit} decimals={deltaDecimals} />
           {delta && delta.arrow !== "flat" && (
             <span className="text-xs" style={{ color: C.muted }}>vs prev 7d</span>
           )}
@@ -451,12 +453,12 @@ export function WeeklyReviewTab({ clientId }: Props) {
 
           {/* Avg Steps */}
           {r?.avgSteps != null && (
-            <SummaryCard label="Avg Steps" value={fmtK(Math.round(r.avgSteps))} delta={stepsDelta} />
+            <SummaryCard label="Avg Steps" value={fmtK(Math.round(r.avgSteps))} delta={stepsDelta} deltaDecimals={0} />
           )}
 
           {/* Sleep Duration */}
           {r?.avgSleepHours != null && (
-            <SummaryCard label="Avg Sleep" value={hoursToHmm(r.avgSleepHours)} delta={sleepDeltaMins} deltaUnit="min" />
+            <SummaryCard label="Avg Sleep" value={hoursToHmm(r.avgSleepHours)} delta={sleepDeltaMins} deltaUnit="min" deltaDecimals={0} />
           )}
 
           {/* Sleep Quality */}
