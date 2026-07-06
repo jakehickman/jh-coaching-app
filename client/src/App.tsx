@@ -10,8 +10,6 @@ import CoachPanel from "./pages/CoachPanel";
 import ClientHub from "./pages/coach/ClientHub";
 // import CoachingLanding from "./pages/CoachingLanding"; // temporarily disabled
 import Onboarding from "./pages/Onboarding";
-import GettingStarted from "./pages/GettingStarted";
-import SetFlowMockup from "./pages/client/SetFlowMockup";
 import InvitePage from "./pages/InvitePage";
 
 function AppRoutes() {
@@ -25,8 +23,6 @@ function AppRoutes() {
       <Route path="/coach/:section" component={CoachPanel} />
       {/* <Route path="/coaching" component={CoachingLanding} /> */} {/* temporarily disabled */}
       <Route path="/onboarding" component={Onboarding} />
-      <Route path="/getting-started" component={GettingStarted} />
-      <Route path="/mockup/set-flow" component={SetFlowMockup} />
       <Route path="/invite/:token" component={InvitePage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

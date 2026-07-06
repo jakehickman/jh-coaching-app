@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, Settings, History, Pencil, CalendarIcon, BarChart2 } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, History, Pencil, CalendarIcon, BarChart2 } from "lucide-react";
 import { MdBolt } from "react-icons/md";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { toUTCDateStr as toLocalDateStr } from "@/lib/dates";
-import { Plus, Trash2, ChevronDown, ChevronUp, Save, GripVertical, Check, ChevronsUpDown, Users, ArrowUp, ArrowDown, LayoutList, LayoutGrid } from "lucide-react";
+import { Plus, Trash2, ChevronDown, Save, GripVertical, Users, LayoutList, LayoutGrid } from "lucide-react";
 import KanbanProgramView from "./KanbanProgramView";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

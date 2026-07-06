@@ -869,3 +869,24 @@
 - [x] Mobile: Habit adherence cards — change grid-cols-5 to grid-cols-2 sm:grid-cols-3 lg:grid-cols-5
 - [x] Mobile: SessionDetailPanel header — wrap Incomplete badge so it doesn't overflow into close button
 - [x] Fix TS errors: invite token db.ts null guards, oauth.ts upsertClientProfile args, TrainingTab exData types, CoachNutritionTab prevIdealZonePct, CoachPanel SectionLabel className
+
+## Codebase Cleanup & Quality Review
+- [x] Remove stale checkIn describe block from coaching.test.ts (checkIn router no longer exists)
+- [x] Remove stale check-in mock entries from coaching.test.ts vi.mock block
+- [x] Remove unused LineChart, AreaChart imports from ProgressSection.tsx (recharts)
+- [x] Remove unused Settings2 import from ProgressSection.tsx (lucide-react)
+- [x] Remove unused ChevronUp, Check, ChevronsUpDown imports from TrainingSection.tsx (lucide-react)
+- [x] Remove unused Settings import from TrainingTab.tsx (lucide-react)
+- [x] Remove dead DIET_LABEL_MAP and fmtCheckInDate constants from ProgressSection.tsx
+- [x] Delete dead file: client/src/pages/client/SetFlowMockup.tsx + route in App.tsx
+- [x] Delete dead file: client/src/pages/GettingStarted.tsx + getting-started-content.md + route in App.tsx
+- [x] Delete unused hook: client/src/hooks/useDraft.ts
+- [x] Delete unregistered server router: server/routers/phases.ts
+- [x] TypeScript: 0 errors confirmed
+- [x] Tests: 59/59 passing (7 test files)
+
+## Per-Client Weight Unit Preference
+- [ ] Add weightUnit field (kg/lbs) to client_profiles schema
+- [ ] Migrate DB: add weightUnit column
+- [ ] Add weightUnit selector to coach Client Profile tab
+- [ ] Apply per-client weightUnit default in TrainingTab exercise logging

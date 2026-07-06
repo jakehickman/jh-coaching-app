@@ -4,12 +4,12 @@ import { toast } from "sonner";
 import { localToday, fmtDate, toUTCDateStr as toLocalDateStr } from "@/lib/dates";
 import { pctChange as pctChangeNum } from "@/lib/stats";
 import {
-  LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  Area, Line, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus, Activity, History, BarChart2, Zap } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Plus, Activity, History, BarChart2, Zap } from "lucide-react";
 import { useSearch, useLocation } from "wouter";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
@@ -2099,40 +2099,6 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
     </div>
   );
 }
-
-// --- Shared check-in helpers (used in both Clients section and standalone tab) ---------
-
-// Label maps for new diet execution fields
-const DIET_LABEL_MAP: Record<string, string> = {
-  // Q1 & Q2 (weigh foods / meal prep accuracy)
-  every_meal: 'Every meal or nearly every meal',
-  most_meals: 'Most meals',
-  some_meals: 'Some meals',
-  rarely: 'Rarely',
-  never: 'Never',
-  // Q3 & Q5 (extras frequency / meal timing)
-  one_two_days: 'On 1–2 days',
-  few_days: 'On a few days',
-  most_days: 'On most days',
-  every_day: 'Every day',
-  // Q4 (added fats)
-  light_spray: 'Light spray (e.g. cooking spray)',
-  small_amount: 'Small amount (less than 1 tsp)',
-  one_tsp_or_more: '1 tsp or more',
-  no_added_fats: 'No added fats when cooking',
-  // Q6 (off-plan quality)
-  very_close: 'Very close',
-  somewhat_close: 'Somewhat close',
-  not_very_close: 'Not very close',
-  very_different: 'Very different',
-  no_off_plan_meals: 'No off-plan meals',
-};
-
-
-const fmtCheckInDate = (iso: string) => {
-  const d = new Date(iso + 'T00:00:00');
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-};
 
 // --- Progress Section ------------------------------------------------
 
