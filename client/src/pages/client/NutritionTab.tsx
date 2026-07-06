@@ -734,18 +734,18 @@ function FullnessSheet({
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Meal Habits</p>
               <div className="space-y-2">
                 {(mealHabits as any[]).map((h: any) => (
-                  <label key={h.id} className="flex items-center justify-between gap-3 cursor-pointer bg-secondary rounded-xl px-4 py-3">
+                  <label key={h.id} className="flex items-center justify-between gap-3 cursor-pointer bg-secondary rounded-xl px-4 py-3.5">
                     <span className="text-sm text-foreground">{h.name}</span>
                     <div
                       onClick={() => handleToggleHabit(h.id)}
-                      className={`w-7 h-7 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors ${
                         habitChecked[h.id]
                           ? "bg-primary border-primary"
                           : "border-border bg-card"
                       }`}
                     >
                       {habitChecked[h.id] && (
-                        <svg width="13" height="10" viewBox="0 0 10 8" fill="none">
+                        <svg width="16" height="12" viewBox="0 0 10 8" fill="none">
                           <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground" />
                         </svg>
                       )}
@@ -1025,19 +1025,19 @@ function EditSheet({
                     {(mealHabits as any[]).map((h: any) => (
                       <div
                         key={h.id}
-                        className="flex items-center justify-between gap-3 cursor-pointer bg-secondary rounded-xl px-4 py-3"
+                        className="flex items-center justify-between gap-3 cursor-pointer bg-secondary rounded-xl px-4 py-3.5"
                         onClick={() => handleToggleHabit(h.id)}
                       >
                         <span className="text-sm text-foreground">{h.name}</span>
                         <div
-                          className={`w-7 h-7 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors ${
                             habitChecked[h.id]
                               ? "bg-primary border-primary"
                               : "border-border bg-card"
                           }`}
                         >
                           {habitChecked[h.id] && (
-                            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                            <svg width="16" height="12" viewBox="0 0 10 8" fill="none">
                               <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground" />
                             </svg>
                           )}
@@ -1131,9 +1131,9 @@ function MealRow({
               ) : (
                 <button
                   onClick={() => onRateFullness(meal)}
-                  className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-colors"
+                  className="text-sm font-semibold px-3.5 py-1.5 rounded-full bg-primary/20 text-primary border border-primary/40 hover:bg-primary/30 active:bg-primary/40 transition-colors"
                 >
-                  Rate
+                  Rate fullness
                 </button>
               )}
             </div>

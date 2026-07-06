@@ -2046,11 +2046,11 @@ function WorkoutLogTab() {
                                         return { ...prev, [displayName]: updated };
                                       })}
                                       title={isMyoReps ? 'Disable mini sets' : 'Enable mini sets'}
-                                      className={`w-6 flex-shrink-0 flex items-center justify-center rounded transition-colors ${
+                                      className={`w-8 flex-shrink-0 flex items-center justify-center rounded transition-colors ${
                                         isMyoReps ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
                                       }`}
                                     >
-                                      <MdBolt size={20} />
+                                      <MdBolt size={24} />
                                     </button>
                                   </div>
                                    {/* Mini-set count row — shown when myo-reps is on */}

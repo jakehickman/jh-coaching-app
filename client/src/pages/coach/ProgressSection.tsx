@@ -7,6 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus, Activity, History, BarChart2, Zap } from "lucide-react";
 import { useSearch, useLocation } from "wouter";
 import {
@@ -1628,7 +1629,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
                         <span className={`text-xs font-black leading-tight ${
                           hasIncomplete ? 'text-amber-400' : 'text-primary'
                         }`}>{sess.dayLabel}</span>
-                        <span className="text-[10px] text-muted-foreground leading-tight">
+                        <span className="text-xs text-muted-foreground leading-tight">
                           {exercises.length}ex·{totalSets}s
                         </span>
                       </div>
@@ -2165,7 +2166,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
   const urlSubTab = searchParams.get("sub") ?? "";
   const [, navigate] = useLocation();
 
-  const { clients, selectedUserId: selectorUserId, setSelectedUserId } = useClientSelector();
+  const { clients, selectedUserId: selectorUserId, setSelectedUserId, isLoading: clientsLoading } = useClientSelector();
   // In hub mode, use the fixed clientId directly without a selector
   const selectedUserId = fixedClientId ?? selectorUserId;
   const [activeTab, setActiveTab] = useState(urlTab);
@@ -2398,6 +2399,17 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
       </div>
     );
   }
+  if (!fixedClientId && clientsLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full max-w-sm" />
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {!fixedClientId && (
@@ -2455,12 +2467,13 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 <TabsList className="flex-nowrap min-w-max">
                   <TabsTrigger value="session-log">Session Log</TabsTrigger>
                   <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
-                  <TabsTrigger value="mesocycles">Mesocycles</TabsTrigger>
                   <TabsTrigger value="program">Program Builder</TabsTrigger>
                   <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
+                  <TabsTrigger value="mesocycles">Mesocycles</TabsTrigger>
                 </TabsList>
               </div>
               <TabsContent value="session-log">
+                <p className="text-xs text-muted-foreground mb-3">Showing all sessions. Calendar defaults to current month.</p>
                 <WorkoutSessionsTab
                   workoutSessions={workoutSessions}
                   exerciseLib={exerciseLib}

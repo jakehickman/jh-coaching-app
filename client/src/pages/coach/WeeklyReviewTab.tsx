@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { AlertCircle, ArrowUp, ArrowDown, Minus, ChevronDown } from "lucide-react";
 
 interface Props {
   clientId: number;
@@ -157,68 +157,139 @@ function SummaryCard({
   );
 }
 
-// ── Weekly table row ──────────────────────────────────────────────────────────
-function WeekRow({ week }: { week: Week }) {
+// ── Weekly table row (accordion) ─────────────────────────────────────────────
+function WeekRow({ week, isOpen, onToggle }: { week: Week; isOpen: boolean; onToggle: () => void }) {
   const hasData = week.daysLogged > 0 || week.sessionsCompleted > 0;
   const stepsVal = week.avgSteps != null ? fmtK(Math.round(week.avgSteps)) : null;
   const stepsGoal = (week.stepGoal != null && stepsVal != null) ? `/${fmtK(week.stepGoal)}` : "";
 
   return (
-    <tr
-      className={`border-b border-border/40 transition-colors ${
-        week.isInProgress ? "bg-amber-500/5" : !hasData ? "opacity-40" : ""
-      }`}
-    >
-      <td className="px-3 py-2.5">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-semibold text-foreground whitespace-nowrap">{week.label}</span>
-          {week.isInProgress && (
-            <span className="text-xs font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded whitespace-nowrap">
-              Current
-            </span>
-          )}
-        </div>
-      </td>
-      <td className="px-3 py-2.5 text-center">
-        <span className={`text-xs tabular-nums ${hasData ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-          {hasData ? `${week.daysLogged}/7` : "—"}
-        </span>
-      </td>
-      <td className="px-3 py-2.5 text-right">
-        <span className="text-xs tabular-nums text-foreground">
-          {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
-        </span>
-      </td>
-      <td className="px-3 py-2.5 text-right">
-        <span className="text-xs tabular-nums text-foreground">
-          {stepsVal != null ? <>{stepsVal}{stepsGoal && <span className="text-muted-foreground">{stepsGoal}</span>}</> : "—"}
-        </span>
-      </td>
-      <td className="px-3 py-2.5 text-right">
-        <span className="text-xs tabular-nums text-foreground">
-          {hoursToHmm(week.avgSleepHours)}
-        </span>
-      </td>
-      <td className="px-3 py-2.5 text-right">
-        <span className="text-xs tabular-nums text-foreground">
-          {week.avgSleepQuality != null ? `${fmt(week.avgSleepQuality)}/5` : "—"}
-        </span>
-      </td>
-      <td className="px-3 py-2.5 text-right">
-        <span className={`text-xs tabular-nums ${
-          week.avgStress != null && week.avgStress >= 4 ? "text-red-400"
-          : week.avgStress != null && week.avgStress >= 3 ? "text-amber-400"
-          : "text-foreground"
-        }`}>
-          {week.avgStress != null ? `${fmt(week.avgStress)}/5` : "—"}
-        </span>
-      </td>
-      <td className="px-3 py-2.5 text-right">
-        <span className="text-xs tabular-nums text-foreground">
-          {week.sessionsCompleted > 0 ? week.sessionsCompleted : "—"}
-        </span>
-      </td>
-    </tr>
+    <>
+      <tr
+        onClick={hasData ? onToggle : undefined}
+        className={`border-b border-border/40 transition-colors ${
+          week.isInProgress ? "bg-amber-500/5" : !hasData ? "opacity-40" : ""
+        } ${hasData ? "cursor-pointer hover:bg-muted/20" : ""}`}
+      >
+        <td className="px-3 py-2.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {hasData && (
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-muted-foreground flex-shrink-0 transition-transform duration-200 ${
+                  isOpen ? "rotate-180" : ""
+                }`}
+              />
+            )}
+            <span className="text-xs font-semibold text-foreground whitespace-nowrap">{week.label}</span>
+            {week.isInProgress && (
+              <span className="text-xs font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded whitespace-nowrap">
+                Current
+              </span>
+            )}
+          </div>
+        </td>
+        <td className="px-3 py-2.5 text-center">
+          <span className={`text-xs tabular-nums ${hasData ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+            {hasData ? `${week.daysLogged}/7` : "—"}
+          </span>
+        </td>
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
+          </span>
+        </td>
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {stepsVal != null ? <>{stepsVal}{stepsGoal && <span className="text-muted-foreground">{stepsGoal}</span>}</> : "—"}
+          </span>
+        </td>
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {hoursToHmm(week.avgSleepHours)}
+          </span>
+        </td>
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {week.avgSleepQuality != null ? `${fmt(week.avgSleepQuality)}/5` : "—"}
+          </span>
+        </td>
+        <td className="px-3 py-2.5 text-right">
+          <span className={`text-xs tabular-nums ${
+            week.avgStress != null && week.avgStress >= 4 ? "text-red-400"
+            : week.avgStress != null && week.avgStress >= 3 ? "text-amber-400"
+            : "text-foreground"
+          }`}>
+            {week.avgStress != null ? `${fmt(week.avgStress)}/5` : "—"}
+          </span>
+        </td>
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs tabular-nums text-foreground">
+            {week.sessionsCompleted > 0 ? week.sessionsCompleted : "—"}
+          </span>
+        </td>
+      </tr>
+      {isOpen && hasData && (
+        <tr className="border-b border-border/40 bg-muted/10">
+          <td colSpan={8} className="px-4 py-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {week.avgWeight != null && (
+                <div className="text-xs">
+                  <span className="text-muted-foreground">Avg Weight</span>
+                  <span className="ml-2 font-medium text-foreground tabular-nums">{fmt(week.avgWeight)} kg</span>
+                </div>
+              )}
+              {week.avgSteps != null && (
+                <div className="text-xs">
+                  <span className="text-muted-foreground">Avg Steps</span>
+                  <span className="ml-2 font-medium text-foreground tabular-nums">
+                    {fmtK(Math.round(week.avgSteps))}
+                    {week.stepGoal != null && <span className="text-muted-foreground">/{fmtK(week.stepGoal)}</span>}
+                  </span>
+                </div>
+              )}
+              {week.avgSleepHours != null && (
+                <div className="text-xs">
+                  <span className="text-muted-foreground">Avg Sleep</span>
+                  <span className="ml-2 font-medium text-foreground tabular-nums">{hoursToHmm(week.avgSleepHours)}</span>
+                </div>
+              )}
+              {week.avgSleepQuality != null && (
+                <div className="text-xs">
+                  <span className="text-muted-foreground">Sleep Quality</span>
+                  <span className="ml-2 font-medium text-foreground tabular-nums">{fmt(week.avgSleepQuality)}/5</span>
+                </div>
+              )}
+              {week.avgStress != null && (
+                <div className="text-xs">
+                  <span className="text-muted-foreground">Avg Stress</span>
+                  <span className={`ml-2 font-medium tabular-nums ${
+                    week.avgStress >= 4 ? "text-red-400" : week.avgStress >= 3 ? "text-amber-400" : "text-foreground"
+                  }`}>{fmt(week.avgStress)}/5</span>
+                </div>
+              )}
+              {week.sessionsCompleted > 0 && (
+                <div className="text-xs">
+                  <span className="text-muted-foreground">Sessions</span>
+                  <span className="ml-2 font-medium text-foreground tabular-nums">{week.sessionsCompleted}</span>
+                </div>
+              )}
+              {week.mealLogCount != null && week.mealLogCount > 0 && (
+                <div className="text-xs">
+                  <span className="text-muted-foreground">Meal Logs</span>
+                  <span className="ml-2 font-medium text-foreground tabular-nums">{week.mealLogCount}</span>
+                </div>
+              )}
+              {week.mealLogAvgFullness != null && (
+                <div className="text-xs">
+                  <span className="text-muted-foreground">Avg Fullness</span>
+                  <span className="ml-2 font-medium text-foreground tabular-nums">{fmt(week.mealLogAvgFullness)}/5</span>
+                </div>
+              )}
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -283,6 +354,11 @@ function sessionsInterpretation(n: number | null, delta: DeltaResult | null): st
 // ── Main component ────────────────────────────────────────────────────────────
 export function WeeklyReviewTab({ clientId }: Props) {
   const [showAll, setShowAll] = useState(false);
+  const [openWeek, setOpenWeek] = useState<string | null>(null);
+
+  const handleToggle = useCallback((weekStart: string) => {
+    setOpenWeek(prev => prev === weekStart ? null : weekStart);
+  }, []);
 
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
   const { data, isLoading, error } = trpc.progress.weeklyReview.useQuery(
@@ -426,7 +502,12 @@ export function WeeklyReviewTab({ clientId }: Props) {
               </thead>
               <tbody>
                 {visibleWeeks.map((week) => (
-                  <WeekRow key={week.weekStart} week={week} />
+                  <WeekRow
+                    key={week.weekStart}
+                    week={week}
+                    isOpen={openWeek === week.weekStart}
+                    onToggle={() => handleToggle(week.weekStart)}
+                  />
                 ))}
               </tbody>
             </table>

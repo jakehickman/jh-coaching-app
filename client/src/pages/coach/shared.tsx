@@ -61,7 +61,7 @@ export function Card({
 // ─── Client selector hook ────────────────────────────────────────────────────
 
 export function useClientSelector() {
-  const { data: allUsers } = trpc.users.list.useQuery();
+  const { data: allUsers, isLoading: clientsLoading } = trpc.users.list.useQuery();
   const searchString = typeof window !== 'undefined' ? window.location.search : '';
   const urlClientId = useMemo(() => {
     const p = new URLSearchParams(searchString);
@@ -76,7 +76,7 @@ export function useClientSelector() {
       setSelectedUserId(target);
     }
   }, [clients]);
-  return { clients, selectedUserId, setSelectedUserId };
+  return { clients, selectedUserId, setSelectedUserId, isLoading: clientsLoading };
 }
 
 // ─── Searchable Client Combobox ──────────────────────────────────────────────

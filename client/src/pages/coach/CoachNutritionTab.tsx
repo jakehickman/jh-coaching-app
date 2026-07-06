@@ -624,7 +624,7 @@ function MealTimingCard({
               <span className="text-[13px] w-16 shrink-0" style={{ color: C.muted }}>{slot.label}</span>
               <span className="text-[13px] font-medium" style={{ color: C.fg }}>{slot.anchor}</span>
               {pct != null && (
-                <span className="text-[11px]" style={{ color: C.muted }}>{slot.count} ({pct}%)</span>
+                <span className="text-xs" style={{ color: C.muted }}>{slot.count} ({pct}%)</span>
               )}
               <span className="text-[12px] font-medium" style={{ color: driftColor }}>
                 ±{slot.driftMin} min

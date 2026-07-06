@@ -609,11 +609,11 @@
 - [x] Invite-only: block new sign-ups without a valid invite token in OAuth callback
 - [x] Home page: show "Invite required" error message when redirected with ?error=invite_required
 - [x] Delete David Chen's account (signed up without invite)
-- [ ] Weekly review accordion: only one week expanded at a time (single-expand)
-- [ ] Training sub-tabs: reorder to Session Log > Exercise Progress > Program
-- [ ] Session Log: add "Last 7 days" label/indicator to clarify the default date range
-- [ ] Weekly review coach notes and changes made: auto-expanding textarea
-- [ ] Weekly review coach notes and changes made: basic markdown formatting toolbar (bullet points, headings)
+- [x] Weekly review accordion: only one week expanded at a time (single-expand)
+- [x] Training sub-tabs: reorder to Session Log > Exercise Progress > Program
+- [x] Session Log: add "Last 7 days" label/indicator to clarify the default date range
+- [x] Weekly review coach notes and changes made: auto-expanding textarea (superseded by Tiptap WYSIWYG editor)
+- [x] Weekly review coach notes and changes made: basic markdown formatting toolbar (bullet points, headings) (superseded by Tiptap WYSIWYG editor)
 - [x] Move check-in submission answers, Coach Notes, Changes Made, and Mark as Reviewed out of Weekly Review cards into new dedicated Check-ins tab
 - [x] Weekly Review cards now show metrics only (clean for client-facing sessions)
 - [x] New Check-ins tab: weekly accordion (submissions only), Tiptap WYSIWYG notes for Coach Notes and Changes Made, Mark as Reviewed button with success toast
@@ -653,7 +653,7 @@
 - [x] Show setup details in muted text below the machine pill on the exercise card
 - [x] Move machine setup text inline with pill on same line
 - [x] Hide exercise notes field behind Add note toggle
-- [ ] Rename machine preset also updates machinePreset in workout history entries
+- [x] Rename machine preset also updates machinePreset in workout history entries
 - [x] Mark as Reviewed also advances the cycle (no separate Mark Complete needed)
 - [x] Fix 20 pre-existing TS syntax errors in CheckInsSection.tsx (were stale watcher errors, tsc passes clean)
 - [x] Add confirmation prompt before Mark as Reviewed advances the cycle
@@ -814,9 +814,9 @@
 - [x] Apply premium dark analytics design system to the Overview tab: Last 7 Days summary cards (avg weight + % delta, days logged, avg steps, sleep duration, sleep quality, stress, sessions), remove toggle, add weight column to weekly history table
 
 ## Phase 1 Quick UI Fixes
-- [ ] Larger meal habits checkboxes when rating fullness
-- [ ] Larger rate fullness banner
-- [ ] Larger myo-reps lightning bolt icon in workout log
+- [x] Larger meal habits checkboxes when rating fullness
+- [x] Larger rate fullness banner
+- [x] Larger myo-reps lightning bolt icon in workout log
 
 ## Phase 2 Mesocycles
 - [ ] Mesocycle DB schema: mesocycles table, microcycle detection
@@ -855,12 +855,12 @@
 - [x] Add skeleton loading states to DailyLogTab, NutritionTab today view, TrainingTab
 
 ## Coach Side Material Design 3 Polish (Jul 2026)
-- [ ] Fix text-[10px]/text-[11px] → text-xs in all coach pages
-- [ ] Add shadow-sm to coach card components
-- [ ] Add aria-current="page" to coach sidebar nav items
-- [ ] Add hover:bg-muted/30 to all interactive table/list rows in coach pages
+- [x] Fix text-[10px]/text-[11px] → text-xs in all coach pages
+- [x] Add shadow-sm to coach card components
+- [x] Add aria-current="page" to coach sidebar nav items
+- [x] Add hover:bg-muted/30 to all interactive table/list rows in coach pages
 - [ ] Standardise Button usage in coach forms (replace raw button elements)
-- [ ] Add skeleton loading states to client list, check-in history, coach nutrition data view
+- [x] Add skeleton loading states to client list, check-in history, coach nutrition data view
 
 ## Mobile Layout Fixes (Jul 2026)
 - [x] Mobile: Weekly History table (Overview) — remove table-fixed, add min-w-[560px] + overflow-x-auto, fix Current badge overlap
