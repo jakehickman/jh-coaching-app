@@ -39,6 +39,17 @@ function formatTime(d: Date) {
   return `${h12}:${m} ${ampm}`;
 }
 
+/** Format a UTC timestamp in a specific UTC offset (minutes), e.g. 600 for UTC+10 */
+function formatTimeAtOffset(utcMs: number, utcOffsetMins: number) {
+  // Shift the timestamp so that getUTCHours/getUTCMinutes return local time
+  const shifted = new Date(utcMs + utcOffsetMins * 60 * 1000);
+  const h = shifted.getUTCHours();
+  const m = shifted.getUTCMinutes().toString().padStart(2, "0");
+  const ampm = h >= 12 ? "pm" : "am";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m} ${ampm}`;
+}
+
 function formatMonthYear(year: number, month: number) {
   return new Date(year, month - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" });
 }
@@ -639,7 +650,7 @@ function MealTimingCard({
 
 // ─── Calendar Meal Log View ───────────────────────────────────────────────────
 
-type DayData = { meals: any[]; hasOutOfRange: boolean; treatCount: number };
+type DayData = { meals: any[]; hasOutOfRange: boolean; treatCount: number; utcOffsetMins?: number | null };
 
 function MealLogView({ clientId }: { clientId: number }) {
   const today = new Date();
@@ -787,7 +798,7 @@ function MealLogView({ clientId }: { clientId: number }) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[12px]" style={{ color: C.muted }}>{formatTime(new Date(meal.loggedAt))}</span>
+                            <span className="text-[12px]" style={{ color: C.muted }}>{formatTimeAtOffset(new Date(meal.loggedAt).getTime(), selectedDayData?.utcOffsetMins ?? meal.utcOffsetMins ?? 0)}</span>
                             {meal.mealType === "treat" && (
                               <span className="text-xs font-medium uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}18`, color: C.amber }}>Treat</span>
                             )}

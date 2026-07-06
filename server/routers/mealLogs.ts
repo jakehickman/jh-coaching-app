@@ -349,14 +349,23 @@ export const mealLogsRouter = router({
       month: z.number().int().min(1).max(12),
     }))
     .query(async ({ input }) => {
+      // Widen the query window by ±1 day to catch UTC dates that shift when converted to client local time
       const from = new Date(input.year, input.month - 1, 1);
+      from.setDate(from.getDate() - 1);
       const to = new Date(input.year, input.month, 0, 23, 59, 59, 999);
+      to.setDate(to.getDate() + 1);
       const logs = await getMealLogsForUser(input.userId, from, to);
-      const byDate: Record<string, { meals: any[]; hasOutOfRange: boolean; treatCount: number }> = {};
+      const byDate: Record<string, { meals: any[]; hasOutOfRange: boolean; treatCount: number; utcOffsetMins: number | null }> = {};
       for (const log of logs) {
-        const d = log.loggedAt;
-        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        if (!byDate[key]) byDate[key] = { meals: [], hasOutOfRange: false, treatCount: 0 };
+        // Use the client's stored UTC offset to determine their local date
+        const offsetMins: number = (log as any).utcOffsetMins ?? 0;
+        const localMs = log.loggedAt.getTime() + offsetMins * 60 * 1000;
+        const localDate = new Date(localMs);
+        const key = `${localDate.getUTCFullYear()}-${String(localDate.getUTCMonth()+1).padStart(2,'0')}-${String(localDate.getUTCDate()).padStart(2,'0')}`;
+        // Only include dates within the requested month
+        const [ky, km] = key.split('-').map(Number);
+        if (ky !== input.year || km !== input.month) continue;
+        if (!byDate[key]) byDate[key] = { meals: [], hasOutOfRange: false, treatCount: 0, utcOffsetMins: offsetMins };
         byDate[key].meals.push(log);
         if (log.mealType === 'treat') byDate[key].treatCount++;
         if (log.mealType === 'meal') {
