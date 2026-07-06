@@ -64,14 +64,12 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
   const [stepGoal, setStepGoal] = useState("");
   const [lissSessions, setLissSessions] = useState("");
   const [lissMinsPer, setLissMinsPer] = useState("");
-  const [exerciseWeightUnit, setExerciseWeightUnit] = useState<"kg" | "lbs">("kg");
 
   useEffect(() => {
     if (profile) {
       setStepGoal((profile as any).stepGoal?.toString() ?? "");
       setLissSessions((profile as any).lissSessionsPerWeek?.toString() ?? "");
       setLissMinsPer((profile as any).lissMinutesPerSession?.toString() ?? "");
-      setExerciseWeightUnit((profile as any).exerciseWeightUnit ?? "kg");
     }
   }, [profile]);
 
@@ -90,7 +88,6 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
       stepGoal: stepGoal ? parseInt(stepGoal) : null,
       lissSessionsPerWeek: lissSessions ? parseInt(lissSessions) : null,
       lissMinutesPerSession: lissMinsPer ? parseInt(lissMinsPer) : null,
-      exerciseWeightUnit,
     });
   }
 
@@ -117,7 +114,7 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
           ) : (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => { setEditing(false); setStepGoal((profile as any)?.stepGoal?.toString() ?? ""); setLissSessions((profile as any)?.lissSessionsPerWeek?.toString() ?? ""); setLissMinsPer((profile as any)?.lissMinutesPerSession?.toString() ?? ""); setExerciseWeightUnit((profile as any)?.exerciseWeightUnit ?? "kg"); }}
+                onClick={() => { setEditing(false); setStepGoal((profile as any)?.stepGoal?.toString() ?? ""); setLissSessions((profile as any)?.lissSessionsPerWeek?.toString() ?? ""); setLissMinsPer((profile as any)?.lissMinutesPerSession?.toString() ?? ""); }}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X size={12} /> Cancel
@@ -165,25 +162,6 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
-            <div className="col-span-2">
-              <label className="text-xs text-muted-foreground block mb-1.5">Exercise Weight Unit</label>
-              <div className="flex gap-2">
-                {(["kg", "lbs"] as const).map(unit => (
-                  <button
-                    key={unit}
-                    type="button"
-                    onClick={() => setExerciseWeightUnit(unit)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                      exerciseWeightUnit === unit
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-secondary border-border text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {unit}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-6">
@@ -214,14 +192,6 @@ function CardioActivityCard({ clientId }: { clientId: number }) {
               ) : (
                 <p className="text-sm text-muted-foreground/50 italic">Not set</p>
               )}
-            </div>
-            {/* Exercise Weight Unit tile */}
-            <div className="col-span-2 bg-secondary/40 rounded-xl p-4 border border-border/50">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Exercise Weight Unit</p>
-              <p className="text-base font-bold text-foreground leading-none">
-                {(profile as any)?.exerciseWeightUnit ?? "kg"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1.5">default unit for new exercises</p>
             </div>
           </div>
         )}

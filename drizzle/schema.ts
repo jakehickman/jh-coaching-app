@@ -99,7 +99,6 @@ export const clientProfiles = mysqlTable("client_profiles", {
   stepGoal: int("stepGoal"), // daily step goal
   lissSessionsPerWeek: int('liss_sessions_per_week'), // recommended LISS sessions per week
   lissMinutesPerSession: int('liss_minutes_per_session'), // recommended minutes per LISS session
-  exerciseWeightUnit: mysqlEnum("exerciseWeightUnit", ["kg", "lbs"]).default("kg").notNull(),
   photoType: mysqlEnum("photoType", ["standard", "athlete"]).default("standard").notNull(),
   nutritionMode: mysqlEnum("nutritionMode", ["meal_plan", "macros"]).default("meal_plan").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

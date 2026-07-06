@@ -1763,7 +1763,6 @@ export async function updateClientProfileExtended(userId: number, data: {
   stepGoal?: number | null;
   lissSessionsPerWeek?: number | null;
   lissMinutesPerSession?: number | null;
-  exerciseWeightUnit?: 'kg' | 'lbs' | null;
 }, coachId?: number) {
   const db = await getDb();
   if (!db) return;

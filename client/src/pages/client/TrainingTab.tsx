@@ -695,10 +695,6 @@ function PastSessionsList({
     try { return JSON.parse(localStorage.getItem('workout:exerciseUnits') ?? '{}') as Record<string, 'kg' | 'lbs'>; }
     catch { return {} as Record<string, 'kg' | 'lbs'>; }
   })();
-  // PastSessionsList reads stored units; for display of historical sessions the unit
-  // is already embedded in the session data (ex.weightUnit), so we only need the
-  // localStorage fallback here — no need for the profile query in this component.
-  const pastSessionFallbackUnit: 'kg' | 'lbs' = 'kg';
 
   const displayed = showAll ? sessions.slice(0, 50) : sessions.slice(0, 10);
 
@@ -830,7 +826,7 @@ function PastSessionsList({
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-sm text-muted-foreground">
-                          {firstSet?.weight != null ? `${firstSet.weight}${exerciseUnits[ex.name] ?? pastSessionFallbackUnit}` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
+                          {firstSet?.weight != null ? `${firstSet.weight}${exerciseUnits[ex.name] ?? 'lbs'}` : '—'} × {firstSet?.reps != null ? firstSet.reps : '—'}
                         </p>
                         <p className="text-[11px] text-muted-foreground/60">{setLabel}</p>
                       </div>
@@ -1069,10 +1065,6 @@ function WorkoutLogTab() {
   const refetch = viewAsUserId ? refetchAdmin : refetchOwn;
   const sessionsLoaded = viewAsUserId ? sessionsLoadedAdmin : sessionsLoadedOwn;
   const { data: exerciseLib = [] } = trpc.exerciseLibrary.list.useQuery();
-  const { data: clientProfile } = trpc.profile.get.useQuery(undefined, { enabled: !viewAsUserId });
-  const { data: clientProfileAdmin } = trpc.profile.getById.useQuery({ userId: viewAsUserId! }, { enabled: !!viewAsUserId });
-  const activeProfile = viewAsUserId ? clientProfileAdmin : clientProfile;
-  const profileWeightUnit: 'kg' | 'lbs' = (activeProfile as any)?.exerciseWeightUnit ?? 'kg';
   const utils = trpc.useUtils();
 
   const videoMap: Record<string, string> = Object.fromEntries(
@@ -1131,7 +1123,7 @@ function WorkoutLogTab() {
   });
   function toggleExerciseUnit(exName: string) {
     setExerciseUnits(prev => {
-      const current = prev[exName] ?? profileWeightUnit;
+      const current = prev[exName] ?? 'lbs';
       const next = { ...prev, [exName]: current === 'kg' ? 'lbs' as const : 'kg' as const };
       try { localStorage.setItem('workout:exerciseUnits', JSON.stringify(next)); } catch {}
       return next;
@@ -1520,7 +1512,7 @@ function WorkoutLogTab() {
         presetId: machinePresetId[nameToUse] || null,
         machineSettings: machineSettings[nameToUse] || null,
         exerciseNotes: exerciseNotes[nameToUse] || null,
-        weightUnit: exerciseUnits[nameToUse] ?? profileWeightUnit,
+        weightUnit: exerciseUnits[nameToUse] ?? 'kg',
         sets: (exerciseData[nameToUse] ?? []).map(s => ({
           weight: s.weight !== "" ? parseFloat(s.weight) : null,
           reps: s.reps !== "" ? parseInt(s.reps) : null,
