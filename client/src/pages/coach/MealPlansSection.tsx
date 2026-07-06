@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, ClientCombobox, useClientSelector } from "./shared";
+import { Button } from "@/components/ui/button";
 import MacroTargetsEditor from "./MacroTargetsEditor";
 
 // ─── Food combobox ────────────────────────────────────────────────────────────
@@ -561,9 +562,9 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
 
                     {/* Add item + meal subtotal */}
                     <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/30">
-                      <button onClick={() => addItem(i)} className="flex items-center gap-1 text-[13px] text-primary hover:text-primary/80 transition-colors">
+                      <Button variant="ghost" size="sm" onClick={() => addItem(i)} className="text-primary hover:text-primary/80 px-0 h-auto text-[13px]">
                         <Plus size={12} /> Add Item
-                      </button>
+                      </Button>
                       {(meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-semibold text-primary/70">{mealMacros[i].calories} kcal</span>
@@ -575,10 +576,9 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                 ))}
 
                 {/* Add Meal */}
-                <button onClick={addMeal}
-                  className="flex items-center gap-1 text-[13px] text-primary hover:text-primary/80 mt-1">
+                <Button variant="ghost" size="sm" onClick={addMeal} className="text-primary hover:text-primary/80 px-0 h-auto text-[13px] mt-1">
                   <Plus size={12} /> Add Meal
-                </button>
+                </Button>
 
                 {/* Notes card */}
                 <Card>
@@ -589,14 +589,10 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
 
                 {/* Save button */}
                 <div className="space-y-1.5">
-                  <button
-                    onClick={doSave}
-                    disabled={upsert.isPending}
-                    className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 transition-opacity"
-                  >
+                  <Button onClick={doSave} disabled={upsert.isPending} className="w-full">
                     <Save size={15} />
                     {upsert.isPending ? "Saving…" : "Save Meal Plan"}
-                  </button>
+                  </Button>
                   {lastSavedAt && (
                     <p className="text-center text-xs text-muted-foreground">
                       Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

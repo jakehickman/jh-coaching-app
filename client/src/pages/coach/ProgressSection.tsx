@@ -7,6 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowDown, Check, Ruler, Utensils, Settings2, Plus, Activity, History, BarChart2, Zap } from "lucide-react";
 import { useSearch, useLocation } from "wouter";
@@ -2051,11 +2052,13 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
         </div>
         <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))}
           rows={3} className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
-        <button onClick={() => { if (!form.content.trim()) { toast.error("Note content required"); return; } add.mutate({ clientId, ...form }); }}
+        <Button
+          onClick={() => { if (!form.content.trim()) { toast.error("Note content required"); return; } add.mutate({ clientId, ...form }); }}
           disabled={add.isPending}
-          className="px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 disabled:opacity-50">
+          size="sm"
+        >
           {add.isPending ? "Saving..." : "Save Note"}
-        </button>
+        </Button>
       </div>
       {/* Notes history */}
       {notes.length === 0 ? (
@@ -2080,16 +2083,16 @@ function CoachingNotesTab({ clientId }: { clientId: number }) {
                   <textarea value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))}
                     rows={3} className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       onClick={() => { if (!editForm.content.trim()) { toast.error("Note content required"); return; } update.mutate({ id: note.id, ...editForm }); }}
                       disabled={update.isPending}
-                      className="px-3 py-1.5 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5">
+                      size="sm"
+                    >
                       <Check size={13} />{update.isPending ? "Saving..." : "Save"}
-                    </button>
-                    <button onClick={cancelEdit}
-                      className="px-3 py-1.5 bg-secondary text-foreground text-sm rounded-lg hover:opacity-80 flex items-center gap-1.5">
+                    </Button>
+                    <Button onClick={cancelEdit} variant="secondary" size="sm">
                       <X size={13} />Cancel
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (

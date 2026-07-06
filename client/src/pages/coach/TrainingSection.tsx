@@ -639,10 +639,9 @@ function SortableDayCard({
               />
             ))}
           </SortableContext>
-          <button onClick={() => addExercise(dayIdx)}
-            className="flex items-center gap-1 text-[13px] text-primary hover:text-primary/80 mt-1">
+          <Button variant="ghost" size="sm" onClick={() => addExercise(dayIdx)} className="text-primary hover:text-primary/80 px-0 h-auto text-[13px] mt-1">
             <Plus size={12} /> Add Exercise
-          </button>
+          </Button>
         </div>
       </Card>
     </div>
@@ -1059,14 +1058,14 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                   className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
               </div>
               <div className="space-y-1.5">
-                <button
+                <Button
                   onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || null, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null })}
                   disabled={upsert.isPending}
-                  className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full"
                 >
                   <Save size={15} />
                   {upsert.isPending ? "Saving..." : "Save Training Program"}
-                </button>
+                </Button>
                 {lastSavedAt && (
                   <p className="text-center text-xs text-muted-foreground">
                     Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1135,24 +1134,23 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
                   })() : null}
                 </DragOverlay>
               </DndContext>
-              <button onClick={addDay}
-                className="flex items-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors w-full justify-center">
+              <Button variant="outline" onClick={addDay} className="w-full border-dashed text-muted-foreground hover:text-foreground hover:border-primary/50">
                 <Plus size={14} /> Add Training Day
-              </button>
+              </Button>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Coach Notes</label>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
                   className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
               </div>
               <div className="space-y-1.5">
-                <button
+                <Button
                   onClick={() => upsert.mutate({ userId: selectedUserId, programName: programName || null, days, schedule: schedule.length > 0 ? schedule : undefined, notes: notes || null })}
                   disabled={upsert.isPending}
-                  className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full"
                 >
                   <Save size={15} />
                   {upsert.isPending ? "Saving..." : "Save Training Program"}
-                </button>
+                </Button>
                 {lastSavedAt && (
                   <p className="text-center text-xs text-muted-foreground">
                     Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

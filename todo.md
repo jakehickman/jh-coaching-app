@@ -819,9 +819,9 @@
 - [x] Larger myo-reps lightning bolt icon in workout log
 
 ## Phase 2 Mesocycles
-- [ ] Mesocycle DB schema: mesocycles table, microcycle detection
-- [ ] Coach UI: create/close mesocycle per client
-- [ ] Coach UI: mesocycle review table (sessions grouped by day, top set per cell, date per microcycle column)
+- [x] Mesocycle DB schema: mesocycles table, microcycle detection
+- [x] Coach UI: create/close mesocycle per client
+- [x] Coach UI: mesocycle review table (sessions grouped by day, top set per cell, date per microcycle column)
 - [x] Fix per-meal habit counter so it updates immediately after meal habit changes and meal save flows
 - [x] Allow gallery photo selection when editing an already logged meal
 - [x] Vertically center text in expanded training session exercise rows
@@ -859,7 +859,7 @@
 - [x] Add shadow-sm to coach card components
 - [x] Add aria-current="page" to coach sidebar nav items
 - [x] Add hover:bg-muted/30 to all interactive table/list rows in coach pages
-- [ ] Standardise Button usage in coach forms (replace raw button elements)
+- [x] Standardise Button usage in coach forms (replace raw button elements)
 - [x] Add skeleton loading states to client list, check-in history, coach nutrition data view
 
 ## Mobile Layout Fixes (Jul 2026)

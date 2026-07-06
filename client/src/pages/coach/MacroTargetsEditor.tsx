@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, ArrowUp, ArrowDown } from "lucide-react";
 import { Card } from "./shared";
+import { Button } from "@/components/ui/button";
 
 interface MacroMeal {
   id?: string;
@@ -214,10 +215,9 @@ export default function MacroTargetsEditor({
         ))}
 
         {/* Add Meal */}
-        <button onClick={addMeal}
-          className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors py-1">
+        <Button variant="ghost" size="sm" onClick={addMeal} className="text-primary hover:text-primary/80 px-0">
           <Plus size={14} /> Add Meal
-        </button>
+        </Button>
 
         {/* Notes card */}
         <Card>
@@ -228,11 +228,10 @@ export default function MacroTargetsEditor({
 
         {/* Save button */}
         <div className="space-y-1.5">
-          <button onClick={doSave} disabled={upsert.isPending}
-            className="w-full py-3 bg-primary text-primary-foreground font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 transition-opacity">
+          <Button onClick={doSave} disabled={upsert.isPending} className="w-full">
             <Save size={15} />
             {upsert.isPending ? "Saving…" : "Save Macro Targets"}
-          </button>
+          </Button>
           {lastSavedAt && (
             <p className="text-center text-xs text-muted-foreground">
               Saved {lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
