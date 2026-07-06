@@ -17,6 +17,11 @@ export default function Home() {
     }
   }, [loading, isAuthenticated, user, navigate]);
 
+  // Check for invite_required error in URL params
+  const params = new URLSearchParams(window.location.search);
+  const error = params.get("error");
+  const inviteRequired = error === "invite_required";
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -40,6 +45,16 @@ export default function Home() {
         </p>
       </div>
 
+      {/* Invite-required error */}
+      {inviteRequired && (
+        <div className="mb-6 max-w-sm w-full bg-destructive/10 border border-destructive/30 rounded-xl px-5 py-4 text-center">
+          <p className="text-sm font-semibold text-destructive mb-1">Invite required</p>
+          <p className="text-xs text-muted-foreground">
+            This app is invite-only. Please use the invite link sent to you by your coach to sign up.
+          </p>
+        </div>
+      )}
+
       {/* CTA */}
       <a
         href={getLoginUrl()}
@@ -47,7 +62,6 @@ export default function Home() {
       >
         Sign In to Your Dashboard
       </a>
-
     </div>
   );
 }

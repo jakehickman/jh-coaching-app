@@ -45,6 +45,12 @@ export function registerOAuthRoutes(app: Express) {
       const existingUser = await db.getUserByOpenId(userInfo.openId);
       const isNewUser = !existingUser;
 
+      // Invite-only: block new sign-ups that don't have a valid invite token
+      if (isNewUser && !inviteToken) {
+        res.redirect(302, `/?error=invite_required`);
+        return;
+      }
+
       await db.upsertUser({
         openId: userInfo.openId,
         name: userInfo.name || null,

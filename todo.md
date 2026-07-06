@@ -606,6 +606,9 @@
 - [x] Client Training Program tab: all day cards expanded by default
 - [x] Redesign Habits card row: smaller square dots, wider name, remove redundant left dot, fix day-letter alignment via CSS grid, streak as inline badge
 
+- [x] Invite-only: block new sign-ups without a valid invite token in OAuth callback
+- [x] Home page: show "Invite required" error message when redirected with ?error=invite_required
+- [x] Delete David Chen's account (signed up without invite)
 - [ ] Weekly review accordion: only one week expanded at a time (single-expand)
 - [ ] Training sub-tabs: reorder to Session Log > Exercise Progress > Program
 - [ ] Session Log: add "Last 7 days" label/indicator to clarify the default date range
