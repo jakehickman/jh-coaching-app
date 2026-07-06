@@ -1573,7 +1573,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
 
     <div className="flex flex-col lg:grid lg:grid-cols-[1fr_384px] gap-4 items-start">
       {/* Calendar grid */}
-      <div className="min-w-0">
+      <div className="min-w-0 w-full">
         <div className="border border-border rounded-xl overflow-hidden">
           {/* Weekday headers */}
           <div className="grid grid-cols-7 bg-muted/30 border-b border-border divide-x divide-border">
