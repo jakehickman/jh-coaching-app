@@ -1292,11 +1292,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
                   ) : (
                     <p className="text-xs font-semibold text-foreground truncate">{ex.name}</p>
                   )}
-                  {machinePreset && (
-                    <p className="text-xs text-muted-foreground/70 truncate">
-                      {machinePreset}{machineSettings ? ` · ${machineSettings}` : ''}
-                    </p>
-                  )}
+
                 </div>
                 {isMiniSets && (
                   <Zap size={14} className="text-amber-400 shrink-0" />
@@ -1609,7 +1605,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
                   sess ? 'cursor-pointer' : 'cursor-default',
                 ].join(' ')}
                 style={{
-                  background: isSelected ? 'hsl(var(--primary) / 0.13)' : sess ? 'hsl(var(--foreground) / 0.05)' : 'transparent',
+                  background: isSelected ? 'hsl(var(--primary) / 0.13)' : cell.day && !cell.otherMonth ? 'hsl(var(--foreground) / 0.05)' : 'transparent',
                   outline: isSelected ? '1px solid hsl(var(--primary))' : isToday && !isSelected ? '1px solid hsl(var(--primary) / 0.4)' : 'none',
                   color: cell.otherMonth ? 'hsl(var(--muted-foreground) / 0.3)' : isToday ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
                 }}
@@ -1629,7 +1625,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
       {selectedSession ? (
         <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} allSessions={workoutSessions} />
       ) : (
-        <div className="border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 200 }}>
+        <div className="w-full border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 80 }}>
           <p className="text-xs text-muted-foreground">Click a session to view details</p>
         </div>
       )}
