@@ -562,11 +562,13 @@ function TreatsChart({
 function MealTimingCard({
   slots,
   consistencyScore,
+  totalForConsistency,
   showInfo,
   onToggleInfo,
 }: {
-  slots: { label: string; anchor: string; driftMin: number }[];
+  slots: { label: string; anchor: string; driftMin: number; count?: number }[];
   consistencyScore: number | null;
+  totalForConsistency?: number;
   showInfo: boolean;
   onToggleInfo: () => void;
 }) {
@@ -614,10 +616,16 @@ function MealTimingCard({
       <div className="space-y-3 pt-1">
         {slots.map((slot) => {
           const driftColor = slot.driftMin <= 30 ? C.primary : slot.driftMin <= 60 ? C.amber : C.red;
+          const pct = slot.count != null && totalForConsistency
+            ? Math.round((slot.count / totalForConsistency) * 100)
+            : null;
           return (
-            <div key={slot.label} className="flex items-center justify-between">
+            <div key={slot.label} className="flex items-center justify-between gap-2">
               <span className="text-[13px] w-16 shrink-0" style={{ color: C.muted }}>{slot.label}</span>
               <span className="text-[13px] font-medium" style={{ color: C.fg }}>{slot.anchor}</span>
+              {pct != null && (
+                <span className="text-[11px]" style={{ color: C.muted }}>{slot.count} ({pct}%)</span>
+              )}
               <span className="text-[12px] font-medium" style={{ color: driftColor }}>
                 ±{slot.driftMin} min
               </span>
@@ -967,6 +975,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           <MealTimingCard
             slots={insights.slots}
             consistencyScore={insights.consistencyScore ?? null}
+            totalForConsistency={insights.totalForConsistency}
             showInfo={showTimingInfo}
             onToggleInfo={() => setShowTimingInfo(v => !v)}
           />

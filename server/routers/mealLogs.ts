@@ -587,7 +587,7 @@ export const mealLogsRouter = router({
       // Build slots from elbow-method k-means result
       // Reject tiny clusters: must have at least 3 meals AND at least 15% of total meals
       const minClusterSize = Math.max(3, Math.ceil(allMealMins.length * 0.15));
-      const slots: { label: string; anchor: string; anchorMins: number; driftMin: number }[] = [];
+      const slots: { label: string; anchor: string; anchorMins: number; driftMin: number; count: number }[] = [];
       if (numSlots > 0 && bestCentroids.length > 0) {
         bestClusters
           .map((cl, i) => ({ cl, centroid: bestCentroids[i] }))
@@ -599,7 +599,7 @@ export const mealLogsRouter = router({
             const m = Math.round(centroid % 60);
             const ampm = h >= 12 ? 'pm' : 'am';
             const h12 = h % 12 === 0 ? 12 : h % 12;
-            slots.push({ label: `Meal ${i + 1}`, anchor: `${h12}:${String(m).padStart(2, '0')} ${ampm}`, anchorMins: centroid, driftMin: Math.round(drift) });
+            slots.push({ label: `Meal ${i + 1}`, anchor: `${h12}:${String(m).padStart(2, '0')} ${ampm}`, anchorMins: centroid, driftMin: Math.round(drift), count: cl.length });
           });
       }
       // Consistency score
@@ -630,7 +630,7 @@ export const mealLogsRouter = router({
         mealsWithBothRatings: mealsWithBoth.length,
         scatter,
         treatsByWeek,
-        slots: slots.map(s => ({ label: s.label, anchor: s.anchor, driftMin: s.driftMin })),
+        slots: slots.map(s => ({ label: s.label, anchor: s.anchor, driftMin: s.driftMin, count: s.count })),
         consistencyScore,
         totalForConsistency,
         hasTimingData: slots.length > 0,

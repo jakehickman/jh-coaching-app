@@ -1196,13 +1196,16 @@ function TodayScreen() {
     );
   }
 
-  const todayMeals = (mealsList as any[]).filter((m) => {
-    const d = new Date(m.loggedAt);
-    return toLocalDateStr(d) === todayStr;
-  }).sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
+  const todayMeals = useMemo(
+    () => (mealsList as any[]).filter((m) => {
+      const d = new Date(m.loggedAt);
+      return toLocalDateStr(d) === todayStr;
+    }).sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime()),
+    [mealsList, todayStr]
+  );
 
-  const mealCount = todayMeals.filter((m) => m.mealType === "meal").length;
-  const treatCount = todayMeals.filter((m) => m.mealType === "treat").length;
+  const mealCount = useMemo(() => todayMeals.filter((m) => m.mealType === "meal").length, [todayMeals]);
+  const treatCount = useMemo(() => todayMeals.filter((m) => m.mealType === "treat").length, [todayMeals]);
 
   // Per-meal habit summary
   const todayMealIds = useMemo(
