@@ -805,6 +805,7 @@ function EditSheet({
   const [notes, setNotes] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null | "uploading">(null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
   const [scaleOpen, setScaleOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -853,6 +854,7 @@ function EditSheet({
       setNotes(meal.notes ?? "");
       setPhotoPreview(meal.photoUrl ?? null);
       setUploadedPhotoUrl(null);
+      setPhotoRemoved(false);
     }
   }, [meal]);
 
@@ -894,8 +896,16 @@ function EditSheet({
 
   function handleSave() {
     if (!meal) return;
-    const newPhotoUrl = typeof uploadedPhotoUrl === "string" && uploadedPhotoUrl !== "uploading"
-      ? uploadedPhotoUrl : undefined;
+    // Determine photoUrl to send:
+    // - new upload: use uploadedPhotoUrl string
+    // - explicitly removed: send null to clear
+    // - unchanged: send undefined (server keeps existing)
+    let photoUrl: string | null | undefined = undefined;
+    if (typeof uploadedPhotoUrl === "string" && uploadedPhotoUrl !== "uploading") {
+      photoUrl = uploadedPhotoUrl;
+    } else if (photoRemoved) {
+      photoUrl = null;
+    }
     editMutation.mutate({
       id: meal.id,
       name: name || undefined,
@@ -904,7 +914,7 @@ function EditSheet({
       fullnessRating: meal.mealType === "meal" ? fullness : undefined,
       isOffPlan: false,
       notes: notes || null,
-      photoUrl: newPhotoUrl,
+      photoUrl,
     });
   }
 
@@ -930,7 +940,7 @@ function EditSheet({
                   <div className="relative">
                     <img src={photoPreview} alt="Meal" className="w-full h-52 object-cover rounded-xl" />
                     <button
-                      onClick={() => { setPhotoPreview(null); setUploadedPhotoUrl(null); }}
+                      onClick={() => { setPhotoPreview(null); setUploadedPhotoUrl(null); setPhotoRemoved(true); }}
                       className="absolute top-2 right-2 bg-black/60 rounded-full p-1"
                     >
                       <X size={14} className="text-white" />

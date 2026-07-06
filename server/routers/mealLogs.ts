@@ -220,7 +220,7 @@ export const mealLogsRouter = router({
         isOffPlan: z.boolean().optional(),
         notes: z.string().nullable().optional(),
         // Optional new photo — either pre-uploaded URL (fast) or inline base64
-        photoUrl: z.string().optional(),
+        photoUrl: z.string().nullable().optional(), // null = explicitly remove photo
         photoKey: z.string().optional(),
         imageBase64: z.string().optional(),
         mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]).optional(),
@@ -240,8 +240,11 @@ export const mealLogsRouter = router({
       if (fields.isOffPlan !== undefined) updateData.isOffPlan = fields.isOffPlan;
       if (fields.notes !== undefined) updateData.notes = fields.notes;
 
-      // Fast path: pre-uploaded photo URL
-      if (preUploadedUrl) {
+      // Explicit photo removal: photoUrl === null means clear the photo
+      if (preUploadedUrl === null) {
+        updateData.photoUrl = null;
+        updateData.photoKey = null;
+      } else if (preUploadedUrl) {
         updateData.photoUrl = preUploadedUrl;
         if (preUploadedKey) updateData.photoKey = preUploadedKey;
       } else if (imageBase64 && mimeType) {
