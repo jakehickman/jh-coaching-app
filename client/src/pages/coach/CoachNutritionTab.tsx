@@ -896,42 +896,53 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         </div>
       )}
 
-      {/* ── Row 1: Meals logged + Avg Hunger + Avg Fullness ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          label="Meals Logged"
-          value={insights.totalMeals}
-          period={periodLabel}
-        />
-        <StatCard
-          label="Avg Pre-Meal Hunger"
-          value={insights.avgHunger ?? "—"}
-          period={`${periodLabel} · ideal 3–4`}
-          trend={
+      {/* ── Row 1: Meals logged + Avg Hunger + Avg Fullness — single card ── */}
+      <Card className="flex divide-x divide-border">
+        {/* Meals Logged */}
+        <div className="flex-1 flex flex-col gap-1 px-4 py-3">
+          <SectionLabel>Meals</SectionLabel>
+          <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
+            {insights.totalMeals}
+          </span>
+          <span className="text-xs" style={{ color: C.muted }}>{periodLabel}</span>
+        </div>
+        {/* Avg Hunger */}
+        <div className="flex-1 flex flex-col gap-1 px-4 py-3">
+          <SectionLabel>Avg Hunger</SectionLabel>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
+              {insights.avgHunger ?? "—"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
             <TrendBadge
               current={insights.avgHunger}
               previous={insights.prevAvgHunger}
               higherIsBetter={false}
               threshold={0.15}
             />
-          }
-
-        />
-        <StatCard
-          label="Avg Post-Meal Fullness"
-          value={insights.avgFullness ?? "—"}
-          period={`${periodLabel} · ideal 6–7`}
-          trend={
+            <span className="text-xs" style={{ color: C.muted }}>ideal 3–4</span>
+          </div>
+        </div>
+        {/* Avg Fullness */}
+        <div className="flex-1 flex flex-col gap-1 px-4 py-3">
+          <SectionLabel>Avg Fullness</SectionLabel>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
+              {insights.avgFullness ?? "—"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
             <TrendBadge
               current={insights.avgFullness}
               previous={insights.prevAvgFullness}
               higherIsBetter={true}
               threshold={0.15}
             />
-          }
-
-        />
-      </div>
+            <span className="text-xs" style={{ color: C.muted }}>ideal 6–7</span>
+          </div>
+        </div>
+      </Card>
 
       {/* ── Row 2: Scatter + Treats ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
