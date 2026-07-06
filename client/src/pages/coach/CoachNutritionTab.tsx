@@ -127,7 +127,7 @@ function TrendBadge({
   return (
     <span className="inline-flex items-center gap-0.5 text-[12px] font-medium" style={{ color }}>
       {isUp ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-      {sign}{typeof delta === "number" && !Number.isInteger(delta) ? delta.toFixed(1) : delta} vs prev
+      {sign}{typeof delta === "number" && !Number.isInteger(delta) ? delta.toFixed(1) : delta}
     </span>
   );
 }
@@ -899,7 +899,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
       {/* ── Row 1: Meals logged + Avg Hunger + Avg Fullness — single card ── */}
       <Card className="flex divide-x divide-border">
         {/* Meals Logged */}
-        <div className="flex-1 flex flex-col gap-1 px-4 py-3">
+        <div className="flex-1 flex flex-col justify-between gap-2 px-4 py-3">
           <SectionLabel>Meals</SectionLabel>
           <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
             {insights.totalMeals}
@@ -907,13 +907,11 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           <span className="text-xs" style={{ color: C.muted }}>{periodLabel}</span>
         </div>
         {/* Avg Hunger */}
-        <div className="flex-1 flex flex-col gap-1 px-4 py-3">
+        <div className="flex-1 flex flex-col justify-between gap-2 px-4 py-3">
           <SectionLabel>Avg Hunger</SectionLabel>
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
-              {insights.avgHunger ?? "—"}
-            </span>
-          </div>
+          <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
+            {insights.avgHunger ?? "—"}
+          </span>
           <div className="flex items-center gap-2">
             <TrendBadge
               current={insights.avgHunger}
@@ -925,13 +923,11 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           </div>
         </div>
         {/* Avg Fullness */}
-        <div className="flex-1 flex flex-col gap-1 px-4 py-3">
+        <div className="flex-1 flex flex-col justify-between gap-2 px-4 py-3">
           <SectionLabel>Avg Fullness</SectionLabel>
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
-              {insights.avgFullness ?? "—"}
-            </span>
-          </div>
+          <span className="font-bold leading-none" style={{ fontSize: 32, color: C.fg }}>
+            {insights.avgFullness ?? "—"}
+          </span>
           <div className="flex items-center gap-2">
             <TrendBadge
               current={insights.avgFullness}
