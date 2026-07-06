@@ -810,7 +810,7 @@
 - [x] IdealZoneCard: rebuilt with sparkline (SVG polyline, week-by-week), hunger/fullness split stats, trend-based card border colour (green/amber/red), dashed baseline reference line
 
 ## Behaviour Tab Redesign (Jun 24)
-- [ ] Rename "Overview" tab to "Behaviour" in ClientHub tab bar (deferred — purpose still being defined)
+- [x] Rename "Overview" tab to "Behaviour" in ClientHub tab bar (deferred — purpose still being defined, skipped intentionally)
 - [x] Apply premium dark analytics design system to the Overview tab: Last 7 Days summary cards (avg weight + % delta, days logged, avg steps, sleep duration, sleep quality, stress, sessions), remove toggle, add weight column to weekly history table
 
 ## Phase 1 Quick UI Fixes
