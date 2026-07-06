@@ -1608,7 +1608,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
                 <div
                   key={idx}
                   className={[
-                    'min-h-[60px] sm:min-h-[90px] p-1 sm:p-1.5 bg-card',
+                    'min-h-[48px] sm:min-h-[60px] p-1 sm:p-1.5 bg-card',
                     isToday ? 'bg-primary/5' : '',
                     isSelected ? 'ring-1 ring-inset ring-primary/40' : '',
                     sess ? 'cursor-pointer hover:bg-muted/20 active:opacity-70' : '',
@@ -1620,23 +1620,10 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
                   }`}>{cell.day}</span>
 
                   {sess && (
-                    <div className={[
-                      'rounded-md px-1.5 py-1 border text-left',
-                      hasIncomplete
-                        ? 'bg-amber-500/10 border-amber-500/20'
-                        : 'bg-primary/10 border-primary/20',
-                    ].join(' ')}>
-                      <div className="flex flex-col gap-0">
-                        <span className={`text-xs font-black leading-tight ${
-                          hasIncomplete ? 'text-amber-400' : 'text-primary'
-                        }`}>{sess.dayLabel}</span>
-                        <span className="text-xs text-muted-foreground leading-tight">
-                          {exercises.length}ex·{totalSets}s
-                        </span>
-                      </div>
-                      {hasIncomplete && (
-                        <span className="text-xs font-semibold text-amber-400/80">incomplete</span>
-                      )}
+                    <div className="flex justify-center mt-1">
+                      <span className={`w-2 h-2 rounded-full block ${
+                        hasIncomplete ? 'bg-amber-400' : 'bg-primary'
+                      }`} />
                     </div>
                   )}
                 </div>
