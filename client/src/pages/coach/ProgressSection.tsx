@@ -1605,9 +1605,9 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
                   sess ? 'cursor-pointer' : 'cursor-default',
                 ].join(' ')}
                 style={{
-                  background: isSelected ? 'hsl(var(--primary) / 0.13)' : cell.day && !cell.otherMonth ? 'hsl(var(--foreground) / 0.05)' : 'transparent',
-                  outline: isSelected ? '1px solid hsl(var(--primary))' : isToday && !isSelected ? '1px solid hsl(var(--primary) / 0.4)' : 'none',
-                  color: cell.otherMonth ? 'hsl(var(--muted-foreground) / 0.3)' : isToday ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
+                  background: isSelected ? '#52B78822' : cell.day && !cell.otherMonth ? '#ECEDEE08' : 'transparent',
+                  outline: isSelected ? '1px solid #52B788' : isToday && !isSelected ? '1px solid #52B78844' : 'none',
+                  color: cell.otherMonth ? '#9BA1A655' : isToday ? '#52B788' : '#ECEDEE',
                 }}
                 onClick={() => sess ? setSelectedSession(isSelected ? null : sess) : undefined}
               >
