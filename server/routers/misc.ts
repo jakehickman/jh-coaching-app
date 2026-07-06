@@ -158,6 +158,7 @@ export const clientConfigRouter = router({
       stepGoal: z.number().int().min(0).nullable().optional(),
       lissSessionsPerWeek: z.number().int().min(0).nullable().optional(),
       lissMinutesPerSession: z.number().int().min(0).nullable().optional(),
+      exerciseWeightUnit: z.enum(["kg", "lbs"]).nullable().optional(),
     }))
     .mutation(({ ctx, input }) => {
       const { userId, ...data } = input;
