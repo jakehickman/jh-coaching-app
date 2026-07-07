@@ -1055,12 +1055,14 @@ function SessionCard({ s, viewAsUserId, deleteConfirmId, deleting, setDeleteConf
               ? `${topSet.weight != null ? topSet.weight + exUnit : 'BW'}${topSet.reps != null ? ' × ' + topSet.reps : ''} (${completedSets.length} set${completedSets.length !== 1 ? 's' : ''})`
               : `${completedSets.length} set${completedSets.length !== 1 ? 's' : ''}`;
             return (
-              <div key={exIdx} className="flex items-center justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-foreground truncate">{ex.name}</p>
-                  <p className="text-xs text-muted-foreground/60 italic truncate">{ex.machinePreset ?? '\u00a0'}</p>
+              <div key={exIdx} className="flex flex-col gap-0.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-xs font-medium text-foreground truncate flex-1 min-w-0">{ex.name}</p>
+                  <p className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">{topSetStr}</p>
                 </div>
-                <p className="text-xs text-muted-foreground whitespace-nowrap">{topSetStr}</p>
+                {ex.machinePreset && (
+                  <p className="text-xs text-muted-foreground/60 italic truncate">{ex.machinePreset}</p>
+                )}
               </div>
             );
           })}
