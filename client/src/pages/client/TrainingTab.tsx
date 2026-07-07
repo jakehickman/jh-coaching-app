@@ -101,7 +101,7 @@ function TrainingTab() {
                   <span className={`text-sm font-semibold ${
                     isOff ? "text-muted-foreground" : "text-primary"
                   }`}>
-                    {isOff ? "Rest Day" : slot}
+                    {isOff ? "OFF" : slot}
                   </span>
                 </div>
               );
