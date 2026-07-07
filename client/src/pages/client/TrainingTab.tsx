@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useViewAs } from "@/contexts/ViewAsContext";
-import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, History, Pencil, CalendarIcon, BarChart2 } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, X, Plus, Minus, Trash2, Shuffle, History, Pencil, CalendarIcon, BarChart2, Type } from "lucide-react";
 import { MdBolt } from "react-icons/md";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -244,72 +244,96 @@ function PresetSelector({
   const renameMutation = trpc.equipmentPresets.rename.useMutation({
     onSuccess: (_data, vars) => {
       utils.equipmentPresets.list.invalidate({ exerciseName });
-      if (currentPreset === renamingFrom) onSelectPreset(vars.newName, currentSettings || null);
-      setRenamingId(null); setRenamingFrom(""); setRenameValue("");
+      // If the renamed preset was the active one, update the selection
+      const editingPreset = (presetList as any[]).find(p => p.id === editingId);
+      if (editingPreset && currentPreset === editingPreset.presetName && editNameVal.trim()) {
+        onSelectPreset(vars.newName, currentSettings || null);
+      }
+      setEditingId(null);
     },
   });
 
-  const [renamingId, setRenamingId] = useState<number | null>(null);
-  const [renamingFrom, setRenamingFrom] = useState("");
-  const [renameValue, setRenameValue] = useState("");
+  // Which row is in edit mode (by preset id), null = none
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editNameVal, setEditNameVal] = useState('');
+  const [editNotesVal, setEditNotesVal] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+  // Add-new inline form
   const [addingNew, setAddingNew] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [editingSettings, setEditingSettings] = useState(false);
-  const [settingsDraft, setSettingsDraft] = useState("");
-  const addInputRef = useRef<HTMLInputElement>(null);
-  const settingsInputRef = useRef<HTMLInputElement>(null);
+  const [newName, setNewName] = useState('');
+  const [newNotes, setNewNotes] = useState('');
+  const addNameRef = useRef<HTMLInputElement>(null);
+  const addNotesRef = useRef<HTMLInputElement>(null);
 
-  const handleSettingsBlur = (val: string) => {
-    if (currentPreset) upsertMutation.mutate({ exerciseName, presetName: currentPreset, lastSettings: val });
-    onSettingsBlur(val);
+  const closeSheet = () => {
+    onPopoverOpenChange(false);
+    setEditingId(null);
+    setAddingNew(false);
+    setNewName('');
+    setNewNotes('');
+    setDeleteConfirmId(null);
   };
 
-  const handlePickPreset = (preset: any) => {
-    onSelectPreset(preset.presetName, preset.lastSettings ?? null, preset.id);
+  const startEdit = (p: any) => {
+    setEditingId(p.id);
+    setEditNameVal(p.presetName);
+    setEditNotesVal(p.lastSettings ?? '');
+    setAddingNew(false);
   };
 
-  const [deleteConfirmPreset, setDeleteConfirmPreset] = useState<any | null>(null);
+  const cancelEdit = () => { setEditingId(null); setDeleteConfirmId(null); };
 
-  const handleDeletePreset = (preset: any) => {
-    setDeleteConfirmPreset(preset);
-  };
-
-  const confirmDeletePreset = () => {
-    if (!deleteConfirmPreset) return;
-    onDeletePreset(deleteConfirmPreset.id, deleteConfirmPreset.presetName);
-    deleteMutation.mutate({ id: deleteConfirmPreset.id });
-    setDeleteConfirmPreset(null);
-  };
-
-  const commitRename = () => {
-    const trimmed = renameValue.trim();
-    if (!trimmed || !renamingId) { setRenamingId(null); return; }
-    renameMutation.mutate({ id: renamingId, newName: trimmed });
+  const saveEdit = (p: any) => {
+    const name = editNameVal.trim();
+    const notes = editNotesVal.trim();
+    if (!name) return;
+    // Rename if name changed
+    if (name !== p.presetName) {
+      renameMutation.mutate({ id: p.id, newName: name });
+    }
+    // Save notes
+    upsertMutation.mutate({ exerciseName, presetName: name, lastSettings: notes || null });
+    // Update selection if this is the active preset
+    if (currentPreset === p.presetName) {
+      onSelectPreset(name, notes || null, p.id);
+      onSettingsChange(notes);
+      onSettingsBlur(notes);
+    }
+    setEditingId(null);
   };
 
   const saveNewPreset = () => {
     const name = newName.trim();
     if (!name) return;
-    upsertMutation.mutate({ exerciseName, presetName: name });
-    onSelectPreset(name, null);
+    upsertMutation.mutate({ exerciseName, presetName: name, lastSettings: newNotes.trim() || null });
+    onSelectPreset(name, newNotes.trim() || null);
+    setNewName('');
+    setNewNotes('');
     setAddingNew(false);
-    setNewName("");
+    closeSheet();
   };
 
-  const closeSheet = () => { onPopoverOpenChange(false); setAddingNew(false); setNewName(""); setRenamingId(null); };
+  const confirmDelete = (p: any) => {
+    onDeletePreset(p.id, p.presetName);
+    deleteMutation.mutate({ id: p.id });
+    setDeleteConfirmId(null);
+    setEditingId(null);
+  };
 
   return (
     <>
+      {/* Trigger pill */}
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={e => { e.stopPropagation(); onPopoverOpenChange(true); }}
           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs transition-colors ${
             currentPreset
-              ? "bg-primary/10 border-primary/20 text-primary/80 hover:bg-primary/20"
-              : "bg-secondary border-border text-muted-foreground hover:text-foreground"
+              ? 'bg-primary/10 border-primary/20 text-primary/80 hover:bg-primary/20'
+              : 'bg-secondary border-border text-muted-foreground hover:text-foreground'
           }`}
         >
-          {currentPreset || "Add machine"}
+          {currentPreset || 'Add machine'}
         </button>
         {currentPreset && currentSettings && (
           <span className="text-xs text-muted-foreground/70">{currentSettings}</span>
@@ -319,14 +343,14 @@ function PresetSelector({
       <Sheet open={popoverOpen} onOpenChange={open => { if (!open) closeSheet(); }}>
         <SheetContent
           side="bottom"
-          className="h-[85vh] p-0 flex flex-col rounded-t-2xl bg-[#141414] border-t border-border"
+          className="h-[80vh] p-0 flex flex-col rounded-t-2xl bg-[#141414] border-t border-border"
           onClick={e => e.stopPropagation()}
           hideCloseButton
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
             <div>
-              <SheetTitle className="text-base font-semibold text-foreground">Machine Setup</SheetTitle>
+              <SheetTitle className="text-base font-semibold text-foreground">Machine</SheetTitle>
               <p className="text-xs text-muted-foreground mt-0.5">{exerciseName}</p>
             </div>
             <button onClick={closeSheet} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors">
@@ -337,154 +361,156 @@ function PresetSelector({
           {/* Machine list */}
           <div className="flex-1 overflow-y-auto">
             {(presetList as any[]).length === 0 && !addingNew && (
-              <p className="px-5 py-8 text-sm text-muted-foreground text-center">No machines saved yet.<br/><span className="text-xs">Tap "Add machine" below to get started.</span></p>
+              <p className="px-5 py-10 text-sm text-muted-foreground text-center">No machines saved yet</p>
             )}
-            {(presetList as any[]).map((p: any) => (
-              <div key={p.id}>
-                {renamingId === p.id ? (
-                  <div className="flex items-center gap-3 px-5 py-4 border-b border-border/40">
+
+            {(presetList as any[]).map((p: any) => {
+              const isSelected = currentPreset === p.presetName;
+              const isEditing = editingId === p.id;
+              const isDeleteConfirm = deleteConfirmId === p.id;
+
+              if (isDeleteConfirm) {
+                return (
+                  <div key={p.id} className="px-5 py-4 border-b border-border/30 bg-red-950/20">
+                    <p className="text-sm text-foreground mb-3">Remove <span className="font-semibold">{p.presetName}</span>?</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => confirmDelete(p)}
+                        className="flex-1 py-2.5 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium active:opacity-80"
+                      >Remove</button>
+                      <button
+                        onClick={() => setDeleteConfirmId(null)}
+                        className="flex-1 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium active:opacity-80"
+                      >Cancel</button>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (isEditing) {
+                return (
+                  <div key={p.id} className="px-5 py-4 border-b border-border/30 bg-secondary/30">
                     <input
                       autoFocus
                       type="text"
-                      value={renameValue}
-                      onChange={e => setRenameValue(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") setRenamingId(null); }}
-                      className="flex-1 bg-secondary border border-border rounded-lg px-4 py-3 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      value={editNameVal}
+                      onChange={e => setEditNameVal(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Escape') cancelEdit(); }}
+                      placeholder="Machine name"
+                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary mb-2"
                     />
-                    <button onClick={commitRename} className="p-3 text-primary"><Check size={18} /></button>
-                    <button onClick={() => setRenamingId(null)} className="p-3 text-muted-foreground"><X size={18} /></button>
-                  </div>
-                ) : (
-                  <div
-                    className={`flex items-center gap-3 px-5 py-4 border-b border-border/40 cursor-pointer transition-colors active:bg-white/5 ${
-                      currentPreset === p.presetName ? "bg-primary/10" : ""
-                    }`}
-                    onClick={() => { handlePickPreset(p); closeSheet(); }}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-base ${ currentPreset === p.presetName ? "text-primary font-semibold" : "text-foreground" }`}>{p.presetName}</p>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {currentPreset === p.presetName && <Check size={16} className="text-primary mr-1" />}
+                    <input
+                      type="text"
+                      value={editNotesVal}
+                      onChange={e => setEditNotesVal(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveEdit(p); if (e.key === 'Escape') cancelEdit(); }}
+                      placeholder="Setup notes (e.g. Seat 3, pin 8)"
+                      className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary mb-3"
+                    />
+                    <div className="flex gap-2">
                       <button
-                        onClick={e => { e.stopPropagation(); setRenamingId(p.id); setRenamingFrom(p.presetName); setRenameValue(p.presetName); }}
-                        className="p-3 rounded-lg text-muted-foreground hover:text-foreground active:bg-white/10 transition-colors"
-                        title="Rename"
-                      ><Pencil size={17} /></button>
+                        onClick={() => saveEdit(p)}
+                        disabled={!editNameVal.trim()}
+                        className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-40 active:opacity-80"
+                      >Save</button>
                       <button
-                        onClick={e => { e.stopPropagation(); handleDeletePreset(p); }}
-                        className="p-3 rounded-lg text-muted-foreground hover:text-red-400 active:bg-white/10 transition-colors"
-                        title="Delete"
-                      ><Trash2 size={17} /></button>
+                        onClick={cancelEdit}
+                        className="px-4 py-2.5 bg-secondary text-muted-foreground rounded-lg text-sm active:opacity-80"
+                      >Cancel</button>
+                      <button
+                        onClick={() => { setDeleteConfirmId(p.id); }}
+                        className="px-3 py-2.5 rounded-lg text-muted-foreground hover:text-red-400 active:opacity-80"
+                      ><Trash2 size={16} /></button>
                     </div>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                );
+              }
 
-          {/* Setup notes for selected preset — Option A: display/edit toggle */}
-          {currentPreset && (
-            <div className="px-5 py-4 border-t border-border/40 flex-shrink-0">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Setup notes</p>
-              {editingSettings ? (
-                <div className="flex gap-2">
-                  <input
-                    ref={settingsInputRef}
-                    type="text"
-                    value={settingsDraft}
-                    onChange={e => setSettingsDraft(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        onSettingsChange(settingsDraft);
-                        handleSettingsBlur(settingsDraft);
-                        setEditingSettings(false);
-                      }
-                      if (e.key === 'Escape') setEditingSettings(false);
-                    }}
-                    placeholder="e.g. Seat 3, pin 8"
-                    className="flex-1 bg-secondary border border-primary rounded-xl px-4 py-3.5 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    autoFocus
-                  />
+              return (
+                <div
+                  key={p.id}
+                  className={`flex items-center px-5 py-4 border-b border-border/30 cursor-pointer active:bg-white/5 transition-colors ${
+                    isSelected ? 'bg-primary/5' : ''
+                  }`}
+                  onClick={() => { onSelectPreset(p.presetName, p.lastSettings ?? null, p.id); closeSheet(); }}
+                >
+                  {/* Radio dot */}
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 transition-colors ${
+                    isSelected ? 'border-primary' : 'border-border'
+                  }`}>
+                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                  </div>
+
+                  {/* Name + notes */}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm ${ isSelected ? 'text-primary font-medium' : 'text-foreground' }`}>{p.presetName}</p>
+                    {p.lastSettings && (
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{p.lastSettings}</p>
+                    )}
+                  </div>
+
+                  {/* Edit button */}
                   <button
-                    onClick={() => {
-                      onSettingsChange(settingsDraft);
-                      handleSettingsBlur(settingsDraft);
-                      setEditingSettings(false);
-                    }}
-                    className="px-4 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium shrink-0 active:opacity-80 transition-opacity"
+                    onClick={e => { e.stopPropagation(); startEdit(p); }}
+                    className="p-2.5 ml-1 rounded-lg text-muted-foreground hover:text-foreground active:bg-white/10 transition-colors flex-shrink-0"
                   >
-                    Save
+                    <Pencil size={15} />
                   </button>
                 </div>
-              ) : (
-                <button
-                  onClick={() => { setSettingsDraft(currentSettings); setEditingSettings(true); setTimeout(() => settingsInputRef.current?.focus(), 50); }}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 bg-secondary rounded-xl text-left group hover:bg-secondary/70 transition-colors"
-                >
-                  <span className={currentSettings ? "text-base text-foreground" : "text-base text-muted-foreground/50"}>
-                    {currentSettings || "Tap to add setup notes"}
-                  </span>
-                  <Pencil size={14} className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-                </button>
-              )}
-            </div>
-          )}
+              );
+            })}
 
-          {/* Add new machine */}
-          <div className="border-t border-border/40 flex-shrink-0 pb-safe">
-            {addingNew ? (
-              <div className="flex items-center gap-3 px-5 py-4">
+            {/* Add new inline form */}
+            {addingNew && (
+              <div className="px-5 py-4 border-b border-border/30 bg-secondary/20">
                 <input
-                  ref={addInputRef}
+                  ref={addNameRef}
                   autoFocus
                   type="text"
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") saveNewPreset(); if (e.key === "Escape") { setAddingNew(false); setNewName(""); } }}
-                  placeholder="Machine name…"
-                  className="flex-1 bg-secondary border border-border rounded-xl px-4 py-3.5 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  onKeyDown={e => { if (e.key === 'Enter') addNotesRef.current?.focus(); if (e.key === 'Escape') { setAddingNew(false); setNewName(''); setNewNotes(''); } }}
+                  placeholder="Machine name"
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary mb-2"
                 />
-                <button onClick={saveNewPreset} className="p-3 text-primary"><Check size={18} /></button>
-                <button onClick={() => { setAddingNew(false); setNewName(""); }} className="p-3 text-muted-foreground"><X size={18} /></button>
+                <input
+                  ref={addNotesRef}
+                  type="text"
+                  value={newNotes}
+                  onChange={e => setNewNotes(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveNewPreset(); if (e.key === 'Escape') { setAddingNew(false); setNewName(''); setNewNotes(''); } }}
+                  placeholder="Setup notes (e.g. Seat 3, pin 8)"
+                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary mb-3"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={saveNewPreset}
+                    disabled={!newName.trim()}
+                    className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-40 active:opacity-80"
+                  >Save</button>
+                  <button
+                    onClick={() => { setAddingNew(false); setNewName(''); setNewNotes(''); }}
+                    className="px-4 py-2.5 bg-secondary text-muted-foreground rounded-lg text-sm active:opacity-80"
+                  >Cancel</button>
+                </div>
               </div>
-            ) : (
+            )}
+          </div>
+
+          {/* Add machine footer */}
+          {!addingNew && (
+            <div className="border-t border-border/40 flex-shrink-0 pb-safe">
               <button
-                className="w-full flex items-center justify-center gap-2 px-5 py-5 text-primary text-base font-medium active:bg-white/5 transition-colors"
-                onClick={() => { setAddingNew(true); setTimeout(() => addInputRef.current?.focus(), 100); }}
+                className="w-full flex items-center justify-center gap-2 px-5 py-5 text-primary text-sm font-medium active:bg-white/5 transition-colors"
+                onClick={() => { setEditingId(null); setAddingNew(true); setTimeout(() => addNameRef.current?.focus(), 100); }}
               >
-                <Plus size={18} />
+                <Plus size={17} />
                 Add machine
               </button>
-            )}
-            {(presetList as any[]).length > 0 && !addingNew && (
-              <p className="text-center text-xs text-muted-foreground pb-4">
-                Rename or delete presets in{" "}
-                <button
-                  onClick={closeSheet}
-                  className="text-primary underline underline-offset-2"
-                >
-                  Settings
-                </button>
-              </p>
-            )}
-          </div>
+            </div>
+          )}
         </SheetContent>
       </Sheet>
-
-      {/* Delete preset confirm dialog */}
-      <Dialog open={!!deleteConfirmPreset} onOpenChange={(v) => !v && setDeleteConfirmPreset(null)}>
-        <DialogContent className="max-w-xs mx-auto">
-          <DialogHeader>
-            <DialogTitle>Delete preset?</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">Delete &ldquo;{deleteConfirmPreset?.presetName}&rdquo;? This cannot be undone.</p>
-          <div className="flex gap-3 mt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setDeleteConfirmPreset(null)}>Cancel</Button>
-            <Button variant="destructive" className="flex-1" onClick={confirmDeletePreset}>Delete</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
