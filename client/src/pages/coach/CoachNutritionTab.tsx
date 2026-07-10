@@ -1060,21 +1060,23 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         </Card>
       </div>
 
-      {/* ── Row 3: Meal Timing (full width) ── */}
-      {insights.hasTimingData ? (
-        <MealTimingCard
-          slots={insights.slots}
-          consistencyScore={insights.consistencyScore ?? null}
-          totalForConsistency={insights.totalForConsistency}
-          showInfo={showTimingInfo}
-          onToggleInfo={() => setShowTimingInfo(v => !v)}
-        />
-      ) : (
-        <Card>
-          <SectionLabel>Meal Timing</SectionLabel>
-          <p className="text-[12px] mt-2" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
-        </Card>
-      )}
+      {/* ── Row 3: Meal Timing (1-col width, left-aligned) ── */}
+      <div className="grid grid-cols-3 gap-3">
+        {insights.hasTimingData ? (
+          <MealTimingCard
+            slots={insights.slots}
+            consistencyScore={insights.consistencyScore ?? null}
+            totalForConsistency={insights.totalForConsistency}
+            showInfo={showTimingInfo}
+            onToggleInfo={() => setShowTimingInfo(v => !v)}
+          />
+        ) : (
+          <Card>
+            <SectionLabel>Meal Timing</SectionLabel>
+            <p className="text-[12px] mt-2" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
+          </Card>
+        )}
+      </div>
 
       {/* ── Row 3: Habit Performance ── */}
       <CoachHabitsPanel clientId={clientId} periodDays={days} />
