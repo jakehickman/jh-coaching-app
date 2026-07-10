@@ -41,23 +41,29 @@ interface ReviewData {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Returns a comparable "volume" score for a top set: weight × reps (or reps/weight alone). */
-function topSetScore(entry: TopSetEntry | undefined): number | null {
-  if (!entry?.topSet) return null;
-  const { weight, reps } = entry.topSet;
-  if (weight != null && reps != null) return weight * reps;
-  if (weight != null) return weight;
-  if (reps != null) return reps;
-  return null;
-}
-
-/** Background tint colour based on progression vs previous microcycle. */
+/** Background tint colour based on weight progression vs previous microcycle.
+ *  Returns transparent if machine preset changed (different equipment = incomparable). */
 function cellBg(current: TopSetEntry | undefined, prev: TopSetEntry | undefined): string {
-  const cur = topSetScore(current);
-  const prv = topSetScore(prev);
-  if (cur == null || prv == null) return "transparent";
-  if (cur > prv) return "rgba(82,183,136,0.12)";
-  if (cur < prv) return "rgba(239,68,68,0.09)";
+  if (!current?.topSet || !prev?.topSet) return "transparent";
+  // If machine preset changed the comparison is invalid
+  const curPreset = current.machinePreset ?? null;
+  const prvPreset = prev.machinePreset ?? null;
+  if (curPreset !== prvPreset) return "transparent";
+  const cw = current.topSet.weight;
+  const pw = prev.topSet.weight;
+  // Weight is the primary signal
+  if (cw != null && pw != null) {
+    if (cw > pw) return "rgba(82,183,136,0.12)";
+    if (cw < pw) return "rgba(239,68,68,0.09)";
+    return "transparent";
+  }
+  // Bodyweight exercise — fall back to reps
+  const cr = current.topSet.reps;
+  const pr = prev.topSet.reps;
+  if (cr != null && pr != null) {
+    if (cr > pr) return "rgba(82,183,136,0.12)";
+    if (cr < pr) return "rgba(239,68,68,0.09)";
+  }
   return "transparent";
 }
 
