@@ -81,7 +81,7 @@ function getTrend(current: number | null, previous: number | null, threshold = 5
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={cn("rounded-xl p-6", className)}
+      className={cn("rounded-xl p-4", className)}
       style={{
         background: C.surface,
         border: `1px solid ${C.border}`,
@@ -905,12 +905,12 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
   const periodLabel = `Last ${days}d`;
 
   return (
-    <div className="space-y-4">
+    <div className="max-w-4xl mx-auto space-y-3">
 
       {/* Low data warning */}
       {insights.totalMeals < 5 && (
         <div
-          className="rounded-xl px-5 py-3.5 text-[13px]"
+          className="rounded-lg px-4 py-2.5 text-[12px]"
           style={{ background: C.surfaceVariant, color: C.muted, border: `1px solid ${C.border}` }}
         >
           {insights.totalMeals === 0
@@ -919,23 +919,23 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         </div>
       )}
 
-      {/* ── Row 1: Meals logged + Avg Hunger + Avg Fullness — single card ── */}
-      <Card className="flex divide-x divide-border">
+      {/* ── Row 1: 3-column stat cards ── */}
+      <div className="grid grid-cols-3 gap-3">
         {/* Meals Logged */}
-        <div className="flex-1 flex flex-col gap-2 px-4 py-3">
-          <div className="min-h-[2.5rem] flex items-start"><SectionLabel>Meals</SectionLabel></div>
-          <span className="font-bold leading-none flex-1 flex items-center" style={{ fontSize: 32, color: C.fg }}>
+        <Card className="flex flex-col gap-1.5">
+          <SectionLabel>Meals</SectionLabel>
+          <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
             {insights.totalMeals}
           </span>
-          <div className="h-5" />
-        </div>
+          <div className="h-4" />
+        </Card>
         {/* Avg Hunger */}
-        <div className="flex-1 flex flex-col gap-2 px-4 py-3">
-          <div className="min-h-[2.5rem] flex items-start"><SectionLabel>Avg Hunger</SectionLabel></div>
-          <span className="font-bold leading-none flex-1 flex items-center" style={{ fontSize: 32, color: C.fg }}>
+        <Card className="flex flex-col gap-1.5">
+          <SectionLabel>Avg Hunger</SectionLabel>
+          <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
             {insights.avgHunger ?? "—"}
           </span>
-          <div className="flex items-center gap-2 h-5">
+          <div className="flex items-center gap-2 h-4">
             <TrendBadge
               current={insights.avgHunger}
               previous={insights.prevAvgHunger}
@@ -943,14 +943,14 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               threshold={0.15}
             />
           </div>
-        </div>
+        </Card>
         {/* Avg Fullness */}
-        <div className="flex-1 flex flex-col gap-2 px-4 py-3">
-          <div className="min-h-[2.5rem] flex items-start"><SectionLabel>Avg Fullness</SectionLabel></div>
-          <span className="font-bold leading-none flex-1 flex items-center" style={{ fontSize: 32, color: C.fg }}>
+        <Card className="flex flex-col gap-1.5">
+          <SectionLabel>Avg Fullness</SectionLabel>
+          <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
             {insights.avgFullness ?? "—"}
           </span>
-          <div className="flex items-center gap-2 h-5">
+          <div className="flex items-center gap-2 h-4">
             <TrendBadge
               current={insights.avgFullness}
               previous={insights.prevAvgFullness}
@@ -958,62 +958,62 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               threshold={0.15}
             />
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
 
-      {/* ── Row 2: Scatter + Treats ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* ── Row 2: Scatter + Treats + Ideal Zone (3-col) ── */}
+      <div className="grid grid-cols-3 gap-3">
         {/* Scatter */}
-        <Card className="flex flex-col gap-4">
+        <Card className="flex flex-col gap-3">
           <SectionLabel>Hunger vs. Fullness</SectionLabel>
           {insights.scatter.length > 0 ? (
             <div className="flex justify-center">
               <ScatterPlot scatter={insights.scatter} />
             </div>
           ) : (
-            <p className="text-[13px] py-8 text-center" style={{ color: C.muted }}>No rated meals yet</p>
+            <p className="text-[12px] py-6 text-center" style={{ color: C.muted }}>No rated meals yet</p>
           )}
         </Card>
 
-        {/* Treats — cap at 4 weeks for 28d view */}
-        <Card className="flex flex-col gap-4">
+        {/* Treats */}
+        <Card className="flex flex-col gap-3">
           <SectionLabel>Treats</SectionLabel>
-          <div className="flex items-center gap-4" style={{ fontSize: 11, color: C.muted }}>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: C.primary, opacity: 0.8 }} />
+          <div className="flex items-center gap-3" style={{ fontSize: 11, color: C.muted }}>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-sm inline-block" style={{ background: C.primary, opacity: 0.8 }} />
               Small
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: C.amber, opacity: 0.85 }} />
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-sm inline-block" style={{ background: C.amber, opacity: 0.85 }} />
               Medium
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: C.red, opacity: 0.8 }} />
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-sm inline-block" style={{ background: C.red, opacity: 0.8 }} />
               Large
             </span>
           </div>
           <TreatsChart treatsByWeek={days === 7 ? insights.treatsByWeek : insights.treatsByWeek.slice(-4)} days={days} />
         </Card>
+
+        {/* Ideal Zone */}
+        <IdealZoneCard insights={insights} days={days} />
       </div>
 
-      {/* ── Row 3: Ideal Zone + Meal Timing side by side ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <IdealZoneCard insights={insights} days={days} />
-        {insights.hasTimingData ? (
-          <MealTimingCard
-            slots={insights.slots}
-            consistencyScore={insights.consistencyScore ?? null}
-            totalForConsistency={insights.totalForConsistency}
-            showInfo={showTimingInfo}
-            onToggleInfo={() => setShowTimingInfo(v => !v)}
-          />
-        ) : (
-          <Card>
-            <SectionLabel>Meal Timing</SectionLabel>
-            <p className="text-[13px] mt-3" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
-          </Card>
-        )}
-      </div>
+      {/* ── Row 3: Meal Timing (full width) ── */}
+      {insights.hasTimingData ? (
+        <MealTimingCard
+          slots={insights.slots}
+          consistencyScore={insights.consistencyScore ?? null}
+          totalForConsistency={insights.totalForConsistency}
+          showInfo={showTimingInfo}
+          onToggleInfo={() => setShowTimingInfo(v => !v)}
+        />
+      ) : (
+        <Card>
+          <SectionLabel>Meal Timing</SectionLabel>
+          <p className="text-[12px] mt-2" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
+        </Card>
+      )}
 
       {/* ── Row 4: Habit Performance ── */}
       <CoachHabitsPanel clientId={clientId} periodDays={days} />
