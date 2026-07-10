@@ -225,12 +225,16 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                     const prevEntry = micro > 1 ? ex.microcycles.find(m => m.microNum === micro - 1) : undefined;
                     const hasData = entry?.topSet != null;
                     const bg = cellBg(entry, prevEntry);
+                    // Show amber left border when preset changed from previous microcycle
+                    const presetChanged = !!entry && !!prevEntry &&
+                      (entry.machinePreset ?? null) !== (prevEntry.machinePreset ?? null) &&
+                      entry.machinePreset != null;
                     return (
                       <td
                         key={micro}
                         className="py-2.5 px-2 text-center relative group/cell transition-colors"
-                        title={entry?.machinePreset ?? undefined}
-                        style={{ background: bg }}
+                        title={entry?.machinePreset ? `${presetChanged ? '⚙ Equipment changed: ' : ''}${entry.machinePreset}` : undefined}
+                        style={{ background: bg, borderLeft: presetChanged ? '2px solid rgba(251,191,36,0.6)' : undefined }}
                       >
                         {entry ? (
                           <div className={`text-xs leading-tight ${hasData ? "text-foreground" : "text-muted-foreground/40"}`}>
@@ -310,12 +314,16 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                     const prevEntry = micro > 1 ? ex.microcycles.find(m => m.microNum === micro - 1) : undefined;
                     const hasData = entry?.topSet != null;
                     const bg = cellBg(entry, prevEntry);
+                    // Show amber left border when preset changed from previous microcycle
+                    const presetChanged = !!entry && !!prevEntry &&
+                      (entry.machinePreset ?? null) !== (prevEntry.machinePreset ?? null) &&
+                      entry.machinePreset != null;
                     return (
                       <td
                         key={micro}
                         className="py-2.5 px-2 text-center relative group/cell transition-colors"
-                        title={entry?.machinePreset ?? undefined}
-                        style={{ background: bg }}
+                        title={entry?.machinePreset ? `${presetChanged ? '⚙ Equipment changed: ' : ''}${entry.machinePreset}` : undefined}
+                        style={{ background: bg, borderLeft: presetChanged ? '2px solid rgba(251,191,36,0.6)' : undefined }}
                       >
                         {entry ? (
                           <div className={`text-xs leading-tight ${hasData ? "text-foreground" : "text-muted-foreground/40"}`}>
