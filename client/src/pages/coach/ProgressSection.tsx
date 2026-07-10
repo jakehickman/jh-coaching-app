@@ -1212,7 +1212,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
       <div className="flex items-start justify-between px-4 py-3 border-b border-border bg-muted/30">
         <div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <p className="text-sm font-bold text-foreground whitespace-nowrap">Session {session.dayLabel}</p>
+            <p className="text-sm font-bold text-foreground whitespace-nowrap">{session.dayLabel}</p>
             {hasIncomplete && (
               <span className="text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded whitespace-nowrap">Incomplete</span>
             )}
