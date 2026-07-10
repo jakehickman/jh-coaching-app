@@ -953,7 +953,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
   const periodLabel = `Last ${days}d`;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-3">
+    <div className="space-y-3">
 
       {/* Low data warning */}
       {insights.totalMeals < 5 && (
@@ -1022,8 +1022,8 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         </div>
       </Card>
 
-      {/* ── Row 2: Ideal Zone detail + Scatter + Treats + Meal Timing (3-col) ── */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* ── Row 2: Ideal Zone detail + Scatter + Treats + Meal Timing (4-col, full width) ── */}
+      <div className="grid grid-cols-4 gap-3">
         {/* Ideal Zone detail */}
         <IdealZoneCard insights={insights} days={days} />
 
@@ -1058,10 +1058,8 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           </div>
           <TreatsChart treatsByWeek={days === 7 ? insights.treatsByWeek : insights.treatsByWeek.slice(-4)} days={days} />
         </Card>
-      </div>
 
-      {/* ── Row 3: Meal Timing (1-col width, left-aligned) ── */}
-      <div className="grid grid-cols-3 gap-3">
+        {/* Meal Timing */}
         {insights.hasTimingData ? (
           <MealTimingCard
             slots={insights.slots}
