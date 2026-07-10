@@ -886,7 +886,4 @@
 - [x] Tests: 59/59 passing (7 test files)
 
 ## Per-Client Weight Unit Preference
-- [ ] Add weightUnit field (kg/lbs) to client_profiles schema
-- [ ] Migrate DB: add weightUnit column
-- [ ] Add weightUnit selector to coach Client Profile tab
-- [ ] Apply per-client weightUnit default in TrainingTab exercise logging
+- [x] ~~Per-client weight unit preference~~ — feature rolled back at user request; default is kg globally
