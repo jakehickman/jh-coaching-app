@@ -53,7 +53,7 @@ function formatTopSet(entry: TopSetEntry): string {
 
 function formatSets(entry: TopSetEntry): string {
   if (!entry.topSet || entry.totalSets === 0) return "";
-  return `(${entry.totalSets} set${entry.totalSets !== 1 ? "s" : ""})`;
+  return `${entry.totalSets} set${entry.totalSets !== 1 ? "s" : ""}`;
 }
 
 function formatDate(dateStr: string | Date | null | undefined): string {
@@ -133,7 +133,11 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                     const entry = ex.microcycles.find(m => m.microNum === micro);
                     const hasData = entry?.topSet != null;
                     return (
-                      <td key={micro} className="py-2.5 px-2 text-center">
+                      <td
+                        key={micro}
+                        className="py-2.5 px-2 text-center relative group/cell"
+                        title={entry?.machinePreset ?? undefined}
+                      >
                         {entry ? (
                           <div className={`text-xs leading-tight ${hasData ? "text-foreground" : "text-muted-foreground/40"}`}>
                             <div className="font-medium">{formatTopSet(entry)}</div>
@@ -143,8 +147,11 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                               </div>
                             )}
                             {entry.machinePreset && (
-                              <div className="text-muted-foreground/50 text-xs mt-0.5 italic truncate max-w-[100px] mx-auto">
-                                {entry.machinePreset}
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 hidden group-hover/cell:block pointer-events-none">
+                                <div className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs shadow-lg"
+                                  style={{ background: 'var(--popover)', border: '1px solid var(--border)', color: 'var(--popover-foreground)' }}>
+                                  {entry.machinePreset}
+                                </div>
                               </div>
                             )}
                           </div>
