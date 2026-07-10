@@ -1630,7 +1630,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
       {selectedSession ? (
         <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} allSessions={workoutSessions} />
       ) : (
-        <div className="w-full border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 80 }}>
+        <div className="w-full border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 80, marginTop: '27px' }}>
           <p className="text-xs text-muted-foreground">Click a session to view details</p>
         </div>
       )}
