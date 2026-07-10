@@ -41,54 +41,53 @@ interface ReviewData {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Background tint colour based on weight progression vs previous microcycle.
+/** Background tint: green if weight OR reps increased, red only if both decreased.
  *  Returns transparent if machine preset changed (different equipment = incomparable). */
 function cellBg(current: TopSetEntry | undefined, prev: TopSetEntry | undefined): string {
   if (!current?.topSet || !prev?.topSet) return "transparent";
-  // If machine preset changed the comparison is invalid
   const curPreset = current.machinePreset ?? null;
   const prvPreset = prev.machinePreset ?? null;
   if (curPreset !== prvPreset) return "transparent";
   const cw = current.topSet.weight;
   const pw = prev.topSet.weight;
-  // Weight is the primary signal
-  if (cw != null && pw != null) {
-    if (cw > pw) return "rgba(82,183,136,0.12)";
-    if (cw < pw) return "rgba(239,68,68,0.09)";
-    return "transparent";
-  }
-  // Bodyweight exercise — fall back to reps
   const cr = current.topSet.reps;
   const pr = prev.topSet.reps;
-  if (cr != null && pr != null) {
-    if (cr > pr) return "rgba(82,183,136,0.12)";
-    if (cr < pr) return "rgba(239,68,68,0.09)";
-  }
+  const weightUp = cw != null && pw != null && cw > pw;
+  const weightDown = cw != null && pw != null && cw < pw;
+  const repsUp = cr != null && pr != null && cr > pr;
+  const repsDown = cr != null && pr != null && cr < pr;
+  if (weightUp || repsUp) return "rgba(82,183,136,0.12)";
+  if (weightDown || repsDown) return "rgba(239,68,68,0.09)";
   return "transparent";
 }
 
-/** Net delta label from first logged microcycle to latest logged microcycle. */
-function deltaLabel(entries: TopSetEntry[]): string | null {
+/** Net weight delta from first to last logged microcycle. Returns null if machine preset changed. */
+function weightDelta(entries: TopSetEntry[]): { value: string; positive: boolean; negative: boolean } | null {
   const logged = entries.filter(e => e.topSet != null);
   if (logged.length < 2) return null;
   const first = logged[0];
   const last = logged[logged.length - 1];
-  const unit = first.weightUnit ?? "kg";
+  if ((first.machinePreset ?? null) !== (last.machinePreset ?? null)) return null;
   const fw = first.topSet?.weight;
   const lw = last.topSet?.weight;
+  if (fw == null || lw == null) return null;
+  const unit = first.weightUnit ?? "kg";
+  const diff = lw - fw;
+  return { value: `${diff > 0 ? "+" : ""}${diff}${unit}`, positive: diff > 0, negative: diff < 0 };
+}
+
+/** Net reps delta from first to last logged microcycle. Returns null if machine preset changed. */
+function repsDelta(entries: TopSetEntry[]): { value: string; positive: boolean; negative: boolean } | null {
+  const logged = entries.filter(e => e.topSet != null);
+  if (logged.length < 2) return null;
+  const first = logged[0];
+  const last = logged[logged.length - 1];
+  if ((first.machinePreset ?? null) !== (last.machinePreset ?? null)) return null;
   const fr = first.topSet?.reps;
   const lr = last.topSet?.reps;
-  const parts: string[] = [];
-  if (fw != null && lw != null && lw !== fw) {
-    const diff = lw - fw;
-    parts.push(`${diff > 0 ? "+" : ""}${diff}${unit}`);
-  }
-  if (fr != null && lr != null && lr !== fr) {
-    const diff = lr - fr;
-    parts.push(`${diff > 0 ? "+" : ""}${diff} rep${Math.abs(diff) !== 1 ? "s" : ""}`);
-  }
-  if (parts.length === 0) return "=";
-  return parts.join(" / ");
+  if (fr == null || lr == null) return null;
+  const diff = lr - fr;
+  return { value: `${diff > 0 ? "+" : ""}${diff}`, positive: diff > 0, negative: diff < 0 };
 }
 
 
@@ -143,8 +142,11 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                 <div className="text-xs font-semibold">Micro {micro}</div>
               </th>
             ))}
-            <th className="text-center py-2 px-3 font-medium text-muted-foreground min-w-[80px] sticky right-0 bg-background z-10">
-              <div className="text-xs font-semibold">Δ</div>
+            <th className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[70px] sticky right-0 bg-background z-10 border-l border-border/30">
+              <div className="text-xs font-semibold">Δ Weight</div>
+            </th>
+            <th className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[60px]">
+              <div className="text-xs font-semibold">Δ Reps</div>
             </th>
           </tr>
         </thead>
@@ -174,7 +176,8 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                     </td>
                   );
                 })}
-                <td className="py-2 px-2 bg-muted/20 sticky right-0 z-10" />
+                <td className="py-2 px-2 bg-muted/20 sticky right-0 z-10 border-l border-border/30" />
+                <td className="py-2 px-2 bg-muted/20" />
               </tr>
               {day.exercises.map((ex, ei) => (
                 <tr
@@ -219,23 +222,30 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                       </td>
                     );
                   })}
-                  {/* Delta column */}
+                  {/* Δ Weight column */}
                   {(() => {
-                    const delta = deltaLabel(ex.microcycles);
-                    const logged = ex.microcycles.filter(e => e.topSet != null);
-                    const first = logged[0];
-                    const last = logged[logged.length - 1];
-                    const isPositive = delta && delta !== "=" && !delta.startsWith("-") && delta !== null;
-                    const isNegative = delta && (delta.startsWith("-") || delta.includes("/-"));
+                    const d = weightDelta(ex.microcycles);
                     return (
-                      <td className="py-2.5 px-3 text-center sticky right-0 bg-background z-10">
-                        {delta ? (
+                      <td className="py-2.5 px-2 text-center sticky right-0 bg-background z-10 border-l border-border/30">
+                        {d ? (
                           <span className={`text-xs font-semibold ${
-                            delta === "=" ? "text-muted-foreground/50" :
-                            isPositive ? "text-green-400" : "text-red-400"
-                          }`}>
-                            {delta}
-                          </span>
+                            d.positive ? "text-green-400" : d.negative ? "text-red-400" : "text-muted-foreground/50"
+                          }`}>{d.value}</span>
+                        ) : (
+                          <span className="text-muted-foreground/20 text-xs">—</span>
+                        )}
+                      </td>
+                    );
+                  })()}
+                  {/* Δ Reps column */}
+                  {(() => {
+                    const d = repsDelta(ex.microcycles);
+                    return (
+                      <td className="py-2.5 px-2 text-center bg-background">
+                        {d ? (
+                          <span className={`text-xs font-semibold ${
+                            d.positive ? "text-green-400" : d.negative ? "text-red-400" : "text-muted-foreground/50"
+                          }`}>{d.value}</span>
                         ) : (
                           <span className="text-muted-foreground/20 text-xs">—</span>
                         )}
