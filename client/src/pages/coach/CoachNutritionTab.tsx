@@ -366,16 +366,7 @@ function IdealZoneCard({
         )}
       </div>
 
-      {/* Sparkline */}
-      {weeklyIdealZone && weeklyIdealZone.length > 0 && (
-        <div className="mt-4">
-          <IdealZoneSparkline
-            weeklyIdealZone={weeklyIdealZone}
-            allTimeIdealZonePct={allTimeIdealZonePct ?? null}
-            accentColor={accentColor}
-          />
-        </div>
-      )}
+
 
       {/* Hunger / Fullness split */}
       {(hungerInZonePct != null || fullnessInZonePct != null) && (
@@ -465,14 +456,7 @@ function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
         stroke={C.primary} strokeOpacity={0.25} strokeWidth={1}
         rx={3}
       />
-      {/* Ideal zone label — above the rectangle */}
-      <text
-        x={(zoneX1 + zoneX2) / 2} y={zoneY1 - 5}
-        textAnchor="middle" fontSize={9}
-        fill={C.primary} opacity={0.7}
-      >
-        Ideal zone
-      </text>
+
       {/* Axis labels */}
       {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
         <g key={n}>
@@ -532,10 +516,11 @@ function TreatsChart({
             </span>
             {/* Bar */}
             <div
-              className="w-full flex flex-col-reverse overflow-hidden"
+              className="w-full flex flex-col-reverse overflow-visible"
               style={{
                 height: barPx,
                 borderRadius: 4,
+                clipPath: 'inset(0 0 0 0 round 4px)',
               }}
             >
               {week.total === 0 ? (
@@ -543,13 +528,40 @@ function TreatsChart({
               ) : (
                 <>
                   {week.small > 0 && (
-                    <div className="w-full" style={{ flex: week.small, background: C.primary, opacity: 0.8 }} />
+                    <div
+                      className="w-full relative group/seg"
+                      style={{ flex: week.small, background: C.primary, opacity: 0.8 }}
+                      title={`Small: ${week.small}`}
+                    >
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded text-[11px] font-medium whitespace-nowrap pointer-events-none opacity-0 group-hover/seg:opacity-100 transition-opacity z-20"
+                        style={{ background: C.surfaceVariant, color: C.fg, border: `1px solid ${C.border}` }}>
+                        Small: {week.small}
+                      </div>
+                    </div>
                   )}
                   {week.medium > 0 && (
-                    <div className="w-full" style={{ flex: week.medium, background: C.amber, opacity: 0.85 }} />
+                    <div
+                      className="w-full relative group/seg"
+                      style={{ flex: week.medium, background: C.amber, opacity: 0.85 }}
+                      title={`Medium: ${week.medium}`}
+                    >
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded text-[11px] font-medium whitespace-nowrap pointer-events-none opacity-0 group-hover/seg:opacity-100 transition-opacity z-20"
+                        style={{ background: C.surfaceVariant, color: C.fg, border: `1px solid ${C.border}` }}>
+                        Medium: {week.medium}
+                      </div>
+                    </div>
                   )}
                   {week.large > 0 && (
-                    <div className="w-full" style={{ flex: week.large, background: C.red, opacity: 0.8 }} />
+                    <div
+                      className="w-full relative group/seg"
+                      style={{ flex: week.large, background: C.red, opacity: 0.8 }}
+                      title={`Large: ${week.large}`}
+                    >
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded text-[11px] font-medium whitespace-nowrap pointer-events-none opacity-0 group-hover/seg:opacity-100 transition-opacity z-20"
+                        style={{ background: C.surfaceVariant, color: C.fg, border: `1px solid ${C.border}` }}>
+                        Large: {week.large}
+                      </div>
+                    </div>
                   )}
                 </>
               )}
