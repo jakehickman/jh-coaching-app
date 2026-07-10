@@ -142,10 +142,10 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                 <div className="text-xs font-semibold">Micro {micro}</div>
               </th>
             ))}
-            <th className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[70px] sticky right-0 bg-background z-10 border-l border-border/30">
+            <th className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[70px] sticky right-[60px] bg-background z-10 border-l border-border/30">
               <div className="text-xs font-semibold">Δ Weight</div>
             </th>
-            <th className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[60px]">
+            <th className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[60px] sticky right-0 bg-background z-10">
               <div className="text-xs font-semibold">Δ Reps</div>
             </th>
           </tr>
@@ -176,8 +176,8 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                     </td>
                   );
                 })}
-                <td className="py-2 px-2 bg-muted/20 sticky right-0 z-10 border-l border-border/30" />
-                <td className="py-2 px-2 bg-muted/20" />
+                <td className="py-2 px-2 bg-muted/20 sticky right-[60px] z-10 border-l border-border/30" />
+                <td className="py-2 px-2 bg-muted/20 sticky right-0 z-10" />
               </tr>
               {day.exercises.map((ex, ei) => (
                 <tr
@@ -226,7 +226,7 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                   {(() => {
                     const d = weightDelta(ex.microcycles);
                     return (
-                      <td className="py-2.5 px-2 text-center sticky right-0 bg-background z-10 border-l border-border/30">
+                      <td className="py-2.5 px-2 text-center sticky right-[60px] bg-background z-10 border-l border-border/30">
                         {d ? (
                           <span className={`text-xs font-semibold ${
                             d.positive ? "text-green-400" : d.negative ? "text-red-400" : "text-muted-foreground/50"
@@ -241,7 +241,7 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                   {(() => {
                     const d = repsDelta(ex.microcycles);
                     return (
-                      <td className="py-2.5 px-2 text-center bg-background">
+                      <td className="py-2.5 px-2 text-center sticky right-0 bg-background z-10">
                         {d ? (
                           <span className={`text-xs font-semibold ${
                             d.positive ? "text-green-400" : d.negative ? "text-red-400" : "text-muted-foreground/50"
