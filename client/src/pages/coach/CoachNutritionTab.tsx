@@ -967,27 +967,28 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         </div>
       )}
 
-      {/* ── Row 1: Ideal Zone + Meals + Avg Hunger + Avg Fullness (4-col) ── */}
-      <div className="grid grid-cols-4 gap-3">
+      {/* ── Row 1: Ideal Zone (left) + Combined stats (right) ── */}
+      <div className="grid grid-cols-2 gap-3">
         {/* Ideal Zone — compact variant */}
         <IdealZoneCard insights={insights} days={days} compact />
 
-        {/* Meals Logged */}
-        <Card className="flex flex-col gap-1.5">
-          <SectionLabel>Meals</SectionLabel>
-          <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
-            {insights.totalMeals}
-          </span>
-          <div className="h-4" />
-        </Card>
-
-        {/* Avg Hunger */}
-        <Card className="flex flex-col gap-1.5">
-          <SectionLabel>Avg Hunger</SectionLabel>
-          <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
-            {insights.avgHunger ?? "—"}
-          </span>
-          <div className="flex items-center gap-2 h-4">
+        {/* Combined stats: Meals / Avg Hunger / Avg Fullness */}
+        <Card className="flex items-stretch">
+          {/* Meals */}
+          <div className="flex-1 flex flex-col justify-center gap-1.5 px-4 py-3">
+            <SectionLabel>Meals</SectionLabel>
+            <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
+              {insights.totalMeals}
+            </span>
+          </div>
+          {/* Divider */}
+          <div className="w-px self-stretch my-3" style={{ background: C.border }} />
+          {/* Avg Hunger */}
+          <div className="flex-1 flex flex-col justify-center gap-1.5 px-4 py-3">
+            <SectionLabel>Avg Hunger</SectionLabel>
+            <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
+              {insights.avgHunger ?? "—"}
+            </span>
             <TrendBadge
               current={insights.avgHunger}
               previous={insights.prevAvgHunger}
@@ -995,15 +996,14 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
               threshold={0.15}
             />
           </div>
-        </Card>
-
-        {/* Avg Fullness */}
-        <Card className="flex flex-col gap-1.5">
-          <SectionLabel>Avg Fullness</SectionLabel>
-          <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
-            {insights.avgFullness ?? "—"}
-          </span>
-          <div className="flex items-center gap-2 h-4">
+          {/* Divider */}
+          <div className="w-px self-stretch my-3" style={{ background: C.border }} />
+          {/* Avg Fullness */}
+          <div className="flex-1 flex flex-col justify-center gap-1.5 px-4 py-3">
+            <SectionLabel>Avg Fullness</SectionLabel>
+            <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
+              {insights.avgFullness ?? "—"}
+            </span>
             <TrendBadge
               current={insights.avgFullness}
               previous={insights.prevAvgFullness}
