@@ -62,15 +62,32 @@ function cellBg(current: TopSetEntry | undefined, prev: TopSetEntry | undefined)
   return "transparent";
 }
 
-/** Net weight delta from first to last logged microcycle. Returns null if machine preset changed. */
+/**
+ * Find the index of the last preset change in a logged entries array.
+ * Returns the index of the first entry after the last change (the new baseline).
+ * If no change, returns 0.
+ */
+function lastPresetChangeBaseline(logged: TopSetEntry[]): number {
+  const lastPreset = logged[logged.length - 1].machinePreset;
+  // Walk backwards to find where the current preset started
+  for (let i = logged.length - 2; i >= 0; i--) {
+    if (logged[i].machinePreset !== lastPreset) {
+      return i + 1; // first entry with the current preset
+    }
+  }
+  return 0; // no change, use full range
+}
+
+/** Net weight delta from first to last logged microcycle, respecting preset changes. */
 function weightDelta(entries: TopSetEntry[]): { value: string; positive: boolean; negative: boolean } | null {
   // Only include entries where topSet has actual weight data
   const logged = entries.filter(e => e.topSet != null && e.topSet.weight != null);
   if (logged.length < 2) return null;
-  const first = logged[0];
-  const last = logged[logged.length - 1];
-  // Only suppress if both entries have a preset and they differ (incomparable equipment)
-  if (first.machinePreset && last.machinePreset && first.machinePreset !== last.machinePreset) return null;
+  const baseIdx = lastPresetChangeBaseline(logged);
+  const slice = logged.slice(baseIdx);
+  if (slice.length < 2) return null; // only one entry on current preset
+  const first = slice[0];
+  const last = slice[slice.length - 1];
   const fw = first.topSet!.weight!;
   const lw = last.topSet!.weight!;
   const unit = first.weightUnit ?? "kg";
@@ -78,15 +95,16 @@ function weightDelta(entries: TopSetEntry[]): { value: string; positive: boolean
   return { value: `${diff > 0 ? "+" : ""}${diff}${unit}`, positive: diff > 0, negative: diff < 0 };
 }
 
-/** Net reps delta from first to last logged microcycle. Returns null if machine preset changed. */
+/** Net reps delta from first to last logged microcycle, respecting preset changes. */
 function repsDelta(entries: TopSetEntry[]): { value: string; positive: boolean; negative: boolean } | null {
   // Only include entries where topSet has actual reps data
   const logged = entries.filter(e => e.topSet != null && e.topSet.reps != null);
   if (logged.length < 2) return null;
-  const first = logged[0];
-  const last = logged[logged.length - 1];
-  // Only suppress if both entries have a preset and they differ (incomparable equipment)
-  if (first.machinePreset && last.machinePreset && first.machinePreset !== last.machinePreset) return null;
+  const baseIdx = lastPresetChangeBaseline(logged);
+  const slice = logged.slice(baseIdx);
+  if (slice.length < 2) return null; // only one entry on current preset
+  const first = slice[0];
+  const last = slice[slice.length - 1];
   const fr = first.topSet!.reps!;
   const lr = last.topSet!.reps!;
   const diff = lr - fr;
