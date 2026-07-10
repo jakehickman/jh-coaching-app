@@ -239,11 +239,7 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                         {entry ? (
                           <div className={`text-xs leading-tight ${hasData ? "text-foreground" : "text-muted-foreground/40"}`}>
                             <div className="font-medium">{formatTopSet(entry)}</div>
-                            {hasData && (
-                              <div className="text-muted-foreground/60 text-xs mt-0.5">
-                                {formatSets(entry)}
-                              </div>
-                            )}
+
                             {entry.machinePreset && (
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 hidden group-hover/cell:block pointer-events-none">
                                 <div className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs shadow-lg"
@@ -328,11 +324,7 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                         {entry ? (
                           <div className={`text-xs leading-tight ${hasData ? "text-foreground" : "text-muted-foreground/40"}`}>
                             <div className="font-medium">{formatTopSet(entry)}</div>
-                            {hasData && (
-                              <div className="text-muted-foreground/60 text-xs mt-0.5">
-                                {formatSets(entry)}
-                              </div>
-                            )}
+
                             {entry.machinePreset && (
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 hidden group-hover/cell:block pointer-events-none">
                                 <div className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs shadow-lg"
