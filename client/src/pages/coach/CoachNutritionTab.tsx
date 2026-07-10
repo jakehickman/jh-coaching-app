@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CoachHabitsPanel } from "./HabitsSection";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Info, UtensilsCrossed, ArrowUp, ArrowDown, Minus } from "lucide-react";
-import { PhotoLightbox } from "@/components/PhotoLightbox";
 
 // ─── Design tokens (mirroring index.css CSS vars) ─────────────────────────────
 const C = {
@@ -658,7 +657,6 @@ function MealLogView({ clientId }: { clientId: number }) {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const { data: calData = {}, isLoading } = trpc.mealLogs.calendarForClient.useQuery(
     { userId: clientId, year, month },
@@ -691,7 +689,6 @@ function MealLogView({ clientId }: { clientId: number }) {
   const selectedDayData: DayData | null = selectedDate ? (byDate[selectedDate] ?? null) : null;
 
   return (
-    <>
     <div className="flex flex-col sm:flex-row gap-6">
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-4">
@@ -792,11 +789,7 @@ function MealLogView({ clientId }: { clientId: number }) {
                   return (
                     <div key={meal.id} className="px-5 py-3.5" style={{ borderBottom: `1px solid ${C.border}` }}>
                       <div className="flex items-start gap-3">
-                        <div
-                          className={`w-11 h-11 rounded-lg overflow-hidden shrink-0 flex items-center justify-center${meal.photoUrl ? " cursor-pointer" : ""}`}
-                          style={{ background: C.surfaceVariant }}
-                          onClick={() => meal.photoUrl && setLightboxSrc(meal.photoUrl)}
-                        >
+                        <div className="w-11 h-11 rounded-lg overflow-hidden shrink-0 flex items-center justify-center" style={{ background: C.surfaceVariant }}>
                           {meal.photoUrl ? (
                             <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
                           ) : (
@@ -850,8 +843,6 @@ function MealLogView({ clientId }: { clientId: number }) {
         )}
       </div>
     </div>
-    {lightboxSrc && <PhotoLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
-    </>
   );
 }
 
