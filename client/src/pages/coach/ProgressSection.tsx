@@ -1207,7 +1207,7 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
   });
 
   return (
-    <div className="w-full lg:w-96 flex-shrink-0 border border-border rounded-xl bg-card overflow-hidden lg:sticky lg:top-4">
+    <div className="w-full lg:w-96 flex-shrink-0 border border-border rounded-xl bg-card overflow-hidden lg:sticky lg:top-4" style={{marginTop: '27px'}}>
       {/* Header */}
       <div className="flex items-start justify-between px-4 py-3 border-b border-border bg-muted/30">
         <div>
