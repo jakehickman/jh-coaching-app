@@ -67,7 +67,8 @@ function weightDelta(entries: TopSetEntry[]): { value: string; positive: boolean
   if (logged.length < 2) return null;
   const first = logged[0];
   const last = logged[logged.length - 1];
-  if ((first.machinePreset ?? null) !== (last.machinePreset ?? null)) return null;
+  // Only suppress if both entries have a preset and they differ (incomparable equipment)
+  if (first.machinePreset && last.machinePreset && first.machinePreset !== last.machinePreset) return null;
   const fw = first.topSet?.weight;
   const lw = last.topSet?.weight;
   if (fw == null || lw == null) return null;
@@ -82,7 +83,8 @@ function repsDelta(entries: TopSetEntry[]): { value: string; positive: boolean; 
   if (logged.length < 2) return null;
   const first = logged[0];
   const last = logged[logged.length - 1];
-  if ((first.machinePreset ?? null) !== (last.machinePreset ?? null)) return null;
+  // Only suppress if both entries have a preset and they differ (incomparable equipment)
+  if (first.machinePreset && last.machinePreset && first.machinePreset !== last.machinePreset) return null;
   const fr = first.topSet?.reps;
   const lr = last.topSet?.reps;
   if (fr == null || lr == null) return null;
