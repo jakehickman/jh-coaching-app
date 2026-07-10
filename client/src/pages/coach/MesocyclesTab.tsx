@@ -64,15 +64,15 @@ function cellBg(current: TopSetEntry | undefined, prev: TopSetEntry | undefined)
 
 /** Net weight delta from first to last logged microcycle. Returns null if machine preset changed. */
 function weightDelta(entries: TopSetEntry[]): { value: string; positive: boolean; negative: boolean } | null {
-  const logged = entries.filter(e => e.topSet != null);
+  // Only include entries where topSet has actual weight data
+  const logged = entries.filter(e => e.topSet != null && e.topSet.weight != null);
   if (logged.length < 2) return null;
   const first = logged[0];
   const last = logged[logged.length - 1];
   // Only suppress if both entries have a preset and they differ (incomparable equipment)
   if (first.machinePreset && last.machinePreset && first.machinePreset !== last.machinePreset) return null;
-  const fw = first.topSet?.weight;
-  const lw = last.topSet?.weight;
-  if (fw == null || lw == null) return null;
+  const fw = first.topSet!.weight!;
+  const lw = last.topSet!.weight!;
   const unit = first.weightUnit ?? "kg";
   const diff = lw - fw;
   return { value: `${diff > 0 ? "+" : ""}${diff}${unit}`, positive: diff > 0, negative: diff < 0 };
@@ -80,16 +80,15 @@ function weightDelta(entries: TopSetEntry[]): { value: string; positive: boolean
 
 /** Net reps delta from first to last logged microcycle. Returns null if machine preset changed. */
 function repsDelta(entries: TopSetEntry[]): { value: string; positive: boolean; negative: boolean } | null {
-  const logged = entries.filter(e => e.topSet != null);
+  // Only include entries where topSet has actual reps data
+  const logged = entries.filter(e => e.topSet != null && e.topSet.reps != null);
   if (logged.length < 2) return null;
   const first = logged[0];
   const last = logged[logged.length - 1];
   // Only suppress if both entries have a preset and they differ (incomparable equipment)
   if (first.machinePreset && last.machinePreset && first.machinePreset !== last.machinePreset) return null;
-  // Treat null reps as 0 so a rep increase still shows even if one entry has no rep count
-  const fr = first.topSet?.reps ?? 0;
-  const lr = last.topSet?.reps ?? 0;
-  if (fr === 0 && lr === 0) return null; // no rep data at all
+  const fr = first.topSet!.reps!;
+  const lr = last.topSet!.reps!;
   const diff = lr - fr;
   return { value: `${diff > 0 ? "+" : ""}${diff}`, positive: diff > 0, negative: diff < 0 };
 }
