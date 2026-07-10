@@ -2373,7 +2373,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
           <div className="-mx-4 px-4 lg:-mx-6 lg:px-6 pt-2 pb-2 border-b border-border/40 overflow-x-auto">
             <TabsList className="flex-nowrap min-w-max">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="body-comp">Body Comp</TabsTrigger>
+              <TabsTrigger value="body-comp">Body Composition</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
               <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
               <TabsTrigger value="habits">Habits</TabsTrigger>
