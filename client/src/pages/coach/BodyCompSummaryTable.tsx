@@ -255,7 +255,15 @@ export function BodyCompSummaryTable({ clientId }: Props) {
       <SectionLabel>Weekly Summary</SectionLabel>
       <div className="mt-2 bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[420px]">
+          <table className="w-full table-fixed text-sm min-w-[420px]">
+            <colgroup>
+              <col className="w-[30%]" />
+              <col className="w-[14%]" />
+              <col className="w-[18%]" />
+              <col className="w-[14%]" />
+              <col className="w-[12%]" />
+              <col className="w-[12%]" />
+            </colgroup>
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Week</th>
