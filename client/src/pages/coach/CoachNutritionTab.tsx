@@ -784,7 +784,7 @@ function MealLogView({ clientId }: { clientId: number }) {
         {isLoading ? (
           <div className="grid grid-cols-7 gap-1">
             {[...Array(35)].map((_, i) => (
-              <Skeleton key={i} className="aspect-square rounded-lg" style={{ background: `${C.fg}08` }} />
+              <Skeleton key={i} className="h-16 rounded-lg" style={{ background: `${C.fg}08` }} />
             ))}
           </div>
         ) : (
@@ -801,7 +801,7 @@ function MealLogView({ clientId }: { clientId: number }) {
                 <button
                   key={idx}
                   onClick={() => setSelectedDate(isSelected ? null : key)}
-                  className="relative aspect-square flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors"
+                  className="relative h-16 flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors"
                   style={{
                     cursor: hasMeals ? "pointer" : "default",
                     background: isSelected ? `${C.primary}22` : hasMeals ? `${C.fg}08` : "transparent",
