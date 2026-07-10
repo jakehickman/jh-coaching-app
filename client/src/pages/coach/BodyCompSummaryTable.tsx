@@ -106,13 +106,12 @@ function WeekRow({ week, isExpanded, onToggle }: {
             <span className="text-xs font-semibold tabular-nums text-foreground">
               {week.avgWeight != null ? `${fmt(week.avgWeight)} kg` : "—"}
             </span>
-            {weightDeltaPct != null && (
-              <span className={`text-xs font-semibold ${
-                weightDeltaPct < 0 ? "text-green-400" : weightDeltaPct > 0 ? "text-red-400" : "text-muted-foreground"
-              }`}>
-                {weightDeltaPct > 0 ? "+" : ""}{weightDeltaPct.toFixed(2)}%
-              </span>
-            )}
+            <span className={`text-xs font-semibold ${
+              weightDeltaPct == null ? "invisible" :
+              weightDeltaPct < 0 ? "text-green-400" : weightDeltaPct > 0 ? "text-red-400" : "text-muted-foreground"
+            }`}>
+              {weightDeltaPct != null ? `${weightDeltaPct > 0 ? "+" : ""}${weightDeltaPct.toFixed(2)}%` : "0.00%"}
+            </span>
           </div>
         </td>
 
