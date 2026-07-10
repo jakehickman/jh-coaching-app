@@ -887,11 +887,13 @@ function WorkoutMiniCalendar({
   selectedDate,
   onSelect,
   datesWithSessions,
+  sessionLabelsByDate,
   onMonthChange,
 }: {
   selectedDate: Date;
   onSelect: (d: Date) => void;
   datesWithSessions: Set<string>;
+  sessionLabelsByDate?: Map<string, string>;
   onMonthChange: (month: string) => void;
 }) {
   const [viewMonth, setViewMonth] = useState(() => {
@@ -971,15 +973,20 @@ function WorkoutMiniCalendar({
               disabled={isFuture}
               onClick={() => onSelect(cellDate)}
               className={cn(
-                'relative flex flex-col items-center justify-center h-9 rounded-lg text-sm transition-all',
+                'relative flex flex-col items-center justify-center h-9 sm:h-12 rounded-lg text-sm transition-all',
                 isFuture ? 'text-muted-foreground/20 cursor-not-allowed' :
                 isSelected ? 'bg-primary text-primary-foreground font-bold' :
                 isT ? 'border border-primary text-primary font-semibold' :
                 'text-foreground hover:bg-secondary'
               )}
             >
-              {dayNum}
-              {hasSession && !isSelected && (
+              <span className="text-[13px] leading-none">{dayNum}</span>
+              {hasSession && sessionLabelsByDate?.get(cellStr) && (
+                <span className="hidden sm:block text-[9px] leading-tight mt-0.5 max-w-full truncate px-0.5 font-medium" style={{ color: isSelected ? 'inherit' : 'var(--color-primary)' }}>
+                  {sessionLabelsByDate.get(cellStr)}
+                </span>
+              )}
+              {hasSession && !isSelected && !sessionLabelsByDate?.get(cellStr) && (
                 <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary/70" />
               )}
             </button>
@@ -1563,6 +1570,14 @@ function WorkoutLogTab() {
     for (const s of sessions as any[]) set.add(toLocalDateStr(s.sessionDate));
     return set;
   }, [sessions]);
+  const sessionLabelsByDate = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of sessions as any[]) {
+      const key = toLocalDateStr(s.sessionDate);
+      if (!map.has(key)) map.set(key, s.dayLabel);
+    }
+    return map;
+  }, [sessions]);
 
   const calSelectedDateStr = localDateStr(calSelectedDate);
   const sessionsForCalDay = useMemo(() => {
@@ -1582,6 +1597,7 @@ function WorkoutLogTab() {
           selectedDate={calSelectedDate}
           onSelect={setCalSelectedDate}
           datesWithSessions={datesWithSessions}
+          sessionLabelsByDate={sessionLabelsByDate}
           onMonthChange={() => {}}
         />
 
