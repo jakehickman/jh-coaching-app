@@ -44,6 +44,7 @@ import {
   cardioChangeLogs,
   CardioChangeEntry,
   TrainingDay,
+  TrainingExercise,
   checkInQuestions,
   checkInAnswers,
   CheckInQuestion,
@@ -883,15 +884,30 @@ export async function getMesoCycleReview(mesoId: number, userId: number) {
   interface DayReview {
     dayLabel: string;
     exercises: ExerciseReview[];
+    /** Exercise names in current program order for this day (empty if day not in program) */
+    programExerciseOrder: string[];
   }
 
   const dayReviews: DayReview[] = [];
+
+  // Build a map of day label -> current program exercise order
+  const programDays: TrainingDay[] = (program as any)?.days ?? [];
+  const programExOrderByDay: Record<string, string[]> = {};
+  for (const pd of programDays) {
+    programExOrderByDay[pd.name] = pd.exercises.map((e: TrainingExercise) => e.name);
+  }
 
   for (const dayLabel of sortedDayLabels) {
     const daySessions = sessionEntries.filter(s =>
       s.dayLabel === dayLabel ||
       dayOrder.some(d => s.dayLabel.startsWith(d) && dayLabel.startsWith(d))
     );
+
+    // Current program exercise order for this day
+    const matchedProgramDay = Object.keys(programExOrderByDay).find(k =>
+      k === dayLabel || dayLabel.startsWith(k) || k.startsWith(dayLabel)
+    );
+    const programExerciseOrder: string[] = matchedProgramDay ? programExOrderByDay[matchedProgramDay] : [];
 
     // Collect all exercise names seen in this day across all microcycles
     const exNames: string[] = [];
@@ -934,7 +950,7 @@ export async function getMesoCycleReview(mesoId: number, userId: number) {
       return { exerciseName: exName, microcycles };
     });
 
-    dayReviews.push({ dayLabel, exercises: exerciseReviews });
+    dayReviews.push({ dayLabel, exercises: exerciseReviews, programExerciseOrder });
   }
 
   return {

@@ -25,6 +25,7 @@ interface ExerciseReview {
 interface DayReview {
   dayLabel: string;
   exercises: ExerciseReview[];
+  programExerciseOrder?: string[];
 }
 
 interface ReviewData {
@@ -181,14 +182,26 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                 <td className="py-2 px-2 bg-muted/20 sticky right-[60px] z-10 border-l border-border/30" />
                 <td className="py-2 px-2 bg-muted/20 sticky right-0 z-10" />
               </tr>
-              {day.exercises.map((ex, ei) => (
-                <tr
-                  key={`ex-${di}-${ei}`}
-                  className="border-t border-border/30 hover:bg-muted/10 transition-colors"
-                >
-                  <td className="py-2.5 px-3 font-medium sticky left-0 bg-background z-10 max-w-[176px] truncate">
-                    {ex.exerciseName}
-                  </td>
+              {(() => {
+                const order = day.programExerciseOrder ?? [];
+                // Active: exercises in current program order
+                const inProgram: ExerciseReview[] = order.length > 0
+                  ? order.map(name => day.exercises.find(e => e.exerciseName === name)).filter(Boolean) as ExerciseReview[]
+                  : day.exercises;
+                // Removed: exercises that were logged but are no longer in the current program
+                const notInProgram: ExerciseReview[] = order.length > 0
+                  ? day.exercises.filter(e => !order.includes(e.exerciseName))
+                  : [];
+                return (
+                  <>
+                    {inProgram.map((ex, ei) => (
+                      <tr
+                        key={`ex-${di}-${ei}`}
+                        className="border-t border-border/30 hover:bg-muted/10 transition-colors"
+                      >
+                        <td className="py-2.5 px-3 font-medium sticky left-0 bg-background z-10 max-w-[176px] truncate">
+                          {ex.exerciseName}
+                        </td>
                   {cols.map(micro => {
                     const entry = ex.microcycles.find(m => m.microNum === micro);
                     const prevEntry = micro > 1 ? ex.microcycles.find(m => m.microNum === micro - 1) : undefined;
@@ -254,8 +267,98 @@ function MesocycleReviewTable({ review }: { review: ReviewData }) {
                       </td>
                     );
                   })()}
-                </tr>
-              ))}
+                      </tr>
+                    ))}
+                    {notInProgram.length > 0 && (
+                      <>
+                        <tr key={`removed-header-${di}`} className="border-t border-border/40">
+                          <td
+                            colSpan={TOTAL_MICROS + 3}
+                            className="py-1.5 px-3 text-xs text-muted-foreground/50 italic bg-muted/10"
+                          >
+                            Removed
+                          </td>
+                        </tr>
+                        {notInProgram.map((ex, ei) => (
+                          <tr
+                            key={`removed-ex-${di}-${ei}`}
+                            className="border-t border-border/20 hover:bg-muted/10 transition-colors opacity-60"
+                          >
+                            <td className="py-2.5 px-3 font-medium sticky left-0 bg-background z-10 max-w-[176px] truncate text-muted-foreground">
+                              {ex.exerciseName}
+                            </td>
+                  {cols.map(micro => {
+                    const entry = ex.microcycles.find(m => m.microNum === micro);
+                    const prevEntry = micro > 1 ? ex.microcycles.find(m => m.microNum === micro - 1) : undefined;
+                    const hasData = entry?.topSet != null;
+                    const bg = cellBg(entry, prevEntry);
+                    return (
+                      <td
+                        key={micro}
+                        className="py-2.5 px-2 text-center relative group/cell transition-colors"
+                        title={entry?.machinePreset ?? undefined}
+                        style={{ background: bg }}
+                      >
+                        {entry ? (
+                          <div className={`text-xs leading-tight ${hasData ? "text-foreground" : "text-muted-foreground/40"}`}>
+                            <div className="font-medium">{formatTopSet(entry)}</div>
+                            {hasData && (
+                              <div className="text-muted-foreground/60 text-xs mt-0.5">
+                                {formatSets(entry)}
+                              </div>
+                            )}
+                            {entry.machinePreset && (
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 hidden group-hover/cell:block pointer-events-none">
+                                <div className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs shadow-lg"
+                                  style={{ background: 'var(--popover)', border: '1px solid var(--border)', color: 'var(--popover-foreground)' }}>
+                                  {entry.machinePreset}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground/30 text-xs">—</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                  {/* Δ Weight column */}
+                  {(() => {
+                    const d = weightDelta(ex.microcycles);
+                    return (
+                      <td className="py-2.5 px-2 text-center sticky right-[60px] bg-background z-10 border-l border-border/30">
+                        {d ? (
+                          <span className={`text-xs font-semibold ${
+                            d.positive ? "text-green-400" : d.negative ? "text-red-400" : "text-muted-foreground/50"
+                          }`}>{d.value}</span>
+                        ) : (
+                          <span className="text-muted-foreground/20 text-xs">—</span>
+                        )}
+                      </td>
+                    );
+                  })()}
+                  {/* Δ Reps column */}
+                  {(() => {
+                    const d = repsDelta(ex.microcycles);
+                    return (
+                      <td className="py-2.5 px-2 text-center sticky right-0 bg-background z-10">
+                        {d ? (
+                          <span className={`text-xs font-semibold ${
+                            d.positive ? "text-green-400" : d.negative ? "text-red-400" : "text-muted-foreground/50"
+                          }`}>{d.value}</span>
+                        ) : (
+                          <span className="text-muted-foreground/20 text-xs">—</span>
+                        )}
+                      </td>
+                    );
+                  })()}
+                          </tr>
+                        ))}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </React.Fragment>
           ))}
         </tbody>
