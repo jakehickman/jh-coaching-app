@@ -967,55 +967,66 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         </div>
       )}
 
-      {/* ── Row 1: Ideal Zone (left) + Combined stats (right) ── */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Ideal Zone — compact variant */}
-        <IdealZoneCard insights={insights} days={days} compact />
-
-        {/* Combined stats: Meals / Avg Hunger / Avg Fullness */}
-        <Card className="flex items-stretch">
-          {/* Meals */}
-          <div className="flex-1 flex flex-col justify-center gap-1.5 px-4 py-3">
-            <SectionLabel>Meals</SectionLabel>
-            <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
-              {insights.totalMeals}
-            </span>
+      {/* ── Row 1: Full-width summary strip ── */}
+      <Card className="flex items-stretch p-0 overflow-hidden">
+        {/* Ideal Zone */}
+        <div className="flex-1 flex flex-col justify-center gap-1 px-5 py-4">
+          <div className="flex items-center gap-1.5">
+            <SectionLabel>Ideal Zone</SectionLabel>
+            <div className="relative group">
+              <Info className="w-3 h-3 cursor-pointer" style={{ color: C.muted }} />
+              <div className="absolute left-0 top-5 z-10 hidden group-hover:block w-52 rounded-lg px-3 py-2 text-xs leading-relaxed shadow-lg"
+                style={{ background: C.surfaceVariant, border: `1px solid ${C.border}`, color: C.muted }}>
+                % of meals where hunger (3–4) and fullness (6–7) were both in range
+              </div>
+            </div>
           </div>
-          {/* Divider */}
-          <div className="w-px self-stretch my-3" style={{ background: C.border }} />
-          {/* Avg Hunger */}
-          <div className="flex-1 flex flex-col justify-center gap-1.5 px-4 py-3">
-            <SectionLabel>Avg Hunger</SectionLabel>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
+              {insights.idealZonePct != null ? `${insights.idealZonePct}%` : "—"}
+            </span>
+            {insights.idealZonePct != null && insights.prevIdealZonePct != null && (
+              <TrendBadge current={insights.idealZonePct} previous={insights.prevIdealZonePct} higherIsBetter threshold={2} />
+            )}
+          </div>
+        </div>
+        <div className="w-px self-stretch my-4" style={{ background: C.border }} />
+        {/* Meals */}
+        <div className="flex-1 flex flex-col justify-center gap-1 px-5 py-4">
+          <SectionLabel>Meals</SectionLabel>
+          <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
+            {insights.totalMeals}
+          </span>
+        </div>
+        <div className="w-px self-stretch my-4" style={{ background: C.border }} />
+        {/* Avg Hunger */}
+        <div className="flex-1 flex flex-col justify-center gap-1 px-5 py-4">
+          <SectionLabel>Avg Hunger</SectionLabel>
+          <div className="flex items-baseline gap-1.5">
             <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
               {insights.avgHunger ?? "—"}
             </span>
-            <TrendBadge
-              current={insights.avgHunger}
-              previous={insights.prevAvgHunger}
-              higherIsBetter={false}
-              threshold={0.15}
-            />
+            <TrendBadge current={insights.avgHunger} previous={insights.prevAvgHunger} higherIsBetter={false} threshold={0.15} />
           </div>
-          {/* Divider */}
-          <div className="w-px self-stretch my-3" style={{ background: C.border }} />
-          {/* Avg Fullness */}
-          <div className="flex-1 flex flex-col justify-center gap-1.5 px-4 py-3">
-            <SectionLabel>Avg Fullness</SectionLabel>
+        </div>
+        <div className="w-px self-stretch my-4" style={{ background: C.border }} />
+        {/* Avg Fullness */}
+        <div className="flex-1 flex flex-col justify-center gap-1 px-5 py-4">
+          <SectionLabel>Avg Fullness</SectionLabel>
+          <div className="flex items-baseline gap-1.5">
             <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>
               {insights.avgFullness ?? "—"}
             </span>
-            <TrendBadge
-              current={insights.avgFullness}
-              previous={insights.prevAvgFullness}
-              higherIsBetter={true}
-              threshold={0.15}
-            />
+            <TrendBadge current={insights.avgFullness} previous={insights.prevAvgFullness} higherIsBetter threshold={0.15} />
           </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
 
-      {/* ── Row 2: Scatter + Treats + Meal Timing (3-col) ── */}
+      {/* ── Row 2: Ideal Zone detail + Scatter + Treats + Meal Timing (3-col) ── */}
       <div className="grid grid-cols-3 gap-3">
+        {/* Ideal Zone detail */}
+        <IdealZoneCard insights={insights} days={days} />
+
         {/* Scatter */}
         <Card className="flex flex-col gap-3">
           <SectionLabel>Hunger vs. Fullness</SectionLabel>
@@ -1047,23 +1058,23 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           </div>
           <TreatsChart treatsByWeek={days === 7 ? insights.treatsByWeek : insights.treatsByWeek.slice(-4)} days={days} />
         </Card>
-
-        {/* Meal Timing */}
-        {insights.hasTimingData ? (
-          <MealTimingCard
-            slots={insights.slots}
-            consistencyScore={insights.consistencyScore ?? null}
-            totalForConsistency={insights.totalForConsistency}
-            showInfo={showTimingInfo}
-            onToggleInfo={() => setShowTimingInfo(v => !v)}
-          />
-        ) : (
-          <Card>
-            <SectionLabel>Meal Timing</SectionLabel>
-            <p className="text-[12px] mt-2" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
-          </Card>
-        )}
       </div>
+
+      {/* ── Row 3: Meal Timing (full width) ── */}
+      {insights.hasTimingData ? (
+        <MealTimingCard
+          slots={insights.slots}
+          consistencyScore={insights.consistencyScore ?? null}
+          totalForConsistency={insights.totalForConsistency}
+          showInfo={showTimingInfo}
+          onToggleInfo={() => setShowTimingInfo(v => !v)}
+        />
+      ) : (
+        <Card>
+          <SectionLabel>Meal Timing</SectionLabel>
+          <p className="text-[12px] mt-2" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
+        </Card>
+      )}
 
       {/* ── Row 3: Habit Performance ── */}
       <CoachHabitsPanel clientId={clientId} periodDays={days} />
