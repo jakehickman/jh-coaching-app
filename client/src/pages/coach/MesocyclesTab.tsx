@@ -86,9 +86,10 @@ function repsDelta(entries: TopSetEntry[]): { value: string; positive: boolean; 
   const last = logged[logged.length - 1];
   // Only suppress if both entries have a preset and they differ (incomparable equipment)
   if (first.machinePreset && last.machinePreset && first.machinePreset !== last.machinePreset) return null;
-  const fr = first.topSet?.reps;
-  const lr = last.topSet?.reps;
-  if (fr == null || lr == null) return null;
+  // Treat null reps as 0 so a rep increase still shows even if one entry has no rep count
+  const fr = first.topSet?.reps ?? 0;
+  const lr = last.topSet?.reps ?? 0;
+  if (fr === 0 && lr === 0) return null; // no rep data at all
   const diff = lr - fr;
   return { value: `${diff > 0 ? "+" : ""}${diff}`, positive: diff > 0, negative: diff < 0 };
 }
