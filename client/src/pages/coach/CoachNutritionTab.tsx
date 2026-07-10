@@ -298,6 +298,7 @@ function IdealZoneSparkline({
 function IdealZoneCard({
   insights,
   days,
+  compact = false,
 }: {
   insights: {
     idealZonePct: number | null;
@@ -308,6 +309,7 @@ function IdealZoneCard({
     weeklyIdealZone?: { weekStart: string; pct: number | null; meals: number }[];
   };
   days: number;
+  compact?: boolean;
 }) {
   const {
     idealZonePct,
@@ -320,9 +322,9 @@ function IdealZoneCard({
 
   if (idealZonePct == null) {
     return (
-      <Card>
+      <Card className="flex flex-col gap-1.5">
         <SectionLabel>Ideal Zone</SectionLabel>
-        <p className="text-[13px] mt-3" style={{ color: C.muted }}>No rated meals in this period.</p>
+        <p className="text-[12px] mt-1" style={{ color: C.muted }}>No rated meals.</p>
       </Card>
     );
   }
@@ -332,7 +334,53 @@ function IdealZoneCard({
   const accentColor = scoreColor(idealZonePct);
   const trendCol = trendColor(trend);
 
-
+  if (compact) {
+    return (
+      <Card className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <SectionLabel>Ideal Zone</SectionLabel>
+          <div className="relative group">
+            <Info className="w-3 h-3 cursor-pointer" style={{ color: C.muted }} />
+            <div className="absolute left-0 top-5 z-10 hidden group-hover:block w-52 rounded-lg px-3 py-2 text-xs leading-relaxed shadow-lg"
+              style={{ background: "#1A2020", border: `1px solid ${C.border}`, color: C.muted }}>
+              % of meals where hunger (3–4) and fullness (6–7) were both in range
+            </div>
+          </div>
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-bold leading-none" style={{ fontSize: 28, color: C.fg }}>{idealZonePct}%</span>
+          {delta != null && (
+            <span className="inline-flex items-center gap-0.5 text-[11px] font-medium" style={{ color: trendCol }}>
+              {trend === "up" ? <ArrowUp className="w-3 h-3" /> : trend === "down" ? <ArrowDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+              {trend === "flat" ? "flat" : `${delta! > 0 ? "+" : ""}${delta}%`}
+            </span>
+          )}
+        </div>
+        {(hungerInZonePct != null || fullnessInZonePct != null) && (
+          <div className="space-y-1.5 pt-1">
+            {hungerInZonePct != null && (
+              <div>
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span style={{ color: C.muted }}>Hunger</span>
+                  <span style={{ color: C.fg }}>{hungerInZonePct}%</span>
+                </div>
+                <ProgressBar value={hungerInZonePct} color={scoreColor(hungerInZonePct)} />
+              </div>
+            )}
+            {fullnessInZonePct != null && (
+              <div>
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span style={{ color: C.muted }}>Fullness</span>
+                  <span style={{ color: C.fg }}>{fullnessInZonePct}%</span>
+                </div>
+                <ProgressBar value={fullnessInZonePct} color={scoreColor(fullnessInZonePct)} />
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -919,8 +967,11 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         </div>
       )}
 
-      {/* ── Row 1: 3-column stat cards ── */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* ── Row 1: Ideal Zone + Meals + Avg Hunger + Avg Fullness (4-col) ── */}
+      <div className="grid grid-cols-4 gap-3">
+        {/* Ideal Zone — compact variant */}
+        <IdealZoneCard insights={insights} days={days} compact />
+
         {/* Meals Logged */}
         <Card className="flex flex-col gap-1.5">
           <SectionLabel>Meals</SectionLabel>
@@ -929,6 +980,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           </span>
           <div className="h-4" />
         </Card>
+
         {/* Avg Hunger */}
         <Card className="flex flex-col gap-1.5">
           <SectionLabel>Avg Hunger</SectionLabel>
@@ -944,6 +996,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
             />
           </div>
         </Card>
+
         {/* Avg Fullness */}
         <Card className="flex flex-col gap-1.5">
           <SectionLabel>Avg Fullness</SectionLabel>
@@ -961,7 +1014,7 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         </Card>
       </div>
 
-      {/* ── Row 2: Scatter + Treats + Ideal Zone (3-col) ── */}
+      {/* ── Row 2: Scatter + Treats + Meal Timing (3-col) ── */}
       <div className="grid grid-cols-3 gap-3">
         {/* Scatter */}
         <Card className="flex flex-col gap-3">
@@ -995,27 +1048,24 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
           <TreatsChart treatsByWeek={days === 7 ? insights.treatsByWeek : insights.treatsByWeek.slice(-4)} days={days} />
         </Card>
 
-        {/* Ideal Zone */}
-        <IdealZoneCard insights={insights} days={days} />
+        {/* Meal Timing */}
+        {insights.hasTimingData ? (
+          <MealTimingCard
+            slots={insights.slots}
+            consistencyScore={insights.consistencyScore ?? null}
+            totalForConsistency={insights.totalForConsistency}
+            showInfo={showTimingInfo}
+            onToggleInfo={() => setShowTimingInfo(v => !v)}
+          />
+        ) : (
+          <Card>
+            <SectionLabel>Meal Timing</SectionLabel>
+            <p className="text-[12px] mt-2" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
+          </Card>
+        )}
       </div>
 
-      {/* ── Row 3: Meal Timing (full width) ── */}
-      {insights.hasTimingData ? (
-        <MealTimingCard
-          slots={insights.slots}
-          consistencyScore={insights.consistencyScore ?? null}
-          totalForConsistency={insights.totalForConsistency}
-          showInfo={showTimingInfo}
-          onToggleInfo={() => setShowTimingInfo(v => !v)}
-        />
-      ) : (
-        <Card>
-          <SectionLabel>Meal Timing</SectionLabel>
-          <p className="text-[12px] mt-2" style={{ color: C.muted }}>Not enough data to identify meal timing patterns.</p>
-        </Card>
-      )}
-
-      {/* ── Row 4: Habit Performance ── */}
+      {/* ── Row 3: Habit Performance ── */}
       <CoachHabitsPanel clientId={clientId} periodDays={days} />
     </div>
   );
