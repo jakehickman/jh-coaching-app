@@ -1601,7 +1601,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
               <button
                 key={idx}
                 className={[
-                  'relative h-16 flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors',
+                  'relative aspect-square flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors',
                   sess ? 'cursor-pointer' : 'cursor-default',
                 ].join(' ')}
                 style={{
