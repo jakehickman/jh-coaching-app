@@ -1613,7 +1613,12 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
               >
                 <span className={isToday ? 'font-bold' : ''}>{cell.day}</span>
                 {sess && (
-                  <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${dotColor}`} />
+                  <span
+                    className="text-[9px] leading-tight font-semibold truncate max-w-full px-0.5 mt-0.5"
+                    style={{ color: isSelected ? '#52B788' : hasIncomplete ? '#fbbf24' : '#52B788', opacity: cell.otherMonth ? 0.4 : 1 }}
+                  >
+                    {sess.dayLabel}
+                  </span>
                 )}
               </button>
             );
