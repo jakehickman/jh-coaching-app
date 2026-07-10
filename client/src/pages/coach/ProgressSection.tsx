@@ -1731,6 +1731,48 @@ function CoachPresetEditor({ clientId, exerciseName, onClose }: { clientId: numb
   );
 }
 
+function ProgressTabWrapper({
+  workoutSessions, exerciseLib, clientId, initialExercise
+}: {
+  workoutSessions: any[];
+  exerciseLib: any[];
+  clientId: number;
+  initialExercise?: string | null;
+}) {
+  const [view, setView] = useState<'exercise-trends' | 'mesocycle-review'>('exercise-trends');
+  return (
+    <div>
+      <div className="flex gap-1 mb-4">
+        <button
+          onClick={() => setView('exercise-trends')}
+          className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+            view === 'exercise-trends'
+              ? 'bg-primary text-primary-foreground font-medium'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+          }`}
+        >
+          Exercise Trends
+        </button>
+        <button
+          onClick={() => setView('mesocycle-review')}
+          className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+            view === 'mesocycle-review'
+              ? 'bg-primary text-primary-foreground font-medium'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+          }`}
+        >
+          Mesocycle Review
+        </button>
+      </div>
+      {view === 'exercise-trends' ? (
+        <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={clientId} initialExercise={initialExercise} />
+      ) : (
+        <MesocyclesTab clientId={clientId} />
+      )}
+    </div>
+  );
+}
+
 function ExerciseProgressTab({
   workoutSessions, exerciseLib, clientId, initialExercise
 }: {
@@ -2415,10 +2457,9 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
               <div className="overflow-x-auto mb-4">
                 <TabsList className="flex-nowrap min-w-max">
                   <TabsTrigger value="session-log">Session Log</TabsTrigger>
-                  <TabsTrigger value="exercise-progress">Exercise Progress</TabsTrigger>
+                  <TabsTrigger value="exercise-progress">Progress</TabsTrigger>
                   <TabsTrigger value="program">Program Builder</TabsTrigger>
                   <TabsTrigger value="cardio">Cardio &amp; Activity</TabsTrigger>
-                  <TabsTrigger value="mesocycles">Mesocycles</TabsTrigger>
                 </TabsList>
               </div>
               <TabsContent value="session-log">
@@ -2434,10 +2475,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
                 />
               </TabsContent>
               <TabsContent value="exercise-progress">
-                <ExerciseProgressTab workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} initialExercise={jumpToExercise} />
-              </TabsContent>
-              <TabsContent value="mesocycles">
-                <MesocyclesTab clientId={selectedUserId!} />
+                <ProgressTabWrapper workoutSessions={workoutSessions} exerciseLib={exerciseLib} clientId={selectedUserId!} initialExercise={jumpToExercise} />
               </TabsContent>
               <TabsContent value="program">
                 <TrainingSection fixedClientId={selectedUserId!} />
