@@ -1497,7 +1497,8 @@ export async function listAssignedHabitsForClient(clientId: number) {
     .select({ habit: habits, assignment: habitAssignments })
     .from(habitAssignments)
     .innerJoin(habits, eq(habitAssignments.habitId, habits.id))
-    .where(and(eq(habitAssignments.clientId, clientId), eq(habitAssignments.active, true), eq(habits.deleted, false)));
+    .where(and(eq(habitAssignments.clientId, clientId), eq(habitAssignments.active, true), eq(habits.deleted, false)))
+    .orderBy(habits.sortOrder, habits.createdAt);
   return rows.map(r => ({ ...r.habit, assignedAt: r.assignment.assignedAt }));
 }
 
@@ -1513,7 +1514,8 @@ export async function listAssignedPerMealHabitsForClient(clientId: number) {
       eq(habitAssignments.active, true),
       eq(habits.deleted, false),
       eq(habits.scope, 'per_meal')
-    ));
+    ))
+    .orderBy(habits.sortOrder, habits.createdAt);
   return rows.map(r => ({ ...r.habit, assignedAt: r.assignment.assignedAt }));
 }
 
