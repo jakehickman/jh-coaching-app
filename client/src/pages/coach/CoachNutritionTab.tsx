@@ -867,7 +867,7 @@ function MealLogView({ clientId }: { clientId: number }) {
                             )}
                           </div>
                           {meal.name && <p className="text-[13px] font-medium truncate" style={{ color: C.fg }}>{meal.name}</p>}
-                          {meal.portionSize && <p className="text-[12px] capitalize" style={{ color: C.muted }}>{meal.portionSize} portion</p>}
+                          {meal.portionSize && <p className="text-[12px] capitalize" style={{ color: C.muted }}>{meal.portionSize}</p>}
                           {meal.mealType === "meal" && (h != null || f != null) && (
                             <div className="flex items-center gap-4 mt-1.5">
                               {h != null && (

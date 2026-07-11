@@ -1129,7 +1129,7 @@ function MealRow({
             <span className="text-xs text-muted-foreground">{time}</span>
           </div>
           {meal.name && <p className="text-sm font-medium text-foreground truncate">{meal.name}</p>}
-          {meal.portionSize && <p className="text-xs text-muted-foreground capitalize">{meal.portionSize} portion</p>}
+          {meal.portionSize && <p className="text-xs text-muted-foreground capitalize">{meal.portionSize}</p>}
           {isMeal ? (
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               {h != null ? (
