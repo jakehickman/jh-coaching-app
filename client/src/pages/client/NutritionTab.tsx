@@ -142,11 +142,11 @@ function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }>
 
 function ScaleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-sm mx-auto flex flex-col max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Hunger &amp; Fullness Scale</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
+      <SheetContent side="bottom" className="max-h-[85vh] flex flex-col rounded-t-2xl px-4 pb-8">
+        <SheetHeader className="px-0 pb-2">
+          <SheetTitle>Hunger &amp; Fullness Scale</SheetTitle>
+        </SheetHeader>
         <p className="text-sm text-muted-foreground -mt-1">Aim to start eating at 3–4 and stop at 6–7.</p>
         <div className="space-y-0.5 text-sm overflow-y-auto flex-1 mt-2">
           {SCALE.map((s, i) => {
@@ -164,8 +164,8 @@ function ScaleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
           })}
         </div>
         <Button className="w-full mt-4" onClick={onClose}>Got it</Button>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
 
