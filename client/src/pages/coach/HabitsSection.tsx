@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { Plus, Pencil, Trash2, CheckSquare, Check, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckSquare, Check, GripVertical, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionLabel } from "./shared";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -348,12 +348,14 @@ function SortableHabitRow({
   setEditingId,
   onEdit,
   onDelete,
+  reorderMode,
 }: {
   habit: any;
   editingId: number | null;
   setEditingId: (id: number | null) => void;
   onEdit: (id: number, data: { name: string; scope: HabitScope; frequency: "daily" | "x_per_week"; targetDays: number }) => void;
   onDelete: (id: number, name: string) => void;
+  reorderMode: boolean;
 }) {
   const {
     attributes,
@@ -391,16 +393,18 @@ function SortableHabitRow({
         </div>
       ) : (
         <div className="flex items-center justify-between p-4 gap-2">
-          {/* Drag handle */}
-          <button
-            {...attributes}
-            {...listeners}
-            className="p-1 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing touch-none shrink-0"
-            tabIndex={-1}
-            aria-label="Drag to reorder"
-          >
-            <GripVertical size={16} />
-          </button>
+          {/* Drag handle — only visible in reorder mode */}
+          {reorderMode && (
+            <button
+              {...attributes}
+              {...listeners}
+              className="p-1 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing touch-none shrink-0"
+              tabIndex={-1}
+              aria-label="Drag to reorder"
+            >
+              <GripVertical size={16} />
+            </button>
+          )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold">{habit.name}</p>
             <p className="text-xs text-muted-foreground">
@@ -433,6 +437,7 @@ function HabitLibraryColumn({
   onDelete,
   onReorder,
 }: {
+  // reorderMode is controlled internally
   title: string;
   habits: any[];
   isLoading: boolean;
@@ -445,6 +450,7 @@ function HabitLibraryColumn({
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [addPending, setAddPending] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
   // Local optimistic order — null means use server order
   const [localOrder, setLocalOrder] = useState<any[] | null>(null);
 
@@ -473,9 +479,28 @@ function HabitLibraryColumn({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
-        <Button size="sm" variant="ghost" onClick={() => { setShowAdd(v => !v); setEditingId(null); }} className="h-7 px-2 text-xs gap-1">
-          <Plus size={12} /> Add
-        </Button>
+        <div className="flex items-center gap-1">
+          {habits.length > 1 && (
+            <Button
+              size="sm"
+              variant={reorderMode ? "default" : "ghost"}
+              onClick={() => {
+                setReorderMode(v => !v);
+                setShowAdd(false);
+                setEditingId(null);
+              }}
+              className="h-7 px-2 text-xs gap-1"
+            >
+              <ArrowUpDown size={12} />
+              {reorderMode ? "Done" : "Reorder"}
+            </Button>
+          )}
+          {!reorderMode && (
+            <Button size="sm" variant="ghost" onClick={() => { setShowAdd(v => !v); setEditingId(null); }} className="h-7 px-2 text-xs gap-1">
+              <Plus size={12} /> Add
+            </Button>
+          )}
+        </div>
       </div>
 
       {showAdd && (
@@ -510,10 +535,11 @@ function HabitLibraryColumn({
                 <SortableHabitRow
                   key={h.id}
                   habit={h}
-                  editingId={editingId}
-                  setEditingId={setEditingId}
+                  editingId={reorderMode ? null : editingId}
+                  setEditingId={reorderMode ? () => {} : setEditingId}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  reorderMode={reorderMode}
                 />
               ))}
             </div>
