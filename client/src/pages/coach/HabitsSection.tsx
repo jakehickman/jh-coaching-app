@@ -1,9 +1,24 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { Plus, Pencil, Trash2, CheckSquare, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckSquare, Check, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionLabel } from "./shared";
 import { useConfirm } from "@/components/ConfirmDialog";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -325,16 +340,98 @@ function HabitForm({
   );
 }
 
+// ─── SortableHabitRow ─────────────────────────────────────────────────────────
+
+function SortableHabitRow({
+  habit,
+  editingId,
+  setEditingId,
+  onEdit,
+  onDelete,
+}: {
+  habit: any;
+  editingId: number | null;
+  setEditingId: (id: number | null) => void;
+  onEdit: (id: number, data: { name: string; scope: HabitScope; frequency: "daily" | "x_per_week"; targetDays: number }) => void;
+  onDelete: (id: number, name: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: habit.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const [editPending, setEditPending] = useState(false);
+
+  return (
+    <div ref={setNodeRef} style={style} className="bg-card border border-border rounded-xl overflow-hidden">
+      {editingId === habit.id ? (
+        <div className="p-4">
+          <HabitForm
+            title="Edit Habit"
+            initial={{ name: habit.name, scope: (habit.scope ?? "daily") as HabitScope }}
+            isPending={editPending}
+            onCancel={() => setEditingId(null)}
+            onSave={(data) => {
+              setEditPending(true);
+              onEdit(habit.id, data);
+              setEditingId(null);
+              setEditPending(false);
+            }}
+          />
+        </div>
+      ) : (
+        <div className="flex items-center justify-between p-4 gap-2">
+          {/* Drag handle */}
+          <button
+            {...attributes}
+            {...listeners}
+            className="p-1 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing touch-none shrink-0"
+            tabIndex={-1}
+            aria-label="Drag to reorder"
+          >
+            <GripVertical size={16} />
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">{habit.name}</p>
+            <p className="text-xs text-muted-foreground">
+              {habit.scope === "per_meal" ? "Per meal" : (habit.frequency === "daily" ? "Daily" : `${habit.targetDays}x/week`)}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button onClick={() => setEditingId(habit.id)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded">
+              <Pencil size={14} />
+            </button>
+            <button onClick={() => onDelete(habit.id, habit.name)} className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors rounded">
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── HabitLibraryColumn (one column of the two-column layout) ────────────────
 
 function HabitLibraryColumn({
   title,
-  habits,
+  habits: serverHabits,
   isLoading,
   scope,
   onAdd,
   onEdit,
   onDelete,
+  onReorder,
 }: {
   title: string;
   habits: any[];
@@ -343,11 +440,34 @@ function HabitLibraryColumn({
   onAdd: (data: { name: string; scope: HabitScope; frequency: "daily" | "x_per_week"; targetDays: number }) => void;
   onEdit: (id: number, data: { name: string; scope: HabitScope; frequency: "daily" | "x_per_week"; targetDays: number }) => void;
   onDelete: (id: number, name: string) => void;
+  onReorder: (items: { id: number; sortOrder: number }[]) => void;
 }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [addPending, setAddPending] = useState(false);
-  const [editPending, setEditPending] = useState(false);
+  // Local optimistic order — null means use server order
+  const [localOrder, setLocalOrder] = useState<any[] | null>(null);
+
+  const habits = localOrder ?? serverHabits;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = habits.findIndex((h: any) => h.id === active.id);
+    const newIndex = habits.findIndex((h: any) => h.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(habits, oldIndex, newIndex);
+    setLocalOrder(reordered);
+
+    // Persist new order
+    onReorder(reordered.map((h: any, i: number) => ({ id: h.id, sortOrder: i })));
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -383,45 +503,22 @@ function HabitLibraryColumn({
           <p className="text-xs">No {title.toLowerCase()} habits yet</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {habits.map((h: any) => (
-            <div key={h.id} className="bg-card border border-border rounded-xl overflow-hidden">
-              {editingId === h.id ? (
-                <div className="p-4">
-                  <HabitForm
-                    title="Edit Habit"
-                    initial={{ name: h.name, scope: (h.scope ?? "daily") as HabitScope }}
-                    isPending={editPending}
-                    onCancel={() => setEditingId(null)}
-                    onSave={(data) => {
-                      setEditPending(true);
-                      onEdit(h.id, data);
-                      setEditingId(null);
-                      setEditPending(false);
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="text-sm font-semibold">{h.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {h.scope === "per_meal" ? "Per meal" : (h.frequency === "daily" ? "Daily" : `${h.targetDays}x/week`)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => setEditingId(h.id)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded">
-                      <Pencil size={14} />
-                    </button>
-                    <button onClick={() => onDelete(h.id, h.name)} className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors rounded">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={habits.map((h: any) => h.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {habits.map((h: any) => (
+                <SortableHabitRow
+                  key={h.id}
+                  habit={h}
+                  editingId={editingId}
+                  setEditingId={setEditingId}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );
@@ -443,6 +540,7 @@ export default function HabitsSection() {
   const deleteMut = trpc.habits.delete.useMutation({
     onSuccess: () => utils.habits.list.invalidate(),
   });
+  const reorderMut = trpc.habits.reorder.useMutation();
 
   const dailyHabits = (habits as any[]).filter(h => h.scope !== "per_meal");
   const mealHabits = (habits as any[]).filter(h => h.scope === "per_meal");
@@ -464,6 +562,7 @@ export default function HabitsSection() {
           onAdd={(data) => createMut.mutate({ ...data })}
           onEdit={(id, data) => updateMut.mutate({ id, ...data })}
           onDelete={handleDelete}
+          onReorder={(items) => reorderMut.mutate({ items })}
         />
         <HabitLibraryColumn
           title="Per-Meal Habits"
@@ -473,6 +572,7 @@ export default function HabitsSection() {
           onAdd={(data) => createMut.mutate({ ...data })}
           onEdit={(id, data) => updateMut.mutate({ id, ...data })}
           onDelete={handleDelete}
+          onReorder={(items) => reorderMut.mutate({ items })}
         />
       </div>
     </div>

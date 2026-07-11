@@ -1413,7 +1413,17 @@ export async function listHabitsByCoach(coachId: number) {
     .select()
     .from(habits)
     .where(and(eq(habits.coachId, coachId), eq(habits.deleted, false)))
-    .orderBy(habits.createdAt);
+    .orderBy(habits.sortOrder, habits.createdAt);
+}
+
+export async function reorderHabits(coachId: number, items: { id: number; sortOrder: number }[]) {
+  const db = await getDb();
+  if (!db || items.length === 0) return;
+  await Promise.all(
+    items.map(({ id, sortOrder }) =>
+      db.update(habits).set({ sortOrder }).where(and(eq(habits.id, id), eq(habits.coachId, coachId)))
+    )
+  );
 }
 
 export async function createHabit(data: Omit<InsertHabit, "id" | "createdAt" | "updatedAt" | "deleted">) {

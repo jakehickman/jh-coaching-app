@@ -416,6 +416,7 @@ export const habits = mysqlTable("habits", {
   frequency: mysqlEnum("frequency", ["daily", "x_per_week"]).notNull().default("daily"),
   targetDays: int("targetDays").default(7), // 1-7, used when frequency = x_per_week
   startDate: date("startDate"),
+  sortOrder: int("sortOrder").default(0).notNull(),
   deleted: boolean("deleted").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

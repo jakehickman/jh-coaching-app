@@ -84,4 +84,9 @@ export const habitsRouter = router({
   unassignHabit: adminProcedure
     .input(z.object({ habitId: z.number(), clientId: z.number() }))
     .mutation(({ input }) => db.removeHabitAssignment(input.habitId, input.clientId)),
+  reorder: adminProcedure
+    .input(z.object({
+      items: z.array(z.object({ id: z.number(), sortOrder: z.number() })),
+    }))
+    .mutation(({ ctx, input }) => db.reorderHabits(ctx.user.id, input.items)),
 });
