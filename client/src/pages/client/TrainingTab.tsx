@@ -1004,7 +1004,7 @@ interface SessionCardProps {
   selectDay: (day: string) => void;
 }
 function SessionCard({ s, viewAsUserId, deleteConfirmId, deleting, setDeleteConfirmId, setDeleting, deleteMutation, clearDraft, setSessionDate, selectDay }: SessionCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const dateStr = toLocalDateStr(s.sessionDate);
   const allExercises = (s.exercises as any[]).filter((ex: any) => {
     const sets = (ex.sets ?? []).filter((st: any) => st.completed || st.weight != null || st.reps != null);
