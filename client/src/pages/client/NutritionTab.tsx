@@ -17,12 +17,7 @@ import {
 } from "lucide-react";
 import { MdRestaurant } from "react-icons/md";
 import { FaCookieBite } from "react-icons/fa";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+
 import {
   Dialog,
   DialogContent,
@@ -141,14 +136,27 @@ function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }>
 // ─── Scale Reference Modal ────────────────────────────────────────────────────
 
 function ScaleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null;
   return (
-    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="bottom" className="max-h-[85vh] flex flex-col rounded-t-2xl px-4 pb-8">
-        <SheetHeader className="px-0 pb-2">
-          <SheetTitle>Hunger &amp; Fullness Scale</SheetTitle>
-        </SheetHeader>
-        <p className="text-sm text-muted-foreground -mt-1">Aim to start eating at 3–4 and stop at 6–7.</p>
-        <div className="space-y-0.5 text-sm overflow-y-auto flex-1 mt-2">
+    <div
+      className="fixed inset-0 z-[80] flex items-end justify-center"
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60" />
+      {/* Drawer */}
+      <div
+        className="relative w-full max-w-lg bg-card rounded-t-2xl px-4 pt-5 pb-8 flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-base font-semibold text-foreground">Hunger &amp; Fullness Scale</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
+            <X size={20} />
+          </button>
+        </div>
+        <p className="text-sm text-muted-foreground mb-3">Aim to start eating at 3–4 and stop at 6–7.</p>
+        <div className="space-y-0.5 text-sm overflow-y-auto flex-1">
           {SCALE.map((s, i) => {
             const n = i + 1;
             const isIdeal = (n >= 3 && n <= 4) || (n >= 6 && n <= 7);
@@ -164,8 +172,8 @@ function ScaleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
           })}
         </div>
         <Button className="w-full mt-4" onClick={onClose}>Got it</Button>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </div>
   );
 }
 
