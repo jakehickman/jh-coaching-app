@@ -64,6 +64,8 @@ import {
   HabitCompletion,
   MealHabitCompletion,
   mealLogs,
+  deviceTokens,
+  DeviceToken,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -2449,4 +2451,30 @@ export async function deleteInviteToken(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(inviteTokens).where(eq(inviteTokens.id, id));
+}
+
+// ─── Device tokens — push notification tokens for mobile clients ─────────────
+
+export async function upsertDeviceToken(
+  userId: number,
+  token: string,
+  platform: "ios" | "android"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // Delete any existing token for this device (same token string) then insert fresh
+  await db.delete(deviceTokens).where(eq(deviceTokens.token, token));
+  await db.insert(deviceTokens).values({ userId, token, platform });
+}
+
+export async function deleteDeviceToken(token: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(deviceTokens).where(eq(deviceTokens.token, token));
+}
+
+export async function listDeviceTokensForUser(userId: number): Promise<DeviceToken[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(deviceTokens).where(eq(deviceTokens.userId, userId));
 }

@@ -97,10 +97,19 @@ export function registerOAuthRoutes(app: Express) {
         expiresInMs: ONE_YEAR_MS,
       });
 
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      // Detect mobile deep link redirect (custom scheme like jhcoaching://)
+      const isMobileRedirect = redirectUri && !redirectUri.startsWith("http");
 
-      res.redirect(302, "/dashboard");
+      if (isMobileRedirect && redirectUri) {
+        // Mobile: pass the JWT as a query param in the deep link — no cookie needed
+        const separator = redirectUri.includes("?") ? "&" : "?";
+        res.redirect(302, `${redirectUri}${separator}token=${encodeURIComponent(sessionToken)}`);
+      } else {
+        // Web: set cookie and redirect to dashboard as before
+        const cookieOptions = getSessionCookieOptions(req);
+        res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        res.redirect(302, "/dashboard");
+      }
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });

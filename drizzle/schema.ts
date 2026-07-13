@@ -755,3 +755,16 @@ export const mealLogs = mysqlTable("meal_logs", {
 
 export type MealLog = typeof mealLogs.$inferSelect;
 export type InsertMealLog = typeof mealLogs.$inferInsert;
+
+// ─── Device tokens — push notification tokens for mobile clients ─────────────
+export const deviceTokens = mysqlTable("device_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),                          // FK -> users.id
+  token: varchar("token", { length: 512 }).notNull(),       // FCM or APNs token
+  platform: mysqlEnum("platform", ["ios", "android"]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DeviceToken = typeof deviceTokens.$inferSelect;
+export type InsertDeviceToken = typeof deviceTokens.$inferInsert;
