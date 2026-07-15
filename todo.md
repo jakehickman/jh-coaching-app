@@ -887,3 +887,9 @@
 
 ## Per-Client Weight Unit Preference
 - [x] ~~Per-client weight unit preference~~ — feature rolled back at user request; default is kg globally
+
+## Dead Code Cleanup
+- [x] Delete ProgramChangeLogTab.tsx (dead, never rendered)
+- [x] Delete CardioChangeLogTab.tsx (dead, never rendered)
+- [x] Delete UnifiedChangeLog.tsx (dead, never rendered)
+- [x] Remove dead imports from ProgressSection.tsx

@@ -13,19 +13,15 @@ import { ChevronDown, ChevronUp, Minus, Pencil, Save, Trash2, X, ArrowUp, ArrowD
 import { useSearch, useLocation } from "wouter";
 import {
   Card, SectionLabel, ClientCombobox, useClientSelector,
-  MeasurementsCard, MuscleGroupSection, DailyLogRow, ProgressHistoryTable
+  MeasurementsCard, MuscleGroupSection, DailyLogRow
 } from "./shared";
-import { CoachHabitsPanel, ClientHabitsTab } from "./HabitsSection";
+import { ClientHabitsTab } from "./HabitsSection";
 import { WeeklyReviewTab } from "./WeeklyReviewTab";
 import TrainingSection from "./TrainingSection";
-import MealPlansSection from "./MealPlansSection";
 import { CoachNutritionTab } from "./CoachNutritionTab";
 import { ProgressPhotosTab } from "./ProgressPhotosTab";
 import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import { BodyCompSummaryTable } from "./BodyCompSummaryTable";
-import ProgramChangeLogTab from "./ProgramChangeLogTab";
-import CardioChangeLogTab from "./CardioChangeLogTab";
-import { UnifiedChangeLog } from "./UnifiedChangeLog";
 import { MesocyclesTab } from "./MesocyclesTab";
 
 // --- Collapsible Change History Panel ---------------------------------------
