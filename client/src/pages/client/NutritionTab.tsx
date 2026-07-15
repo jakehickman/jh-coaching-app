@@ -137,9 +137,9 @@ function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }>
 
 function ScaleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null;
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-end justify-center"
+      className="fixed inset-0 z-[300] flex items-end justify-center"
       onClick={onClose}
     >
       {/* Backdrop */}
@@ -173,7 +173,8 @@ function ScaleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         </div>
         <Button className="w-full mt-4" onClick={onClose}>Got it</Button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
