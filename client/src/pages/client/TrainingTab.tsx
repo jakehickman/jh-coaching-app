@@ -1335,8 +1335,8 @@ function WorkoutLogTab() {
       utils.dailyLog.list.invalidate();
       setSaving(false);
       setLastSaved(new Date());
-      setSelectedDay(null);
-      sessionStorage.removeItem('workoutLog:selectedDay');
+      // Stay on the current session — do NOT close or reset selectedDay.
+      // Client can continue logging sets and save again, or use the Back button when done.
       toast.success("Session saved!");
     },
     onError: () => { setSaving(false); toast.error("Failed to save session."); },
