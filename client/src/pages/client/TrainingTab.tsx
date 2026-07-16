@@ -288,12 +288,15 @@ function PresetSelector({
     const name = editNameVal.trim();
     const notes = editNotesVal.trim();
     if (!name) return;
-    // Rename if name changed
-    if (name !== p.presetName) {
+    const nameChanged = name !== p.presetName;
+    const notesChanged = notes !== (p.lastSettings ?? '');
+    if (nameChanged) {
+      // Rename updates the row by ID — do NOT also upsert or it inserts a duplicate
       renameMutation.mutate({ id: p.id, newName: name });
+    } else if (notesChanged) {
+      // Only settings changed — safe to upsert by (exerciseName, presetName)
+      upsertMutation.mutate({ exerciseName, presetName: name, lastSettings: notes || null });
     }
-    // Save notes
-    upsertMutation.mutate({ exerciseName, presetName: name, lastSettings: notes || null });
     // Update selection if this is the active preset
     if (currentPreset === p.presetName) {
       onSelectPreset(name, notes || null, p.id);
