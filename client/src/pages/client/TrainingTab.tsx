@@ -1677,7 +1677,7 @@ function WorkoutLogTab() {
   return (
     <div className="space-y-4">
       {/* ── Active session header ─────────────────────────────────── */}
-      <div className="flex items-center gap-3 -mb-1">
+      <div className="relative flex items-center gap-3 -mb-1">
         <button
           onClick={() => {
             // Check if there's any actual data worth saving as a draft
@@ -1700,9 +1700,7 @@ function WorkoutLogTab() {
           <ChevronLeft size={16} />
           Back
         </button>
-        <div className="flex-1" />
-        <p className="text-sm font-semibold text-foreground">{selectedDay}</p>
-        <div className="flex-1" />
+        <p className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-foreground pointer-events-none">{selectedDay}</p>
       </div>
       {selectedDay && (() => {
         const dayDef = days.find(d => d.label === selectedDay);
@@ -1750,7 +1748,17 @@ function WorkoutLogTab() {
           // Only count exercises where the user explicitly pressed "Complete"
           return !!exerciseDone[displayName];
         }).length;
-        const progressPct = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
+        // Progress bar: count ticked sets across all exercises
+        const totalSetsAll = (dayDef?.exercises ?? []).reduce((sum, ex) => {
+          return sum + (ex.sets ?? 1);
+        }, 0);
+        const completedSetsAll = (dayDef?.exercises ?? []).reduce((sum, ex) => {
+          const subName = substitutions[ex.name];
+          const displayName = subName ?? ex.name;
+          const sets = exerciseData[displayName] ?? [];
+          return sum + sets.filter((s: any) => s.completed).length;
+        }, 0);
+        const progressPct = totalSetsAll > 0 ? Math.round((completedSetsAll / totalSetsAll) * 100) : 0;
 
         return (
           <div className="space-y-3 pb-24">
@@ -1763,7 +1771,7 @@ function WorkoutLogTab() {
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground flex-shrink-0">{completedExercises}/{totalExercises}</span>
+                <span className="text-xs font-medium text-muted-foreground flex-shrink-0">{completedSetsAll}/{totalSetsAll}</span>
               </div>
             </div>
             {(dayDef?.exercises ?? []).map((ex, i) => {
