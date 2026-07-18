@@ -2267,8 +2267,8 @@ function WorkoutLogTab() {
                     <Button
                       onClick={handleSave}
                       disabled={saving}
-                      variant="outline"
-                      className="flex-1 h-12 text-base font-semibold shadow-2xl bg-card border-border"
+                      variant="secondary"
+                      className="flex-1 h-12 text-base font-semibold shadow-2xl"
                     >
                       {saving ? "Saving..." : "Save"}
                     </Button>
