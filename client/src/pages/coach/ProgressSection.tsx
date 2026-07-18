@@ -19,6 +19,7 @@ import { ClientHabitsTab } from "./HabitsSection";
 import { WeeklyReviewTab } from "./WeeklyReviewTab";
 import TrainingSection from "./TrainingSection";
 import { CoachNutritionTab } from "./CoachNutritionTab";
+import MealPlansSection from "./MealPlansSection";
 import { ProgressPhotosTab } from "./ProgressPhotosTab";
 import { WeeklyBodyCompCards } from "./WeeklyBodyCompCards";
 import { BodyCompSummaryTable } from "./BodyCompSummaryTable";
@@ -2484,9 +2485,22 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             </Tabs>
           </TabsContent>
 
-            {/* -- Nutrition: Meal Log + Insights -- */}
+            {/* -- Nutrition: Insights/Log + Meal Plan sub-tabs -- */}
           <TabsContent value="nutrition">
-            <CoachNutritionTab clientId={selectedUserId!} />
+            <Tabs value={getSubTab("nutrition") || "insights"} onValueChange={handleSubTabChange} className="w-full">
+              <div className="overflow-x-auto mb-4">
+                <TabsList className="flex-nowrap min-w-max">
+                  <TabsTrigger value="insights">Insights &amp; Log</TabsTrigger>
+                  <TabsTrigger value="meal-plan">Meal Plan</TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="insights">
+                <CoachNutritionTab clientId={selectedUserId!} />
+              </TabsContent>
+              <TabsContent value="meal-plan">
+                <MealPlansSection fixedClientId={selectedUserId!} />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* -- Habits: assign/unassign habits to client -- */}

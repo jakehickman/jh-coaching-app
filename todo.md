@@ -893,3 +893,12 @@
 - [x] Delete CardioChangeLogTab.tsx (dead, never rendered)
 - [x] Delete UnifiedChangeLog.tsx (dead, never rendered)
 - [x] Remove dead imports from ProgressSection.tsx
+
+## Finish Session Button + Meal Plan
+- [x] Add Finish Session button next to Save in the workout log sticky bar
+- [x] Wire MealPlanTab into client Nutrition screen as a sub-tab
+
+## Finish Session + Meal Plan Restoration
+- [x] Add Finish Session button next to Save in workout sticky bar
+- [x] Add Meal Plan sub-tab to coach per-client Nutrition tab (MealPlansSection with fixedClientId)
+- [x] Add Meal Plan sub-tab to client Nutrition screen (CombinedMealPlanTab - read-only viewer + shopping list)

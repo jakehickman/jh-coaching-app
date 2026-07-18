@@ -2262,16 +2262,33 @@ function WorkoutLogTab() {
             {/* Sticky save button rendered via portal-like fixed positioning */}
             {!viewAsUserId && (
               <div className="fixed bottom-16 left-0 right-0 z-40 px-4 pb-2 pointer-events-none">
-                <div className="max-w-lg mx-auto pointer-events-auto">
-                  <Button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="w-full h-12 text-base font-semibold shadow-2xl"
-                  >
-                    {saving ? "Saving..." : "Save Session"}
-                  </Button>
+                <div className="max-w-lg mx-auto pointer-events-auto space-y-2">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSave}
+                      disabled={saving}
+                      variant="outline"
+                      className="flex-1 h-12 text-base font-semibold shadow-2xl bg-card border-border"
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        handleSave();
+                        // After saving, close the session and return to calendar
+                        setTimeout(() => {
+                          setSelectedDay(null);
+                          sessionStorage.removeItem('workoutLog:selectedDay');
+                        }, 400);
+                      }}
+                      disabled={saving}
+                      className="flex-1 h-12 text-base font-semibold shadow-2xl"
+                    >
+                      Finish Session
+                    </Button>
+                  </div>
                   {lastSaved && (
-                    <p className="text-center text-xs text-muted-foreground mt-1">
+                    <p className="text-center text-xs text-muted-foreground">
                       Last saved: {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   )}

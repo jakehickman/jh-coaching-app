@@ -1715,14 +1715,21 @@ function DistributionChart({
 }
 
 /// ─── Combined Nutrition Tab ─────────────────────────────────────────────────
+import CombinedMealPlanTab from "./MealPlanTab";
 
-type NutritionSub = "today" | "history";
+type NutritionSub = "today" | "history" | "meal-plan";
+
+const NUTRITION_SUB_LABELS: Record<NutritionSub, string> = {
+  today: "Today",
+  history: "History",
+  "meal-plan": "Meal Plan",
+};
 
 export function CombinedNutritionTab({ defaultSub = "today" }: { defaultSub?: NutritionSub }) {
   const [sub, setSub] = useState<NutritionSub>(() => {
     try {
       const stored = sessionStorage.getItem("nutritionTab:sub") as NutritionSub | null;
-      return (stored === "today" || stored === "history") ? stored : defaultSub;
+      return (stored === "today" || stored === "history" || stored === "meal-plan") ? stored : defaultSub;
     } catch { return defaultSub; }
   });
 
@@ -1733,21 +1740,22 @@ export function CombinedNutritionTab({ defaultSub = "today" }: { defaultSub?: Nu
   return (
     <div>
       <div className="flex gap-1 mb-6 bg-secondary rounded-lg p-1">
-        {(["today", "history"] as const).map((s) => (
+        {(["today", "history", "meal-plan"] as const).map((s) => (
           <button
             key={s}
             onClick={() => setSub(s)}
             className={cn(
-              "flex-1 py-1.5 rounded-md text-sm font-medium transition-colors capitalize",
+              "flex-1 py-1.5 rounded-md text-sm font-medium transition-colors",
               sub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            {s === "today" ? "Today" : "History"}
+            {NUTRITION_SUB_LABELS[s]}
           </button>
         ))}
       </div>
       {sub === "today" && <TodayScreen />}
       {sub === "history" && <HistoryScreen />}
+      {sub === "meal-plan" && <CombinedMealPlanTab />}
     </div>
   );
 }
