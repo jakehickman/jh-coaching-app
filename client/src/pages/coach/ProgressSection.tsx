@@ -1565,8 +1565,8 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
     </div>
 
     <div className="flex flex-col lg:flex-row gap-4 items-start">
-      {/* Compact calendar grid */}
-      <div style={{ width: 'min(100%, 300px)', flexShrink: 0 }}>
+      {/* Compact calendar grid — 50% split */}
+      <div className="flex-1 min-w-0">
         {/* Weekday headers */}
         <div className="grid grid-cols-7 mb-0.5">
           {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (

@@ -804,8 +804,8 @@ function MealLogView({ clientId }: { clientId: number }) {
 
   return (
     <div className="flex flex-col sm:flex-row gap-6">
-      {/* ── Compact month calendar ── */}
-      <div className="flex-shrink-0" style={{ width: "min(100%, 320px)" }}>
+      {/* ── Compact month calendar — 50% split ── */}
+      <div className="flex-1 min-w-0">
         {/* Month nav */}
         <div className="flex items-center justify-between mb-3">
           <button
