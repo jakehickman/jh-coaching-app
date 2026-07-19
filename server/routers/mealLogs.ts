@@ -461,10 +461,17 @@ export const mealLogsRouter = router({
         const ws = `${wStart.getFullYear()}-${String(wStart.getMonth()+1).padStart(2,'0')}-${String(wStart.getDate()).padStart(2,'0')}`;
         weeklyIdealZone.push({ weekStart: ws, pct, meals: wWithBoth.length });
       }
-      // Scatter data
+      // Scatter data — include meal metadata for click popover
       const scatter = curMeals
         .filter(m => m.hungerRating != null && m.fullnessRating != null)
-        .map(m => ({ h: m.hungerRating!, f: m.fullnessRating! }));
+        .map(m => ({
+          h: m.hungerRating!,
+          f: m.fullnessRating!,
+          id: m.id,
+          name: m.name ?? null,
+          loggedAt: m.loggedAt.getTime(),
+          utcOffsetMins: (m as any).utcOffsetMins as number ?? 0,
+        }));
       // Out-of-zone meals: at least one rating present and outside ideal range
       const outOfZoneMeals = curMeals
         .filter(m => m.hungerRating != null || m.fullnessRating != null)

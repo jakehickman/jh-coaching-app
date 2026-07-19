@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoachHabitsPanel } from "./HabitsSection";
@@ -310,12 +310,10 @@ function IdealZoneCard({
     fullnessInZonePct?: number | null;
     allTimeIdealZonePct?: number | null;
     weeklyIdealZone?: { weekStart: string; pct: number | null; meals: number }[];
-    outOfZoneMeals?: { id: number; name: string | null; loggedAt: number; utcOffsetMins: number; hungerRating: number | null; fullnessRating: number | null }[];
   };
   days: number;
   compact?: boolean;
 }) {
-  const [showOutOfZone, setShowOutOfZone] = useState(false);
   const {
     idealZonePct,
     prevIdealZonePct,
@@ -323,7 +321,6 @@ function IdealZoneCard({
     fullnessInZonePct,
     allTimeIdealZonePct,
     weeklyIdealZone,
-    outOfZoneMeals,
   } = insights;
 
   if (idealZonePct == null) {
@@ -456,69 +453,26 @@ function IdealZoneCard({
         </div>
       )}
 
-      {/* Option B: out-of-zone meal list */}
-      {outOfZoneMeals && outOfZoneMeals.length > 0 && (
-        <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${C.border}` }}>
-          <button
-            className="flex items-center justify-between w-full mb-2"
-            onClick={() => setShowOutOfZone(v => !v)}
-          >
-            <span className="text-xs font-medium uppercase tracking-[0.7px]" style={{ color: C.amber }}>
-              {outOfZoneMeals.length} out-of-zone meal{outOfZoneMeals.length !== 1 ? "s" : ""}
-            </span>
-            <span className="text-[11px]" style={{ color: C.muted }}>{showOutOfZone ? "Hide" : "Show"}</span>
-          </button>
-          {showOutOfZone && (
-            <div className="space-y-2">
-              {outOfZoneMeals.map(m => {
-                const hBad = m.hungerRating != null && (m.hungerRating < 3 || m.hungerRating > 4);
-                const fBad = m.fullnessRating != null && (m.fullnessRating < 6 || m.fullnessRating > 7);
-                const dateStr = new Date(m.loggedAt).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
-                return (
-                  <div key={m.id} className="rounded-lg px-3 py-2.5" style={{ background: `${C.amber}0D`, border: `1px solid ${C.amber}28` }}>
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-[12px] font-medium truncate" style={{ color: C.fg }}>
-                        {m.name ?? "Unnamed meal"}
-                      </span>
-                      <span className="text-[11px] shrink-0" style={{ color: C.muted }}>{dateStr}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {m.hungerRating != null && (
-                        <span className="text-[11px]" style={{ color: hBad ? C.amber : C.muted }}>
-                          Hunger <span className="font-bold" style={{ color: hBad ? C.amber : C.primary }}>{m.hungerRating}</span>
-                          {hBad && <span className="ml-1" style={{ color: C.amber }}>{m.hungerRating < 3 ? "(too low)" : "(too high)"}</span>}
-                        </span>
-                      )}
-                      {m.fullnessRating != null && (
-                        <span className="text-[11px]" style={{ color: fBad ? C.amber : C.muted }}>
-                          Fullness <span className="font-bold" style={{ color: fBad ? C.amber : C.primary }}>{m.fullnessRating}</span>
-                          {fBad && <span className="ml-1" style={{ color: C.amber }}>{m.fullnessRating < 6 ? "(too low)" : "(too high)"}</span>}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
     </Card>
   );
 }
 
 // ─── Scatter plot ─────────────────────────────────────────────────────────────
 
-function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
+type ScatterPoint = { h: number; f: number; id: number; name: string | null; loggedAt: number; utcOffsetMins: number };
+
+function ScatterPlot({ scatter }: { scatter: ScatterPoint[] }) {
   const SIZE = 260;
   const PAD = 28;
   const INNER = SIZE - PAD * 2;
   const STEP = INNER / 9;
 
-  const counts: Record<string, number> = {};
+  // Group meals by (h,f) coordinate
+  const groups: Record<string, ScatterPoint[]> = {};
   for (const p of scatter) {
     const k = `${p.h},${p.f}`;
-    counts[k] = (counts[k] ?? 0) + 1;
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(p);
   }
 
   function toX(h: number) { return PAD + (h - 1) * STEP; }
@@ -529,56 +483,111 @@ function ScatterPlot({ scatter }: { scatter: { h: number; f: number }[] }) {
   const zoneY1 = toY(7);
   const zoneY2 = toY(6) + STEP;
 
-  const plotted = new Set<string>();
-  const dots: { x: number; y: number; r: number; ideal: boolean }[] = [];
-  for (const p of scatter) {
-    const k = `${p.h},${p.f}`;
-    if (plotted.has(k)) continue;
-    plotted.add(k);
-    const cnt = counts[k];
-    const r = Math.min(10, 5 + (cnt - 1) * 1.2);
-    const ideal = isIdealHunger(p.h) && isIdealFullness(p.f);
-    dots.push({ x: toX(p.h), y: toY(p.f), r, ideal });
-  }
+  type Dot = { x: number; y: number; r: number; ideal: boolean; meals: ScatterPoint[] };
+  const dots: Dot[] = Object.entries(groups).map(([k, meals]) => {
+    const [h, f] = k.split(',').map(Number);
+    const r = Math.min(10, 5 + (meals.length - 1) * 1.2);
+    const ideal = isIdealHunger(h) && isIdealFullness(f);
+    return { x: toX(h), y: toY(f), r, ideal, meals };
+  });
+
+  const [activeDot, setActiveDot] = useState<Dot | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Close popover when clicking outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (svgRef.current && !svgRef.current.contains(e.target as Node)) {
+        setActiveDot(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   return (
-    <svg width={SIZE} height={SIZE} className="overflow-visible">
-      {/* Grid lines — 8% opacity, no axis borders */}
-      {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-        <g key={n}>
-          <line x1={toX(n)} y1={PAD} x2={toX(n)} y2={SIZE - PAD} stroke={C.fg} strokeOpacity={0.08} strokeWidth={1} />
-          <line x1={PAD} y1={toY(n)} x2={SIZE - PAD} y2={toY(n)} stroke={C.fg} strokeOpacity={0.08} strokeWidth={1} />
-        </g>
-      ))}
-      {/* Ideal zone rectangle */}
-      <rect
-        x={zoneX1} y={zoneY1}
-        width={zoneX2 - zoneX1} height={zoneY2 - zoneY1}
-        fill={C.primary} fillOpacity={0.1}
-        stroke={C.primary} strokeOpacity={0.25} strokeWidth={1}
-        rx={3}
-      />
-
-      {/* Axis labels */}
-      {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-        <g key={n}>
-          <text x={toX(n)} y={SIZE - PAD + 13} textAnchor="middle" fontSize={9} fill={C.muted} opacity={0.5}>{n}</text>
-          <text x={PAD - 9} y={toY(n) + 3.5} textAnchor="middle" fontSize={9} fill={C.muted} opacity={0.5}>{n}</text>
-        </g>
-      ))}
-      {/* Axis titles */}
-      <text x={SIZE / 2} y={SIZE - 2} textAnchor="middle" fontSize={10} fill={C.muted} opacity={0.55}>Hunger</text>
-      <text x={9} y={SIZE / 2} textAnchor="middle" fontSize={10} fill={C.muted} opacity={0.55}
-        transform={`rotate(-90, 9, ${SIZE / 2})`}>Fullness</text>
-      {/* Dots */}
-      {dots.map((d, i) => (
-        <circle
-          key={i} cx={d.x} cy={d.y} r={d.r}
-          fill={d.ideal ? C.primary : C.muted}
-          fillOpacity={d.ideal ? 0.75 : 0.35}
+    <div className="relative inline-block">
+      <svg ref={svgRef} width={SIZE} height={SIZE} className="overflow-visible">
+        {/* Grid lines */}
+        {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+          <g key={n}>
+            <line x1={toX(n)} y1={PAD} x2={toX(n)} y2={SIZE - PAD} stroke={C.fg} strokeOpacity={0.08} strokeWidth={1} />
+            <line x1={PAD} y1={toY(n)} x2={SIZE - PAD} y2={toY(n)} stroke={C.fg} strokeOpacity={0.08} strokeWidth={1} />
+          </g>
+        ))}
+        {/* Ideal zone rectangle */}
+        <rect
+          x={zoneX1} y={zoneY1}
+          width={zoneX2 - zoneX1} height={zoneY2 - zoneY1}
+          fill={C.primary} fillOpacity={0.1}
+          stroke={C.primary} strokeOpacity={0.25} strokeWidth={1}
+          rx={3}
         />
-      ))}
-    </svg>
+        {/* Axis labels */}
+        {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+          <g key={n}>
+            <text x={toX(n)} y={SIZE - PAD + 13} textAnchor="middle" fontSize={9} fill={C.muted} opacity={0.5}>{n}</text>
+            <text x={PAD - 9} y={toY(n) + 3.5} textAnchor="middle" fontSize={9} fill={C.muted} opacity={0.5}>{n}</text>
+          </g>
+        ))}
+        {/* Axis titles */}
+        <text x={SIZE / 2} y={SIZE - 2} textAnchor="middle" fontSize={10} fill={C.muted} opacity={0.55}>Hunger</text>
+        <text x={9} y={SIZE / 2} textAnchor="middle" fontSize={10} fill={C.muted} opacity={0.55}
+          transform={`rotate(-90, 9, ${SIZE / 2})`}>Fullness</text>
+        {/* Clickable dots */}
+        {dots.map((d, i) => (
+          <circle
+            key={i} cx={d.x} cy={d.y} r={d.r}
+            fill={d.ideal ? C.primary : C.muted}
+            fillOpacity={activeDot === d ? 1 : d.ideal ? 0.75 : 0.35}
+            style={{ cursor: 'pointer' }}
+            onClick={() => setActiveDot(activeDot === d ? null : d)}
+          />
+        ))}
+      </svg>
+
+      {/* Popover */}
+      {activeDot && (
+        <div
+          className="absolute z-20 rounded-xl shadow-xl"
+          style={{
+            background: "#1A2020",
+            border: `1px solid ${C.border}`,
+            minWidth: 200,
+            maxWidth: 260,
+            // Position: right of dot if space, else left
+            left: activeDot.x + activeDot.r + 6,
+            top: Math.max(0, activeDot.y - 20),
+          }}
+        >
+          <div className="px-3 py-2.5">
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ background: activeDot.ideal ? C.primary : C.amber }}
+              />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.6px]" style={{ color: C.muted }}>
+                {activeDot.meals.length} meal{activeDot.meals.length !== 1 ? 's' : ''} · H{activeDot.meals[0].h} / F{activeDot.meals[0].f}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {activeDot.meals.map(m => {
+                const dateStr = new Date(m.loggedAt + m.utcOffsetMins * 60000)
+                  .toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+                return (
+                  <div key={m.id} className="flex flex-col gap-0.5">
+                    <span className="text-[12px] font-medium truncate" style={{ color: C.fg }}>
+                      {m.name ?? 'Unnamed meal'}
+                    </span>
+                    <span className="text-[11px]" style={{ color: C.muted }}>{dateStr}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
