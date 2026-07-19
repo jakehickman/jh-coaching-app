@@ -87,11 +87,13 @@ function SortableFoodRow({
   // Build serving options: 100g fallback first, then USDA servings
   const servingOptions: { id: number | null; label: string; grams: number }[] = [
     { id: null, label: "100g", grams: 100 },
-    ...(selectedFood?.servings ?? []).map((s: any) => ({
-      id: s.id as number,
-      label: `${s.label} (${Math.round(s.grams)}g)`,
-      grams: s.grams as number,
-    })),
+    ...(selectedFood?.servings ?? []).map((s: any) => {
+      const rawLabel: string = s.label ?? "";
+      // Only append (Xg) if the label doesn't already contain a gram value
+      const hasGrams = /\(\d+g\)/i.test(rawLabel);
+      const label = hasGrams ? rawLabel : `${rawLabel} (${Math.round(s.grams)}g)`;
+      return { id: s.id as number, label, grams: s.grams as number };
+    }),
   ];
 
   const effectiveGrams = getEffectiveGrams(item);
