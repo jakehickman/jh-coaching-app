@@ -1594,7 +1594,7 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
             return (
               <button
                 key={idx}
-                className="relative h-8 flex flex-col items-center justify-center rounded text-[12px] font-medium transition-all"
+                className="relative h-10 flex flex-col items-center justify-center rounded text-[12px] font-medium transition-all"
                 style={{
                   cursor: sess ? 'pointer' : 'default',
                   background: isSelected ? `${accentColor}22` : sess ? 'hsl(var(--muted)/0.25)' : 'transparent',

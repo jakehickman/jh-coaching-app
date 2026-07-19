@@ -881,7 +881,7 @@ function MealLogView({ clientId }: { clientId: number }) {
         ) : (
           <div className="grid grid-cols-7 gap-0.5">
             {cells.map((day, idx) => {
-              if (!day) return <div key={idx} className="h-8" />;
+              if (!day) return <div key={idx} className="h-10" />;
               const key = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               const dayData = byDate[key];
               const isSelected = selectedDate === key;
@@ -892,7 +892,7 @@ function MealLogView({ clientId }: { clientId: number }) {
                 <button
                   key={idx}
                   onClick={() => hasMeals && setSelectedDate(isSelected ? null : key)}
-                  className="relative h-8 flex flex-col items-center justify-center rounded text-[12px] font-medium transition-all"
+                  className="relative h-10 flex flex-col items-center justify-center rounded text-[12px] font-medium transition-all"
                   style={{
                     cursor: hasMeals ? "pointer" : "default",
                     background: isSelected ? `${dotColor}22` : hasMeals ? 'hsl(var(--muted)/0.25)' : 'transparent',
