@@ -15,8 +15,6 @@ type FoodRow = {
   carbs: number;
   fiber: number;
   fat: number;
-  servingUnit?: string | null;
-  servingGrams?: number | null;
 };
 
 const EMPTY_FOOD: FoodRow = {
@@ -26,9 +24,72 @@ const EMPTY_FOOD: FoodRow = {
   carbs: 0,
   fiber: 0,
   fat: 0,
-  servingUnit: null,
-  servingGrams: null,
 };
+
+// ─── ServingsEditor ──────────────────────────────────────────────────────────
+
+function ServingsEditor({ foodId }: { foodId: number }) {
+  const { data: servings = [], refetch } = trpc.nutritionFoods.getServings.useQuery({ foodId });
+  const upsertServing = trpc.nutritionFoods.upsertServing.useMutation({ onSuccess: () => refetch() });
+  const deleteServing = trpc.nutritionFoods.deleteServing.useMutation({ onSuccess: () => refetch() });
+  const [confirmServing, ConfirmServingNode] = useConfirm();
+  const [newLabel, setNewLabel] = useState("");
+  const [newGrams, setNewGrams] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editGrams, setEditGrams] = useState("");
+
+  function addServing() {
+    const g = parseFloat(newGrams);
+    if (!newLabel.trim() || isNaN(g) || g <= 0) { toast.error("Enter a valid label and gram weight"); return; }
+    upsertServing.mutate({ foodId, label: newLabel.trim(), grams: g });
+    setNewLabel(""); setNewGrams("");
+  }
+  function startEditServing(s: { id: number; label: string; grams: number }) {
+    setEditingId(s.id); setEditLabel(s.label); setEditGrams(String(s.grams));
+  }
+  function saveEditServing() {
+    const g = parseFloat(editGrams);
+    if (!editLabel.trim() || isNaN(g) || g <= 0) { toast.error("Enter a valid label and gram weight"); return; }
+    upsertServing.mutate({ id: editingId!, foodId, label: editLabel.trim(), grams: g });
+    setEditingId(null);
+  }
+
+  return (
+    <div className="space-y-2">
+      {ConfirmServingNode}
+      {servings.length === 0 && (
+        <p className="text-xs text-muted-foreground italic">No serving sizes defined. The "100g" option is always available by default.</p>
+      )}
+      {servings.map((s) => (
+        <div key={s.id} className="flex items-center gap-2">
+          {editingId === s.id ? (
+            <>
+              <input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} placeholder="e.g. 1 cup" className="flex-1 px-2 py-1 bg-secondary border border-border rounded text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <input value={editGrams} onChange={(e) => setEditGrams(e.target.value)} placeholder="grams" type="number" min="0.1" step="0.1" className="w-24 px-2 py-1 bg-secondary border border-border rounded text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+              <span className="text-xs text-muted-foreground">g</span>
+              <button onClick={saveEditServing} className="text-primary hover:opacity-80" title="Save"><Save size={13} /></button>
+              <button onClick={() => setEditingId(null)} className="text-muted-foreground hover:text-foreground" title="Cancel"><X size={13} /></button>
+            </>
+          ) : (
+            <>
+              <span className="flex-1 text-sm text-foreground">{s.label}</span>
+              <span className="text-xs text-muted-foreground">{s.grams}g</span>
+              <button onClick={() => startEditServing(s as any)} className="text-muted-foreground hover:text-primary transition-colors" title="Edit"><Pencil size={12} /></button>
+              <button onClick={async () => { const ok = await confirmServing({ title: `Delete "${s.label}"?`, description: "This serving size will be removed.", confirmLabel: "Delete", variant: "destructive" }); if (ok) deleteServing.mutate({ id: s.id! }); }} className="text-muted-foreground hover:text-destructive transition-colors" title="Delete"><Trash2 size={12} /></button>
+            </>
+          )}
+        </div>
+      ))}
+      <div className="flex items-center gap-2 pt-1 border-t border-border/50">
+        <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Label (e.g. 1 cup, 1 breast)" className="flex-1 px-2 py-1 bg-secondary border border-border rounded text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" onKeyDown={(e) => e.key === "Enter" && addServing()} />
+        <input value={newGrams} onChange={(e) => setNewGrams(e.target.value)} placeholder="grams" type="number" min="0.1" step="0.1" className="w-24 px-2 py-1 bg-secondary border border-border rounded text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary" onKeyDown={(e) => e.key === "Enter" && addServing()} />
+        <span className="text-xs text-muted-foreground">g</span>
+        <button onClick={addServing} disabled={upsertServing.isPending} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-xs font-medium hover:opacity-90 disabled:opacity-50"><Plus size={11} /> Add</button>
+      </div>
+    </div>
+  );
+}
 
 const MACRO_FIELDS = [
   { key: "calories" as const, label: "Calories", unit: "kcal", step: 1 },
@@ -152,56 +213,21 @@ export default function NutritionDataSection() {
               </div>
             ))}
           </div>
-          {/* Serving size fields */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Serving sizes — only for existing foods */}
+          {!isNew && editing.id ? (
             <div>
-              <label className="block text-xs text-muted-foreground mb-1 uppercase tracking-wider">
-                Serving Unit{" "}
-                <span className="normal-case font-normal">
-                  (e.g. egg, slice, tbsp)
-                </span>
+              <label className="block text-xs text-muted-foreground mb-2 uppercase tracking-wider">
+                Serving Sizes
               </label>
-              <input
-                type="text"
-                value={(editing as any).servingUnit ?? ""}
-                onChange={(e) =>
-                  setEditing((prev) =>
-                    prev
-                      ? { ...prev, servingUnit: e.target.value || null }
-                      : prev
-                  )
-                }
-                className="w-full bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
+              <ServingsEditor foodId={editing.id} />
             </div>
-            <div>
-              <label className="block text-xs text-muted-foreground mb-1 uppercase tracking-wider">
-                Grams per serving
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                value={(editing as any).servingGrams ?? ""}
-                onChange={(e) =>
-                  setEditing((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          servingGrams: e.target.value
-                            ? parseFloat(e.target.value)
-                            : null,
-                        }
-                      : prev
-                  )
-                }
-                className="w-full bg-secondary border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-          </div>
+          ) : isNew ? (
+            <p className="text-xs text-muted-foreground italic">
+              Save the food first, then reopen it to add serving sizes.
+            </p>
+          ) : null}
           <p className="text-xs text-muted-foreground">
-            All macro values are per 100g. Serving unit is optional — used in
-            meal plans for unit-based foods.
+            All macro values are per 100g. The "100g" serving is always available by default.
           </p>
           <div className="flex gap-2 justify-end">
             <button
@@ -285,13 +311,12 @@ export default function NutritionDataSection() {
                   {food.fat}
                 </td>
                 <td className="px-3 py-2.5 text-left text-foreground text-xs">
-                  {(food as any).servingUnit ? (
+                  {(food as any).servings?.length > 0 ? (
                     <span className="text-muted-foreground">
-                      1 {(food as any).servingUnit} ={" "}
-                      {(food as any).servingGrams}g
+                      {(food as any).servings.length} defined
                     </span>
                   ) : (
-                    <span className="text-muted-foreground/40">—</span>
+                    <span className="text-muted-foreground/40">100g only</span>
                   )}
                 </td>
                 <td className="px-3 py-2.5 text-center">
@@ -325,7 +350,7 @@ export default function NutritionDataSection() {
       </div>
       <p className="text-xs text-muted-foreground">
         {filtered.length} food{filtered.length !== 1 ? "s" : ""} · All
-        nutritional values sourced from USDA FoodData Central (per 100g)
+        nutritional values sourced from USDA SR Legacy (per 100g)
       </p>
       {ConfirmDialogNode}
     </div>
