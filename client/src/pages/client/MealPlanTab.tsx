@@ -139,16 +139,19 @@ function MealPlanTab() {
 
   const meals = (plan?.meals as any[]) ?? [];
 
-  function itemToGrams(food: any, amount: number): number {
-    if (!food) return amount;
-    return food.servingUnit && food.servingGrams ? amount * food.servingGrams : amount;
+  // Items are stored as {food, qty, servingGrams, servingLabel}
+  // effectiveGrams = qty * servingGrams
+  function itemEffectiveGrams(item: any): number {
+    const qty = parseFloat(item.qty ?? item.grams) || 0;
+    const sg = item.servingGrams ?? 100;
+    return qty * sg;
   }
 
   const mealMacros = meals.map(meal =>
     (meal.items ?? []).reduce((acc: any, item: any) => {
       const food = foodDb.find((f: any) => f.name === item.food);
-      if (!food || !parseFloat(item.grams)) return acc;
-      const grams = itemToGrams(food, parseFloat(item.grams));
+      const grams = itemEffectiveGrams(item);
+      if (!food || !grams) return acc;
       const factor = grams / 100;
       return {
         calories: acc.calories + Math.round(food.calories * factor),
@@ -220,27 +223,25 @@ function MealPlanTab() {
                     {[...(meal.items ?? [])].sort((a: any, b: any) => {
                         const fa = foodDb.find((f: any) => f.name === a.food);
                         const fb = foodDb.find((f: any) => f.name === b.food);
-                        const gaRaw = parseFloat(a.grams) || 0;
-                        const gbRaw = parseFloat(b.grams) || 0;
-                        const gaG = fa ? (fa.servingGrams ? gaRaw * fa.servingGrams : gaRaw) : gaRaw;
-                        const gbG = fb ? (fb.servingGrams ? gbRaw * fb.servingGrams : gbRaw) : gbRaw;
+                        const gaG = itemEffectiveGrams(a);
+                        const gbG = itemEffectiveGrams(b);
                         const pA = fa ? (fa.protein * gaG / 100) : 0;
                         const pB = fb ? (fb.protein * gbG / 100) : 0;
                         if (pB !== pA) return pB - pA;
                         return gbG - gaG;
                       }).map((item: any, j: number) => {
                       const food = foodDb.find((f: any) => f.name === item.food);
-                      const rawAmount = parseFloat(item.grams) || 0;
-                      const effectiveGrams = food ? itemToGrams(food, rawAmount) : rawAmount;
+                      const effectiveGrams = itemEffectiveGrams(item);
                       const factor = effectiveGrams / 100;
-                      const isServingBased = !!(food?.servingUnit && food?.servingGrams);
-                      const displayQty = isServingBased
-                        ? `${rawAmount} ${food.servingUnit}${rawAmount !== 1 ? "s" : ""} (${effectiveGrams}g)`
-                        : rawAmount > 0 ? `${rawAmount}g` : "";
-                      const itemCal = food && rawAmount ? Math.round(food.calories * factor) : null;
-                      const itemP = food && rawAmount ? Math.round(food.protein * factor * 10) / 10 : null;
-                      const itemC = food && rawAmount ? Math.round(food.carbs * factor * 10) / 10 : null;
-                      const itemF = food && rawAmount ? Math.round(food.fat * factor * 10) / 10 : null;
+                      // Display: use servingLabel if available, else fall back to grams
+                      const qty = parseFloat(item.qty ?? item.grams) || 0;
+                      const displayQty = item.servingLabel
+                        ? (qty === 1 ? item.servingLabel : `${qty} × ${item.servingLabel}`)
+                        : effectiveGrams > 0 ? `${effectiveGrams}g` : "";
+                      const itemCal = food && effectiveGrams ? Math.round(food.calories * factor) : null;
+                      const itemP = food && effectiveGrams ? Math.round(food.protein * factor * 10) / 10 : null;
+                      const itemC = food && effectiveGrams ? Math.round(food.carbs * factor * 10) / 10 : null;
+                      const itemF = food && effectiveGrams ? Math.round(food.fat * factor * 10) / 10 : null;
                       return (
                         <div key={j} className="py-2 border-b border-border/50 last:border-0">
                           <div className="flex items-center justify-between">
@@ -353,11 +354,6 @@ function ShoppingListTab() {
   const restPlan = viewAsUserId ? restPlanAdmin : restPlanOwn;
   const { data: foodDb = [] } = trpc.nutritionFoods.list.useQuery();
 
-  function itemToGrams(food: any, amount: number): number {
-    if (!food) return amount;
-    return food.servingUnit && food.servingGrams ? amount * food.servingGrams : amount;
-  }
-
   const shoppingMap = useMemo(() => {
     const map: Record<string, { totalGrams: number; food: any }> = {};
 
@@ -366,9 +362,12 @@ function ShoppingListTab() {
       const meals = (plan.meals as any[]) ?? [];
       meals.forEach(meal => {
         (meal.items ?? []).forEach((item: any) => {
-          if (!item.food || !parseFloat(item.grams)) return;
+          if (!item.food) return;
+          const qty = parseFloat(item.qty ?? item.grams) || 0;
+          const sg = item.servingGrams ?? 100;
+          const grams = qty * sg * multiplier;
+          if (!grams) return;
           const food = foodDb.find((f: any) => f.name === item.food);
-          const grams = itemToGrams(food, parseFloat(item.grams)) * multiplier;
           if (!map[item.food]) map[item.food] = { totalGrams: 0, food };
           map[item.food].totalGrams += grams;
         });

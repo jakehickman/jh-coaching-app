@@ -929,3 +929,7 @@
 - [x] Simplify verbose names to sentence case and shorter format
 - [x] Re-run serving sizes script after cleanup
 - [x] 3-pass cleanup: 1,588 → 405 foods with clean names and serving sizes
+
+## Client Meal Plan Bugs
+- [x] Fix: quantities not showing in client-side meal plan viewer
+- [x] Fix: shopping list not generating
