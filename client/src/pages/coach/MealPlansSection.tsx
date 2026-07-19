@@ -1,10 +1,85 @@
 import React, { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, Save, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, ClientCombobox, useClientSelector } from "./shared";
 import { Button } from "@/components/ui/button";
 import MacroTargetsEditor from "./MacroTargetsEditor";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+// ─── Sortable food row ────────────────────────────────────────────────────────
+
+function SortableFoodRow({
+  id, item, mealIdx, itemIdx, isServingBased, selectedFood, effectiveGrams, macros, hasData,
+  foodNames, onUpdate, onRemove, onSelectAdvance, onQtyEnter
+}: {
+  id: string;
+  item: any;
+  mealIdx: number;
+  itemIdx: number;
+  isServingBased: boolean;
+  selectedFood: any;
+  effectiveGrams: number | null;
+  macros: { calories: number; protein: number; carbs: number; fat: number };
+  hasData: boolean;
+  foodNames: string[];
+  onUpdate: (field: string, value: string) => void;
+  onRemove: () => void;
+  onSelectAdvance: () => void;
+  onQtyEnter: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2">
+      <button {...attributes} {...listeners} className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing touch-none">
+        <GripVertical size={12} />
+      </button>
+      <div className="flex-1 min-w-0">
+        <FoodCombobox value={item.food} onChange={v => onUpdate("food", v)} foodNames={foodNames} onSelectAdvance={onSelectAdvance} mealIdx={mealIdx} itemIdx={itemIdx} />
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <input
+          type="number" min="0" step={isServingBased ? "0.5" : "1"}
+          data-meal={mealIdx} data-item={itemIdx} data-field="qty"
+          value={item.grams}
+          onChange={e => onUpdate("grams", e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); onQtyEnter(); } }}
+          className="w-16 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
+        />
+        <div className="text-[13px] text-muted-foreground w-28 leading-tight">
+          <span className="whitespace-nowrap">{isServingBased ? selectedFood.servingUnit : "g"}</span>
+          {isServingBased && effectiveGrams ? <span className="whitespace-nowrap text-muted-foreground/50"> ({effectiveGrams}g)</span> : null}
+        </div>
+      </div>
+      <div className="w-24 shrink-0 text-xs leading-tight">
+        {hasData ? (
+          <>
+            <span className="text-foreground font-medium text-xs">{macros.calories} kcal</span>
+            <div className="text-muted-foreground text-xs">P{macros.protein} C{macros.carbs} F{macros.fat}</div>
+          </>
+        ) : <span className="text-muted-foreground/30">—</span>}
+      </div>
+      <button onClick={onRemove} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
+        <Trash2 size={12} />
+      </button>
+    </div>
+  );
+}
 
 // ─── Food combobox ────────────────────────────────────────────────────────────
 
@@ -398,6 +473,18 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
   const removeItem = (mealIdx: number, itemIdx: number) => setMeals(m => m.map((meal, idx) => idx === mealIdx ? { ...meal, items: meal.items.filter((_: any, i: number) => i !== itemIdx) } : meal));
   const updateItem = (mealIdx: number, itemIdx: number, field: string, value: string) =>
     setMeals(m => m.map((meal, idx) => idx === mealIdx ? { ...meal, items: meal.items.map((item: any, i: number) => i === itemIdx ? { ...item, [field]: value } : item) } : meal));
+  const reorderItem = (mealIdx: number, oldIndex: number, newIndex: number) =>
+    setMeals(m => m.map((meal, idx) => idx === mealIdx ? { ...meal, items: arrayMove(meal.items ?? [], oldIndex, newIndex) } : meal));
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  function handleFoodDragEnd(mealIdx: number, event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const items = meals[mealIdx]?.items ?? [];
+    const oldIndex = items.findIndex((_: any, i: number) => `food-${mealIdx}-${i}` === active.id);
+    const newIndex = items.findIndex((_: any, i: number) => `food-${mealIdx}-${i}` === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) reorderItem(mealIdx, oldIndex, newIndex);
+  }
 
   const foodNames = foodDb.map((f: any) => f.name).sort();
 
@@ -498,67 +585,61 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                       <p className="w-4"></p>
                     </div>
 
-                    {/* Food rows */}
-                    <div className="space-y-1.5">
-                      {(meal.items ?? []).map((item: any, j: number) => {
-                        const selectedFood = foodDb.find((f: any) => f.name === item.food);
-                        const isServingBased = !!(selectedFood?.servingUnit && selectedFood?.servingGrams);
-                        const amount = parseFloat(item.grams) || 0;
-                        const m = calcItemMacros(foodDb, item.food, amount);
-                        const hasData = item.food && amount > 0;
-                        const effectiveGrams = isServingBased ? getItemGrams(foodDb, item.food, amount) : null;
-                        const totalItems = (meal.items ?? []).length;
-                        const isLastItem = j === totalItems - 1;
-                        const focusNextFoodInput = () => {
-                          if (isLastItem) {
-                            addItem(i);
-                            setTimeout(() => {
-                              const next = document.querySelector<HTMLInputElement>(`[data-meal="${i}"][data-item="${j + 1}"][data-field="food"]`);
-                              next?.focus();
-                            }, 50);
-                          } else {
-                            const next = document.querySelector<HTMLInputElement>(`[data-meal="${i}"][data-item="${j + 1}"][data-field="food"]`);
-                            next?.focus();
-                          }
-                        };
-                        const focusQtyInput = () => {
-                          const qty = document.querySelector<HTMLInputElement>(`[data-meal="${i}"][data-item="${j}"][data-field="qty"]`);
-                          qty?.focus();
-                        };
-                        return (
-                          <div key={j} className="flex items-center gap-2">
-                            <div className="flex-1 min-w-0">
-                              <FoodCombobox value={item.food} onChange={v => updateItem(i, j, "food", v)} foodNames={foodNames} onSelectAdvance={focusQtyInput} mealIdx={i} itemIdx={j} />
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <input
-                                type="number" min="0" step={isServingBased ? "0.5" : "1"}
-                                data-meal={i} data-item={j} data-field="qty"
-                                value={item.grams}
-                                onChange={e => updateItem(i, j, "grams", e.target.value)}
-                                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextFoodInput(); } }}
-                                className="w-16 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
+                    {/* Food rows — drag to reorder */}
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={e => handleFoodDragEnd(i, e)}>
+                      <SortableContext
+                        items={(meal.items ?? []).map((_: any, j: number) => `food-${i}-${j}`)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-1.5">
+                          {(meal.items ?? []).map((item: any, j: number) => {
+                            const selectedFood = foodDb.find((f: any) => f.name === item.food);
+                            const isServingBased = !!(selectedFood?.servingUnit && selectedFood?.servingGrams);
+                            const amount = parseFloat(item.grams) || 0;
+                            const m = calcItemMacros(foodDb, item.food, amount);
+                            const hasData = item.food && amount > 0;
+                            const effectiveGrams = isServingBased ? getItemGrams(foodDb, item.food, amount) : null;
+                            const totalItems = (meal.items ?? []).length;
+                            const isLastItem = j === totalItems - 1;
+                            const focusNextFoodInput = () => {
+                              if (isLastItem) {
+                                addItem(i);
+                                setTimeout(() => {
+                                  const next = document.querySelector<HTMLInputElement>(`[data-meal="${i}"][data-item="${j + 1}"][data-field="food"]`);
+                                  next?.focus();
+                                }, 50);
+                              } else {
+                                const next = document.querySelector<HTMLInputElement>(`[data-meal="${i}"][data-item="${j + 1}"][data-field="food"]`);
+                                next?.focus();
+                              }
+                            };
+                            const focusQtyInput = () => {
+                              const qty = document.querySelector<HTMLInputElement>(`[data-meal="${i}"][data-item="${j}"][data-field="qty"]`);
+                              qty?.focus();
+                            };
+                            return (
+                              <SortableFoodRow
+                                key={`food-${i}-${j}`}
+                                id={`food-${i}-${j}`}
+                                item={item}
+                                mealIdx={i}
+                                itemIdx={j}
+                                isServingBased={isServingBased}
+                                selectedFood={selectedFood}
+                                effectiveGrams={effectiveGrams}
+                                macros={m}
+                                hasData={hasData}
+                                foodNames={foodNames}
+                                onUpdate={(field, value) => updateItem(i, j, field, value)}
+                                onRemove={() => removeItem(i, j)}
+                                onSelectAdvance={focusQtyInput}
+                                onQtyEnter={focusNextFoodInput}
                               />
-                              <div className="text-[13px] text-muted-foreground w-28 leading-tight">
-                                <span className="whitespace-nowrap">{isServingBased ? selectedFood.servingUnit : "g"}</span>
-                                {isServingBased && effectiveGrams ? <span className="whitespace-nowrap text-muted-foreground/50"> ({effectiveGrams}g)</span> : null}
-                              </div>
-                            </div>
-                            <div className="w-24 shrink-0 text-xs leading-tight">
-                              {hasData ? (
-                                <>
-                                  <span className="text-foreground font-medium text-xs">{m.calories} kcal</span>
-                                  <div className="text-muted-foreground text-xs">P{m.protein} C{m.carbs} F{m.fat}</div>
-                                </>
-                              ) : <span className="text-muted-foreground/30">—</span>}
-                            </div>
-                            <button onClick={() => removeItem(i, j)} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
+                            );
+                          })}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
 
                     {/* Add item + meal subtotal */}
                     <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/30">
