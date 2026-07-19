@@ -461,6 +461,7 @@ function IdealZoneCard({
         <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${C.border}` }}>
           <button
             className="flex items-center justify-between w-full mb-2"
+            onClick={() => setShowOutOfZone(v => !v)}
           >
             <span className="text-xs font-medium uppercase tracking-[0.7px]" style={{ color: C.amber }}>
               {outOfZoneMeals.length} out-of-zone meal{outOfZoneMeals.length !== 1 ? "s" : ""}
@@ -803,70 +804,76 @@ function MealLogView({ clientId }: { clientId: number }) {
 
   return (
     <div className="flex flex-col sm:flex-row gap-6">
-      <div className="flex-shrink-0" style={{ width: "min(100%, 360px)" }}>
-        <div className="flex items-center justify-between mb-4">
+      {/* ── Compact month calendar ── */}
+      <div className="flex-shrink-0" style={{ width: "min(100%, 320px)" }}>
+        {/* Month nav */}
+        <div className="flex items-center justify-between mb-3">
           <button
             onClick={prevMonth}
-            className="p-1.5 rounded-lg transition-colors"
+            className="p-1 rounded transition-colors"
             style={{ color: C.muted }}
-            onMouseEnter={e => (e.currentTarget.style.background = C.surfaceVariant)}
-            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            onMouseEnter={e => (e.currentTarget.style.color = C.fg)}
+            onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-[14px] font-medium" style={{ color: C.fg }}>{formatMonthYear(year, month)}</span>
+          <span className="text-[13px] font-medium" style={{ color: C.fg }}>{formatMonthYear(year, month)}</span>
           <button
             onClick={nextMonth}
-            className="p-1.5 rounded-lg transition-colors"
+            className="p-1 rounded transition-colors"
             style={{ color: C.muted }}
-            onMouseEnter={e => (e.currentTarget.style.background = C.surfaceVariant)}
-            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            onMouseEnter={e => (e.currentTarget.style.color = C.fg)}
+            onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="grid grid-cols-7 mb-1">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 mb-0.5">
           {DAY_HEADERS.map(d => (
-            <div key={d} className="text-center py-1" style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.7px", color: C.muted, opacity: 0.7 }}>
+            <div key={d} className="text-center" style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.6px", color: C.muted, opacity: 0.55, paddingBottom: 4 }}>
               {d.toUpperCase()}
             </div>
           ))}
         </div>
 
+        {/* Compact grid — each row is ~32px */}
         {isLoading ? (
-          <div className="grid grid-cols-7 gap-1">
-            {[...Array(35)].map((_, i) => (
-              <Skeleton key={i} className="h-16 rounded-lg" style={{ background: `${C.fg}08` }} />
+          <div className="space-y-0.5">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="grid grid-cols-7 gap-0.5">
+                {[...Array(7)].map((_, j) => (
+                  <Skeleton key={j} className="h-8 rounded" style={{ background: `${C.fg}08` }} />
+                ))}
+              </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-7">
+          <div className="grid grid-cols-7 gap-0.5">
             {cells.map((day, idx) => {
-              if (!day) return <div key={idx} className="aspect-square" />;
+              if (!day) return <div key={idx} className="h-8" />;
               const key = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               const dayData = byDate[key];
               const isSelected = selectedDate === key;
               const isToday = today.getFullYear() === year && today.getMonth() + 1 === month && today.getDate() === day;
               const hasMeals = !!dayData;
-
-              // Option A: amber dot if any out-of-zone meal, green otherwise
               const dotColor = dayData?.hasOutOfRange ? C.amber : C.primary;
               return (
                 <button
                   key={idx}
-                  onClick={() => setSelectedDate(isSelected ? null : key)}
-                  className="relative aspect-square flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors"
+                  onClick={() => hasMeals && setSelectedDate(isSelected ? null : key)}
+                  className="relative h-8 flex flex-col items-center justify-center rounded text-[12px] font-medium transition-colors"
                   style={{
                     cursor: hasMeals ? "pointer" : "default",
-                    background: isSelected ? `${dotColor}22` : hasMeals ? `${C.fg}08` : "transparent",
+                    background: isSelected ? `${dotColor}28` : "transparent",
                     outline: isSelected ? `1px solid ${dotColor}` : isToday && !isSelected ? `1px solid ${C.primary}44` : "none",
-                    color: hasMeals ? C.fg : `${C.muted}55`,
+                    color: hasMeals ? C.fg : `${C.muted}33`,
                   }}
                 >
-                  <span>{day}</span>
-                  {dayData && (
-                    <span className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: dotColor }} />
+                  <span style={{ lineHeight: 1 }}>{day}</span>
+                  {hasMeals && (
+                    <span className="w-1 h-1 rounded-full mt-0.5" style={{ background: dotColor }} />
                   )}
                 </button>
               );
@@ -874,13 +881,14 @@ function MealLogView({ clientId }: { clientId: number }) {
           </div>
         )}
 
-        <div className="flex items-center gap-4 mt-3" style={{ fontSize: 10, color: C.muted, opacity: 0.65 }}>
+        {/* Legend */}
+        <div className="flex items-center gap-4 mt-2" style={{ fontSize: 10, color: C.muted, opacity: 0.6 }}>
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full inline-block" style={{ background: C.primary }} />
+            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: C.primary }} />
             All in zone
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full inline-block" style={{ background: C.amber }} />
+            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: C.amber }} />
             Out of zone
           </span>
         </div>

@@ -1564,17 +1564,17 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
       </span>
     </div>
 
-    <div className="flex flex-col lg:grid lg:grid-cols-[1fr_384px] gap-4 items-start">
-      {/* Calendar grid */}
-      <div className="min-w-0 w-full">
+    <div className="flex flex-col lg:flex-row gap-4 items-start">
+      {/* Compact calendar grid */}
+      <div style={{ width: 'min(100%, 300px)', flexShrink: 0 }}>
         {/* Weekday headers */}
-        <div className="grid grid-cols-7 mb-1">
+        <div className="grid grid-cols-7 mb-0.5">
           {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
-            <div key={d} className="text-center py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground opacity-70">{d}</div>
+            <div key={d} className="text-center" style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.6px', color: 'hsl(var(--muted-foreground))', opacity: 0.55, paddingBottom: 4 }}>{d}</div>
           ))}
         </div>
-        {/* Day cells — aspect-square, gap-1, no borders */}
-        <div className="grid grid-cols-7 gap-1">
+        {/* Compact day cells — h-8 (~32px) */}
+        <div className="grid grid-cols-7 gap-0.5">
           {cells.map((cell, idx) => {
             const sess = cell.iso ? sessionByDate[cell.iso] : null;
             const isToday = cell.iso === todayIso;
@@ -1592,30 +1592,26 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
               });
             }
 
-            const dotColor = hasIncomplete ? 'bg-amber-400' : 'bg-primary';
+            const accentColor = hasIncomplete ? '#fbbf24' : '#52B788';
 
             return (
               <button
                 key={idx}
-                className={[
-                  'relative aspect-square flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors',
-                  sess ? 'cursor-pointer' : 'cursor-default',
-                ].join(' ')}
+                className="relative h-8 flex flex-col items-center justify-center rounded text-[12px] font-medium transition-colors"
                 style={{
-                  background: isSelected ? '#52B78822' : cell.day && !cell.otherMonth ? '#ECEDEE08' : 'transparent',
-                  outline: isSelected ? '1px solid #52B788' : isToday && !isSelected ? '1px solid #52B78844' : 'none',
-                  color: cell.otherMonth ? '#9BA1A655' : isToday ? '#52B788' : '#ECEDEE',
+                  cursor: sess ? 'pointer' : 'default',
+                  background: isSelected ? `${accentColor}28` : 'transparent',
+                  outline: isSelected ? `1px solid ${accentColor}` : isToday && !isSelected ? '1px solid #52B78844' : 'none',
+                  color: cell.otherMonth ? '#9BA1A633' : isToday ? '#52B788' : '#ECEDEE',
                 }}
                 onClick={() => sess ? setSelectedSession(isSelected ? null : sess) : undefined}
               >
-                <span className={isToday ? 'font-bold' : ''}>{cell.day}</span>
+                <span style={{ lineHeight: 1 }}>{cell.day}</span>
                 {sess && (
                   <span
-                    className="text-[9px] leading-tight font-semibold truncate max-w-full px-0.5 mt-0.5"
-                    style={{ color: isSelected ? '#52B788' : hasIncomplete ? '#fbbf24' : '#52B788', opacity: cell.otherMonth ? 0.4 : 1 }}
-                  >
-                    {sess.dayLabel}
-                  </span>
+                    className="w-1 h-1 rounded-full mt-0.5"
+                    style={{ background: accentColor, opacity: cell.otherMonth ? 0.4 : 1, display: 'inline-block' }}
+                  />
                 )}
               </button>
             );
@@ -1623,14 +1619,16 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
         </div>
       </div>
 
-      {/* Detail panel */}
-      {selectedSession ? (
-        <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} allSessions={workoutSessions} />
-      ) : (
-        <div className="w-full border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 80, marginTop: '27px' }}>
-          <p className="text-xs text-muted-foreground">Click a session to view details</p>
-        </div>
-      )}
+      {/* Detail panel — fills remaining space */}
+      <div className="flex-1 min-w-0">
+        {selectedSession ? (
+          <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} allSessions={workoutSessions} />
+        ) : (
+          <div className="w-full border border-border rounded-xl bg-card flex items-center justify-center" style={{ minHeight: 80 }}>
+            <p className="text-xs text-muted-foreground">Click a session to view details</p>
+          </div>
+        )}
+      </div>
     </div>
 
     {/* Monthly volume summary — constrained to calendar column width */}
