@@ -918,3 +918,6 @@
 - [x] Parse nutrient_profiles.xlsx: map Energy kJ→kcal, Protein, Fat, Fibre, Starch+Sugars→Carbs
 - [x] Clear existing USDA data (nutrition_foods + food_servings) and insert 1,588 AFCD foods
 - [x] Verify import: 1,588 rows confirmed in nutrition_foods table
+
+## AFCD Serving Sizes
+- [x] Add practical serving sizes to AFCD foods (eggs, meats, dairy, fruits, vegetables, nuts, bread, etc.)
