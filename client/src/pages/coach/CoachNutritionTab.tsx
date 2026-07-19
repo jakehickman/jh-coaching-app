@@ -310,10 +310,12 @@ function IdealZoneCard({
     fullnessInZonePct?: number | null;
     allTimeIdealZonePct?: number | null;
     weeklyIdealZone?: { weekStart: string; pct: number | null; meals: number }[];
+    outOfZoneMeals?: { id: number; name: string | null; loggedAt: number; utcOffsetMins: number; hungerRating: number | null; fullnessRating: number | null }[];
   };
   days: number;
   compact?: boolean;
 }) {
+  const [showOutOfZone, setShowOutOfZone] = useState(false);
   const {
     idealZonePct,
     prevIdealZonePct,
@@ -321,6 +323,7 @@ function IdealZoneCard({
     fullnessInZonePct,
     allTimeIdealZonePct,
     weeklyIdealZone,
+    outOfZoneMeals,
   } = insights;
 
   if (idealZonePct == null) {
@@ -448,6 +451,53 @@ function IdealZoneCard({
                 <span className="text-xs" style={{ color: C.muted }}>in zone</span>
               </div>
               <ProgressBar value={fullnessInZonePct} color={scoreColor(fullnessInZonePct)} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Option B: out-of-zone meal list */}
+      {outOfZoneMeals && outOfZoneMeals.length > 0 && (
+        <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${C.border}` }}>
+          <button
+            className="flex items-center justify-between w-full mb-2"
+          >
+            <span className="text-xs font-medium uppercase tracking-[0.7px]" style={{ color: C.amber }}>
+              {outOfZoneMeals.length} out-of-zone meal{outOfZoneMeals.length !== 1 ? "s" : ""}
+            </span>
+            <span className="text-[11px]" style={{ color: C.muted }}>{showOutOfZone ? "Hide" : "Show"}</span>
+          </button>
+          {showOutOfZone && (
+            <div className="space-y-2">
+              {outOfZoneMeals.map(m => {
+                const hBad = m.hungerRating != null && (m.hungerRating < 3 || m.hungerRating > 4);
+                const fBad = m.fullnessRating != null && (m.fullnessRating < 6 || m.fullnessRating > 7);
+                const dateStr = new Date(m.loggedAt).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+                return (
+                  <div key={m.id} className="rounded-lg px-3 py-2.5" style={{ background: `${C.amber}0D`, border: `1px solid ${C.amber}28` }}>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-[12px] font-medium truncate" style={{ color: C.fg }}>
+                        {m.name ?? "Unnamed meal"}
+                      </span>
+                      <span className="text-[11px] shrink-0" style={{ color: C.muted }}>{dateStr}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {m.hungerRating != null && (
+                        <span className="text-[11px]" style={{ color: hBad ? C.amber : C.muted }}>
+                          Hunger <span className="font-bold" style={{ color: hBad ? C.amber : C.primary }}>{m.hungerRating}</span>
+                          {hBad && <span className="ml-1" style={{ color: C.amber }}>{m.hungerRating < 3 ? "(too low)" : "(too high)"}</span>}
+                        </span>
+                      )}
+                      {m.fullnessRating != null && (
+                        <span className="text-[11px]" style={{ color: fBad ? C.amber : C.muted }}>
+                          Fullness <span className="font-bold" style={{ color: fBad ? C.amber : C.primary }}>{m.fullnessRating}</span>
+                          {fBad && <span className="ml-1" style={{ color: C.amber }}>{m.fullnessRating < 6 ? "(too low)" : "(too high)"}</span>}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -800,6 +850,8 @@ function MealLogView({ clientId }: { clientId: number }) {
               const isToday = today.getFullYear() === year && today.getMonth() + 1 === month && today.getDate() === day;
               const hasMeals = !!dayData;
 
+              // Option A: amber dot if any out-of-zone meal, green otherwise
+              const dotColor = dayData?.hasOutOfRange ? C.amber : C.primary;
               return (
                 <button
                   key={idx}
@@ -807,14 +859,14 @@ function MealLogView({ clientId }: { clientId: number }) {
                   className="relative aspect-square flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors"
                   style={{
                     cursor: hasMeals ? "pointer" : "default",
-                    background: isSelected ? `${C.primary}22` : hasMeals ? `${C.fg}08` : "transparent",
-                    outline: isSelected ? `1px solid ${C.primary}` : isToday && !isSelected ? `1px solid ${C.primary}44` : "none",
+                    background: isSelected ? `${dotColor}22` : hasMeals ? `${C.fg}08` : "transparent",
+                    outline: isSelected ? `1px solid ${dotColor}` : isToday && !isSelected ? `1px solid ${C.primary}44` : "none",
                     color: hasMeals ? C.fg : `${C.muted}55`,
                   }}
                 >
                   <span>{day}</span>
                   {dayData && (
-                    <span className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: C.primary }} />
+                    <span className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: dotColor }} />
                   )}
                 </button>
               );
@@ -825,7 +877,11 @@ function MealLogView({ clientId }: { clientId: number }) {
         <div className="flex items-center gap-4 mt-3" style={{ fontSize: 10, color: C.muted, opacity: 0.65 }}>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: C.primary }} />
-            Meals logged
+            All in zone
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full inline-block" style={{ background: C.amber }} />
+            Out of zone
           </span>
         </div>
       </div>

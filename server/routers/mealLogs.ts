@@ -465,6 +465,23 @@ export const mealLogsRouter = router({
       const scatter = curMeals
         .filter(m => m.hungerRating != null && m.fullnessRating != null)
         .map(m => ({ h: m.hungerRating!, f: m.fullnessRating! }));
+      // Out-of-zone meals: at least one rating present and outside ideal range
+      const outOfZoneMeals = curMeals
+        .filter(m => m.hungerRating != null || m.fullnessRating != null)
+        .filter(m => {
+          const hBad = m.hungerRating != null && (m.hungerRating < 3 || m.hungerRating > 4);
+          const fBad = m.fullnessRating != null && (m.fullnessRating < 6 || m.fullnessRating > 7);
+          return hBad || fBad;
+        })
+        .map(m => ({
+          id: m.id,
+          name: m.name ?? null,
+          loggedAt: m.loggedAt.getTime(),
+          utcOffsetMins: (m as any).utcOffsetMins as number ?? 0,
+          hungerRating: m.hungerRating ?? null,
+          fullnessRating: m.fullnessRating ?? null,
+        }))
+        .sort((a, b) => b.loggedAt - a.loggedAt); // newest first
       // Treats: daily bars for 7d, weekly bars for 30d
       const treatsByWeek: { weekStart: string; small: number; medium: number; large: number; total: number }[] = [];
       if (input.days === 7) {
@@ -646,6 +663,7 @@ export const mealLogsRouter = router({
         consistencyScore,
         totalForConsistency,
         hasTimingData: slots.length > 0,
+        outOfZoneMeals,
       };
     }),
 
