@@ -160,7 +160,7 @@ function SortableFoodRow({
       </div>
 
       {/* Quantity input */}
-      <div className="w-14 shrink-0">
+      <div className="w-20 shrink-0">
         <input
           type="number" min="0" step="0.5"
           data-meal={mealIdx} data-item={itemIdx} data-field="qty"
@@ -727,7 +727,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                       <div className="w-3 shrink-0" />
                       <p className="flex-1 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Food</p>
                       <p className="w-44 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Serving</p>
-                      <p className="w-14 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">Qty</p>
+                       <p className="w-20 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">Qty</p>
                       <div className="w-16 shrink-0" />
                       <p className="w-24 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Macros</p>
                       <p className="w-4"></p>
@@ -805,7 +805,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                               <div className="w-44 bg-secondary border border-border rounded px-2 py-1 text-[12px] text-foreground truncate shrink-0">
                                 {active.item.servingLabel || "100g"}
                               </div>
-                              <div className="w-14 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground text-right shrink-0">
+                               <div className="w-20 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground text-right shrink-0">
                                 {active.item.qty || active.item.grams || ""}
                               </div>
                               <div className="w-24 shrink-0 text-xs leading-tight">
