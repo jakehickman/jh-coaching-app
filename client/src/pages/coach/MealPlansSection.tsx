@@ -454,6 +454,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
   const [planNotes, setPlanNotes] = useState("");
   const [treatAllowance, setTreatAllowance] = useState("");
   const [meals, setMeals] = useState<any[]>([]);
+  const [supplements, setSupplements] = useState<{ name: string; dose: string; timing: string }[]>([]);
   const mealSavedSnapshot = useRef<{ meals: any[]; planNotes: string } | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
@@ -471,6 +472,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
         setMeals(normalizedMeals);
         setPlanNotes(parsed.planNotes ?? "");
         setTreatAllowance(parsed.treatAllowance ?? "");
+        setSupplements(parsed.supplements ?? []);
         return;
       } catch { /* ignore */ }
     }
@@ -482,6 +484,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
       setMeals(normalizedMeals);
       setPlanNotes(plan.notes ?? "");
       setTreatAllowance(plan.treatAllowanceKcal ? String(plan.treatAllowanceKcal) : "");
+      setSupplements((plan as any).supplements ?? []);
       mealSavedSnapshot.current = { meals: normalizedMeals, planNotes: plan.notes ?? "" };
     }
   }, [plan, mealDraftKey]);
@@ -489,9 +492,9 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
   // Persist draft to localStorage
   useEffect(() => {
     if (!mealDraftKey) return;
-    localStorage.setItem(mealDraftKey, JSON.stringify({ meals, planNotes, treatAllowance }));
+    localStorage.setItem(mealDraftKey, JSON.stringify({ meals, planNotes, treatAllowance, supplements }));
     window.dispatchEvent(new Event("draft-changed"));
-  }, [meals, planNotes, treatAllowance, mealDraftKey]);
+  }, [meals, planNotes, treatAllowance, supplements, mealDraftKey]);
 
   const upsert = trpc.mealPlan.upsert.useMutation({
     onSuccess: () => {
@@ -612,6 +615,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
       totalFat: dailyTotals.fat ? Math.round(dailyTotals.fat) : undefined,
       notes: planNotes || null,
       treatAllowanceKcal: treatAllowance ? parseInt(treatAllowance) : null,
+      supplements: supplements.length > 0 ? supplements : null,
     });
   };
 
@@ -848,6 +852,52 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                   <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground block mb-1.5">Notes</label>
                   <textarea value={planNotes} onChange={e => setPlanNotes(e.target.value)} rows={2}
                     className="w-full bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+                </Card>
+
+                {/* Supplements card */}
+                <Card>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Supplements</label>
+                    <button
+                      onClick={() => setSupplements(s => [...s, { name: "", dose: "", timing: "" }])}
+                      className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                    >
+                      <Plus size={11} /> Add
+                    </button>
+                  </div>
+                  {supplements.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No supplements added yet.</p>
+                  )}
+                  <div className="space-y-2">
+                    {supplements.map((supp, i) => (
+                      <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-1.5 items-center">
+                        <input
+                          placeholder="Name"
+                          value={supp.name}
+                          onChange={e => setSupplements(s => s.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x))}
+                          className="bg-secondary border border-border rounded px-2 py-1 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <input
+                          placeholder="Dose"
+                          value={supp.dose}
+                          onChange={e => setSupplements(s => s.map((x, idx) => idx === i ? { ...x, dose: e.target.value } : x))}
+                          className="bg-secondary border border-border rounded px-2 py-1 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <input
+                          placeholder="Timing"
+                          value={supp.timing}
+                          onChange={e => setSupplements(s => s.map((x, idx) => idx === i ? { ...x, timing: e.target.value } : x))}
+                          className="bg-secondary border border-border rounded px-2 py-1 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <button
+                          onClick={() => setSupplements(s => s.filter((_, idx) => idx !== i))}
+                          className="text-muted-foreground hover:text-destructive p-1"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </Card>
 
                 {/* Save button */}

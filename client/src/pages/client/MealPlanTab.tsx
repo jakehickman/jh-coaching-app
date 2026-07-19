@@ -293,6 +293,24 @@ function MealPlanTab() {
             </Card>
           )}
 
+          {/* Supplements */}
+          {((plan as any).supplements ?? []).length > 0 && (
+            <Card>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3 font-semibold">Supplements</p>
+              <div className="space-y-2">
+                {((plan as any).supplements as { name: string; dose: string; timing: string }[]).map((supp, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{supp.name}</p>
+                      {supp.timing && <p className="text-xs text-muted-foreground">{supp.timing}</p>}
+                    </div>
+                    <span className="text-sm text-muted-foreground font-medium">{supp.dose}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
           {/* In-flow free calories card at bottom of page */}
           {!!treatAllowanceKcal && (
             <Card className="border-pink-500/30">

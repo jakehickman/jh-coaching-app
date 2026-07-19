@@ -933,3 +933,8 @@
 ## Client Meal Plan Bugs
 - [x] Fix: quantities not showing in client-side meal plan viewer
 - [x] Fix: shopping list not generating
+
+## Supplements Section in Meal Plan
+- [x] Add supplements array to meal plan data structure (name, dose, timing, notes)
+- [x] Add supplements editor to coach-side meal plan builder
+- [x] Display supplements section in client-side Meal Plan tab

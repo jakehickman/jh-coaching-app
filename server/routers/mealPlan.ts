@@ -16,6 +16,11 @@ export const mealPlanRouter = router({
         userId: z.number(),
         dayType: z.enum(["training", "rest"]),
         meals: z.any().optional(),
+        supplements: z.array(z.object({
+          name: z.string(),
+          dose: z.string(),
+          timing: z.string(),
+        })).nullable().optional(),
         totalCalories: z.number().optional(),
         totalProtein: z.number().optional(),
         totalCarbs: z.number().optional(),

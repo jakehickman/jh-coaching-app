@@ -177,6 +177,7 @@ export const mealPlans = mysqlTable("meal_plans", {
   coachId: int("coachId"),
   dayType: mysqlEnum("dayType", ["training", "rest"]).notNull(),
   meals: json("meals").$type<Meal[]>(), // JSON array of meal objects
+  supplements: json("supplements").$type<{ name: string; dose: string; timing: string }[]>(), // supplement stack
   totalCalories: int("totalCalories"),
   totalProtein: int("totalProtein"),
   totalCarbs: int("totalCarbs"),
