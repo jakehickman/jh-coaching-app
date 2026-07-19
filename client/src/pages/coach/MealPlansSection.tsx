@@ -11,8 +11,9 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverlay,
 } from "@dnd-kit/core";
-import type { DragEndEvent } from "@dnd-kit/core";
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import {
   SortableContext,
   useSortable,
@@ -43,9 +44,18 @@ function SortableFoodRow({
   onQtyEnter: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition ?? "transform 150ms cubic-bezier(0.25, 1, 0.5, 1)",
+  };
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-2">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 rounded transition-opacity ${
+        isDragging ? "opacity-30 border border-dashed border-border bg-secondary/30" : ""
+      }`}
+    >
       <button {...attributes} {...listeners} className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing touch-none">
         <GripVertical size={12} />
       </button>
@@ -476,14 +486,37 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
   const reorderItem = (mealIdx: number, oldIndex: number, newIndex: number) =>
     setMeals(m => m.map((meal, idx) => idx === mealIdx ? { ...meal, items: arrayMove(meal.items ?? [], oldIndex, newIndex) } : meal));
 
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  function handleFoodDragStart(_mealIdx: number, event: DragStartEvent) {
+    setActiveDragId(String(event.active.id));
+  }
   function handleFoodDragEnd(mealIdx: number, event: DragEndEvent) {
+    setActiveDragId(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const items = meals[mealIdx]?.items ?? [];
     const oldIndex = items.findIndex((_: any, i: number) => `food-${mealIdx}-${i}` === active.id);
     const newIndex = items.findIndex((_: any, i: number) => `food-${mealIdx}-${i}` === over.id);
     if (oldIndex !== -1 && newIndex !== -1) reorderItem(mealIdx, oldIndex, newIndex);
+  }
+  // Derive the active item data for DragOverlay
+  function getActiveDragItem() {
+    if (!activeDragId) return null;
+    const parts = activeDragId.split("-"); // food-{mealIdx}-{itemIdx}
+    const mealIdx = parseInt(parts[1] ?? "", 10);
+    const itemIdx = parseInt(parts[2] ?? "", 10);
+    if (isNaN(mealIdx) || isNaN(itemIdx)) return null;
+    const meal = meals[mealIdx];
+    const item = meal?.items?.[itemIdx];
+    if (!item) return null;
+    const selectedFood = foodDb.find((f: any) => f.name === item.food);
+    const isServingBased = !!(selectedFood?.servingUnit && selectedFood?.servingGrams);
+    const amount = parseFloat(item.grams) || 0;
+    const m = calcItemMacros(foodDb, item.food, amount);
+    const hasData = item.food && amount > 0;
+    const effectiveGrams = isServingBased ? getItemGrams(foodDb, item.food, amount) : null;
+    return { item, mealIdx, itemIdx, isServingBased, selectedFood, effectiveGrams, macros: m, hasData };
   }
 
   const foodNames = foodDb.map((f: any) => f.name).sort();
@@ -586,7 +619,13 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                     </div>
 
                     {/* Food rows — drag to reorder */}
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={e => handleFoodDragEnd(i, e)}>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragStart={e => handleFoodDragStart(i, e)}
+                      onDragEnd={e => handleFoodDragEnd(i, e)}
+                      onDragCancel={() => setActiveDragId(null)}
+                    >
                       <SortableContext
                         items={(meal.items ?? []).map((_: any, j: number) => `food-${i}-${j}`)}
                         strategy={verticalListSortingStrategy}
@@ -639,6 +678,42 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                           })}
                         </div>
                       </SortableContext>
+                      <DragOverlay dropAnimation={{ duration: 150, easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)" }}>
+                        {(() => {
+                          const active = getActiveDragItem();
+                          if (!active) return null;
+                          return (
+                            <div className="flex items-center gap-2 rounded-lg bg-card border border-primary/30 shadow-xl scale-[1.02] opacity-95 px-1 py-0.5">
+                              <button className="shrink-0 text-primary/60 cursor-grabbing touch-none">
+                                <GripVertical size={12} />
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <div className="w-full bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground truncate">
+                                  {active.item.food || <span className="text-muted-foreground">Search food…</span>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <div className="w-16 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground text-right">
+                                  {active.item.grams || ""}
+                                </div>
+                                <div className="text-[13px] text-muted-foreground w-28 leading-tight">
+                                  <span className="whitespace-nowrap">{active.isServingBased ? active.selectedFood?.servingUnit : "g"}</span>
+                                  {active.isServingBased && active.effectiveGrams ? <span className="whitespace-nowrap text-muted-foreground/50"> ({active.effectiveGrams}g)</span> : null}
+                                </div>
+                              </div>
+                              <div className="w-24 shrink-0 text-xs leading-tight">
+                                {active.hasData ? (
+                                  <>
+                                    <span className="text-foreground font-medium text-xs">{active.macros.calories} kcal</span>
+                                    <div className="text-muted-foreground text-xs">P{active.macros.protein} C{active.macros.carbs} F{active.macros.fat}</div>
+                                  </>
+                                ) : <span className="text-muted-foreground/30">—</span>}
+                              </div>
+                              <div className="w-4 shrink-0" />
+                            </div>
+                          );
+                        })()}
+                      </DragOverlay>
                     </DndContext>
 
                     {/* Add item + meal subtotal */}
