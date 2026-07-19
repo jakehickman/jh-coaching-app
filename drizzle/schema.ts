@@ -17,6 +17,10 @@ export interface MealIngredient {
   foodId?: number;
   name: string;
   quantity: number; // grams
+  servingId?: number;    // food_servings.id — which serving size was selected
+  servingLabel?: string; // e.g. "1 cup (240g)" — display label for the serving
+  servingGrams?: number; // grams per 1 serving unit (for quantity calculation)
+  servingQty?: number;   // number of servings (e.g. 2 cups) — quantity = servingQty * servingGrams
   protein: number;
   carbs: number;
   fat: number;
@@ -346,20 +350,31 @@ export type WeeklyCheckIn = typeof weeklyCheckIns.$inferSelect;
 // Nutrition foods — food database with macros per 100g (USDA-sourced)
 export const nutritionFoods = mysqlTable("nutrition_foods", {
   id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 128 }).notNull(),
+  fdcId: int("fdcId"),                                  // USDA FDC ID for reference
+  name: varchar("name", { length: 256 }).notNull(),
   calories: float("calories").notNull().default(0),   // kcal per 100g
   protein: float("protein").notNull().default(0),     // g per 100g
   carbs: float("carbs").notNull().default(0),         // g per 100g
   fiber: float("fiber").notNull().default(0),         // g per 100g
   fat: float("fat").notNull().default(0),             // g per 100g
-  servingUnit: varchar("servingUnit", { length: 64 }),  // e.g. "egg", "slice", "tbsp" — null means per 100g
-  servingGrams: float("servingGrams"),                  // grams per 1 serving unit
+  servingUnit: varchar("servingUnit", { length: 64 }),  // legacy single serving — kept for compatibility
+  servingGrams: float("servingGrams"),                  // legacy single serving — kept for compatibility
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
 export type NutritionFood = typeof nutritionFoods.$inferSelect;
 export type InsertNutritionFood = typeof nutritionFoods.$inferInsert;
+
+// Multiple serving sizes per food (e.g. "1 cup", "1 breast", "1 oz")
+export const foodServings = mysqlTable("food_servings", {
+  id: int("id").autoincrement().primaryKey(),
+  foodId: int("foodId").notNull(),                     // references nutritionFoods.id
+  label: varchar("label", { length: 128 }).notNull(), // e.g. "1 cup", "1 medium breast"
+  grams: float("grams").notNull(),                    // gram weight for this serving
+  sortOrder: int("sortOrder").notNull().default(0),
+});
+export type FoodServing = typeof foodServings.$inferSelect;
+export type InsertFoodServing = typeof foodServings.$inferInsert;
 
 // Workout sessions — client logs sets/reps/weight per program day
 export const workoutSessions = mysqlTable("workout_sessions", {

@@ -22,23 +22,59 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+// ─── Item type ────────────────────────────────────────────────────────────────
+// item.qty  = number of servings (or grams if 100g serving)
+// item.servingGrams = grams per one serving (default 100)
+// item.servingLabel = display label e.g. "1 cup (240g)"
+// item.servingId    = food_servings.id or null for 100g fallback
+interface MealItem {
+  food: string;
+  qty: string;           // quantity of servings
+  servingId: number | null;
+  servingGrams: number;  // grams per serving
+  servingLabel: string;  // display label
+  // legacy compat — grams field kept for old saved plans
+  grams?: string;
+}
+
+// ─── Macro helpers ────────────────────────────────────────────────────────────
+
+function calcItemMacros(foodDb: any[], item: MealItem) {
+  const food = foodDb.find((f: any) => f.name === item.food);
+  if (!food) return { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 };
+  const qty = parseFloat(item.qty ?? item.grams ?? "0") || 0;
+  if (!qty) return { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 };
+  const grams = qty * (item.servingGrams ?? 100);
+  const factor = grams / 100;
+  return {
+    calories: Math.round(food.calories * factor),
+    protein: Math.round(food.protein * factor),
+    carbs: Math.round(food.carbs * factor),
+    fiber: Math.round(food.fiber * factor),
+    fat: Math.round(food.fat * factor),
+  };
+}
+
+function getEffectiveGrams(item: MealItem): number {
+  const qty = parseFloat(item.qty ?? item.grams ?? "0") || 0;
+  return Math.round(qty * (item.servingGrams ?? 100));
+}
+
 // ─── Sortable food row ────────────────────────────────────────────────────────
 
 function SortableFoodRow({
-  id, item, mealIdx, itemIdx, isServingBased, selectedFood, effectiveGrams, macros, hasData,
+  id, item, mealIdx, itemIdx, selectedFood, macros, hasData,
   foodNames, onUpdate, onRemove, onSelectAdvance, onQtyEnter
 }: {
   id: string;
-  item: any;
+  item: MealItem;
   mealIdx: number;
   itemIdx: number;
-  isServingBased: boolean;
   selectedFood: any;
-  effectiveGrams: number | null;
   macros: { calories: number; protein: number; carbs: number; fat: number };
   hasData: boolean;
   foodNames: string[];
-  onUpdate: (field: string, value: string) => void;
+  onUpdate: (field: string, value: string | number | null) => void;
   onRemove: () => void;
   onSelectAdvance: () => void;
   onQtyEnter: () => void;
@@ -48,6 +84,20 @@ function SortableFoodRow({
     transform: CSS.Transform.toString(transform),
     transition: transition ?? "transform 150ms cubic-bezier(0.25, 1, 0.5, 1)",
   };
+
+  // Build serving options: 100g fallback first, then USDA servings
+  const servingOptions: { id: number | null; label: string; grams: number }[] = [
+    { id: null, label: "100g", grams: 100 },
+    ...(selectedFood?.servings ?? []).map((s: any) => ({
+      id: s.id as number,
+      label: `${s.label} (${Math.round(s.grams)}g)`,
+      grams: s.grams as number,
+    })),
+  ];
+
+  const effectiveGrams = getEffectiveGrams(item);
+  const showGramHint = item.servingGrams !== 100 && (parseFloat(item.qty) || 0) > 0;
+
   return (
     <div
       ref={setNodeRef}
@@ -59,23 +109,73 @@ function SortableFoodRow({
       <button {...attributes} {...listeners} className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing touch-none">
         <GripVertical size={12} />
       </button>
+
+      {/* Food name combobox */}
       <div className="flex-1 min-w-0">
-        <FoodCombobox value={item.food} onChange={v => onUpdate("food", v)} foodNames={foodNames} onSelectAdvance={onSelectAdvance} mealIdx={mealIdx} itemIdx={itemIdx} />
+        <FoodCombobox
+          value={item.food}
+          onChange={v => {
+            onUpdate("food", v);
+            // Reset serving to 100g when food changes
+            onUpdate("servingId", null);
+            onUpdate("servingGrams", 100);
+            onUpdate("servingLabel", "100g");
+          }}
+          foodNames={foodNames}
+          onSelectAdvance={onSelectAdvance}
+          mealIdx={mealIdx}
+          itemIdx={itemIdx}
+        />
       </div>
+
+      {/* Serving size dropdown — only shown when a food is selected */}
+      {selectedFood && (
+        <select
+          value={item.servingId === null || item.servingId === undefined ? "__100g__" : String(item.servingId)}
+          onChange={e => {
+            const val = e.target.value;
+            if (val === "__100g__") {
+              onUpdate("servingId", null);
+              onUpdate("servingGrams", 100);
+              onUpdate("servingLabel", "100g");
+            } else {
+              const opt = servingOptions.find(o => o.id !== null && String(o.id) === val);
+              if (opt) {
+                onUpdate("servingId", opt.id);
+                onUpdate("servingGrams", opt.grams);
+                onUpdate("servingLabel", opt.label);
+              }
+            }
+          }}
+          className="w-44 bg-secondary border border-border rounded px-2 py-1 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary shrink-0"
+        >
+          {servingOptions.map(opt => (
+            <option key={opt.id === null ? "__100g__" : opt.id} value={opt.id === null ? "__100g__" : String(opt.id)}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {/* Quantity input */}
       <div className="flex items-center gap-1 shrink-0">
         <input
-          type="number" min="0" step={isServingBased ? "0.5" : "1"}
+          type="number" min="0" step="0.5"
           data-meal={mealIdx} data-item={itemIdx} data-field="qty"
-          value={item.grams}
-          onChange={e => onUpdate("grams", e.target.value)}
+          value={item.qty ?? item.grams ?? ""}
+          onChange={e => onUpdate("qty", e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); onQtyEnter(); } }}
-          className="w-16 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
+          className="w-14 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
+          placeholder="0"
         />
-        <div className="text-[13px] text-muted-foreground w-28 leading-tight">
-          <span className="whitespace-nowrap">{isServingBased ? selectedFood.servingUnit : "g"}</span>
-          {isServingBased && effectiveGrams ? <span className="whitespace-nowrap text-muted-foreground/50"> ({effectiveGrams}g)</span> : null}
-        </div>
+        {showGramHint && (
+          <span className="text-[11px] text-muted-foreground/50 shrink-0 whitespace-nowrap">
+            = {effectiveGrams}g
+          </span>
+        )}
       </div>
+
+      {/* Macro summary */}
       <div className="w-24 shrink-0 text-xs leading-tight">
         {hasData ? (
           <>
@@ -84,6 +184,7 @@ function SortableFoodRow({
           </>
         ) : <span className="text-muted-foreground/30">—</span>}
       </div>
+
       <button onClick={onRemove} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
         <Trash2 size={12} />
       </button>
@@ -160,28 +261,6 @@ function FoodCombobox({
       )}
     </div>
   );
-}
-
-// ─── Macro helpers ────────────────────────────────────────────────────────────
-
-function calcItemMacros(foodDb: any[], foodName: string, amount: number) {
-  const food = foodDb.find(f => f.name === foodName);
-  if (!food || !amount) return { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 };
-  const grams = food.servingUnit && food.servingGrams ? amount * food.servingGrams : amount;
-  const factor = grams / 100;
-  return {
-    calories: Math.round(food.calories * factor),
-    protein: Math.round(food.protein * factor),
-    carbs: Math.round(food.carbs * factor),
-    fiber: Math.round(food.fiber * factor),
-    fat: Math.round(food.fat * factor),
-  };
-}
-
-function getItemGrams(foodDb: any[], foodName: string, amount: number): number | null {
-  const food = foodDb.find(f => f.name === foodName);
-  if (!food || !amount) return null;
-  return food.servingUnit && food.servingGrams ? Math.round(amount * food.servingGrams) : amount;
 }
 
 // ─── Shared tab bar component ─────────────────────────────────────────────────
@@ -266,6 +345,19 @@ function DailyTotalsCard({
   );
 }
 
+// ─── Normalize legacy items ───────────────────────────────────────────────────
+// Old items used { food, grams } — migrate to new shape on load
+function normalizeMealItem(item: any): MealItem {
+  if (item.qty !== undefined) return item as MealItem; // already new shape
+  return {
+    food: item.food ?? "",
+    qty: item.grams ?? "",
+    servingId: null,
+    servingGrams: 100,
+    servingLabel: "100g",
+  };
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixedClientId?: number; onLiveTotals?: (dayType: "training" | "rest", calories: number) => void } = {}) {
@@ -340,91 +432,144 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
   const mealDraftKey = selectedUserId ? `draft:mealPlan:${selectedUserId}:${dayType}` : null;
 
   const [planNotes, setPlanNotes] = useState("");
-  const [meals, setMeals] = useState<any[]>([]);
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [treatAllowance, setTreatAllowance] = useState("");
+  const [meals, setMeals] = useState<any[]>([]);
+  const mealSavedSnapshot = useRef<{ meals: any[]; planNotes: string } | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
-  const mealSavedSnapshot = useRef<{ planNotes: string; meals: any[] } | null>(null);
+  // Load from draft or server
+  useEffect(() => {
+    if (!mealDraftKey) return;
+    const draft = localStorage.getItem(mealDraftKey);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        const normalizedMeals = (parsed.meals ?? []).map((meal: any) => ({
+          ...meal,
+          items: (meal.items ?? []).map(normalizeMealItem),
+        }));
+        setMeals(normalizedMeals);
+        setPlanNotes(parsed.planNotes ?? "");
+        setTreatAllowance(parsed.treatAllowance ?? "");
+        return;
+      } catch { /* ignore */ }
+    }
+    if (plan) {
+      const normalizedMeals = ((plan.meals as any[]) ?? []).map((meal: any) => ({
+        ...meal,
+        items: (meal.items ?? []).map(normalizeMealItem),
+      }));
+      setMeals(normalizedMeals);
+      setPlanNotes(plan.notes ?? "");
+      setTreatAllowance(plan.treatAllowanceKcal ? String(plan.treatAllowanceKcal) : "");
+      mealSavedSnapshot.current = { meals: normalizedMeals, planNotes: plan.notes ?? "" };
+    }
+  }, [plan, mealDraftKey]);
+
+  // Persist draft to localStorage
+  useEffect(() => {
+    if (!mealDraftKey) return;
+    localStorage.setItem(mealDraftKey, JSON.stringify({ meals, planNotes, treatAllowance }));
+    window.dispatchEvent(new Event("draft-changed"));
+  }, [meals, planNotes, treatAllowance, mealDraftKey]);
 
   const upsert = trpc.mealPlan.upsert.useMutation({
     onSuccess: () => {
-      mealSavedSnapshot.current = { planNotes, meals };
-      if (mealDraftKey) { try { localStorage.removeItem(mealDraftKey); window.dispatchEvent(new Event("draft-changed")); } catch {} }
-      setLastSavedAt(new Date());
       toast.success("Meal plan saved");
+      setLastSavedAt(new Date());
+      if (mealDraftKey) {
+        localStorage.removeItem(mealDraftKey);
+        setMealDraftUserIds(prev => { const next = new Set(prev); next.delete(selectedUserId!); return next; });
+        window.dispatchEvent(new Event("draft-changed"));
+      }
+      mealSavedSnapshot.current = { meals, planNotes };
       refetch();
-    }
+    },
+    onError: () => toast.error("Failed to save meal plan"),
   });
 
-  const mealLoadKey = selectedUserId ? `${selectedUserId}:${dayType}` : null;
-  const mealServerLoadedRef = useRef<string | null>(null);
-  const prevDayTypeRef = useRef<"training" | "rest">(dayType);
-  const prevMealsRef = useRef(meals);
-  const prevPlanNotesRef = useRef(planNotes);
-  useEffect(() => { prevMealsRef.current = meals; }, [meals]);
-  useEffect(() => { prevPlanNotesRef.current = planNotes; }, [planNotes]);
-
+  // Warn before unload if dirty
   useEffect(() => {
-    if (!mealLoadKey) return;
-    if (prevDayTypeRef.current !== dayType && selectedUserId) {
-      const oldDraftKey = `draft:mealPlan:${selectedUserId}:${prevDayTypeRef.current}`;
-      const snap = mealSavedSnapshot.current;
-      const isDirty = snap && (
-        prevPlanNotesRef.current !== snap.planNotes ||
-        JSON.stringify(prevMealsRef.current) !== JSON.stringify(snap.meals)
-      );
-      if (isDirty) {
-        try { localStorage.setItem(oldDraftKey, JSON.stringify({ planNotes: prevPlanNotesRef.current, meals: prevMealsRef.current })); window.dispatchEvent(new Event("draft-changed")); } catch {}
-      }
-      prevDayTypeRef.current = dayType;
-    }
-    if (mealServerLoadedRef.current === mealLoadKey) {
-      const draftRaw = localStorage.getItem(`draft:mealPlan:${mealLoadKey}`);
-      if (draftRaw) {
-        try { const draft = JSON.parse(draftRaw); setPlanNotes(draft.planNotes ?? ""); setMeals(draft.meals ?? []); } catch {}
-      }
-      return;
-    }
-    if (plan === undefined) return;
-    const serverNotes = plan?.notes ?? "";
-    const serverMeals = (plan?.meals as any[]) ?? [];
-    const draftRaw = localStorage.getItem(`draft:mealPlan:${mealLoadKey}`);
-    if (draftRaw) {
-      try {
-        const draft = JSON.parse(draftRaw);
-        setPlanNotes(draft.planNotes ?? serverNotes);
-        setMeals(draft.meals ?? serverMeals);
-      } catch {
-        setPlanNotes(serverNotes);
-        setMeals(serverMeals);
-      }
-    } else {
-      setPlanNotes(serverNotes);
-      setMeals(serverMeals);
-    }
-    setTreatAllowance((plan as any)?.treatAllowanceKcal?.toString() ?? "");
-    mealSavedSnapshot.current = { planNotes: serverNotes, meals: serverMeals };
-    mealServerLoadedRef.current = mealLoadKey;
-  }, [plan, mealLoadKey, dayType, selectedUserId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!mealDraftKey || !mealSavedSnapshot.current) return;
-    const snap = mealSavedSnapshot.current;
-    const isDirty = planNotes !== snap.planNotes || JSON.stringify(meals) !== JSON.stringify(snap.meals);
-    if (isDirty) {
-      try { localStorage.setItem(mealDraftKey, JSON.stringify({ planNotes, meals })); window.dispatchEvent(new Event("draft-changed")); } catch {}
-    } else {
-      try { localStorage.removeItem(mealDraftKey); window.dispatchEvent(new Event("draft-changed")); } catch {}
-    }
+    const isDirty = !!mealDraftKey && !!mealSavedSnapshot.current && (
+      planNotes !== mealSavedSnapshot.current.planNotes ||
+      JSON.stringify(meals) !== JSON.stringify(mealSavedSnapshot.current.meals)
+    );
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
   }, [mealDraftKey, planNotes, meals]);
 
+  const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", items: [] }]);
+  const removeMeal = (i: number) => setMeals(m => m.filter((_, idx) => idx !== i));
+  const moveMeal = (from: number, to: number) => setMeals(m => {
+    const next = [...m];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    return next.map((meal, idx) => /^Meal \d+$/.test(meal.name) ? { ...meal, name: `Meal ${idx + 1}` } : meal);
+  });
+  const updateMealName = (i: number, name: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, name } : meal));
+  const updateMealTime = (i: number, time: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, time } : meal));
+
+  const addItem = (mealIdx: number) => setMeals(m => m.map((meal, idx) => idx === mealIdx
+    ? { ...meal, items: [...(meal.items ?? []), { food: "", qty: "", servingId: null, servingGrams: 100, servingLabel: "100g" } as MealItem] }
+    : meal
+  ));
+  const removeItem = (mealIdx: number, itemIdx: number) => setMeals(m => m.map((meal, idx) => idx === mealIdx
+    ? { ...meal, items: meal.items.filter((_: any, i: number) => i !== itemIdx) }
+    : meal
+  ));
+  const updateItem = (mealIdx: number, itemIdx: number, field: string, value: string | number | null) =>
+    setMeals(m => m.map((meal, idx) => idx === mealIdx
+      ? { ...meal, items: meal.items.map((item: any, i: number) => i === itemIdx ? { ...item, [field]: value } : item) }
+      : meal
+    ));
+  const reorderItem = (mealIdx: number, oldIndex: number, newIndex: number) =>
+    setMeals(m => m.map((meal, idx) => idx === mealIdx
+      ? { ...meal, items: arrayMove(meal.items ?? [], oldIndex, newIndex) }
+      : meal
+    ));
+
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  function handleFoodDragStart(_mealIdx: number, event: DragStartEvent) {
+    setActiveDragId(String(event.active.id));
+  }
+  function handleFoodDragEnd(mealIdx: number, event: DragEndEvent) {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const items = meals[mealIdx]?.items ?? [];
+    const oldIndex = items.findIndex((_: any, i: number) => `food-${mealIdx}-${i}` === active.id);
+    const newIndex = items.findIndex((_: any, i: number) => `food-${mealIdx}-${i}` === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) reorderItem(mealIdx, oldIndex, newIndex);
+  }
+
+  // Derive the active item data for DragOverlay
+  function getActiveDragItem() {
+    if (!activeDragId) return null;
+    const parts = activeDragId.split("-"); // food-{mealIdx}-{itemIdx}
+    const mealIdx = parseInt(parts[1] ?? "", 10);
+    const itemIdx = parseInt(parts[2] ?? "", 10);
+    if (isNaN(mealIdx) || isNaN(itemIdx)) return null;
+    const meal = meals[mealIdx];
+    const item: MealItem | undefined = meal?.items?.[itemIdx];
+    if (!item) return null;
+    const selectedFood = foodDb.find((f: any) => f.name === item.food);
+    const m = calcItemMacros(foodDb, item);
+    const hasData = !!(item.food && (parseFloat(item.qty ?? item.grams ?? "0") || 0) > 0);
+    return { item, mealIdx, itemIdx, selectedFood, macros: m, hasData };
+  }
+
+  // Macro calculations
   const mealMacros = meals.map(meal =>
     (meal.items ?? []).reduce((acc: any, item: any) => {
-      const m = calcItemMacros(foodDb, item.food, parseFloat(item.grams) || 0);
+      const normalized = normalizeMealItem(item);
+      const m = calcItemMacros(foodDb, normalized);
       return { calories: acc.calories + m.calories, protein: Math.round(acc.protein + m.protein), carbs: Math.round(acc.carbs + m.carbs), fiber: Math.round(acc.fiber + m.fiber), fat: Math.round(acc.fat + m.fat) };
     }, { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 })
   );
-
   const dailyTotals = mealMacros.reduce((acc, m) => ({
     calories: acc.calories + m.calories,
     protein: Math.round(acc.protein + m.protein),
@@ -458,68 +603,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
     return () => window.removeEventListener('keydown', handler);
   }, [selectedUserId, upsert.isPending, dayType, meals, planNotes, dailyTotals]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    const isDirty = !!mealDraftKey && !!mealSavedSnapshot.current && (
-      planNotes !== mealSavedSnapshot.current.planNotes ||
-      JSON.stringify(meals) !== JSON.stringify(mealSavedSnapshot.current.meals)
-    );
-    if (!isDirty) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [mealDraftKey, planNotes, meals]);
-
-  const addMeal = () => setMeals(m => [...m, { name: `Meal ${m.length + 1}`, time: "", items: [] }]);
-  const removeMeal = (i: number) => setMeals(m => m.filter((_, idx) => idx !== i));
-  const moveMeal = (from: number, to: number) => setMeals(m => {
-    const next = [...m];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    return next.map((meal, idx) => /^Meal \d+$/.test(meal.name) ? { ...meal, name: `Meal ${idx + 1}` } : meal);
-  });
-  const updateMealName = (i: number, name: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, name } : meal));
-  const updateMealTime = (i: number, time: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, time } : meal));
-  const addItem = (mealIdx: number) => setMeals(m => m.map((meal, idx) => idx === mealIdx ? { ...meal, items: [...(meal.items ?? []), { food: "", grams: "" }] } : meal));
-  const removeItem = (mealIdx: number, itemIdx: number) => setMeals(m => m.map((meal, idx) => idx === mealIdx ? { ...meal, items: meal.items.filter((_: any, i: number) => i !== itemIdx) } : meal));
-  const updateItem = (mealIdx: number, itemIdx: number, field: string, value: string) =>
-    setMeals(m => m.map((meal, idx) => idx === mealIdx ? { ...meal, items: meal.items.map((item: any, i: number) => i === itemIdx ? { ...item, [field]: value } : item) } : meal));
-  const reorderItem = (mealIdx: number, oldIndex: number, newIndex: number) =>
-    setMeals(m => m.map((meal, idx) => idx === mealIdx ? { ...meal, items: arrayMove(meal.items ?? [], oldIndex, newIndex) } : meal));
-
-  const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-  function handleFoodDragStart(_mealIdx: number, event: DragStartEvent) {
-    setActiveDragId(String(event.active.id));
-  }
-  function handleFoodDragEnd(mealIdx: number, event: DragEndEvent) {
-    setActiveDragId(null);
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const items = meals[mealIdx]?.items ?? [];
-    const oldIndex = items.findIndex((_: any, i: number) => `food-${mealIdx}-${i}` === active.id);
-    const newIndex = items.findIndex((_: any, i: number) => `food-${mealIdx}-${i}` === over.id);
-    if (oldIndex !== -1 && newIndex !== -1) reorderItem(mealIdx, oldIndex, newIndex);
-  }
-  // Derive the active item data for DragOverlay
-  function getActiveDragItem() {
-    if (!activeDragId) return null;
-    const parts = activeDragId.split("-"); // food-{mealIdx}-{itemIdx}
-    const mealIdx = parseInt(parts[1] ?? "", 10);
-    const itemIdx = parseInt(parts[2] ?? "", 10);
-    if (isNaN(mealIdx) || isNaN(itemIdx)) return null;
-    const meal = meals[mealIdx];
-    const item = meal?.items?.[itemIdx];
-    if (!item) return null;
-    const selectedFood = foodDb.find((f: any) => f.name === item.food);
-    const isServingBased = !!(selectedFood?.servingUnit && selectedFood?.servingGrams);
-    const amount = parseFloat(item.grams) || 0;
-    const m = calcItemMacros(foodDb, item.food, amount);
-    const hasData = item.food && amount > 0;
-    const effectiveGrams = isServingBased ? getItemGrams(foodDb, item.food, amount) : null;
-    return { item, mealIdx, itemIdx, isServingBased, selectedFood, effectiveGrams, macros: m, hasData };
-  }
-
-  const foodNames = foodDb.map((f: any) => f.name).sort();
+  const foodNames = (foodDb as any[]).map((f: any) => f.name).sort();
 
   const modeTabs = [
     { value: "meal_plan" as const, label: "Meal Plan" },
@@ -563,7 +647,11 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
               <button
                 onClick={() => {
                   if (!window.confirm(`Copy meals from ${oppositeDay} day plan? This will replace the current meals.`)) return;
-                  setMeals(JSON.parse(JSON.stringify((oppositePlan.meals as any[]) ?? [])));
+                  const normalizedMeals = ((oppositePlan.meals as any[]) ?? []).map((meal: any) => ({
+                    ...meal,
+                    items: (meal.items ?? []).map(normalizeMealItem),
+                  }));
+                  setMeals(normalizedMeals);
                   setPlanNotes(oppositePlan.notes ?? "");
                   toast.success(`Copied from ${oppositeDay} day plan`);
                 }}
@@ -600,7 +688,12 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                           <ArrowDown size={12} />
                         </button>
                       </div>
-                      <span className="text-[13px] text-foreground font-semibold">Meal {i + 1}</span>
+                      <input
+                        type="text"
+                        value={meal.name ?? `Meal ${i + 1}`}
+                        onChange={e => updateMealName(i, e.target.value)}
+                        className="text-[13px] text-foreground font-semibold bg-transparent border-none outline-none focus:ring-0 p-0 w-32"
+                      />
                       <div className="flex-1" />
                       <input type="time" value={meal.time ?? ""} onChange={e => updateMealTime(i, e.target.value)}
                         className="w-28 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
@@ -611,9 +704,10 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
 
                     {/* Column headers */}
                     <div className="flex items-center gap-2 px-1 mb-2">
+                      <div className="w-3 shrink-0" />
                       <p className="flex-1 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Food</p>
-                      <p className="w-16 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">Amount</p>
-                      <p className="w-28 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Unit</p>
+                      <p className="w-44 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Serving</p>
+                      <p className="w-14 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">Qty</p>
                       <p className="w-24 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Macros</p>
                       <p className="w-4"></p>
                     </div>
@@ -631,13 +725,11 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                         strategy={verticalListSortingStrategy}
                       >
                         <div className="space-y-1.5">
-                          {(meal.items ?? []).map((item: any, j: number) => {
-                            const selectedFood = foodDb.find((f: any) => f.name === item.food);
-                            const isServingBased = !!(selectedFood?.servingUnit && selectedFood?.servingGrams);
-                            const amount = parseFloat(item.grams) || 0;
-                            const m = calcItemMacros(foodDb, item.food, amount);
-                            const hasData = item.food && amount > 0;
-                            const effectiveGrams = isServingBased ? getItemGrams(foodDb, item.food, amount) : null;
+                          {(meal.items ?? []).map((rawItem: any, j: number) => {
+                            const item = normalizeMealItem(rawItem);
+                            const selectedFood = (foodDb as any[]).find((f: any) => f.name === item.food);
+                            const m = calcItemMacros(foodDb, item);
+                            const hasData = !!(item.food && (parseFloat(item.qty ?? item.grams ?? "0") || 0) > 0);
                             const totalItems = (meal.items ?? []).length;
                             const isLastItem = j === totalItems - 1;
                             const focusNextFoodInput = () => {
@@ -663,9 +755,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                                 item={item}
                                 mealIdx={i}
                                 itemIdx={j}
-                                isServingBased={isServingBased}
                                 selectedFood={selectedFood}
-                                effectiveGrams={effectiveGrams}
                                 macros={m}
                                 hasData={hasData}
                                 foodNames={foodNames}
@@ -692,14 +782,11 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                                   {active.item.food || <span className="text-muted-foreground">Search food…</span>}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <div className="w-16 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground text-right">
-                                  {active.item.grams || ""}
-                                </div>
-                                <div className="text-[13px] text-muted-foreground w-28 leading-tight">
-                                  <span className="whitespace-nowrap">{active.isServingBased ? active.selectedFood?.servingUnit : "g"}</span>
-                                  {active.isServingBased && active.effectiveGrams ? <span className="whitespace-nowrap text-muted-foreground/50"> ({active.effectiveGrams}g)</span> : null}
-                                </div>
+                              <div className="w-44 bg-secondary border border-border rounded px-2 py-1 text-[12px] text-foreground truncate shrink-0">
+                                {active.item.servingLabel || "100g"}
+                              </div>
+                              <div className="w-14 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground text-right shrink-0">
+                                {active.item.qty || active.item.grams || ""}
                               </div>
                               <div className="w-24 shrink-0 text-xs leading-tight">
                                 {active.hasData ? (
@@ -721,7 +808,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                       <Button variant="ghost" size="sm" onClick={() => addItem(i)} className="text-primary hover:text-primary/80 px-0 h-auto text-[13px]">
                         <Plus size={12} /> Add Item
                       </Button>
-                      {(meal.items ?? []).some((it: any) => it.food && parseFloat(it.grams) > 0) && (
+                      {(meal.items ?? []).some((it: any) => it.food && (parseFloat(it.qty ?? it.grams ?? "0") || 0) > 0) && (
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-semibold text-primary/70">{mealMacros[i].calories} kcal</span>
                           <span className="text-xs text-muted-foreground">P{mealMacros[i].protein} C{mealMacros[i].carbs} F{mealMacros[i].fat}</span>

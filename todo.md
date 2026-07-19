@@ -902,3 +902,13 @@
 - [x] Add Finish Session button next to Save in workout sticky bar
 - [x] Add Meal Plan sub-tab to coach per-client Nutrition tab (MealPlansSection with fixedClientId)
 - [x] Add Meal Plan sub-tab to client Nutrition screen (CombinedMealPlanTab - read-only viewer + shopping list)
+
+## USDA SR Legacy Import + Multiple Serving Sizes
+- [x] Add food_servings table to schema (id, food_id, label, grams)
+- [x] Add fdcId column to nutrition_foods for USDA reference
+- [x] Import USDA SR Legacy database (7,793 foods + 14,449 serving sizes)
+- [x] Add 100g fallback serving to every food in meal plan builder
+- [x] Add serving size dropdown to meal plan builder (pick serving before entering quantity)
+- [x] Show gram equivalent hint when a non-100g serving is selected (e.g. "= 170g")
+- [x] Update client meal plan viewer to show serving labels
+- [x] Normalise legacy meal plan items (grams → qty + 100g serving) on load

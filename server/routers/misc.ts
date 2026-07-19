@@ -64,6 +64,24 @@ export const nutritionFoodsRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => db.deleteNutritionFood(input.id)),
+  getServings: protectedProcedure
+    .input(z.object({ foodId: z.number() }))
+    .query(({ input }) => db.getServingsForFood(input.foodId)),
+  getServingsForFoods: protectedProcedure
+    .input(z.object({ foodIds: z.array(z.number()) }))
+    .query(({ input }) => db.getServingsForFoods(input.foodIds)),
+  upsertServing: adminProcedure
+    .input(z.object({
+      id: z.number().optional(),
+      foodId: z.number(),
+      label: z.string(),
+      grams: z.number(),
+      sortOrder: z.number().optional(),
+    }))
+    .mutation(({ input }) => db.upsertFoodServing(input)),
+  deleteServing: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => db.deleteFoodServing(input.id)),
 });
 
 export const onboardingRouter = router({
