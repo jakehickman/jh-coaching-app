@@ -214,8 +214,20 @@ function FoodCombobox({
   const [open, setOpen] = useState(false);
   const [highlightedIdx, setHighlightedIdx] = useState(-1);
   const filtered = search.length > 0
-    ? foodNames.filter(n => n.toLowerCase().includes(search.toLowerCase())).slice(0, 10)
-    : foodNames.slice(0, 10);
+    ? (() => {
+        const q = search.toLowerCase();
+        const matches = foodNames.filter(n => n.toLowerCase().includes(q));
+        // Sort: exact start-of-name matches first, then word-boundary matches, then rest
+        matches.sort((a, b) => {
+          const al = a.toLowerCase();
+          const bl = b.toLowerCase();
+          const aStarts = al.startsWith(q) ? 0 : al.split(/[,\s]+/).some(w => w.startsWith(q)) ? 1 : 2;
+          const bStarts = bl.startsWith(q) ? 0 : bl.split(/[,\s]+/).some(w => w.startsWith(q)) ? 1 : 2;
+          return aStarts - bStarts;
+        });
+        return matches.slice(0, 25);
+      })()
+    : foodNames.slice(0, 25);
 
   const selectItem = (name: string) => {
     onChange(name);
