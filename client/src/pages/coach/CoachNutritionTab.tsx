@@ -780,6 +780,7 @@ function MealLogView({ clientId }: { clientId: number }) {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const { data: calData = {}, isLoading } = trpc.mealLogs.calendarForClient.useQuery(
     { userId: clientId, year, month },
@@ -810,44 +811,60 @@ function MealLogView({ clientId }: { clientId: number }) {
   }
 
   const selectedDayData: DayData | null = selectedDate ? (byDate[selectedDate] ?? null) : null;
+  const sortedMeals = selectedDayData
+    ? selectedDayData.meals.slice().sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime())
+    : [];
 
   return (
-    <div className="flex flex-col sm:flex-row gap-6">
-      {/* ── Compact month calendar — 50% split ── */}
-      <div className="flex-1 min-w-0">
+    <>
+    {/* Photo lightbox */}
+    {lightboxUrl && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        style={{ background: "rgba(0,0,0,0.85)" }}
+        onClick={() => setLightboxUrl(null)}
+      >
+        <img
+          src={lightboxUrl}
+          alt="Meal photo"
+          className="max-w-[90vw] max-h-[85vh] rounded-2xl shadow-2xl object-contain"
+          onClick={e => e.stopPropagation()}
+        />
+        <button
+          className="absolute top-5 right-6 text-white/70 hover:text-white text-3xl leading-none"
+          onClick={() => setLightboxUrl(null)}
+        >&times;</button>
+      </div>
+    )}
+
+    <div className="flex gap-6">
+      {/* ── Left: compact calendar ── */}
+      <div style={{ width: 260, flexShrink: 0 }}>
         {/* Month nav */}
         <div className="flex items-center justify-between mb-3">
-          <button
-            onClick={prevMonth}
-            className="p-1 rounded transition-colors"
-            style={{ color: C.muted }}
+          <button onClick={prevMonth} className="p-1 rounded transition-colors" style={{ color: C.muted }}
             onMouseEnter={e => (e.currentTarget.style.color = C.fg)}
-            onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
-          >
+            onMouseLeave={e => (e.currentTarget.style.color = C.muted)}>
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-[13px] font-medium" style={{ color: C.fg }}>{formatMonthYear(year, month)}</span>
-          <button
-            onClick={nextMonth}
-            className="p-1 rounded transition-colors"
-            style={{ color: C.muted }}
+          <span className="text-[13px] font-semibold" style={{ color: C.fg }}>{formatMonthYear(year, month)}</span>
+          <button onClick={nextMonth} className="p-1 rounded transition-colors" style={{ color: C.muted }}
             onMouseEnter={e => (e.currentTarget.style.color = C.fg)}
-            onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
-          >
+            onMouseLeave={e => (e.currentTarget.style.color = C.muted)}>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
         {/* Day headers */}
-        <div className="grid grid-cols-7 mb-0.5">
+        <div className="grid grid-cols-7 mb-1">
           {DAY_HEADERS.map(d => (
-            <div key={d} className="text-center" style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.6px", color: C.muted, opacity: 0.55, paddingBottom: 4 }}>
+            <div key={d} className="text-center" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.7px", color: C.muted, opacity: 0.5, paddingBottom: 4 }}>
               {d.toUpperCase()}
             </div>
           ))}
         </div>
 
-        {/* Compact grid — each row is ~32px */}
+        {/* Compact grid */}
         {isLoading ? (
           <div className="space-y-0.5">
             {[...Array(5)].map((_, i) => (
@@ -872,12 +889,12 @@ function MealLogView({ clientId }: { clientId: number }) {
                 <button
                   key={idx}
                   onClick={() => hasMeals && setSelectedDate(isSelected ? null : key)}
-                  className="relative h-8 flex flex-col items-center justify-center rounded text-[12px] font-medium transition-colors"
+                  className="relative h-8 flex flex-col items-center justify-center rounded text-[12px] font-medium transition-all"
                   style={{
                     cursor: hasMeals ? "pointer" : "default",
-                    background: isSelected ? `${dotColor}28` : "transparent",
-                    outline: isSelected ? `1px solid ${dotColor}` : isToday && !isSelected ? `1px solid ${C.primary}44` : "none",
-                    color: hasMeals ? C.fg : `${C.muted}33`,
+                    background: isSelected ? `${dotColor}22` : hasMeals ? `${C.fg}06` : "transparent",
+                    outline: isSelected ? `1.5px solid ${dotColor}` : isToday && !isSelected ? `1px solid ${C.primary}44` : "none",
+                    color: hasMeals ? C.fg : `${C.muted}28`,
                   }}
                 >
                   <span style={{ lineHeight: 1 }}>{day}</span>
@@ -890,95 +907,141 @@ function MealLogView({ clientId }: { clientId: number }) {
           </div>
         )}
 
-        {/* Legend */}
-        <div className="flex items-center gap-4 mt-2" style={{ fontSize: 10, color: C.muted, opacity: 0.6 }}>
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: C.primary }} />
-            All in zone
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: C.amber }} />
-            Out of zone
-          </span>
+        {/* Summary + legend */}
+        <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${C.border}` }}>
+          <div className="flex items-center justify-between" style={{ fontSize: 11, color: C.muted }}>
+            <span>{Object.keys(byDate).length} days logged</span>
+            <span>{Object.values(byDate).reduce((s, d) => s + d.meals.filter((m: any) => m.mealType === "meal").length, 0)} meals</span>
+          </div>
+          <div className="flex items-center gap-4 mt-2" style={{ fontSize: 10, color: C.muted, opacity: 0.6 }}>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: C.primary }} />
+              All in zone
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: C.amber }} />
+              Out of zone
+            </span>
+          </div>
         </div>
       </div>
 
+      {/* ── Right: meal detail ── */}
       <div className="flex-1 min-w-0">
         {selectedDate && selectedDayData ? (
-          <div className="rounded-xl overflow-hidden" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
-            <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${C.border}` }}>
-              <p className="text-[14px] font-medium" style={{ color: C.fg }}>
-                {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
-              </p>
-              <p className="text-[12px] mt-0.5" style={{ color: C.muted }}>
-                {selectedDayData.meals.filter(m => m.mealType === "meal").length} meal{selectedDayData.meals.filter(m => m.mealType === "meal").length !== 1 ? "s" : ""}
-                {selectedDayData.treatCount > 0 ? ` · ${selectedDayData.treatCount} treat${selectedDayData.treatCount !== 1 ? "s" : ""}` : ""}
-              </p>
+          <div className="rounded-xl overflow-hidden h-full" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+            {/* Day header */}
+            <div className="px-5 py-4" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <div className="flex items-baseline justify-between">
+                <p className="text-[15px] font-semibold" style={{ color: C.fg }}>
+                  {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
+                </p>
+                <div className="flex items-center gap-3" style={{ fontSize: 12, color: C.muted }}>
+                  <span>{sortedMeals.filter(m => m.mealType === "meal").length} meal{sortedMeals.filter(m => m.mealType === "meal").length !== 1 ? "s" : ""}</span>
+                  {selectedDayData.treatCount > 0 && (
+                    <span style={{ color: C.amber }}>{selectedDayData.treatCount} treat{selectedDayData.treatCount !== 1 ? "s" : ""}</span>
+                  )}
+                </div>
+              </div>
             </div>
-            <div>
-              {selectedDayData.meals
-                .slice()
-                .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime())
-                .map((meal: any) => {
-                  const h = meal.hungerRating;
-                  const f = meal.fullnessRating;
-                  return (
-                    <div key={meal.id} className="px-5 py-3.5" style={{ borderBottom: `1px solid ${C.border}` }}>
-                      <div className="flex items-start gap-3">
-                        <div className="w-11 h-11 rounded-lg overflow-hidden shrink-0 flex items-center justify-center" style={{ background: C.surfaceVariant }}>
-                          {meal.photoUrl ? (
-                            <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
-                          ) : (
-                            <UtensilsCrossed size={18} style={{ color: `${C.muted}55` }} />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[12px]" style={{ color: C.muted }}>{formatTimeAtOffset(new Date(meal.loggedAt).getTime(), selectedDayData?.utcOffsetMins ?? meal.utcOffsetMins ?? 0)}</span>
-                            {meal.mealType === "treat" && (
-                              <span className="text-xs font-medium uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}18`, color: C.amber }}>Treat</span>
+
+            {/* Meal cards */}
+            <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 360px)" }}>
+              {sortedMeals.map((meal: any, mIdx: number) => {
+                const h = meal.hungerRating;
+                const f = meal.fullnessRating;
+                const timeStr = formatTimeAtOffset(new Date(meal.loggedAt).getTime(), selectedDayData?.utcOffsetMins ?? meal.utcOffsetMins ?? 0);
+                const isOutOfZone = (h != null && !isIdealHunger(h)) || (f != null && !isIdealFullness(f));
+                const isTreat = meal.mealType === "treat";
+                return (
+                  <div
+                    key={meal.id}
+                    className="px-5 py-4"
+                    style={{
+                      borderBottom: mIdx < sortedMeals.length - 1 ? `1px solid ${C.border}` : "none",
+                    }}
+                  >
+                    {/* Row 1: time + badges */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[11px] font-semibold tabular-nums" style={{ color: C.muted }}>{timeStr}</span>
+                      {isTreat && (
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}18`, color: C.amber }}>Treat</span>
+                      )}
+                      {meal.isOffPlan && (
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.red}18`, color: C.red }}>Off Plan</span>
+                      )}
+                      {isOutOfZone && !isTreat && (
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}14`, color: C.amber }}>Out of zone</span>
+                      )}
+                    </div>
+
+                    {/* Row 2: photo + content */}
+                    <div className="flex gap-3">
+                      {/* Photo */}
+                      <div
+                        className="rounded-xl overflow-hidden shrink-0"
+                        style={{ width: 80, height: 80, background: C.surfaceVariant, cursor: meal.photoUrl ? "zoom-in" : "default" }}
+                        onClick={() => meal.photoUrl && setLightboxUrl(meal.photoUrl)}
+                      >
+                        {meal.photoUrl ? (
+                          <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <UtensilsCrossed size={22} style={{ color: `${C.muted}40` }} />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Details */}
+                      <div className="flex-1 min-w-0">
+                        {meal.name && (
+                          <p className="text-[14px] font-semibold leading-snug mb-1" style={{ color: C.fg }}>{meal.name}</p>
+                        )}
+                        {meal.portionSize && (
+                          <p className="text-[12px] capitalize mb-1.5" style={{ color: C.muted }}>{meal.portionSize}</p>
+                        )}
+
+                        {/* Hunger / Fullness rating pills */}
+                        {!isTreat && (h != null || f != null) && (
+                          <div className="flex items-center gap-2 mt-1">
+                            {h != null && (
+                              <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: isIdealHunger(h) ? `${C.primary}14` : `${C.amber}14` }}>
+                                <span className="text-[11px]" style={{ color: C.muted }}>Hunger</span>
+                                <span className="text-[13px] font-bold" style={{ color: isIdealHunger(h) ? C.primary : C.amber }}>{h}</span>
+                                <span className="text-[10px]" style={{ color: isIdealHunger(h) ? `${C.primary}80` : `${C.amber}80` }}>/10</span>
+                              </div>
                             )}
-                            {meal.isOffPlan && (
-                              <span className="text-xs font-medium uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.red}18`, color: C.red }}>Off Plan</span>
+                            {f != null && (
+                              <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: isIdealFullness(f) ? `${C.primary}14` : `${C.amber}14` }}>
+                                <span className="text-[11px]" style={{ color: C.muted }}>Fullness</span>
+                                <span className="text-[13px] font-bold" style={{ color: isIdealFullness(f) ? C.primary : C.amber }}>{f}</span>
+                                <span className="text-[10px]" style={{ color: isIdealFullness(f) ? `${C.primary}80` : `${C.amber}80` }}>/10</span>
+                              </div>
                             )}
                           </div>
-                          {meal.name && <p className="text-[13px] font-medium truncate" style={{ color: C.fg }}>{meal.name}</p>}
-                          {meal.portionSize && <p className="text-[12px] capitalize" style={{ color: C.muted }}>{meal.portionSize}</p>}
-                          {meal.mealType === "meal" && (h != null || f != null) && (
-                            <div className="flex items-center gap-4 mt-1.5">
-                              {h != null && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs" style={{ color: C.muted }}>Hunger</span>
-                                  <span className="text-[12px] font-bold" style={{ color: isIdealHunger(h) ? C.primary : C.amber }}>{h}</span>
-                                </div>
-                              )}
-                              {f != null && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs" style={{ color: C.muted }}>Fullness</span>
-                                  <span className="text-[12px] font-bold" style={{ color: isIdealFullness(f) ? C.primary : C.amber }}>{f}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          {meal.notes && (
-                            <p className="text-[12px] mt-1 italic" style={{ color: C.muted }}>"{meal.notes}"</p>
-                          )}
-                        </div>
+                        )}
+
+                        {meal.notes && (
+                          <p className="text-[12px] mt-2 italic leading-relaxed" style={{ color: `${C.muted}CC` }}>“{meal.notes}”</p>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full min-h-[200px] text-[13px]" style={{ color: C.muted }}>
-            {Object.keys(byDate).length === 0 && !isLoading
-              ? "No meals logged this month"
-              : "Select a day to view meals"}
+          <div className="rounded-xl flex flex-col items-center justify-center" style={{ minHeight: 280, background: C.surface, border: `1px solid ${C.border}` }}>
+            <UtensilsCrossed size={28} style={{ color: `${C.muted}40`, marginBottom: 12 }} />
+            <p className="text-[13px]" style={{ color: C.muted }}>
+              {Object.keys(byDate).length === 0 && !isLoading ? "No meals logged this month" : "Select a day to view meals"}
+            </p>
           </div>
         )}
       </div>
     </div>
+    </>
   );
 }
 

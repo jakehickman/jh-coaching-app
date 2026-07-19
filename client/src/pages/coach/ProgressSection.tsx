@@ -1204,120 +1204,148 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
   });
 
   return (
-    <div className="w-full lg:w-96 flex-shrink-0 border border-border rounded-xl bg-card overflow-hidden lg:sticky lg:top-4" style={{marginTop: '27px'}}>
+    <div className="flex-1 min-w-0 border border-border rounded-xl bg-card overflow-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between px-4 py-3 border-b border-border bg-muted/30">
+      <div className="flex items-start justify-between px-5 py-4 border-b border-border">
         <div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <p className="text-sm font-bold text-foreground whitespace-nowrap">{session.dayLabel}</p>
+          <div className="flex flex-wrap items-center gap-2 mb-0.5">
+            <p className="text-[15px] font-bold text-foreground">{session.dayLabel}</p>
             {hasIncomplete && (
-              <span className="text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded whitespace-nowrap">Incomplete</span>
+              <span className="text-[11px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">Incomplete</span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{dateLabel} &middot; {exercises.length} exercises &middot; {totalSets} sets</p>
+          <p className="text-[12px] text-muted-foreground">{dateLabel} &middot; {exercises.length} exercise{exercises.length !== 1 ? 's' : ''} &middot; {totalSets} sets</p>
         </div>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors mt-0.5">
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
+
       {/* Exercise list */}
-      <div className="overflow-y-auto lg:max-h-[calc(100vh-300px)]">
-        <div className="px-4 py-3 space-y-3">
+      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 360px)' }}>
+        <div className="divide-y divide-border/40">
           {exercises.map((ex: any, i: number) => {
             const allSets: any[] = ex.sets ?? [];
-            const totalExSets = allSets.length;
             const isMiniSets = !!allSets[0]?.myoReps;
             const completedSets = allSets.filter((s: any) => s.completed || s.weight != null || s.reps != null);
-            const isSkipped = completedSets.length === 0 && totalExSets > 0;
-            const firstSet = completedSets[0];
+            const isSkipped = completedSets.length === 0 && allSets.length > 0;
             const exUnit = (ex.weightUnit as string | undefined) ?? 'kg';
-            const setStr = firstSet
-              ? `${firstSet.weight != null ? firstSet.weight + ' ' + exUnit : '—'} × ${firstSet.reps != null ? firstSet.reps : '—'}`
-              : null;
-            // Find previous session where this exercise was performed with the same machine preset
-            // (matches Exercise Progress tab logic: compare within same preset, or no-preset vs no-preset)
+
+            // Progress vs previous session
             const currPreset = ex.machinePreset ?? ex.equipmentDetails ?? null;
             const sortedPrev = [...allSessions]
-              .filter(s => {
-                if (s.id === session.id) return false;
-                return new Date(s.sessionDate).getTime() < new Date(session.sessionDate).getTime();
-              })
+              .filter(s => s.id !== session.id && new Date(s.sessionDate).getTime() < new Date(session.sessionDate).getTime())
               .sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime());
-            // Find most recent prior session that has this exercise with a matching preset
             let prevExercise: any = null;
             for (const s of sortedPrev) {
-              const exs: any[] = s.exercises ?? [];
-              const match = exs.find((e: any) => {
+              const match = (s.exercises as any[]).find((e: any) => {
                 if (e.name !== ex.name) return false;
                 const ePreset = e.machinePreset ?? e.equipmentDetails ?? null;
                 if (currPreset && ePreset) return ePreset.toLowerCase() === currPreset.toLowerCase();
-                if (!currPreset && !ePreset) return true;
-                return false;
+                return !currPreset && !ePreset;
               });
               if (match) { prevExercise = match; break; }
             }
-            let progressArrow: 'up' | 'down' | 'same' | null = null;
-            if (prevExercise && firstSet) {
-              const prevCompleted = (prevExercise.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null);
-              const prevFirst = prevCompleted[0];
-              if (prevFirst) {
-                const wCurr = firstSet.weight ?? 0;
-                const wPrev = prevFirst.weight ?? 0;
-                const rCurr = firstSet.reps ?? 0;
-                const rPrev = prevFirst.reps ?? 0;
-                if (wCurr > wPrev || (wCurr === wPrev && rCurr > rPrev)) progressArrow = 'up';
-                else if (wCurr < wPrev || (wCurr === wPrev && rCurr < rPrev)) progressArrow = 'down';
-                else progressArrow = 'same';
-              }
-            }
-            const miniSetsCount = isMiniSets && allSets[0]?.miniSets && String(allSets[0].miniSets) !== '' ? allSets[0].miniSets : null;
-            const setsLabel = isSkipped
-              ? 'skipped'
-              : isMiniSets
-                ? miniSetsCount ? `1 + ${miniSetsCount} mini sets` : '1 mini set'
-                : `${completedSets.length} set${completedSets.length !== 1 ? 's' : ''}`;
-            const machinePreset = ex.machinePreset ?? null;
-            const machineSettings = ex.machineSettings ?? null;
+            const prevCompletedSets = prevExercise
+              ? (prevExercise.sets ?? []).filter((s: any) => s.completed || s.weight != null || s.reps != null)
+              : [];
+
             return (
-              <div key={i} className="flex items-center gap-2 py-1.5 border-b border-border/30 last:border-0">
-                <div className="flex-1 min-w-0">
+              <div key={i} className="px-5 py-4">
+                {/* Exercise name row */}
+                <div className="flex items-center gap-2 mb-3">
                   {onExerciseClick ? (
                     <button
                       onClick={() => onExerciseClick(ex.name)}
-                      className="text-xs font-semibold text-foreground text-left hover:text-primary hover:underline transition-colors block w-full truncate"
+                      className="text-[13px] font-semibold text-foreground text-left hover:text-primary hover:underline transition-colors flex-1 min-w-0 truncate"
                     >{ex.name}</button>
                   ) : (
-                    <p className="text-xs font-semibold text-foreground truncate">{ex.name}</p>
+                    <p className="text-[13px] font-semibold text-foreground flex-1 min-w-0 truncate">{ex.name}</p>
                   )}
-
+                  {isMiniSets && <Zap size={13} className="text-amber-400 shrink-0" />}
+                  {ex.substitutedFor && (
+                    <span className="text-[10px] font-bold bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded shrink-0">SUB</span>
+                  )}
+                  {isSkipped && (
+                    <span className="text-[10px] font-bold text-amber-400/80 shrink-0">SKIPPED</span>
+                  )}
                 </div>
-                {isMiniSets && (
-                  <Zap size={14} className="text-amber-400 shrink-0" />
+
+                {/* Sets table */}
+                {!isSkipped && completedSets.length > 0 && (
+                  <div className="rounded-lg overflow-hidden" style={{ background: 'hsl(var(--muted)/0.3)' }}>
+                    {/* Table header */}
+                    <div className="grid px-3 py-1.5" style={{ gridTemplateColumns: '32px 1fr 1fr 1fr' }}>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60">Set</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 text-right">Weight</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 text-right">Reps</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 text-right">vs prev</span>
+                    </div>
+                    {/* Set rows */}
+                    {isMiniSets ? (
+                      // Myo-rep: single activation set
+                      <div className="grid px-3 py-2 border-t border-border/20" style={{ gridTemplateColumns: '32px 1fr 1fr 1fr' }}>
+                        <span className="text-[12px] text-muted-foreground">1</span>
+                        <span className="text-[12px] font-medium text-foreground text-right">
+                          {allSets[0]?.weight != null ? `${allSets[0].weight} ${exUnit}` : '—'}
+                        </span>
+                        <span className="text-[12px] font-medium text-foreground text-right">
+                          {allSets[0]?.miniSets ? `1+${allSets[0].miniSets}` : '—'}
+                        </span>
+                        <span className="text-[12px] text-right">
+                          {(() => {
+                            const prev = prevCompletedSets[0];
+                            if (!prev) return <span className="text-muted-foreground/40">—</span>;
+                            const wC = allSets[0]?.weight ?? 0, wP = prev.weight ?? 0;
+                            if (wC > wP) return <ArrowUp className="w-3 h-3 text-green-400 ml-auto" />;
+                            if (wC < wP) return <ArrowDown className="w-3 h-3 text-red-400 ml-auto" />;
+                            return <Minus className="w-3 h-3 text-muted-foreground/40 ml-auto" />;
+                          })()}
+                        </span>
+                      </div>
+                    ) : (
+                      completedSets.map((s: any, si: number) => {
+                        const prev = prevCompletedSets[si];
+                        let arrow: 'up' | 'down' | 'same' | null = null;
+                        if (prev) {
+                          const wC = s.weight ?? 0, wP = prev.weight ?? 0;
+                          const rC = s.reps ?? 0, rP = prev.reps ?? 0;
+                          if (wC > wP || (wC === wP && rC > rP)) arrow = 'up';
+                          else if (wC < wP || (wC === wP && rC < rP)) arrow = 'down';
+                          else arrow = 'same';
+                        }
+                        return (
+                          <div key={si} className="grid px-3 py-2 border-t border-border/20" style={{ gridTemplateColumns: '32px 1fr 1fr 1fr' }}>
+                            <span className="text-[12px] text-muted-foreground">{si + 1}</span>
+                            <span className="text-[12px] font-medium text-foreground text-right">
+                              {s.weight != null ? `${s.weight} ${exUnit}` : '—'}
+                            </span>
+                            <span className="text-[12px] font-medium text-foreground text-right">
+                              {s.reps != null ? s.reps : '—'}
+                            </span>
+                            <span className="text-[12px] flex justify-end items-center">
+                              {arrow === 'up' && <ArrowUp className="w-3 h-3 text-green-400" />}
+                              {arrow === 'down' && <ArrowDown className="w-3 h-3 text-red-400" />}
+                              {arrow === 'same' && <Minus className="w-3 h-3 text-muted-foreground/40" />}
+                              {!arrow && <span className="text-muted-foreground/30">—</span>}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 )}
-                {ex.substitutedFor && (
-                  <span className="text-xs font-semibold bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded shrink-0">SUB</span>
-                )}
-                {setStr && (
-                  <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-0.5">
-                    {setStr}
-                    {progressArrow === 'up' && <ArrowUp className="w-3 h-3 text-green-400" />}
-                    {progressArrow === 'down' && <ArrowDown className="w-3 h-3 text-red-400" />}
-                    {progressArrow === 'same' && <Minus className="w-3 h-3 text-muted-foreground" />}
-                  </span>
-                )}
-                <span className={`text-xs shrink-0 ${isSkipped ? 'text-amber-400/80' : isMiniSets ? 'text-amber-400/70' : 'text-muted-foreground/60'}`}>
-                  {setsLabel}
-                </span>
               </div>
             );
           })}
-          {sessionNotes && (
-            <div className="pt-2 border-t border-border/50">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Session notes</p>
-              <p className="text-xs text-muted-foreground/80 italic">&ldquo;{sessionNotes}&rdquo;</p>
-            </div>
-          )}
         </div>
+
+        {sessionNotes && (
+          <div className="px-5 py-4 border-t border-border/50">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/60 mb-1.5">Session notes</p>
+            <p className="text-[13px] text-muted-foreground italic">&ldquo;{sessionNotes}&rdquo;</p>
+          </div>
+        )}
       </div>
     </div>
   );
