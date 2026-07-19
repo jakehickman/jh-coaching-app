@@ -2490,7 +2490,7 @@ export default function ProgressSection({ fixedClientId }: { fixedClientId?: num
             <Tabs value={getSubTab("nutrition") || "insights"} onValueChange={handleSubTabChange} className="w-full">
               <div className="overflow-x-auto mb-4">
                 <TabsList className="flex-nowrap min-w-max">
-                  <TabsTrigger value="insights">Insights &amp; Log</TabsTrigger>
+                  <TabsTrigger value="insights">Nutrition</TabsTrigger>
                   <TabsTrigger value="meal-plan">Meal Plan</TabsTrigger>
                 </TabsList>
               </div>

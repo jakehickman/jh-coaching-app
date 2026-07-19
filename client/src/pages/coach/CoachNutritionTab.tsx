@@ -135,10 +135,13 @@ function TrendBadge({
   const isGood = higherIsBetter ? isUp : !isUp;
   const color = isGood ? C.primary : C.red;
   const sign = isUp ? "+" : "";
+  // Show % sign when both values look like percentages (0–100 integers)
+  const isPercent = Number.isInteger(current) && Number.isInteger(previous) && current >= 0 && current <= 100 && previous >= 0 && previous <= 100;
+  const formatted = typeof delta === "number" && !Number.isInteger(delta) ? delta.toFixed(1) : delta;
   return (
     <span className="inline-flex items-center gap-0.5 text-[12px] font-medium" style={{ color }}>
       {isUp ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-      {sign}{typeof delta === "number" && !Number.isInteger(delta) ? delta.toFixed(1) : delta}
+      {sign}{formatted}{isPercent ? "%" : ""}
     </span>
   );
 }
@@ -750,7 +753,7 @@ function MealLogView({ clientId }: { clientId: number }) {
 
   return (
     <div className="flex flex-col sm:flex-row gap-6">
-      <div className="flex-1 min-w-0">
+      <div className="flex-shrink-0" style={{ width: "min(100%, 360px)" }}>
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={prevMonth}
@@ -788,9 +791,9 @@ function MealLogView({ clientId }: { clientId: number }) {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7">
             {cells.map((day, idx) => {
-              if (!day) return <div key={idx} />;
+              if (!day) return <div key={idx} className="aspect-square" />;
               const key = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               const dayData = byDate[key];
               const isSelected = selectedDate === key;
@@ -801,7 +804,7 @@ function MealLogView({ clientId }: { clientId: number }) {
                 <button
                   key={idx}
                   onClick={() => setSelectedDate(isSelected ? null : key)}
-                  className="relative h-16 flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors"
+                  className="relative aspect-square flex flex-col items-center justify-center rounded-lg text-[13px] font-medium transition-colors"
                   style={{
                     cursor: hasMeals ? "pointer" : "default",
                     background: isSelected ? `${C.primary}22` : hasMeals ? `${C.fg}08` : "transparent",
@@ -827,7 +830,7 @@ function MealLogView({ clientId }: { clientId: number }) {
         </div>
       </div>
 
-      <div className="w-full sm:w-80 shrink-0">
+      <div className="flex-1 min-w-0">
         {selectedDate && selectedDayData ? (
           <div className="rounded-xl overflow-hidden" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
             <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${C.border}` }}>
@@ -1040,24 +1043,37 @@ function InsightsView({ clientId, days }: { clientId: number; days: 7 | 28 }) {
         </Card>
 
         {/* Treats */}
-        <Card className="flex flex-col gap-3">
-          <SectionLabel>Treats</SectionLabel>
-          <div className="flex items-center gap-3" style={{ fontSize: 11, color: C.muted }}>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-sm inline-block" style={{ background: C.primary, opacity: 0.8 }} />
-              Small
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-sm inline-block" style={{ background: C.amber, opacity: 0.85 }} />
-              Medium
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-sm inline-block" style={{ background: C.red, opacity: 0.8 }} />
-              Large
-            </span>
-          </div>
-          <TreatsChart treatsByWeek={days === 7 ? insights.treatsByWeek : insights.treatsByWeek.slice(-4)} days={days} />
-        </Card>
+        {(() => {
+          const treatBars = days === 7 ? insights.treatsByWeek : insights.treatsByWeek.slice(-4);
+          const treatsTotal = treatBars.reduce((s, w) => s + w.total, 0);
+          return (
+            <Card className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <SectionLabel>Treats</SectionLabel>
+                {treatsTotal > 0 && (
+                  <span className="text-[13px] font-bold leading-none" style={{ color: C.fg }}>
+                    {treatsTotal} <span className="text-[11px] font-normal" style={{ color: C.muted }}>total</span>
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3" style={{ fontSize: 11, color: C.muted }}>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-sm inline-block" style={{ background: C.primary, opacity: 0.8 }} />
+                  Small
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-sm inline-block" style={{ background: C.amber, opacity: 0.85 }} />
+                  Medium
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-sm inline-block" style={{ background: C.red, opacity: 0.8 }} />
+                  Large
+                </span>
+              </div>
+              <TreatsChart treatsByWeek={treatBars} days={days} />
+            </Card>
+          );
+        })()}
 
         {/* Meal Timing */}
         {insights.hasTimingData ? (
@@ -1106,7 +1122,7 @@ export function CoachNutritionTab({ clientId }: { clientId: number }) {
                 color: sub === s ? C.fg : C.muted,
               }}
             >
-              {s === "insights" ? "Insights" : "Meal Log"}
+              {s === "insights" ? "Insights" : "Log"}
             </button>
           ))}
         </div>
