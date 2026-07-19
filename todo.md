@@ -921,3 +921,11 @@
 
 ## AFCD Serving Sizes
 - [x] Add practical serving sizes to AFCD foods (eggs, meats, dairy, fruits, vegetables, nuts, bread, etc.)
+
+## AFCD Food Name Cleanup
+- [x] Consolidate fruit/vegetable varieties into single entries (e.g. all apple varieties → one apple entry)
+- [x] Remove cooked/prepared food entries, keep raw + one cooked method where useful
+- [x] Remove unlikely coaching entries (Spam, canned meals, human breast milk, water, etc.)
+- [x] Simplify verbose names to sentence case and shorter format
+- [x] Re-run serving sizes script after cleanup
+- [x] 3-pass cleanup: 1,588 → 405 foods with clean names and serving sizes
