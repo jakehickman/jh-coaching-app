@@ -912,3 +912,9 @@
 - [x] Show gram equivalent hint when a non-100g serving is selected (e.g. "= 170g")
 - [x] Update client meal plan viewer to show serving labels
 - [x] Normalise legacy meal plan items (grams → qty + 100g serving) on load
+
+## AFCD Release 3 Import
+- [x] Replace USDA SR Legacy database with AFCD Release 3 (1,588 Australian foods)
+- [x] Parse nutrient_profiles.xlsx: map Energy kJ→kcal, Protein, Fat, Fibre, Starch+Sugars→Carbs
+- [x] Clear existing USDA data (nutrition_foods + food_servings) and insert 1,588 AFCD foods
+- [x] Verify import: 1,588 rows confirmed in nutrition_foods table
