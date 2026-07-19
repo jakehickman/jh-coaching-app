@@ -837,9 +837,9 @@ function MealLogView({ clientId }: { clientId: number }) {
       </div>
     )}
 
-    <div className="flex gap-6">
+    <div className="flex gap-6" style={{ maxWidth: 1100 }}>
       {/* ── Left: compact calendar ── */}
-      <div style={{ width: 260, flexShrink: 0 }}>
+      <div style={{ width: 300, flexShrink: 0 }}>
         {/* Month nav */}
         <div className="flex items-center justify-between mb-3">
           <button onClick={prevMonth} className="p-1 rounded transition-colors" style={{ color: C.muted }}
@@ -945,9 +945,10 @@ function MealLogView({ clientId }: { clientId: number }) {
               </div>
             </div>
 
-            {/* Meal cards */}
+            {/* Meal cards — 2-column grid on desktop */}
             <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 360px)" }}>
-              {sortedMeals.map((meal: any, mIdx: number) => {
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))" }}>
+              {sortedMeals.map((meal: any) => {
                 const h = meal.hungerRating;
                 const f = meal.fullnessRating;
                 const timeStr = formatTimeAtOffset(new Date(meal.loggedAt).getTime(), selectedDayData?.utcOffsetMins ?? meal.utcOffsetMins ?? 0);
@@ -957,53 +958,52 @@ function MealLogView({ clientId }: { clientId: number }) {
                   <div
                     key={meal.id}
                     className="px-5 py-4"
-                    style={{
-                      borderBottom: mIdx < sortedMeals.length - 1 ? `1px solid ${C.border}` : "none",
-                    }}
+                    style={{ borderBottom: `1px solid ${C.border}`, borderRight: `1px solid ${C.border}` }}
                   >
-                    {/* Row 1: time + badges */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[11px] font-semibold tabular-nums" style={{ color: C.muted }}>{timeStr}</span>
-                      {isTreat && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}18`, color: C.amber }}>Treat</span>
-                      )}
-                      {meal.isOffPlan && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.red}18`, color: C.red }}>Off Plan</span>
-                      )}
-                      {isOutOfZone && !isTreat && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}14`, color: C.amber }}>Out of zone</span>
-                      )}
-                    </div>
-
-                    {/* Row 2: photo + content */}
+                    {/* Photo + content side by side */}
                     <div className="flex gap-3">
-                      {/* Photo */}
+                      {/* Photo — 96px */}
                       <div
                         className="rounded-xl overflow-hidden shrink-0"
-                        style={{ width: 80, height: 80, background: C.surfaceVariant, cursor: meal.photoUrl ? "zoom-in" : "default" }}
+                        style={{ width: 96, height: 96, background: C.surfaceVariant, cursor: meal.photoUrl ? "zoom-in" : "default" }}
                         onClick={() => meal.photoUrl && setLightboxUrl(meal.photoUrl)}
                       >
                         {meal.photoUrl ? (
                           <img src={meal.photoUrl} alt="Meal" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <UtensilsCrossed size={22} style={{ color: `${C.muted}40` }} />
+                            <UtensilsCrossed size={24} style={{ color: `${C.muted}40` }} />
                           </div>
                         )}
                       </div>
 
-                      {/* Details */}
-                      <div className="flex-1 min-w-0">
+                      {/* Right column */}
+                      <div className="flex-1 min-w-0 flex flex-col gap-1">
+                        {/* Time + badges */}
+                        <div className="flex items-center flex-wrap gap-1.5">
+                          <span className="text-[11px] font-semibold tabular-nums" style={{ color: C.muted }}>{timeStr}</span>
+                          {isTreat && (
+                            <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}18`, color: C.amber }}>Treat</span>
+                          )}
+                          {meal.isOffPlan && (
+                            <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.red}18`, color: C.red }}>Off Plan</span>
+                          )}
+                          {isOutOfZone && !isTreat && (
+                            <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: `${C.amber}14`, color: C.amber }}>Out of zone</span>
+                          )}
+                        </div>
+
+                        {/* Name + portion */}
                         {meal.name && (
-                          <p className="text-[14px] font-semibold leading-snug mb-1" style={{ color: C.fg }}>{meal.name}</p>
+                          <p className="text-[14px] font-semibold leading-snug" style={{ color: C.fg }}>{meal.name}</p>
                         )}
                         {meal.portionSize && (
-                          <p className="text-[12px] capitalize mb-1.5" style={{ color: C.muted }}>{meal.portionSize}</p>
+                          <p className="text-[12px] capitalize" style={{ color: C.muted }}>{meal.portionSize}</p>
                         )}
 
-                        {/* Hunger / Fullness rating pills */}
+                        {/* Ratings */}
                         {!isTreat && (h != null || f != null) && (
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-0.5">
                             {h != null && (
                               <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: isIdealHunger(h) ? `${C.primary}14` : `${C.amber}14` }}>
                                 <span className="text-[11px]" style={{ color: C.muted }}>Hunger</span>
@@ -1022,13 +1022,14 @@ function MealLogView({ clientId }: { clientId: number }) {
                         )}
 
                         {meal.notes && (
-                          <p className="text-[12px] mt-2 italic leading-relaxed" style={{ color: `${C.muted}CC` }}>“{meal.notes}”</p>
+                          <p className="text-[12px] italic leading-relaxed" style={{ color: `${C.muted}CC` }}>“{meal.notes}”</p>
                         )}
                       </div>
                     </div>
                   </div>
                 );
               })}
+              </div>
             </div>
           </div>
         ) : (

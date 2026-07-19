@@ -1271,9 +1271,9 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
                   )}
                 </div>
 
-                {/* Sets table */}
+                {/* Sets table — constrained width on desktop */}
                 {!isSkipped && completedSets.length > 0 && (
-                  <div className="rounded-lg overflow-hidden" style={{ background: 'hsl(var(--muted)/0.3)' }}>
+                  <div className="rounded-lg overflow-hidden" style={{ background: 'hsl(var(--muted)/0.3)', maxWidth: 420 }}>
                     {/* Table header */}
                     <div className="grid px-3 py-1.5" style={{ gridTemplateColumns: '32px 1fr 1fr 1fr' }}>
                       <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60">Set</span>
@@ -1592,9 +1592,9 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
       </span>
     </div>
 
-    <div className="flex flex-col lg:flex-row gap-4 items-start">
+    <div className="flex flex-col lg:flex-row gap-4 items-start" style={{ maxWidth: 1100 }}>
       {/* Compact calendar grid — 50% split */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0" style={{ maxWidth: '50%' }}>
         {/* Weekday headers */}
         <div className="grid grid-cols-7 mb-0.5">
           {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
@@ -1647,8 +1647,8 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
         </div>
       </div>
 
-      {/* Detail panel — fills remaining space */}
-      <div className="flex-1 min-w-0">
+      {/* Detail panel — 50% split */}
+      <div className="flex-1 min-w-0" style={{ maxWidth: '50%' }}>
         {selectedSession ? (
           <SessionDetailPanel session={selectedSession} onClose={() => setSelectedSession(null)} onExerciseClick={onExerciseClick} allSessions={workoutSessions} />
         ) : (
