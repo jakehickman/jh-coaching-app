@@ -1271,70 +1271,50 @@ function SessionDetailPanel({ session, onClose, onExerciseClick, allSessions = [
                   )}
                 </div>
 
-                {/* Sets table — constrained width on desktop */}
-                {!isSkipped && completedSets.length > 0 && (
-                  <div className="rounded-lg overflow-hidden" style={{ background: 'hsl(var(--muted)/0.3)', maxWidth: 420 }}>
-                    {/* Table header */}
-                    <div className="grid px-3 py-1.5" style={{ gridTemplateColumns: '32px 1fr 1fr 1fr' }}>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60">Set</span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 text-right">Weight</span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 text-right">Reps</span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 text-right">vs prev</span>
-                    </div>
-                    {/* Set rows */}
-                    {isMiniSets ? (
-                      // Myo-rep: single activation set
-                      <div className="grid px-3 py-2 border-t border-border/20" style={{ gridTemplateColumns: '32px 1fr 1fr 1fr' }}>
-                        <span className="text-[12px] text-muted-foreground">1</span>
-                        <span className="text-[12px] font-medium text-foreground text-right">
-                          {allSets[0]?.weight != null ? `${allSets[0].weight} ${exUnit}` : '—'}
-                        </span>
-                        <span className="text-[12px] font-medium text-foreground text-right">
-                          {allSets[0]?.miniSets ? `1+${allSets[0].miniSets}` : '—'}
-                        </span>
-                        <span className="text-[12px] text-right">
-                          {(() => {
-                            const prev = prevCompletedSets[0];
-                            if (!prev) return <span className="text-muted-foreground/40">—</span>;
-                            const wC = allSets[0]?.weight ?? 0, wP = prev.weight ?? 0;
-                            if (wC > wP) return <ArrowUp className="w-3 h-3 text-green-400 ml-auto" />;
-                            if (wC < wP) return <ArrowDown className="w-3 h-3 text-red-400 ml-auto" />;
-                            return <Minus className="w-3 h-3 text-muted-foreground/40 ml-auto" />;
-                          })()}
-                        </span>
+                {/* Top set only — best weight×reps set vs previous */}
+                {!isSkipped && completedSets.length > 0 && (() => {
+                  // Find top set: highest weight, then highest reps as tiebreaker
+                  const topSet = isMiniSets
+                    ? allSets[0]
+                    : completedSets.reduce((best: any, s: any) =>
+                        (s.weight ?? 0) > (best.weight ?? 0) || ((s.weight ?? 0) === (best.weight ?? 0) && (s.reps ?? 0) > (best.reps ?? 0)) ? s : best
+                      );
+                  // Find matching top set from previous session
+                  const prevTopSet = prevCompletedSets.length > 0
+                    ? prevCompletedSets.reduce((best: any, s: any) =>
+                        (s.weight ?? 0) > (best.weight ?? 0) || ((s.weight ?? 0) === (best.weight ?? 0) && (s.reps ?? 0) > (best.reps ?? 0)) ? s : best
+                      )
+                    : null;
+                  let arrow: 'up' | 'down' | 'same' | null = null;
+                  if (prevTopSet) {
+                    const wC = topSet?.weight ?? 0, wP = prevTopSet.weight ?? 0;
+                    const rC = topSet?.reps ?? 0, rP = prevTopSet.reps ?? 0;
+                    if (wC > wP || (wC === wP && rC > rP)) arrow = 'up';
+                    else if (wC < wP || (wC === wP && rC < rP)) arrow = 'down';
+                    else arrow = 'same';
+                  }
+                  const weightStr = isMiniSets
+                    ? (topSet?.weight != null ? `${topSet.weight} ${exUnit}` : '—')
+                    : (topSet?.weight != null ? `${topSet.weight} ${exUnit}` : '—');
+                  const repsStr = isMiniSets
+                    ? (topSet?.miniSets ? `1+${topSet.miniSets}` : '—')
+                    : (topSet?.reps != null ? `${topSet.reps} reps` : '—');
+                  const setCount = isMiniSets ? 1 : completedSets.length;
+                  return (
+                    <div className="flex items-center gap-3 mt-1">
+                      <div className="rounded-md px-2.5 py-1.5" style={{ background: 'hsl(var(--muted)/0.4)' }}>
+                        <span className="text-[11px] text-muted-foreground/60 mr-1.5">Top set</span>
+                        <span className="text-[13px] font-semibold text-foreground">{weightStr}</span>
+                        <span className="text-[12px] text-muted-foreground mx-1">×</span>
+                        <span className="text-[13px] font-semibold text-foreground">{repsStr}</span>
                       </div>
-                    ) : (
-                      completedSets.map((s: any, si: number) => {
-                        const prev = prevCompletedSets[si];
-                        let arrow: 'up' | 'down' | 'same' | null = null;
-                        if (prev) {
-                          const wC = s.weight ?? 0, wP = prev.weight ?? 0;
-                          const rC = s.reps ?? 0, rP = prev.reps ?? 0;
-                          if (wC > wP || (wC === wP && rC > rP)) arrow = 'up';
-                          else if (wC < wP || (wC === wP && rC < rP)) arrow = 'down';
-                          else arrow = 'same';
-                        }
-                        return (
-                          <div key={si} className="grid px-3 py-2 border-t border-border/20" style={{ gridTemplateColumns: '32px 1fr 1fr 1fr' }}>
-                            <span className="text-[12px] text-muted-foreground">{si + 1}</span>
-                            <span className="text-[12px] font-medium text-foreground text-right">
-                              {s.weight != null ? `${s.weight} ${exUnit}` : '—'}
-                            </span>
-                            <span className="text-[12px] font-medium text-foreground text-right">
-                              {s.reps != null ? s.reps : '—'}
-                            </span>
-                            <span className="text-[12px] flex justify-end items-center">
-                              {arrow === 'up' && <ArrowUp className="w-3 h-3 text-green-400" />}
-                              {arrow === 'down' && <ArrowDown className="w-3 h-3 text-red-400" />}
-                              {arrow === 'same' && <Minus className="w-3 h-3 text-muted-foreground/40" />}
-                              {!arrow && <span className="text-muted-foreground/30">—</span>}
-                            </span>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                )}
+                      <span className="text-[11px] text-muted-foreground/50">{setCount} set{setCount !== 1 ? 's' : ''}</span>
+                      {arrow === 'up' && <span className="flex items-center gap-0.5 text-[11px] text-green-400"><ArrowUp className="w-3 h-3" /> vs prev</span>}
+                      {arrow === 'down' && <span className="flex items-center gap-0.5 text-[11px] text-red-400"><ArrowDown className="w-3 h-3" /> vs prev</span>}
+                      {arrow === 'same' && <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground/40"><Minus className="w-3 h-3" /> vs prev</span>}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
@@ -1594,15 +1574,15 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
 
     <div className="flex flex-col lg:flex-row gap-4 items-start" style={{ maxWidth: 1100 }}>
       {/* Compact calendar grid — 50% split */}
-      <div className="flex-1 min-w-0" style={{ maxWidth: '50%' }}>
+      <div className="flex-1 min-w-0" style={{ maxWidth: '50%', minWidth: 280 }}>
         {/* Weekday headers */}
-        <div className="grid grid-cols-7 mb-0.5">
+        <div className="grid grid-cols-7 mb-1">
           {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
-            <div key={d} className="text-center" style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.6px', color: 'hsl(var(--muted-foreground))', opacity: 0.55, paddingBottom: 4 }}>{d}</div>
+            <div key={d} className="text-center" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.5px', color: 'hsl(var(--muted-foreground))', opacity: 0.55, paddingBottom: 4 }}>{d}</div>
           ))}
         </div>
-        {/* Compact day cells — h-8 (~32px) */}
-        <div className="grid grid-cols-7 gap-0.5">
+        {/* Day cells — h-10 (40px) with aspect ratio to stay square */}
+        <div className="grid grid-cols-7 gap-1">
           {cells.map((cell, idx) => {
             const sess = cell.iso ? sessionByDate[cell.iso] : null;
             const isToday = cell.iso === todayIso;
@@ -1621,21 +1601,25 @@ function WorkoutSessionsTab({ workoutSessions, exerciseLib = [], onExerciseClick
             }
 
             const accentColor = hasIncomplete ? '#fbbf24' : '#52B788';
+            const dayLabel = sess?.dayLabel as string | undefined;
 
             return (
               <button
                 key={idx}
-                className="relative h-8 flex flex-col items-center justify-center rounded text-[12px] font-medium transition-colors"
+                className="relative aspect-square flex flex-col items-center justify-center rounded text-[12px] font-medium transition-colors"
                 style={{
                   cursor: sess ? 'pointer' : 'default',
-                  background: isSelected ? `${accentColor}28` : 'transparent',
-                  outline: isSelected ? `1px solid ${accentColor}` : isToday && !isSelected ? '1px solid #52B78844' : 'none',
+                  background: isSelected ? `${accentColor}28` : sess ? 'hsl(var(--muted)/0.3)' : 'transparent',
+                  outline: isSelected ? `1.5px solid ${accentColor}` : isToday && !isSelected ? '1px solid #52B78844' : 'none',
                   color: cell.otherMonth ? '#9BA1A633' : isToday ? '#52B788' : '#ECEDEE',
                 }}
                 onClick={() => sess ? setSelectedSession(isSelected ? null : sess) : undefined}
               >
-                <span style={{ lineHeight: 1 }}>{cell.day}</span>
-                {sess && (
+                <span style={{ lineHeight: 1, fontSize: 12 }}>{cell.day}</span>
+                {sess && dayLabel && (
+                  <span style={{ fontSize: 9, color: accentColor, lineHeight: 1, marginTop: 1, opacity: cell.otherMonth ? 0.4 : 1 }}>{dayLabel}</span>
+                )}
+                {sess && !dayLabel && (
                   <span
                     className="w-1 h-1 rounded-full mt-0.5"
                     style={{ background: accentColor, opacity: cell.otherMonth ? 0.4 : 1, display: 'inline-block' }}

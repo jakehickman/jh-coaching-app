@@ -837,9 +837,9 @@ function MealLogView({ clientId }: { clientId: number }) {
       </div>
     )}
 
-    <div className="flex gap-6" style={{ maxWidth: 1100 }}>
+    <div className="flex gap-6" style={{ maxWidth: 1200 }}>
       {/* ── Left: compact calendar ── */}
-      <div style={{ width: 300, flexShrink: 0 }}>
+      <div style={{ width: 420, flexShrink: 0 }}>
         {/* Month nav */}
         <div className="flex items-center justify-between mb-3">
           <button onClick={prevMonth} className="p-1 rounded transition-colors" style={{ color: C.muted }}
