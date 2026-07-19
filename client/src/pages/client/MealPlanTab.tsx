@@ -233,11 +233,12 @@ function MealPlanTab() {
                       const food = foodDb.find((f: any) => f.name === item.food);
                       const effectiveGrams = itemEffectiveGrams(item);
                       const factor = effectiveGrams / 100;
-                      // Display: use servingLabel if available, else fall back to grams
+                      // Display: use servingLabel for named servings (e.g. "1 egg"), total grams for gram-based servings
                       const qty = parseFloat(item.qty ?? item.grams) || 0;
-                      const displayQty = item.servingLabel
-                        ? (qty === 1 ? item.servingLabel : `${qty} × ${item.servingLabel}`)
-                        : effectiveGrams > 0 ? `${effectiveGrams}g` : "";
+                      const isGramServing = !item.servingLabel || /^\d+g$/.test(item.servingLabel.trim());
+                      const displayQty = isGramServing
+                        ? (effectiveGrams > 0 ? `${effectiveGrams}g` : "")
+                        : (qty === 1 ? item.servingLabel : `${qty} × ${item.servingLabel}`);
                       const itemCal = food && effectiveGrams ? Math.round(food.calories * factor) : null;
                       const itemP = food && effectiveGrams ? Math.round(food.protein * factor * 10) / 10 : null;
                       const itemC = food && effectiveGrams ? Math.round(food.carbs * factor * 10) / 10 : null;
