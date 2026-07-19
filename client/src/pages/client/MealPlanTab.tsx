@@ -238,7 +238,10 @@ function MealPlanTab() {
                       const isGramServing = !item.servingLabel || /^\d+g$/.test(item.servingLabel.trim());
                       const displayQty = isGramServing
                         ? (effectiveGrams > 0 ? `${effectiveGrams}g` : "")
-                        : (qty === 1 ? item.servingLabel : `${qty} × ${item.servingLabel}`);
+                        : qty === 1
+                          ? item.servingLabel
+                          // Replace leading "1 " with qty, e.g. "1 egg (medium)" → "3 eggs (medium)"
+                          : item.servingLabel.replace(/^1 /, `${qty} `);
                       const itemCal = food && effectiveGrams ? Math.round(food.calories * factor) : null;
                       const itemP = food && effectiveGrams ? Math.round(food.protein * factor * 10) / 10 : null;
                       const itemC = food && effectiveGrams ? Math.round(food.carbs * factor * 10) / 10 : null;
