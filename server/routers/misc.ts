@@ -46,6 +46,9 @@ export const notesRouter = router({
 
 export const nutritionFoodsRouter = router({
   list: protectedProcedure.query(() => db.listNutritionFoods()),
+  search: protectedProcedure
+    .input(z.object({ query: z.string(), limit: z.number().optional() }))
+    .query(({ input }) => db.searchNutritionFoods(input.query, input.limit ?? 25)),
   upsert: adminProcedure
     .input(
       z.object({

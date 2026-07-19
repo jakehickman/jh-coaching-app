@@ -64,7 +64,7 @@ function getEffectiveGrams(item: MealItem): number {
 
 function SortableFoodRow({
   id, item, mealIdx, itemIdx, selectedFood, macros, hasData,
-  foodNames, onUpdate, onRemove, onSelectAdvance, onQtyEnter
+  onUpdate, onRemove, onSelectAdvance, onQtyEnter
 }: {
   id: string;
   item: MealItem;
@@ -73,7 +73,6 @@ function SortableFoodRow({
   selectedFood: any;
   macros: { calories: number; protein: number; carbs: number; fat: number };
   hasData: boolean;
-  foodNames: string[];
   onUpdate: (field: string, value: string | number | null) => void;
   onRemove: () => void;
   onSelectAdvance: () => void;
@@ -121,7 +120,6 @@ function SortableFoodRow({
             onUpdate("servingGrams", 100);
             onUpdate("servingLabel", "100g");
           }}
-          foodNames={foodNames}
           onSelectAdvance={onSelectAdvance}
           mealIdx={mealIdx}
           itemIdx={itemIdx}
@@ -201,37 +199,36 @@ function SortableFoodRow({
 // ─── Food combobox ────────────────────────────────────────────────────────────
 
 function FoodCombobox({
-  value, onChange, foodNames, onSelectAdvance, mealIdx, itemIdx
+  value, onChange, onSelectAdvance, mealIdx, itemIdx
 }: {
   value: string;
   onChange: (v: string) => void;
-  foodNames: string[];
   onSelectAdvance?: () => void;
   mealIdx?: number;
   itemIdx?: number;
 }) {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [highlightedIdx, setHighlightedIdx] = useState(-1);
-  const filtered = search.length > 0
-    ? (() => {
-        const q = search.toLowerCase();
-        const matches = foodNames.filter(n => n.toLowerCase().includes(q));
-        // Sort: exact start-of-name matches first, then word-boundary matches, then rest
-        matches.sort((a, b) => {
-          const al = a.toLowerCase();
-          const bl = b.toLowerCase();
-          const aStarts = al.startsWith(q) ? 0 : al.split(/[,\s]+/).some(w => w.startsWith(q)) ? 1 : 2;
-          const bStarts = bl.startsWith(q) ? 0 : bl.split(/[,\s]+/).some(w => w.startsWith(q)) ? 1 : 2;
-          return aStarts - bStarts;
-        });
-        return matches.slice(0, 25);
-      })()
-    : foodNames.slice(0, 25);
+
+  // Debounce search input by 200ms
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 200);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const { data: searchResults = [], isFetching } = trpc.nutritionFoods.search.useQuery(
+    { query: debouncedSearch, limit: 25 },
+    { enabled: open, staleTime: 30_000 }
+  );
+
+  const filtered = searchResults.map((f: any) => f.name);
 
   const selectItem = (name: string) => {
     onChange(name);
     setSearch("");
+    setDebouncedSearch("");
     setOpen(false);
     setHighlightedIdx(-1);
     setTimeout(() => onSelectAdvance?.(), 0);
@@ -264,7 +261,10 @@ function FoodCombobox({
       />
       {open && filtered.length > 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto">
-          {filtered.map((name, idx) => (
+          {isFetching && (
+            <div className="px-3 py-1.5 text-xs text-muted-foreground">Searching…</div>
+          )}
+          {filtered.map((name: string, idx: number) => (
             <button key={name} type="button" onMouseDown={() => selectItem(name)}
               className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${idx === highlightedIdx ? "bg-primary/20 text-primary" : "text-foreground hover:bg-primary/10 hover:text-primary"}`}>
               {name}
@@ -272,9 +272,9 @@ function FoodCombobox({
           ))}
         </div>
       )}
-      {open && search.length > 0 && filtered.length === 0 && (
+      {open && debouncedSearch.length > 0 && !isFetching && filtered.length === 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-0.5 bg-card border border-border rounded-lg shadow-xl px-3 py-2">
-          <p className="text-xs text-muted-foreground">No foods match "{search}"</p>
+          <p className="text-xs text-muted-foreground">No foods match "{debouncedSearch}"</p>
         </div>
       )}
     </div>
@@ -777,7 +777,6 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                                 selectedFood={selectedFood}
                                 macros={m}
                                 hasData={hasData}
-                                foodNames={foodNames}
                                 onUpdate={(field, value) => updateItem(i, j, field, value)}
                                 onRemove={() => removeItem(i, j)}
                                 onSelectAdvance={focusQtyInput}

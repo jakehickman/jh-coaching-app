@@ -1146,6 +1146,46 @@ export async function listNutritionFoods() {
   return foods.map(f => ({ ...f, servings: servingMap.get(f.id) ?? [] }));
 }
 
+export async function searchNutritionFoods(query: string, limit = 25) {
+  const db = await getDb();
+  if (!db) return [];
+  const q = query.trim();
+  if (!q) {
+    // Return first 25 alphabetically when no query
+    const foods = await db
+      .select({ id: nutritionFoods.id, name: nutritionFoods.name, calories: nutritionFoods.calories, protein: nutritionFoods.protein, carbs: nutritionFoods.carbs, fat: nutritionFoods.fat })
+      .from(nutritionFoods)
+      .orderBy(nutritionFoods.name)
+      .limit(limit);
+    return foods;
+  }
+  // Use SQL CASE for relevance: starts-with = 0, word-boundary = 1, contains = 2
+  const like = `%${q}%`;
+  const startLike = `${q}%`;
+  const wordLike = `%, ${q}%`;
+  const foods = await db
+    .select({
+      id: nutritionFoods.id,
+      name: nutritionFoods.name,
+      calories: nutritionFoods.calories,
+      protein: nutritionFoods.protein,
+      carbs: nutritionFoods.carbs,
+      fat: nutritionFoods.fat,
+    })
+    .from(nutritionFoods)
+    .where(sql`LOWER(${nutritionFoods.name}) LIKE LOWER(${like})`)
+    .orderBy(
+      sql`CASE
+        WHEN LOWER(${nutritionFoods.name}) LIKE LOWER(${startLike}) THEN 0
+        WHEN LOWER(${nutritionFoods.name}) LIKE LOWER(${wordLike}) THEN 1
+        ELSE 2
+      END`,
+      nutritionFoods.name
+    )
+    .limit(limit);
+  return foods;
+}
+
 export async function getServingsForFood(foodId: number): Promise<FoodServing[]> {
   const db = await getDb();
   if (!db) return [];
