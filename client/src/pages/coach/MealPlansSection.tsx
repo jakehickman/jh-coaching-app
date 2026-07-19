@@ -128,48 +128,54 @@ function SortableFoodRow({
         />
       </div>
 
-      {/* Serving size dropdown — only shown when a food is selected */}
-      {selectedFood && (
-        <select
-          value={item.servingId === null || item.servingId === undefined ? "__100g__" : String(item.servingId)}
-          onChange={e => {
-            const val = e.target.value;
-            if (val === "__100g__") {
-              onUpdate("servingId", null);
-              onUpdate("servingGrams", 100);
-              onUpdate("servingLabel", "100g");
-            } else {
-              const opt = servingOptions.find(o => o.id !== null && String(o.id) === val);
-              if (opt) {
-                onUpdate("servingId", opt.id);
-                onUpdate("servingGrams", opt.grams);
-                onUpdate("servingLabel", opt.label);
+      {/* Serving size dropdown — always reserves w-44 space for column alignment */}
+      <div className="w-44 shrink-0">
+        {selectedFood && (
+          <select
+            value={item.servingId === null || item.servingId === undefined ? "__100g__" : String(item.servingId)}
+            onChange={e => {
+              const val = e.target.value;
+              if (val === "__100g__") {
+                onUpdate("servingId", null);
+                onUpdate("servingGrams", 100);
+                onUpdate("servingLabel", "100g");
+              } else {
+                const opt = servingOptions.find(o => o.id !== null && String(o.id) === val);
+                if (opt) {
+                  onUpdate("servingId", opt.id);
+                  onUpdate("servingGrams", opt.grams);
+                  onUpdate("servingLabel", opt.label);
+                }
               }
-            }
-          }}
-          className="w-44 bg-secondary border border-border rounded px-2 py-1 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary shrink-0"
-        >
-          {servingOptions.map(opt => (
-            <option key={opt.id === null ? "__100g__" : opt.id} value={opt.id === null ? "__100g__" : String(opt.id)}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      )}
+            }}
+            className="w-full bg-secondary border border-border rounded px-2 py-1 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            {servingOptions.map(opt => (
+              <option key={opt.id === null ? "__100g__" : opt.id} value={opt.id === null ? "__100g__" : String(opt.id)}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
 
       {/* Quantity input */}
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="w-14 shrink-0">
         <input
           type="number" min="0" step="0.5"
           data-meal={mealIdx} data-item={itemIdx} data-field="qty"
           value={item.qty ?? item.grams ?? ""}
           onChange={e => onUpdate("qty", e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); onQtyEnter(); } }}
-          className="w-14 bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
+          className="w-full bg-secondary border border-border rounded px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary text-right"
           placeholder="0"
         />
+      </div>
+
+      {/* Gram hint — fixed width slot so macros column stays aligned */}
+      <div className="w-16 shrink-0">
         {showGramHint && (
-          <span className="text-[11px] text-muted-foreground/50 shrink-0 whitespace-nowrap">
+          <span className="text-[11px] text-muted-foreground/50 whitespace-nowrap">
             = {effectiveGrams}g
           </span>
         )}
@@ -708,6 +714,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                       <p className="flex-1 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Food</p>
                       <p className="w-44 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Serving</p>
                       <p className="w-14 text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">Qty</p>
+                      <div className="w-16 shrink-0" />
                       <p className="w-24 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Macros</p>
                       <p className="w-4"></p>
                     </div>
