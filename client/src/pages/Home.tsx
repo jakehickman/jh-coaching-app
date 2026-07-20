@@ -41,7 +41,7 @@ export default function Home() {
           Client Dashboard
         </h1>
         <p className="mt-4 text-muted-foreground text-base max-w-sm mx-auto">
-          Track your training, nutrition, and progress — all in one place.
+          Track your training, nutrition, and progress — all in one place. Now running on our own infrastructure.
         </p>
       </div>
 
