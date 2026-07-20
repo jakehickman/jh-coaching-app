@@ -501,23 +501,5 @@ function ShoppingListTab() {
 
 // ─── CombinedMealPlanTab ──────────────────────────────────────────────────────
 export default function CombinedMealPlanTab({ defaultSub = "plan" }: { defaultSub?: "plan" | "shopping" }) {
-  const [sub, setSub] = useState<"plan" | "shopping">(defaultSub);
-  return (
-    <div>
-      <div className="flex gap-1 mb-6 bg-secondary rounded-lg p-1 w-fit">
-        {(["plan", "shopping"] as const).map(s => (
-          <button
-            key={s}
-            onClick={() => setSub(s)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              sub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {s === "plan" ? "Meal Plan" : "Shopping List"}
-          </button>
-        ))}
-      </div>
-      {sub === "plan" ? <MealPlanTab /> : <ShoppingListTab />}
-    </div>
-  );
+  return defaultSub === "plan" ? <MealPlanTab /> : <ShoppingListTab />;
 }

@@ -1717,45 +1717,98 @@ function DistributionChart({
 /// ─── Combined Nutrition Tab ─────────────────────────────────────────────────
 import CombinedMealPlanTab from "./MealPlanTab";
 
-type NutritionSub = "today" | "history" | "meal-plan";
+type TopSection = "log" | "plan";
+type LogSub = "today" | "history";
+type PlanSub = "meal-plan" | "shopping";
 
-const NUTRITION_SUB_LABELS: Record<NutritionSub, string> = {
-  today: "Today",
-  history: "History",
-  "meal-plan": "Meal Plan",
-};
-
-export function CombinedNutritionTab({ defaultSub = "today" }: { defaultSub?: NutritionSub }) {
-  const [sub, setSub] = useState<NutritionSub>(() => {
+export function CombinedNutritionTab({ defaultSub = "today" }: { defaultSub?: "today" | "history" | "meal-plan" }) {
+  // Derive initial top section from defaultSub
+  const initTop: TopSection = defaultSub === "meal-plan" ? "plan" : "log";
+  const [top, setTop] = useState<TopSection>(() => {
     try {
-      const stored = sessionStorage.getItem("nutritionTab:sub") as NutritionSub | null;
-      return (stored === "today" || stored === "history" || stored === "meal-plan") ? stored : defaultSub;
-    } catch { return defaultSub; }
+      const stored = sessionStorage.getItem("nutritionTab:top") as TopSection | null;
+      return stored === "log" || stored === "plan" ? stored : initTop;
+    } catch { return initTop; }
+  });
+  const [logSub, setLogSub] = useState<LogSub>(() => {
+    try {
+      const stored = sessionStorage.getItem("nutritionTab:logSub") as LogSub | null;
+      return stored === "today" || stored === "history" ? stored : (defaultSub === "history" ? "history" : "today");
+    } catch { return "today"; }
+  });
+  const [planSub, setPlanSub] = useState<PlanSub>(() => {
+    try {
+      const stored = sessionStorage.getItem("nutritionTab:planSub") as PlanSub | null;
+      return stored === "meal-plan" || stored === "shopping" ? stored : "meal-plan";
+    } catch { return "meal-plan"; }
   });
 
   useEffect(() => {
-    try { sessionStorage.setItem("nutritionTab:sub", sub); } catch {}
-  }, [sub]);
+    try {
+      sessionStorage.setItem("nutritionTab:top", top);
+      sessionStorage.setItem("nutritionTab:logSub", logSub);
+      sessionStorage.setItem("nutritionTab:planSub", planSub);
+    } catch {}
+  }, [top, logSub, planSub]);
 
   return (
     <div>
-      <div className="flex gap-1 mb-6 bg-secondary rounded-lg p-1">
-        {(["today", "history", "meal-plan"] as const).map((s) => (
+      {/* Top-level toggle: Log / Plan */}
+      <div className="flex gap-1 mb-5 bg-secondary rounded-xl p-1">
+        {(["log", "plan"] as const).map((t) => (
           <button
-            key={s}
-            onClick={() => setSub(s)}
+            key={t}
+            onClick={() => setTop(t)}
             className={cn(
-              "flex-1 py-1.5 rounded-md text-sm font-medium transition-colors",
-              sub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              "flex-1 py-2.5 rounded-lg text-[15px] font-semibold transition-all",
+              top === t
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
-            {NUTRITION_SUB_LABELS[s]}
+            {t === "log" ? "Log" : "Plan"}
           </button>
         ))}
       </div>
-      {sub === "today" && <TodayScreen />}
-      {sub === "history" && <HistoryScreen />}
-      {sub === "meal-plan" && <CombinedMealPlanTab />}
+
+      {/* Sub-tabs */}
+      {top === "log" && (
+        <div className="flex gap-1 mb-5 bg-secondary rounded-lg p-1 w-fit">
+          {(["today", "history"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setLogSub(s)}
+              className={cn(
+                "px-5 py-1.5 rounded-md text-sm font-medium transition-colors",
+                logSub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {s === "today" ? "Today" : "History"}
+            </button>
+          ))}
+        </div>
+      )}
+      {top === "plan" && (
+        <div className="flex gap-1 mb-5 bg-secondary rounded-lg p-1 w-fit">
+          {(["meal-plan", "shopping"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setPlanSub(s)}
+              className={cn(
+                "px-5 py-1.5 rounded-md text-sm font-medium transition-colors",
+                planSub === s ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {s === "meal-plan" ? "Meal Plan" : "Shopping List"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Content */}
+      {top === "log" && logSub === "today" && <TodayScreen />}
+      {top === "log" && logSub === "history" && <HistoryScreen />}
+      {top === "plan" && <CombinedMealPlanTab defaultSub={planSub === "meal-plan" ? "plan" : "shopping"} />}
     </div>
   );
 }

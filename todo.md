@@ -938,3 +938,6 @@
 - [x] Add supplements array to meal plan data structure (name, dose, timing, notes)
 - [x] Add supplements editor to coach-side meal plan builder
 - [x] Display supplements section in client-side Meal Plan tab
+
+## Nutrition Page Restructure
+- [x] Split Nutrition page into two tab groups: Log (Today/History) and Plan (Meal Plan/Shopping List) with top-level toggle
