@@ -1,18 +1,1 @@
-{
-  "query": "SELECT u.name, u.id, c.id as cycle_id, c.status, c.dueDate, c.submissionId FROM check_in_cycles c JOIN users u ON u.id = c.clientId WHERE u.name LIKE '%Jake%' ORDER BY c.dueDate DESC LIMIT 5;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT u.name, u.id, c.id as cycle_id, c.status, c.dueDate, c.submissionId FROM check_in_cycles c JOIN users u ON u.id = c.clientId WHERE u.name LIKE '%Jake%' ORDER BY c.dueDate DESC LIMIT 5;",
-  "rows": [
-    {
-      "name": "Jake Hickman",
-      "id": "1",
-      "cycle_id": "60001",
-      "status": "submitted",
-      "dueDate": "2026-05-06",
-      "submissionId": "420001"
-    }
-  ],
-  "messages": [],
-  "stdout": "name\tid\tcycle_id\tstatus\tdueDate\tsubmissionId\nJake Hickman\t1\t60001\tsubmitted\t2026-05-06\t420001\n",
-  "stderr": "",
-  "execution_time_ms": 1782
-}
+.manus/db/db-query-1778594899895.json

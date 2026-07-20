@@ -1,8 +1,1 @@
-{
-  "query": "\nSELECT u.id, u.name, p.start_date, p.check_in_day\nFROM users u\nLEFT JOIN client_profiles p ON p.user_id = u.id\nWHERE u.name LIKE '%Jake%';\n",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute \nSELECT u.id, u.name, p.start_date, p.check_in_day\nFROM users u\nLEFT JOIN client_profiles p ON p.user_id = u.id\nWHERE u.name LIKE '%Jake%';\n",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 2: Unknown column 'p.user_id' in 'on clause'"
-  ]
-}
+.manus/db/db-query-error-1779662556380.json

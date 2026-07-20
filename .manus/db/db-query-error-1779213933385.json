@@ -1,8 +1,1 @@
-{
-  "query": "SELECT JSON_EXTRACT(days, '$[0].exercises[0].sets') as sets_ex0 FROM training_programs WHERE user_id = (SELECT id FROM users WHERE email = 'jake@jakehickman.com') LIMIT 1;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT JSON_EXTRACT(days, '$[0].exercises[0].sets') as sets_ex0 FROM training_programs WHERE user_id = (SELECT id FROM users WHERE email = 'jake@jakehickman.com') LIMIT 1;",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 1: Unknown column 'user_id' in 'where clause'"
-  ]
-}
+.manus/db/db-query-error-1779213933385.json

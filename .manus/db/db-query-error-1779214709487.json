@@ -1,8 +1,1 @@
-{
-  "query": "SELECT w.sessionDate, w.dayLabel, JSON_EXTRACT(w.exercises, '$') as exercises FROM workouts w WHERE w.userId = (SELECT id FROM users WHERE email = 'jake@jakehickman.com') AND JSON_SEARCH(w.exercises, 'one', '1-Arm DB Preacher Curl', NULL, '$[*].name') IS NOT NULL ORDER BY w.sessionDate DESC LIMIT 5;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT w.sessionDate, w.dayLabel, JSON_EXTRACT(w.exercises, '$') as exercises FROM workouts w WHERE w.userId = (SELECT id FROM users WHERE email = 'jake@jakehickman.com') AND JSON_SEARCH(w.exercises, 'one', '1-Arm DB Preacher Curl', NULL, '$[*].name') IS NOT NULL ORDER BY w.sessionDate DESC LIMIT 5;",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1146 (42S02) at line 1: Table 'hzf6zqya94nkhy3yxxlha5.workouts' doesn't exist"
-  ]
-}
+.manus/db/db-query-error-1779214709487.json

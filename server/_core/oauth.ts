@@ -2,12 +2,19 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
+import { exchangeCodeForGoogleUser } from "./googleAuth";
 import { notifyOwner } from "./notification";
 import { sdk } from "./sdk";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
   return typeof value === "string" ? value : undefined;
+}
+
+function getCallbackRedirectUri(req: Request): string {
+  const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol;
+  const host = req.headers["x-forwarded-host"] || req.headers.host;
+  return `${proto}://${host}/api/oauth/callback`;
 }
 
 export function registerOAuthRoutes(app: Express) {
@@ -33,17 +40,33 @@ export function registerOAuthRoutes(app: Express) {
         redirectUri = Buffer.from(state, "base64").toString();
       }
 
-      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
+      const googleUser = await exchangeCodeForGoogleUser(
+        code,
+        getCallbackRedirectUri(req)
+      );
 
-      if (!userInfo.openId) {
-        res.status(400).json({ error: "openId missing from user info" });
+      if (!googleUser.sub) {
+        res.status(400).json({ error: "sub missing from Google user info" });
         return;
       }
 
-      // Check if this is a new user before upserting
-      const existingUser = await db.getUserByOpenId(userInfo.openId);
-      const isNewUser = !existingUser;
+      // Look up the user by their Google subject id first. If that misses,
+      // fall back to matching by email — this covers accounts created
+      // before the migration off Manus's auth relay, whose openId was a
+      // Manus-issued id rather than a Google subject id. When we find a
+      // match this way, re-point that account at the new Google sub so
+      // future logins resolve directly.
+      let existingUser = await db.getUserByOpenId(googleUser.sub);
+      let isNewUser = !existingUser;
+
+      if (!existingUser && googleUser.email) {
+        const emailMatch = await db.getUserByEmail(googleUser.email);
+        if (emailMatch) {
+          await db.relinkUserOpenId(emailMatch.id, googleUser.sub);
+          existingUser = { ...emailMatch, openId: googleUser.sub };
+          isNewUser = false;
+        }
+      }
 
       // Invite-only: block new sign-ups that don't have a valid invite token
       if (isNewUser && !inviteToken) {
@@ -52,10 +75,10 @@ export function registerOAuthRoutes(app: Express) {
       }
 
       await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+        openId: googleUser.sub,
+        name: googleUser.name || null,
+        email: googleUser.email ?? null,
+        loginMethod: "google",
         lastSignedIn: new Date(),
       });
 
@@ -64,7 +87,7 @@ export function registerOAuthRoutes(app: Express) {
         try {
           const invite = await db.getInviteToken(inviteToken);
           if (invite && !invite.usedByUserId && (!invite.expiresAt || invite.expiresAt > new Date())) {
-            const user = await db.getUserByOpenId(userInfo.openId);
+            const user = await db.getUserByOpenId(googleUser.sub);
             if (user) {
               await db.setUserApproved(user.id, true);
               await db.redeemInviteToken(inviteToken, user.id);
@@ -79,7 +102,7 @@ export function registerOAuthRoutes(app: Express) {
 
       // Notify owner when a new client signs up (fire-and-forget, never blocks login)
       if (isNewUser) {
-        const displayName = userInfo.name || userInfo.email || userInfo.openId;
+        const displayName = googleUser.name || googleUser.email || googleUser.sub;
         Promise.resolve()
           .then(() =>
             notifyOwner({
@@ -92,8 +115,8 @@ export function registerOAuthRoutes(app: Express) {
           .catch(() => {});
       }
 
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
+      const sessionToken = await sdk.createSessionToken(googleUser.sub, {
+        name: googleUser.name || "",
         expiresInMs: ONE_YEAR_MS,
       });
 

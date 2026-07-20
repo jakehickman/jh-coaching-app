@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import { getLoginUrl } from "@/const";
 
 /**
  * Landing page for invite links: /invite/:token
- * Validates the token, then redirects to Manus OAuth with the token embedded in state.
+ * Validates the token, then redirects to Google sign-in with the token embedded in state.
  */
 export default function InvitePage() {
   const { token } = useParams<{ token: string }>();
@@ -17,17 +18,7 @@ export default function InvitePage() {
 
   const handleAccept = () => {
     if (!token) return;
-    const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
-    const appId = import.meta.env.VITE_APP_ID;
-    const redirectUri = `${window.location.origin}/api/oauth/callback`;
-    // Encode both redirectUri and inviteToken in state as JSON base64
-    const state = btoa(JSON.stringify({ redirectUri, inviteToken: token }));
-    const url = new URL(`${oauthPortalUrl}/app-auth`);
-    url.searchParams.set("appId", appId);
-    url.searchParams.set("redirectUri", redirectUri);
-    url.searchParams.set("state", state);
-    url.searchParams.set("type", "signIn");
-    window.location.href = url.toString();
+    window.location.href = getLoginUrl({ inviteToken: token });
   };
 
   // Auto-redirect if token is valid (no need to show a button)

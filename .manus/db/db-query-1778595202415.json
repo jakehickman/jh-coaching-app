@@ -1,9 +1,1 @@
-{
-  "query": "\nINSERT INTO check_in_history (clientId, dueDate, submissionId, skipped, completedAt)\nVALUES (1, '2026-05-06', 420001, 0, NOW());\n\nUPDATE check_in_cycles\nSET dueDate = '2026-05-13', status = 'upcoming', submissionId = NULL, updatedAt = NOW()\nWHERE id = 60001 AND clientId = 1;\n",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute \nINSERT INTO check_in_history (clientId, dueDate, submissionId, skipped, completedAt)\nVALUES (1, '2026-05-06', 420001, 0, NOW());\n\nUPDATE check_in_cycles\nSET dueDate = '2026-05-13', status = 'upcoming', submissionId = NULL, updatedAt = NOW()\nWHERE id = 60001 AND clientId = 1;\n",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1952
-}
+.manus/db/db-query-1778595202415.json

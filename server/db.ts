@@ -106,15 +106,20 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.lastSignedIn = user.lastSignedIn;
       updateSet.lastSignedIn = user.lastSignedIn;
     }
+    const isOwner =
+      user.openId === ENV.ownerOpenId ||
+      (!!ENV.ownerEmail &&
+        !!user.email &&
+        user.email.toLowerCase() === ENV.ownerEmail);
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
+    } else if (isOwner) {
       values.role = "admin";
       updateSet.role = "admin";
     }
     // Auto-approve admins/owner
-    if (user.openId === ENV.ownerOpenId || user.role === "admin") {
+    if (isOwner || user.role === "admin") {
       values.approved = true;
       updateSet.approved = true;
     }
@@ -132,6 +137,24 @@ export async function getUserByOpenId(openId: string) {
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+/**
+ * Re-point an existing user row at a new openId. Used once, during the
+ * migration off Manus's auth, to match an existing account (found by email)
+ * to the new Google subject id, instead of creating a duplicate account.
+ */
+export async function relinkUserOpenId(userId: number, newOpenId: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ openId: newOpenId }).where(eq(users.id, userId));
 }
 
 export async function getAllClients(coachId: number) {

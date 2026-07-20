@@ -39,10 +39,16 @@ export function getSessionCookieOptions(
   //       ? hostname
   //       : undefined;
 
+  // sameSite: "none" requires secure: true (HTTPS) or browsers silently
+  // refuse to store the cookie. That combination was needed when this app
+  // was loaded inside a Manus preview iframe on a different domain; now
+  // that it's a normal same-origin site, "lax" is both correct and safe,
+  // and — critically — actually works over plain http on localhost.
+  const secure = isSecureRequest(req);
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none",
-    secure: isSecureRequest(req),
+    sameSite: "lax",
+    secure,
   };
 }

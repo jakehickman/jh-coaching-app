@@ -1,11 +1,1 @@
-{
-  "query": "\nSELECT \n  ws.date,\n  ws.day_label,\n  JSON_EXTRACT(ex.value, '$.name') as ex_name,\n  JSON_EXTRACT(ex.value, '$.machinePreset') as machine_preset,\n  JSON_EXTRACT(ex.value, '$.presetId') as preset_id,\n  JSON_EXTRACT(ex.value, '$.sets') as sets\nFROM workout_sessions ws\nJOIN JSON_TABLE(ws.exercises, '$[*]' COLUMNS (value JSON PATH '$')) ex\nWHERE JSON_EXTRACT(ex.value, '$.name') = 'Cable Pushdown'\nORDER BY ws.date DESC\nLIMIT 10;\n",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute \nSELECT \n  ws.date,\n  ws.day_label,\n  JSON_EXTRACT(ex.value, '$.name') as ex_name,\n  JSON_EXTRACT(ex.value, '$.machinePreset') as machine_preset,\n  JSON_EXTRACT(ex.value, '$.presetId') as preset_id,\n  JSON_EXTRACT(ex.value, '$.sets') as sets\nFROM workout_sessions ws\nJOIN JSON_TABLE(ws.exercises, '$[*]' COLUMNS (value JSON PATH '$')) ex\nWHERE JSON_EXTRACT(ex.value, '$.name') = 'Cable Pushdown'\nORDER BY ws.date DESC\nLIMIT 10;\n",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1064 (42000) at line 2: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 9 column 17 near \"(ws.exercises, '$[*]' COLUMNS (value JSON PATH '$')) ex",
-    "WHERE JSON_EXTRACT(ex.value, '$.name') = 'Cable Pushdown'",
-    "ORDER BY ws.date DESC",
-    "LIMIT 10\""
-  ]
-}
+.manus/db/db-query-error-1780117385420.json

@@ -1,9 +1,1 @@
-{
-  "query": "CREATE TABLE `exercise_library` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`name` varchar(128) NOT NULL,\n\t`chest` float DEFAULT 0,\n\t`frontDelts` float DEFAULT 0,\n\t`sideDelts` float DEFAULT 0,\n\t`triceps` float DEFAULT 0,\n\t`lats` float DEFAULT 0,\n\t`upperBack` float DEFAULT 0,\n\t`rearDelts` float DEFAULT 0,\n\t`biceps` float DEFAULT 0,\n\t`quads` float DEFAULT 0,\n\t`hams` float DEFAULT 0,\n\t`glutes` float DEFAULT 0,\n\t`calves` float DEFAULT 0,\n\t`abs` float DEFAULT 0,\n\t`customGroups` json,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `exercise_library_id` PRIMARY KEY(`id`)\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute CREATE TABLE `exercise_library` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`name` varchar(128) NOT NULL,\n\t`chest` float DEFAULT 0,\n\t`frontDelts` float DEFAULT 0,\n\t`sideDelts` float DEFAULT 0,\n\t`triceps` float DEFAULT 0,\n\t`lats` float DEFAULT 0,\n\t`upperBack` float DEFAULT 0,\n\t`rearDelts` float DEFAULT 0,\n\t`biceps` float DEFAULT 0,\n\t`quads` float DEFAULT 0,\n\t`hams` float DEFAULT 0,\n\t`glutes` float DEFAULT 0,\n\t`calves` float DEFAULT 0,\n\t`abs` float DEFAULT 0,\n\t`customGroups` json,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `exercise_library_id` PRIMARY KEY(`id`)\n);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1674
-}
+.manus/db/db-query-1775390508517.json

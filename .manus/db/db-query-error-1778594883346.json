@@ -1,8 +1,1 @@
-{
-  "query": "SELECT u.name, u.id, c.id as cycle_id, c.status, c.due_date, c.submission_id FROM check_in_cycles c JOIN users u ON u.id = c.user_id WHERE u.name LIKE '%Jake%' ORDER BY c.due_date DESC LIMIT 5;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT u.name, u.id, c.id as cycle_id, c.status, c.due_date, c.submission_id FROM check_in_cycles c JOIN users u ON u.id = c.user_id WHERE u.name LIKE '%Jake%' ORDER BY c.due_date DESC LIMIT 5;",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 1: Unknown column 'c.user_id' in 'on clause'"
-  ]
-}
+.manus/db/db-query-error-1778594883346.json

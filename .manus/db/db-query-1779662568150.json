@@ -1,16 +1,1 @@
-{
-  "query": "\nSELECT u.id, u.name, p.startDate, p.checkInDay\nFROM users u\nLEFT JOIN client_profiles p ON p.userId = u.id\nWHERE u.name LIKE '%Jake%';\n",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute \nSELECT u.id, u.name, p.startDate, p.checkInDay\nFROM users u\nLEFT JOIN client_profiles p ON p.userId = u.id\nWHERE u.name LIKE '%Jake%';\n",
-  "rows": [
-    {
-      "id": "1",
-      "name": "Jake Hickman",
-      "startDate": "2026-04-08",
-      "checkInDay": "wednesday"
-    }
-  ],
-  "messages": [],
-  "stdout": "id\tname\tstartDate\tcheckInDay\n1\tJake Hickman\t2026-04-08\twednesday\n",
-  "stderr": "",
-  "execution_time_ms": 1787
-}
+.manus/db/db-query-1779662568150.json

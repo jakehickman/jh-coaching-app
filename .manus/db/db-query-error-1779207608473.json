@@ -1,8 +1,1 @@
-{
-  "query": "\nSELECT u.name, u.id, cp.id as phase_id, cp.label, cp.start_date, cp.end_date\nFROM client_phases cp\nJOIN users u ON u.id = cp.client_id\nWHERE u.name LIKE '%Jake%' OR u.email LIKE '%jake%'\nORDER BY cp.start_date;\n",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute \nSELECT u.name, u.id, cp.id as phase_id, cp.label, cp.start_date, cp.end_date\nFROM client_phases cp\nJOIN users u ON u.id = cp.client_id\nWHERE u.name LIKE '%Jake%' OR u.email LIKE '%jake%'\nORDER BY cp.start_date;\n",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 2: Unknown column 'cp.client_id' in 'on clause'"
-  ]
-}
+.manus/db/db-query-error-1779207608473.json

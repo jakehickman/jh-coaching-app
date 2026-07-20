@@ -1,9 +1,1 @@
-{
-  "query": "ALTER TABLE `client_phases` MODIFY COLUMN `label` ENUM('Gaining','Mini Cut','Fat Loss','Contest Prep') NOT NULL; ALTER TABLE `client_phases` ADD COLUMN IF NOT EXISTS `target_rate` VARCHAR(32) NULL",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute ALTER TABLE `client_phases` MODIFY COLUMN `label` ENUM('Gaining','Mini Cut','Fat Loss','Contest Prep') NOT NULL; ALTER TABLE `client_phases` ADD COLUMN IF NOT EXISTS `target_rate` VARCHAR(32) NULL",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 2243
-}
+.manus/db/db-query-1777552723661.json

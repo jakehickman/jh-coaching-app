@@ -109,6 +109,11 @@ temp/
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
 
+# Manus debug/query logs — must never be committed (previously leaked DB
+# connection details; contents have been scrubbed, see migration notes)
+.manus/
+.manus-logs/
+
 # Manus version file (auto-generated, not part of source)
 client/public/__manus__/version.json
 .project-config.json

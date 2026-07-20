@@ -1,17 +1,1 @@
-{
-  "query": "SELECT id, clientId, label, startDate, endDate FROM client_phases WHERE clientId = 1;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT id, clientId, label, startDate, endDate FROM client_phases WHERE clientId = 1;",
-  "rows": [
-    {
-      "id": "30004",
-      "clientId": "1",
-      "label": "Gaining",
-      "startDate": "2026-05-25",
-      "endDate": "2026-11-08"
-    }
-  ],
-  "messages": [],
-  "stdout": "id\tclientId\tlabel\tstartDate\tendDate\n30004\t1\tGaining\t2026-05-25\t2026-11-08\n",
-  "stderr": "",
-  "execution_time_ms": 1833
-}
+.manus/db/db-query-1779662618135.json

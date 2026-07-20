@@ -1,16 +1,1 @@
-{
-  "query": "SELECT logDate FROM daily_logs WHERE userId = 1 AND logDate >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) ORDER BY logDate DESC;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3K2x4Mgy2RpvvVT.root --database HZf6zqYa94nKHY3YxXLHa5 --execute SELECT logDate FROM daily_logs WHERE userId = 1 AND logDate >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) ORDER BY logDate DESC;",
-  "rows": [
-    {
-      "logDate": "2026-06-23"
-    },
-    {
-      "logDate": "2026-06-22"
-    }
-  ],
-  "messages": [],
-  "stdout": "logDate\n2026-06-23\n2026-06-22\n",
-  "stderr": "",
-  "execution_time_ms": 1777
-}
+.manus/db/db-query-1782307538482.json
