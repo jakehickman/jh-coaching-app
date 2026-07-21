@@ -1,5 +1,6 @@
 import {
   int,
+  index,
   mysqlEnum,
   mysqlTable,
   text,
@@ -86,7 +87,9 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_users_email").on(table.email),
+]);
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
@@ -107,7 +110,10 @@ export const clientProfiles = mysqlTable("client_profiles", {
   nutritionMode: mysqlEnum("nutritionMode", ["meal_plan", "macros"]).default("meal_plan").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_client_profiles_userId").on(table.userId),
+  index("idx_client_profiles_coachId").on(table.coachId),
+]);
 
 export type ClientProfile = typeof clientProfiles.$inferSelect;
 
@@ -130,7 +136,9 @@ export const dailyLogs = mysqlTable("daily_logs", {
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_daily_logs_userId").on(table.userId),
+]);
 
 export type DailyLog = typeof dailyLogs.$inferSelect;
 
@@ -166,7 +174,9 @@ export const measurements = mysqlTable("measurements", {
   thigh5: float("thigh5"),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_measurements_userId").on(table.userId),
+]);
 
 export type Measurement = typeof measurements.$inferSelect;
 
@@ -185,7 +195,10 @@ export const mealPlans = mysqlTable("meal_plans", {
   treatAllowanceKcal: int("treatAllowanceKcal"), // daily treat allowance in kcal (per day type)
   notes: text("notes"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_meal_plans_userId").on(table.userId),
+  index("idx_meal_plans_coachId").on(table.coachId),
+]);
 export type MealPlan = typeof mealPlans.$inferSelect;
 
 // Macro targets — per-meal min/max targets when client is in macros mode
@@ -211,7 +224,10 @@ export const macroTargets = mysqlTable("macro_targets", {
   meals: json("meals").$type<MacroMeal[]>(),
   notes: text("notes"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_macro_targets_userId").on(table.userId),
+  index("idx_macro_targets_coachId").on(table.coachId),
+]);
 export type MacroTarget = typeof macroTargets.$inferSelect;
 
 // Shopping list items
@@ -224,7 +240,9 @@ export const shoppingItems = mysqlTable("shopping_items", {
   checked: boolean("checked").default(false),
   sortOrder: int("sortOrder").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_shopping_items_userId").on(table.userId),
+]);
 
 export type ShoppingItem = typeof shoppingItems.$inferSelect;
 
@@ -238,7 +256,10 @@ export const trainingPrograms = mysqlTable("training_programs", {
   schedule: json("schedule").$type<string[]>(), // JSON: array of strings e.g. ["Day 1","Day 2","Off","Day 3","Day 4","Off"]
   notes: text("notes"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_training_programs_userId").on(table.userId),
+  index("idx_training_programs_coachId").on(table.coachId),
+]);
 
 export type TrainingProgram = typeof trainingPrograms.$inferSelect;
 
@@ -252,7 +273,10 @@ export const mesoCycles = mysqlTable("meso_cycles", {
   closedAt: timestamp("closedAt"),        // null = active, set = closed/archived
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_meso_cycles_userId").on(table.userId),
+  index("idx_meso_cycles_coachId").on(table.coachId),
+]);
 
 export type MesoCycle = typeof mesoCycles.$inferSelect;
 
@@ -267,7 +291,9 @@ export const mesoSessions = mysqlTable("meso_sessions", {
   exercises: json("exercises").$type<WorkoutExercise[]>(), // JSON: [{name, sets:[{weight, reps, rir}]}
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_meso_sessions_userId").on(table.userId),
+]);
 
 export type MesoSession = typeof mesoSessions.$inferSelect;
 
@@ -281,7 +307,9 @@ export const timelineMilestones = mysqlTable("timeline_milestones", {
   category: varchar("category", { length: 64 }), // e.g. "Check-in", "Peak Week", "Show Day"
   completed: boolean("completed").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_timeline_milestones_userId").on(table.userId),
+]);
 
 export type TimelineMilestone = typeof timelineMilestones.$inferSelect;
 
@@ -295,7 +323,9 @@ export const coachingNotes = mysqlTable("coaching_notes", {
   category: varchar("category", { length: 64 }), // e.g. "Check-in", "Adjustment", "Motivation"
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_coaching_notes_coachId").on(table.coachId),
+]);
 
 export type CoachingNote = typeof coachingNotes.$inferSelect;
 
@@ -344,7 +374,9 @@ export const weeklyCheckIns = mysqlTable("weekly_check_ins", {
   coachFeedback: text("coachFeedback"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_weekly_check_ins_userId").on(table.userId),
+]);
 
 export type WeeklyCheckIn = typeof weeklyCheckIns.$inferSelect;
 
@@ -388,7 +420,9 @@ export const workoutSessions = mysqlTable("workout_sessions", {
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_workout_sessions_userId").on(table.userId),
+]);
 
 export type WorkoutSession = typeof workoutSessions.$inferSelect;
 export type InsertWorkoutSession = typeof workoutSessions.$inferInsert;
@@ -417,7 +451,10 @@ export const onboardingSubmissions = mysqlTable("onboarding_submissions", {
   // Meta
   submittedAt: timestamp("submittedAt").defaultNow().notNull(),
   reviewed: boolean("reviewed").default(false).notNull(),
-});
+}, (table) => [
+  index("idx_onboarding_submissions_userId").on(table.userId),
+  index("idx_onboarding_submissions_email").on(table.email),
+]);
 
 export type OnboardingSubmission = typeof onboardingSubmissions.$inferSelect;
 export type InsertOnboardingSubmission = typeof onboardingSubmissions.$inferInsert;
@@ -436,7 +473,9 @@ export const habits = mysqlTable("habits", {
   deleted: boolean("deleted").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_habits_coachId").on(table.coachId),
+]);
 
 export type Habit = typeof habits.$inferSelect;
 export type InsertHabit = typeof habits.$inferInsert;
@@ -448,7 +487,9 @@ export const habitAssignments = mysqlTable("habit_assignments", {
   clientId: int("clientId").notNull(), // FK -> users.id (client)
   active: boolean("active").default(true).notNull(),
   assignedAt: timestamp("assignedAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_habit_assignments_clientId").on(table.clientId),
+]);
 
 export type HabitAssignment = typeof habitAssignments.$inferSelect;
 
@@ -459,7 +500,9 @@ export const habitCompletions = mysqlTable("habit_completions", {
   clientId: int("clientId").notNull(), // FK -> users.id (client)
   completedDate: date("completedDate").notNull(), // yyyy-mm-dd
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_habit_completions_clientId").on(table.clientId),
+]);
 
 export type HabitCompletion = typeof habitCompletions.$inferSelect;
 
@@ -470,7 +513,9 @@ export const mealHabitCompletions = mysqlTable("meal_habit_completions", {
   clientId: int("clientId").notNull(),  // FK -> users.id (client)
   mealLogId: int("mealLogId").notNull(), // FK -> meal_logs.id
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_meal_habit_completions_clientId").on(table.clientId),
+]);
 
 export type MealHabitCompletion = typeof mealHabitCompletions.$inferSelect;
 export type InsertMealHabitCompletion = typeof mealHabitCompletions.$inferInsert;
@@ -524,7 +569,9 @@ export const checkInSubmissions = mysqlTable("check_in_submissions", {
   changesNotes: text("changesNotes"),
   submittedAt: timestamp("submittedAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_check_in_submissions_coachId").on(table.coachId),
+]);
 export type CheckInSubmission = typeof checkInSubmissions.$inferSelect;;
 export type InsertCheckInSubmission = typeof checkInSubmissions.$inferInsert;
 
@@ -537,7 +584,9 @@ export const equipmentPresets = mysqlTable("equipment_presets", {
   lastSettings: varchar("lastSettings", { length: 512 }),       // e.g. "Seat 4, pad 2" — auto-updated per session
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_equipment_presets_userId").on(table.userId),
+]);
 
 export type EquipmentPreset = typeof equipmentPresets.$inferSelect;
 export type InsertEquipmentPreset = typeof equipmentPresets.$inferInsert;
@@ -554,7 +603,9 @@ export const checkInCycles = mysqlTable("check_in_cycles", {
   submissionId: int("submissionId"),   // FK -> check_in_submissions.id (set when submitted)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_check_in_cycles_clientId").on(table.clientId),
+]);
 
 export type CheckInCycle = typeof checkInCycles.$inferSelect;
 export type InsertCheckInCycle = typeof checkInCycles.$inferInsert;
@@ -567,7 +618,9 @@ export const checkInHistory = mysqlTable("check_in_history", {
   submissionId: int("submissionId"),   // FK -> check_in_submissions.id (null if cycle was missed)
   skipped: boolean("skipped").default(false).notNull(),
   completedAt: timestamp("completedAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_check_in_history_clientId").on(table.clientId),
+]);
 
 export type CheckInHistoryRow = typeof checkInHistory.$inferSelect;
 export type InsertCheckInHistory = typeof checkInHistory.$inferInsert;
@@ -590,7 +643,10 @@ export const mealPlanHistory = mysqlTable("meal_plan_history", {
   restFat: int("restFat"),
   note: text("note"),
   changedAt: timestamp("changedAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_meal_plan_history_userId").on(table.userId),
+  index("idx_meal_plan_history_coachId").on(table.coachId),
+]);
 export type MealPlanHistoryRow = typeof mealPlanHistory.$inferSelect;
 export type InsertMealPlanHistory = typeof mealPlanHistory.$inferInsert;
 
@@ -616,7 +672,9 @@ export const progressPhotos = mysqlTable("progress_photos", {
   photoUrl: text("photoUrl").notNull(),       // S3 public URL
   s3Key: varchar("s3Key", { length: 512 }).notNull(), // S3 object key for deletion
   uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_progress_photos_coachId").on(table.coachId),
+]);
 
 export type ProgressPhoto = typeof progressPhotos.$inferSelect;
 export type InsertProgressPhoto = typeof progressPhotos.$inferInsert;
@@ -638,7 +696,10 @@ export const programChangeLogs = mysqlTable("program_change_logs", {
   changes: json("changes").$type<ProgramChangeEntry[]>().notNull(),
   note: text("note"),
   changedAt: timestamp("changedAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_program_change_logs_userId").on(table.userId),
+  index("idx_program_change_logs_coachId").on(table.coachId),
+]);
 
 export type ProgramChangeLog = typeof programChangeLogs.$inferSelect;
 export type InsertProgramChangeLog = typeof programChangeLogs.$inferInsert;
@@ -657,7 +718,10 @@ export const cardioChangeLogs = mysqlTable("cardio_change_logs", {
   changes: json("changes").$type<CardioChangeEntry[]>().notNull(),
   note: text("note"),
   changedAt: timestamp("changedAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_cardio_change_logs_userId").on(table.userId),
+  index("idx_cardio_change_logs_coachId").on(table.coachId),
+]);
 
 export type CardioChangeLog = typeof cardioChangeLogs.$inferSelect;
 export type InsertCardioChangeLog = typeof cardioChangeLogs.$inferInsert;
@@ -706,7 +770,9 @@ export const clientQuestionOverrides = mysqlTable("client_question_overrides", {
   active: boolean("active").notNull(),          // true = show, false = hide for this client
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_client_question_overrides_clientId").on(table.clientId),
+]);
 export type ClientQuestionOverride = typeof clientQuestionOverrides.$inferSelect;
 export type InsertClientQuestionOverride = typeof clientQuestionOverrides.$inferInsert;
 
@@ -730,7 +796,9 @@ export const clientPhases = mysqlTable("client_phases", {
   targetRate: varchar("target_rate", { length: 32 }), // e.g. "0.5%-1.0% loss/wk"
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_client_phases_clientId").on(table.clientId),
+]);
 export type ClientPhase = typeof clientPhases.$inferSelect;
 export type InsertClientPhase = typeof clientPhases.$inferInsert;
 
@@ -745,7 +813,9 @@ export const inviteTokens = mysqlTable("invite_tokens", {
   usedAt: timestamp("usedAt"),
   expiresAt: timestamp("expiresAt"),          // null = never expires
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_invite_tokens_coachId").on(table.coachId),
+]);
 export type InviteToken = typeof inviteTokens.$inferSelect;
 export type InsertInviteToken = typeof inviteTokens.$inferInsert;
 
@@ -767,7 +837,9 @@ export const mealLogs = mysqlTable("meal_logs", {
   utcOffsetMins: int("utcOffsetMins"),             // client's UTC offset in minutes at log time (e.g. 600 for UTC+10)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_meal_logs_userId").on(table.userId),
+]);
 
 export type MealLog = typeof mealLogs.$inferSelect;
 export type InsertMealLog = typeof mealLogs.$inferInsert;
@@ -780,7 +852,9 @@ export const deviceTokens = mysqlTable("device_tokens", {
   platform: mysqlEnum("platform", ["ios", "android"]).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_device_tokens_userId").on(table.userId),
+]);
 
 export type DeviceToken = typeof deviceTokens.$inferSelect;
 export type InsertDeviceToken = typeof deviceTokens.$inferInsert;
