@@ -393,8 +393,8 @@ export default function BodyCompTab() {
 
   const addMutation = trpc.measurements.add.useMutation({
     onSuccess: () => {
-      utils.measurements.list.invalidate();
-      utils.measurements.listForClient.invalidate();
+      void utils.measurements.list.invalidate();
+      void utils.measurements.listForClient.invalidate();
       setShowForm(false);
       setForm(blankForm(today));
       toast.success("Measurement saved");
@@ -404,8 +404,8 @@ export default function BodyCompTab() {
 
   const deleteMutation = trpc.measurements.delete.useMutation({
     onSuccess: () => {
-      utils.measurements.list.invalidate();
-      utils.measurements.listForClient.invalidate();
+      void utils.measurements.list.invalidate();
+      void utils.measurements.listForClient.invalidate();
       toast.success("Deleted");
     },
     onError: () => toast.error("Failed to delete"),

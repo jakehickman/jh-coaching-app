@@ -263,13 +263,13 @@ export default function MeasurementsTab() {
       toast.success("Measurements saved");
       setShowForm(false);
       setForm(blankForm(today));
-      refetch();
+      void refetch();
     },
     onError: () => toast.error("Failed to save"),
   });
 
   const deleteMutation = trpc.measurements.delete.useMutation({
-    onSuccess: () => { toast.success("Entry deleted"); refetch(); },
+    onSuccess: () => { toast.success("Entry deleted"); void refetch(); },
     onError: () => toast.error("Failed to delete"),
   });
 

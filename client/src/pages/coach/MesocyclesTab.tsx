@@ -660,7 +660,7 @@ export function MesocyclesTab({ clientId }: { clientId: number }) {
       {showCreate && (
         <CreateMesocycleForm
           clientId={clientId}
-          onCreated={() => { setShowCreate(false); refresh(); }}
+          onCreated={() => { setShowCreate(false); void refresh(); }}
           onCancel={() => setShowCreate(false)}
         />
       )}

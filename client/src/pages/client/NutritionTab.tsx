@@ -530,9 +530,9 @@ function LogSheet({
                 <ImageIcon size={18} /> Gallery
               </button>
               <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void handlePhoto(f); }} />
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }} />
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void handlePhoto(f); }} />
             </div>
           )}
         </div>
@@ -975,14 +975,14 @@ function EditSheet({
                       accept="image/*"
                       capture="environment"
                       className="hidden"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) void handlePhoto(f); }}
                     />
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhoto(f); }}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) void handlePhoto(f); }}
                     />
                   </div>
                 )}
@@ -1198,7 +1198,7 @@ function TodayScreen() {
   );
 
   const deleteMutation = trpc.mealLogs.delete.useMutation({
-    onSuccess: () => { refetch(); setDeleteConfirm(null); },
+    onSuccess: () => { void refetch(); setDeleteConfirm(null); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -1490,7 +1490,7 @@ function HistoryScreen() {
   const datesWithMeals = useMemo(() => new Set(monthDates as string[]), [monthDates]);
 
   const deleteMutation = trpc.mealLogs.delete.useMutation({
-    onSuccess: () => { refetch(); setDeleteConfirm(null); },
+    onSuccess: () => { void refetch(); setDeleteConfirm(null); },
     onError: (e) => toast.error(e.message),
   });
 

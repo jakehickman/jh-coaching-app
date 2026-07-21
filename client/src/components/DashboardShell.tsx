@@ -548,7 +548,7 @@ function ClientLayout({
         open={fullnessOpen}
         mealId={fullnessMealId}
         onClose={() => { setFullnessOpen(false); setFullnessMealId(null); }}
-        onSaved={() => { utils.mealLogs.listByDay.invalidate(); setDismissedId(null); }}
+        onSaved={() => { void utils.mealLogs.listByDay.invalidate(); setDismissedId(null); }}
       />
 
       {/* Bottom navigation bar — 4 evenly-spaced tabs */}

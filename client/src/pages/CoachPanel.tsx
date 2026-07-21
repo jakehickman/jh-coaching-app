@@ -21,10 +21,10 @@ function EditClientDialog({ userId, onClose }: { userId: number; onClose: () => 
   const utils = trpc.useUtils();
   const { data: profile } = trpc.profile.getById.useQuery({ userId }, { enabled: !!userId });
   const upsertProfile = trpc.profile.upsertForClient.useMutation({
-    onSuccess: () => { toast.success("Profile updated"); utils.profile.getById.invalidate({ userId }); utils.users.list.invalidate(); onClose(); }
+    onSuccess: () => { toast.success("Profile updated"); void utils.profile.getById.invalidate({ userId }); void utils.users.list.invalidate(); onClose(); }
   });
   const updateClientConfig = trpc.clientConfig.update.useMutation({
-    onSuccess: () => { toast.success("Config updated"); utils.profile.getById.invalidate({ userId }); }
+    onSuccess: () => { toast.success("Config updated"); void utils.profile.getById.invalidate({ userId }); }
   });
   const [form, setForm] = useState({ displayName: "", startDate: "", notes: "", stepGoal: "", photoType: "standard" as "standard" | "athlete" });
   useEffect(() => {
@@ -130,7 +130,7 @@ function InviteLinksSection() {
   };
 
   const handleCopy = (token: string) => {
-    navigator.clipboard.writeText(getInviteUrl(token));
+    void navigator.clipboard.writeText(getInviteUrl(token));
     toast.success("Invite link copied");
   };
 
@@ -283,10 +283,10 @@ function ClientsSection() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const setApproved = trpc.users.setApproved.useMutation({
-    onSuccess: () => { utils.users.list.invalidate(); toast.success("Access updated"); },
+    onSuccess: () => { void utils.users.list.invalidate(); toast.success("Access updated"); },
   });
   const deleteUser = trpc.users.delete.useMutation({
-    onSuccess: () => { utils.users.list.invalidate(); toast.success("User deleted"); },
+    onSuccess: () => { void utils.users.list.invalidate(); toast.success("User deleted"); },
     onError: (e) => toast.error(e.message),
   });
 

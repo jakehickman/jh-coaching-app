@@ -376,13 +376,13 @@ function ClientsSection() {
   const utils = trpc.useUtils();
   const setApproved = trpc.users.setApproved.useMutation({
     onSuccess: () => {
-      utils.users.list.invalidate();
+      void utils.users.list.invalidate();
       toast.success("Access updated");
     },
   });
   const deleteUser = trpc.users.delete.useMutation({
     onSuccess: () => {
-      utils.users.list.invalidate();
+      void utils.users.list.invalidate();
       setSelectedId(null);
       toast.success("User deleted");
     },
@@ -396,14 +396,14 @@ function ClientsSection() {
   const upsertProfile = trpc.profile.upsertForClient.useMutation({
     onSuccess: () => {
       toast.success("Profile updated");
-      utils.profile.getById.invalidate({ userId: selectedId! });
+      void utils.profile.getById.invalidate({ userId: selectedId! });
     }
   });
 
   const updateClientConfig = trpc.clientConfig.update.useMutation({
     onSuccess: () => {
       toast.success("Config updated");
-      utils.profile.getById.invalidate({ userId: selectedId! });
+      void utils.profile.getById.invalidate({ userId: selectedId! });
     }
   });
 
@@ -705,7 +705,7 @@ export default function TrainingSection({ fixedClientId }: { fixedClientId?: num
       trainingSavedSnapshot.current = { programName, notes, days, schedule };
       if (trainingDraftKey) { try { localStorage.removeItem(trainingDraftKey); window.dispatchEvent(new Event("draft-changed")); } catch {} }
       setLastSavedAt(new Date());
-      toast.success("Training program saved"); refetch();
+      toast.success("Training program saved"); void refetch();
     }
   });
 

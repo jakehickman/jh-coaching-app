@@ -144,7 +144,7 @@ export default function ExerciseLibrarySection() {
     trpc.exerciseLibrary.list.useQuery();
   const upsert = trpc.exerciseLibrary.upsert.useMutation({
     onSuccess: () => {
-      refetch();
+      void refetch();
       setEditing(null);
       toast.success("Saved");
     },
@@ -156,7 +156,7 @@ export default function ExerciseLibrarySection() {
   });
   const del = trpc.exerciseLibrary.delete.useMutation({
     onSuccess: () => {
-      refetch();
+      void refetch();
       toast.success("Deleted");
     },
   });

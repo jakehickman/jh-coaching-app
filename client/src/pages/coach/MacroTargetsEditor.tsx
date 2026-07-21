@@ -119,7 +119,7 @@ export default function MacroTargetsEditor({
     onSuccess: () => {
       setLastSavedAt(new Date());
       toast.success("Macro targets saved");
-      refetch();
+      void refetch();
     },
     onError: () => toast.error("Failed to save macro targets"),
   });

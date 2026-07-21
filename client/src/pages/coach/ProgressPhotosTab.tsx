@@ -74,8 +74,8 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
 
   const uploadMutation = trpc.progressPhotos.upload.useMutation({
     onSuccess: () => {
-      utils.progressPhotos.getByWeek.invalidate({ clientId, weekNumber: uploadWeek! });
-      utils.progressPhotos.getWeeks.invalidate({ clientId });
+      void utils.progressPhotos.getByWeek.invalidate({ clientId, weekNumber: uploadWeek! });
+      void utils.progressPhotos.getWeeks.invalidate({ clientId });
       toast.success("Photo uploaded");
     },
     onError: (e) => toast.error(e.message),
@@ -83,8 +83,8 @@ export function ProgressPhotosTab({ clientId, photoType }: Props) {
 
   const deleteMutation = trpc.progressPhotos.delete.useMutation({
     onSuccess: () => {
-      utils.progressPhotos.getByWeek.invalidate({ clientId, weekNumber: uploadWeek! });
-      utils.progressPhotos.getWeeks.invalidate({ clientId });
+      void utils.progressPhotos.getByWeek.invalidate({ clientId, weekNumber: uploadWeek! });
+      void utils.progressPhotos.getWeeks.invalidate({ clientId });
       toast.success("Photo deleted");
     },
     onError: (e) => toast.error(e.message),

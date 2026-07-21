@@ -173,7 +173,7 @@ function HabitsCard({ date, weekDays }: { date: string; weekDays: string[] }) {
       const currentDone = key in optimistic ? optimistic[key] : serverDone;
       setOptimistic(prev => ({ ...prev, [key]: !currentDone }));
     },
-    onSettled: () => { refetch(); },
+    onSettled: () => { void refetch(); },
   });
 
   if (habits.length === 0) return null;
@@ -379,7 +379,7 @@ export default function DailyLogTab() {
   const workoutSessions = viewAsUserId ? workoutSessionsAdmin : workoutSessionsOwn;
 
   const upsert = trpc.dailyLog.upsert.useMutation({
-    onSuccess: () => { toast.success("Log saved"); refetch(); }
+    onSuccess: () => { toast.success("Log saved"); void refetch(); }
   });
 
   const setDate = (newDate: string) => {

@@ -106,14 +106,14 @@ export default function NutritionDataSection() {
   const { data: foods = [], refetch } = trpc.nutritionFoods.list.useQuery();
   const upsert = trpc.nutritionFoods.upsert.useMutation({
     onSuccess: () => {
-      refetch();
+      void refetch();
       setEditing(null);
       toast.success("Saved");
     },
   });
   const del = trpc.nutritionFoods.delete.useMutation({
     onSuccess: () => {
-      refetch();
+      void refetch();
       toast.success("Deleted");
     },
   });

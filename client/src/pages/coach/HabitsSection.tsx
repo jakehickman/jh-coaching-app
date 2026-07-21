@@ -214,13 +214,13 @@ export function ClientHabitsTab({ clientId }: { clientId: number }) {
 
   const assignMut = trpc.habits.assignHabit.useMutation({
     onSuccess: () => {
-      utils.habits.clientHabits.invalidate({ clientId });
+      void utils.habits.clientHabits.invalidate({ clientId });
       setOptimisticIds(null);
     },
   });
   const unassignMut = trpc.habits.unassignHabit.useMutation({
     onSuccess: () => {
-      utils.habits.clientHabits.invalidate({ clientId });
+      void utils.habits.clientHabits.invalidate({ clientId });
       setOptimisticIds(null);
     },
   });

@@ -11,7 +11,7 @@ export default function ManageEquipmentTab() {
 
   const renameMutation = trpc.equipmentPresets.rename.useMutation({
     onSuccess: () => {
-      utils.equipmentPresets.listAll.invalidate();
+      void utils.equipmentPresets.listAll.invalidate();
       setRenamingId(null);
       setRenameValue("");
       toast.success("Preset renamed.");
@@ -21,7 +21,7 @@ export default function ManageEquipmentTab() {
 
   const deleteMutation = trpc.equipmentPresets.delete.useMutation({
     onSuccess: () => {
-      utils.equipmentPresets.listAll.invalidate();
+      void utils.equipmentPresets.listAll.invalidate();
       toast.success("Preset deleted.");
     },
     onError: () => toast.error("Failed to delete preset."),
