@@ -27,7 +27,7 @@ import { CSS } from "@dnd-kit/utilities";
 // item.servingGrams = grams per one serving (default 100)
 // item.servingLabel = display label e.g. "1 cup (240g)"
 // item.servingId    = food_servings.id or null for 100g fallback
-interface MealItem {
+export interface MealItem {
   food: string;
   qty: string;           // quantity of servings
   servingId: number | null;
@@ -39,7 +39,7 @@ interface MealItem {
 
 // ─── Macro helpers ────────────────────────────────────────────────────────────
 
-function calcItemMacros(foodDb: any[], item: MealItem) {
+export function calcItemMacros(foodDb: any[], item: MealItem) {
   const food = foodDb.find((f: any) => f.name === item.food);
   if (!food) return { calories: 0, protein: 0, carbs: 0, fiber: 0, fat: 0 };
   const qty = parseFloat(item.qty ?? item.grams ?? "0") || 0;
@@ -55,7 +55,7 @@ function calcItemMacros(foodDb: any[], item: MealItem) {
   };
 }
 
-function getEffectiveGrams(item: MealItem): number {
+export function getEffectiveGrams(item: MealItem): number {
   const qty = parseFloat(item.qty ?? item.grams ?? "0") || 0;
   return Math.round(qty * (item.servingGrams ?? 100));
 }
@@ -434,7 +434,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
       if (ctx?.prev !== undefined) utils.macroTarget.getMode.setData({ userId }, ctx.prev);
     },
     onSettled: (_data, _err, { userId }) => {
-      utils.macroTarget.getMode.invalidate({ userId });
+      void utils.macroTarget.getMode.invalidate({ userId });
     },
   });
 
@@ -506,7 +506,7 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
         window.dispatchEvent(new Event("draft-changed"));
       }
       mealSavedSnapshot.current = { meals, planNotes };
-      refetch();
+      void refetch();
     },
     onError: () => toast.error("Failed to save meal plan"),
   });

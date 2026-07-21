@@ -401,6 +401,9 @@ export function ProgressHistoryTable({
   measurements: any[];
   startDate?: string | null;
 }) {
+  // Must run before either early return below — React hooks can't be called conditionally.
+  const [showAllWeeks, setShowAllWeeks] = useState(false);
+
   function siteAvg(vals: (number | null | undefined)[]): number | null {
     const nums = vals.filter((v): v is number => v != null);
     return nums.length ? parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)) : null;
@@ -547,7 +550,6 @@ export function ProgressHistoryTable({
   const tableRows = [...weekRows].reverse();
 
   const INITIAL_WEEKS = 4;
-  const [showAllWeeks, setShowAllWeeks] = useState(false);
   const visibleRows = showAllWeeks ? tableRows : tableRows.slice(0, INITIAL_WEEKS);
 
   return (
