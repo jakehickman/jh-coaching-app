@@ -9,8 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ExerciseLibrarySection from "./coach/ExerciseLibrarySection";
 import NutritionDataSection from "./coach/NutritionDataSection";
 import HabitsSection from "./coach/HabitsSection";
-import TrainingSection from "./coach/TrainingSection";
-import MealPlansSection from "./coach/MealPlansSection";
 import ProgressSection from "./coach/ProgressSection";
 import { Button } from "@/components/ui/button";
 import { SectionLabel, Card, DateInput } from "./coach/shared";
@@ -425,8 +423,6 @@ function ClientsSection() {
 
 const SECTION_MAP: Record<string, () => React.ReactNode> = {
   clients: () => <SectionErrorBoundary sectionName="Clients"><ClientsSection /></SectionErrorBoundary>,
-  training: () => <SectionErrorBoundary sectionName="Training Programs"><TrainingSection /></SectionErrorBoundary>,
-  "meal-plans": () => <SectionErrorBoundary sectionName="Meal Plans"><MealPlansSection /></SectionErrorBoundary>,
   progress: () => <SectionErrorBoundary sectionName="Client Progress"><ProgressSection /></SectionErrorBoundary>,
   "exercise-library": () => <SectionErrorBoundary sectionName="Exercise Library"><ExerciseLibrarySection /></SectionErrorBoundary>,
   "nutrition-data": () => <SectionErrorBoundary sectionName="Nutrition Data"><NutritionDataSection /></SectionErrorBoundary>,
@@ -434,8 +430,6 @@ const SECTION_MAP: Record<string, () => React.ReactNode> = {
 };
 const SECTION_TITLES: Record<string, string> = {
   clients: "Clients",
-  training: "Training Programs",
-  "meal-plans": "Meal Plans",
   progress: "Client Progress",
   "exercise-library": "Exercise Library",
   "nutrition-data": "Nutrition Data",
