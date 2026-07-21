@@ -1,7 +1,7 @@
 // Dev-only login shortcut — skips the Google OAuth round trip so changes can
 // be clicked through locally. Only ever mounted when NODE_ENV=development
 // (see server/_core/index.ts); never present in a production build.
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { COOKIE_NAME, SESSION_MAX_AGE_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
@@ -18,10 +18,10 @@ export function registerDevAuthRoutes(app: Express) {
 
     const sessionToken = await sdk.createSessionToken(user.openId, {
       name: user.name || "",
-      expiresInMs: ONE_YEAR_MS,
+      expiresInMs: SESSION_MAX_AGE_MS,
     });
     const cookieOptions = getSessionCookieOptions(req);
-    res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+    res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: SESSION_MAX_AGE_MS });
     res.redirect(302, "/dashboard");
   });
 }
