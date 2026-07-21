@@ -4,6 +4,7 @@ import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { registerDevAuthRoutes } from "./devAuth";
 import { registerUploadRoutes } from "../uploadRoutes";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -36,6 +37,10 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  // Dev-only login shortcut, never mounted outside local development
+  if (process.env.NODE_ENV === "development") {
+    registerDevAuthRoutes(app);
+  }
   // Direct file upload endpoint (bypasses tRPC JSON for binary data)
   registerUploadRoutes(app);
   // tRPC API

@@ -534,6 +534,13 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
   const updateMealName = (i: number, name: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, name } : meal));
   const updateMealTime = (i: number, time: string) => setMeals(m => m.map((meal, idx) => idx === i ? { ...meal, time } : meal));
 
+  const moveSupplement = (from: number, to: number) => setSupplements(s => {
+    const next = [...s];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    return next;
+  });
+
   const addItem = (mealIdx: number) => setMeals(m => m.map((meal, idx) => idx === mealIdx
     ? { ...meal, items: [...(meal.items ?? []), { food: "", qty: "", servingId: null, servingGrams: 100, servingLabel: "100g" } as MealItem] }
     : meal
@@ -870,7 +877,17 @@ export default function MealPlansSection({ fixedClientId, onLiveTotals }: { fixe
                   )}
                   <div className="space-y-2">
                     {supplements.map((supp, i) => (
-                      <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-1.5 items-center">
+                      <div key={i} className="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-1.5 items-center">
+                        <div className="flex flex-col gap-0.5 shrink-0 text-muted-foreground">
+                          <button onClick={() => i > 0 && moveSupplement(i, i - 1)} disabled={i === 0}
+                            className="hover:text-foreground disabled:opacity-20 leading-none p-0.5">
+                            <ArrowUp size={11} />
+                          </button>
+                          <button onClick={() => i < supplements.length - 1 && moveSupplement(i, i + 1)} disabled={i === supplements.length - 1}
+                            className="hover:text-foreground disabled:opacity-20 leading-none p-0.5">
+                            <ArrowDown size={11} />
+                          </button>
+                        </div>
                         <input
                           placeholder="Name"
                           value={supp.name}
