@@ -603,9 +603,9 @@ export const checkInCycles = mysqlTable("check_in_cycles", {
   submissionId: int("submissionId"),   // FK -> check_in_submissions.id (set when submitted)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  index("idx_check_in_cycles_clientId").on(table.clientId),
-]);
+}); // no index() here — the live DB already has a unique index on clientId
+   // (named uq_client) that isn't declared anywhere in this file, a symptom
+   // of the same schema/DB drift noted in drizzle/0019_....sql's header
 
 export type CheckInCycle = typeof checkInCycles.$inferSelect;
 export type InsertCheckInCycle = typeof checkInCycles.$inferInsert;
@@ -618,9 +618,8 @@ export const checkInHistory = mysqlTable("check_in_history", {
   submissionId: int("submissionId"),   // FK -> check_in_submissions.id (null if cycle was missed)
   skipped: boolean("skipped").default(false).notNull(),
   completedAt: timestamp("completedAt").defaultNow().notNull(),
-}, (table) => [
-  index("idx_check_in_history_clientId").on(table.clientId),
-]);
+}); // no index() here — the live DB already has idx_client (clientId) and
+   // idx_client_due (clientId, dueDate), undeclared in this file (see check_in_cycles above)
 
 export type CheckInHistoryRow = typeof checkInHistory.$inferSelect;
 export type InsertCheckInHistory = typeof checkInHistory.$inferInsert;
@@ -770,9 +769,8 @@ export const clientQuestionOverrides = mysqlTable("client_question_overrides", {
   active: boolean("active").notNull(),          // true = show, false = hide for this client
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  index("idx_client_question_overrides_clientId").on(table.clientId),
-]);
+}); // no index() here — the live DB already has a unique index starting with
+   // clientId ((clientId, questionId)), undeclared in this file (see check_in_cycles above)
 export type ClientQuestionOverride = typeof clientQuestionOverrides.$inferSelect;
 export type InsertClientQuestionOverride = typeof clientQuestionOverrides.$inferInsert;
 
@@ -837,9 +835,8 @@ export const mealLogs = mysqlTable("meal_logs", {
   utcOffsetMins: int("utcOffsetMins"),             // client's UTC offset in minutes at log time (e.g. 600 for UTC+10)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  index("idx_meal_logs_userId").on(table.userId),
-]);
+}); // no index() here — the live DB already has meal_logs_userId_idx (userId),
+   // undeclared in this file (see check_in_cycles above)
 
 export type MealLog = typeof mealLogs.$inferSelect;
 export type InsertMealLog = typeof mealLogs.$inferInsert;

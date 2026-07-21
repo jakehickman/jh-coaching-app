@@ -17,6 +17,16 @@
 -- The journal being out of sync will affect any future `drizzle-kit generate`
 -- too, not just this change — worth reconciling in its own pass (e.g. via
 -- `drizzle-kit introspect` against the live DB) separately from this fix.
+--
+-- APPLIED (2026-07-21): ran against the live DB. 4 of the 41 statements below
+-- turned out to be redundant with indexes that already existed under different
+-- names — check_in_cycles already had a unique index on clientId (uq_client),
+-- client_question_overrides already had a unique index starting with clientId
+-- ((clientId, questionId)), check_in_history already had both a plain clientId
+-- index (idx_client) and a (clientId, dueDate) composite, and meal_logs already
+-- had meal_logs_userId_idx. Those 4 CREATE INDEX statements were skipped/dropped
+-- rather than left as dead duplicates; commented out below rather than deleted,
+-- so this file still matches what was actually generated and reasoned about.
 
 CREATE INDEX `idx_users_email` ON `users` (`email`);
 CREATE INDEX `idx_client_profiles_userId` ON `client_profiles` (`userId`);
@@ -45,8 +55,8 @@ CREATE INDEX `idx_habit_completions_clientId` ON `habit_completions` (`clientId`
 CREATE INDEX `idx_meal_habit_completions_clientId` ON `meal_habit_completions` (`clientId`);
 CREATE INDEX `idx_check_in_submissions_coachId` ON `check_in_submissions` (`coachId`);
 CREATE INDEX `idx_equipment_presets_userId` ON `equipment_presets` (`userId`);
-CREATE INDEX `idx_check_in_cycles_clientId` ON `check_in_cycles` (`clientId`);
-CREATE INDEX `idx_check_in_history_clientId` ON `check_in_history` (`clientId`);
+-- CREATE INDEX `idx_check_in_cycles_clientId` ON `check_in_cycles` (`clientId`); -- redundant with uq_client
+-- CREATE INDEX `idx_check_in_history_clientId` ON `check_in_history` (`clientId`); -- redundant with idx_client
 CREATE INDEX `idx_meal_plan_history_userId` ON `meal_plan_history` (`userId`);
 CREATE INDEX `idx_meal_plan_history_coachId` ON `meal_plan_history` (`coachId`);
 CREATE INDEX `idx_progress_photos_coachId` ON `progress_photos` (`coachId`);
@@ -54,8 +64,8 @@ CREATE INDEX `idx_program_change_logs_userId` ON `program_change_logs` (`userId`
 CREATE INDEX `idx_program_change_logs_coachId` ON `program_change_logs` (`coachId`);
 CREATE INDEX `idx_cardio_change_logs_userId` ON `cardio_change_logs` (`userId`);
 CREATE INDEX `idx_cardio_change_logs_coachId` ON `cardio_change_logs` (`coachId`);
-CREATE INDEX `idx_client_question_overrides_clientId` ON `client_question_overrides` (`clientId`);
+-- CREATE INDEX `idx_client_question_overrides_clientId` ON `client_question_overrides` (`clientId`); -- redundant, covered by the unique (clientId, questionId) index
 CREATE INDEX `idx_client_phases_clientId` ON `client_phases` (`clientId`);
 CREATE INDEX `idx_invite_tokens_coachId` ON `invite_tokens` (`coachId`);
-CREATE INDEX `idx_meal_logs_userId` ON `meal_logs` (`userId`);
+-- CREATE INDEX `idx_meal_logs_userId` ON `meal_logs` (`userId`); -- redundant with meal_logs_userId_idx
 CREATE INDEX `idx_device_tokens_userId` ON `device_tokens` (`userId`);
