@@ -77,7 +77,6 @@ vi.mock("./db", () => ({
   listAssignedHabitsForClient: vi.fn().mockResolvedValue([]),
   toggleHabitCompletion: vi.fn().mockResolvedValue(undefined),
   getHabitCompletionsForClient: vi.fn().mockResolvedValue([]),
-  getAllClients: vi.fn().mockResolvedValue([]),
 }));
 
 beforeEach(() => {
