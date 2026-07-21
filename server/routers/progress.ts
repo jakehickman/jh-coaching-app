@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure, router } from "../_core/trpc";
+import { adminProcedure, router } from "../_core/trpc";
 import * as db from "../db";
 import { getDb } from "../db";
 import { mealLogs } from "../../drizzle/schema";
@@ -97,7 +97,7 @@ function buildPeriods(
 }
 
 export const progressRouter = router({
-  weeklyReview: protectedProcedure
+  weeklyReview: adminProcedure
     .input(z.object({ clientId: z.number(), tzOffsetMinutes: z.number().optional().default(0) }))
     .query(async ({ input }) => {
       const { clientId, tzOffsetMinutes } = input;
