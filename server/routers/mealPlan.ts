@@ -3,6 +3,23 @@ import { protectedProcedure, router } from "../_core/trpc";
 import { adminProcedure } from "./shared";
 import * as db from "../db";
 
+// Matches the item shape MealPlansSection.tsx actually writes (food/qty/serving*),
+// not the unrelated `Meal`/`MealIngredient` interfaces in drizzle/schema.ts (those
+// describe an older ingredients-based shape nothing currently writes).
+const mealPlanItemSchema = z.object({
+  food: z.string(),
+  qty: z.string(),
+  servingId: z.number().nullable().optional(),
+  servingGrams: z.number().optional(),
+  servingLabel: z.string().optional(),
+  grams: z.string().optional(), // legacy field, still read on load
+});
+const mealPlanMealSchema = z.object({
+  name: z.string(),
+  time: z.string().optional(),
+  items: z.array(mealPlanItemSchema).optional(),
+});
+
 export const mealPlanRouter = router({
   get: protectedProcedure
     .input(z.object({ dayType: z.enum(["training", "rest"]) }))
@@ -15,7 +32,7 @@ export const mealPlanRouter = router({
       z.object({
         userId: z.number(),
         dayType: z.enum(["training", "rest"]),
-        meals: z.any().optional(),
+        meals: z.array(mealPlanMealSchema).optional(),
         supplements: z.array(z.object({
           name: z.string(),
           dose: z.string(),
