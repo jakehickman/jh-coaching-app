@@ -5,64 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1775385627724,
-      "tag": "0000_youthful_blackheart",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1775385773566,
-      "tag": "0001_high_thena",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1775389652850,
-      "tag": "0002_illegal_mach_iv",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1775390497518,
-      "tag": "0003_cuddly_garia",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1775392720675,
-      "tag": "0004_familiar_shocker",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
-      "when": 1775395636570,
-      "tag": "0005_mute_ultimatum",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "5",
-      "when": 1775397511874,
-      "tag": "0006_clever_risque",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "5",
-      "when": 1775554637210,
-      "tag": "0007_chemical_goblin_queen",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "5",
-      "when": 1777080562495,
-      "tag": "0008_conscious_thanos",
+      "when": 1784616466408,
+      "tag": "0000_baseline",
       "breakpoints": true
     }
   ]

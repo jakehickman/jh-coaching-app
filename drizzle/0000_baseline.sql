@@ -35,6 +35,7 @@ CREATE TABLE `check_in_history` (
 	`clientId` int NOT NULL,
 	`dueDate` date NOT NULL,
 	`submissionId` int,
+	`skipped` boolean NOT NULL DEFAULT false,
 	`completedAt` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `check_in_history_id` PRIMARY KEY(`id`)
 );
@@ -76,6 +77,21 @@ CREATE TABLE `check_in_submissions` (
 	CONSTRAINT `check_in_submissions_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
+CREATE TABLE `client_phases` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`clientId` int NOT NULL,
+	`label` enum('Gaining','Mini Cut','Fat Loss','Contest Prep','Maintenance') NOT NULL,
+	`startDate` date NOT NULL,
+	`endDate` date,
+	`notes` text,
+	`start_weight` float,
+	`target_weight` float,
+	`target_rate` varchar(32),
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `client_phases_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
 CREATE TABLE `client_profiles` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`userId` int NOT NULL,
@@ -88,6 +104,7 @@ CREATE TABLE `client_profiles` (
 	`liss_sessions_per_week` int,
 	`liss_minutes_per_session` int,
 	`photoType` enum('standard','athlete') NOT NULL DEFAULT 'standard',
+	`nutritionMode` enum('meal_plan','macros') NOT NULL DEFAULT 'meal_plan',
 	`createdAt` timestamp NOT NULL DEFAULT (now()),
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `client_profiles_id` PRIMARY KEY(`id`)
@@ -128,11 +145,22 @@ CREATE TABLE `daily_logs` (
 	`lissMinutes` int,
 	`sleepQuality` int,
 	`hungerLevel` int,
+	`stressLevel` int,
 	`offPlanMeals` int DEFAULT 0,
 	`notes` text,
 	`createdAt` timestamp NOT NULL DEFAULT (now()),
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `daily_logs_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `device_tokens` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`token` varchar(512) NOT NULL,
+	`platform` enum('ios','android') NOT NULL,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `device_tokens_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
 CREATE TABLE `equipment_presets` (
@@ -171,6 +199,15 @@ CREATE TABLE `exercise_library` (
 	CONSTRAINT `exercise_library_name_unique` UNIQUE(`name`)
 );
 --> statement-breakpoint
+CREATE TABLE `food_servings` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`foodId` int NOT NULL,
+	`label` varchar(128) NOT NULL,
+	`grams` float NOT NULL,
+	`sortOrder` int NOT NULL DEFAULT 0,
+	CONSTRAINT `food_servings_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
 CREATE TABLE `habit_assignments` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`habitId` int NOT NULL,
@@ -194,13 +231,68 @@ CREATE TABLE `habits` (
 	`coachId` int NOT NULL,
 	`name` varchar(128) NOT NULL,
 	`description` text,
+	`scope` enum('daily','per_meal') NOT NULL DEFAULT 'daily',
 	`frequency` enum('daily','x_per_week') NOT NULL DEFAULT 'daily',
 	`targetDays` int DEFAULT 7,
 	`startDate` date,
+	`sortOrder` int NOT NULL DEFAULT 0,
 	`deleted` boolean NOT NULL DEFAULT false,
 	`createdAt` timestamp NOT NULL DEFAULT (now()),
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `habits_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `invite_tokens` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`token` varchar(64) NOT NULL,
+	`coachId` int NOT NULL,
+	`label` varchar(128),
+	`profileEmail` varchar(320),
+	`usedByUserId` int,
+	`usedAt` timestamp,
+	`expiresAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `invite_tokens_id` PRIMARY KEY(`id`),
+	CONSTRAINT `invite_tokens_token_unique` UNIQUE(`token`)
+);
+--> statement-breakpoint
+CREATE TABLE `macro_targets` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`coachId` int,
+	`dayType` enum('training','rest') NOT NULL,
+	`meals` json,
+	`notes` text,
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `macro_targets_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `meal_habit_completions` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`habitId` int NOT NULL,
+	`clientId` int NOT NULL,
+	`mealLogId` int NOT NULL,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `meal_habit_completions_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `meal_logs` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`loggedAt` timestamp NOT NULL,
+	`mealType` enum('meal','treat') NOT NULL,
+	`name` varchar(256),
+	`photoUrl` text,
+	`photoKey` varchar(512),
+	`portionSize` enum('small','medium','large'),
+	`hungerRating` int,
+	`fullnessRating` int,
+	`isOffPlan` boolean NOT NULL DEFAULT false,
+	`notes` text,
+	`utcOffsetMins` int,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `meal_logs_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
 CREATE TABLE `meal_plan_history` (
@@ -226,6 +318,7 @@ CREATE TABLE `meal_plans` (
 	`coachId` int,
 	`dayType` enum('training','rest') NOT NULL,
 	`meals` json,
+	`supplements` json,
 	`totalCalories` int,
 	`totalProtein` int,
 	`totalCarbs` int,
@@ -241,6 +334,7 @@ CREATE TABLE `measurements` (
 	`userId` int NOT NULL,
 	`measureDate` date NOT NULL,
 	`waist` float,
+	`hips` float,
 	`umbilical1` float,
 	`umbilical2` float,
 	`umbilical3` float,
@@ -269,10 +363,10 @@ CREATE TABLE `measurements` (
 CREATE TABLE `meso_cycles` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`userId` int NOT NULL,
-	`mesoName` varchar(64),
-	`startDate` date,
-	`endDate` date,
-	`totalWeeks` int DEFAULT 4,
+	`coachId` int,
+	`mesoName` varchar(128) NOT NULL,
+	`startDate` date NOT NULL,
+	`closedAt` timestamp,
 	`notes` text,
 	`createdAt` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `meso_cycles_id` PRIMARY KEY(`id`)
@@ -293,7 +387,8 @@ CREATE TABLE `meso_sessions` (
 --> statement-breakpoint
 CREATE TABLE `nutrition_foods` (
 	`id` int AUTO_INCREMENT NOT NULL,
-	`name` varchar(128) NOT NULL,
+	`fdcId` int,
+	`name` varchar(256) NOT NULL,
 	`calories` float NOT NULL DEFAULT 0,
 	`protein` float NOT NULL DEFAULT 0,
 	`carbs` float NOT NULL DEFAULT 0,
@@ -430,3 +525,41 @@ CREATE TABLE `workout_sessions` (
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `workout_sessions_id` PRIMARY KEY(`id`)
 );
+--> statement-breakpoint
+CREATE INDEX `idx_cardio_change_logs_userId` ON `cardio_change_logs` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_cardio_change_logs_coachId` ON `cardio_change_logs` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_check_in_submissions_coachId` ON `check_in_submissions` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_client_phases_clientId` ON `client_phases` (`clientId`);--> statement-breakpoint
+CREATE INDEX `idx_client_profiles_userId` ON `client_profiles` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_client_profiles_coachId` ON `client_profiles` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_coaching_notes_coachId` ON `coaching_notes` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_daily_logs_userId` ON `daily_logs` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_device_tokens_userId` ON `device_tokens` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_equipment_presets_userId` ON `equipment_presets` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_habit_assignments_clientId` ON `habit_assignments` (`clientId`);--> statement-breakpoint
+CREATE INDEX `idx_habit_completions_clientId` ON `habit_completions` (`clientId`);--> statement-breakpoint
+CREATE INDEX `idx_habits_coachId` ON `habits` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_invite_tokens_coachId` ON `invite_tokens` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_macro_targets_userId` ON `macro_targets` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_macro_targets_coachId` ON `macro_targets` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_meal_habit_completions_clientId` ON `meal_habit_completions` (`clientId`);--> statement-breakpoint
+CREATE INDEX `idx_meal_plan_history_userId` ON `meal_plan_history` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_meal_plan_history_coachId` ON `meal_plan_history` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_meal_plans_userId` ON `meal_plans` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_meal_plans_coachId` ON `meal_plans` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_measurements_userId` ON `measurements` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_meso_cycles_userId` ON `meso_cycles` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_meso_cycles_coachId` ON `meso_cycles` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_meso_sessions_userId` ON `meso_sessions` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_onboarding_submissions_userId` ON `onboarding_submissions` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_onboarding_submissions_email` ON `onboarding_submissions` (`email`);--> statement-breakpoint
+CREATE INDEX `idx_program_change_logs_userId` ON `program_change_logs` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_program_change_logs_coachId` ON `program_change_logs` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_progress_photos_coachId` ON `progress_photos` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_shopping_items_userId` ON `shopping_items` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_timeline_milestones_userId` ON `timeline_milestones` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_training_programs_userId` ON `training_programs` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_training_programs_coachId` ON `training_programs` (`coachId`);--> statement-breakpoint
+CREATE INDEX `idx_users_email` ON `users` (`email`);--> statement-breakpoint
+CREATE INDEX `idx_weekly_check_ins_userId` ON `weekly_check_ins` (`userId`);--> statement-breakpoint
+CREATE INDEX `idx_workout_sessions_userId` ON `workout_sessions` (`userId`);
